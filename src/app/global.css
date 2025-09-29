@@ -1,0 +1,108 @@
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f4f6f8;
+    color: #333;
+}
+
+.container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    color: #222;
+}
+
+button {
+    background: linear-gradient(90deg, #4e54c8, #8f94fb);
+    border: none;
+    color: white;
+    padding: 0.7rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.error {
+    color: #ff4d4f;
+    margin: 1rem 0;
+    text-align: center;
+    font-weight: 500;
+}
+
+.day-block {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.day-block h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+    color: #555;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+.event-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.8rem;
+    border-radius: 8px;
+    background: #fafafa;
+    transition: all 0.2s ease;
+}
+
+.event-card:hover {
+    background: #f0f4ff;
+    transform: translateX(3px);
+}
+
+.event-time {
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.3rem;
+}
+
+.event-info {
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.prof {
+    color: #888;
+    font-style: italic;
+}
+
+.location {
+    color: #888;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+    li {
+        font-size: 14px;
+    }
+}
