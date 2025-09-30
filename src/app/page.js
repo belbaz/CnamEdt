@@ -10,6 +10,7 @@ export default function Home() {
     const [selectedWeek, setSelectedWeek] = useState(null);
     const [darkMode, setDarkMode] = useState(false);
     const [subjectColors, setSubjectColors] = useState({});
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const fetchEvents = async () => {
         try {
@@ -49,7 +50,7 @@ export default function Home() {
                 const weeks = extractAvailableWeeks(data);
                 setAvailableWeeks(weeks);
                 if (weeks.length > 0) setSelectedWeek(weeks[0].monday);
-                
+
                 if (savedColors) {
                     setSubjectColors(JSON.parse(savedColors));
                 } else {
@@ -64,12 +65,12 @@ export default function Home() {
     // Créer un mapping des matières vers les couleurs
     const createSubjectColorMapping = (data) => {
         const subjectsSet = new Set();
-        
+
         // Extraire toutes les matières uniques
         data.forEach(event => {
             let matiere = event.summary?.trim() || "";
             matiere = matiere.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, "").trim();
-            
+
             if (matiere && matiere !== ":") {
                 subjectsSet.add(matiere);
             }
@@ -77,7 +78,7 @@ export default function Home() {
 
         // Convertir en tableau et trier alphabétiquement pour cohérence
         const subjects = Array.from(subjectsSet).sort();
-        
+
         // Assigner une couleur fixe à chaque matière
         const mapping = {};
         subjects.forEach((subject, index) => {
@@ -103,7 +104,10 @@ export default function Home() {
                 weeksMap.set(key, {
                     monday,
                     sunday,
-                    label: `${monday.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} - ${sunday.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`
+                    label: `${monday.toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "short"
+                    })} - ${sunday.toLocaleDateString("fr-FR", {day: "numeric", month: "short"})}`
                 });
             }
         });
@@ -160,6 +164,15 @@ export default function Home() {
         fetchEvents();
     }, []);
 
+    // Mettre à jour l'heure actuelle toutes les minutes
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000); // Toutes les minutes
+
+        return () => clearInterval(interval);
+    }, []);
+
     function getEventTitle(ev) {
         let matiere = ev.summary?.trim() || "";
         const description = ev.description || "";
@@ -170,6 +183,8 @@ export default function Home() {
         const match = description.match(/Professeur\s*:\s*-?\s*(.*)$/i);
         if (match) {
             prof = match[1].trim();
+            // Enlever "Madame" ou "Monsieur"
+            prof = prof.replace(/^(Madame|Monsieur|Mme|M\.)\s+/i, "").trim();
         }
 
         return {matiere, prof, description};
@@ -180,6 +195,97 @@ export default function Home() {
         if (!matiere) return 0;
         // Utiliser le mapping prédéfini
         return subjectColors[matiere] ?? 0;
+    }
+
+    // Trouver les heures min/max des cours d'une journée
+    function getDayTimeRange(dayEvents) {
+        if (!dayEvents || dayEvents.length === 0) {
+            return { startMinutes: 8 * 60 + 45, endMinutes: 18 * 60 + 45 };
+        }
+
+        let minTime = Infinity;
+        let maxTime = -Infinity;
+
+        dayEvents.forEach(ev => {
+            const start = new Date(ev.start);
+            const end = new Date(ev.end);
+            const startMinutes = start.getHours() * 60 + start.getMinutes();
+            const endMinutes = end.getHours() * 60 + end.getMinutes();
+            
+            minTime = Math.min(minTime, startMinutes);
+            maxTime = Math.max(maxTime, endMinutes);
+        });
+
+        // Arrondir au quart d'heure inférieur/supérieur
+        const startMinutes = Math.floor(minTime / 15) * 15;
+        const endMinutes = Math.ceil(maxTime / 15) * 15;
+
+        return { startMinutes, endMinutes };
+    }
+
+    // Générer les marqueurs horaires pour une plage donnée
+    function generateTimeMarkers(startMinutes, endMinutes) {
+        const markers = [];
+        
+        // Arrondir au 30 minutes
+        const roundedStart = Math.floor(startMinutes / 30) * 30;
+        const roundedEnd = Math.ceil(endMinutes / 30) * 30;
+        
+        // Créer les marqueurs toutes les 30 minutes
+        for (let totalMin = roundedStart; totalMin <= roundedEnd; totalMin += 30) {
+            const hour = Math.floor(totalMin / 60);
+            const minute = totalMin % 60;
+            
+            markers.push({
+                hour,
+                minute,
+                totalMinutes: totalMin,
+                label: minute === 0 ? `${hour}h` : `${hour}h${minute.toString().padStart(2, '0')}`,
+                isHour: minute === 0
+            });
+        }
+        
+        return markers;
+    }
+
+    // Calculer la position de l'heure actuelle en pourcentage
+    function getCurrentTimePosition(dayDate, startMinutes, endMinutes) {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        
+        if (nowMinutes < startMinutes || nowMinutes > endMinutes) return null;
+
+        const totalMinutes = endMinutes - startMinutes;
+        const currentMinutes = nowMinutes - startMinutes;
+        return (currentMinutes / totalMinutes) * 100;
+    }
+
+    // Vérifier si c'est le jour actuel
+    function isToday(dayDate) {
+        const today = new Date();
+        return dayDate.toDateString() === today.toDateString();
+    }
+
+    // Calculer la position et la largeur d'un cours sur la timeline
+    function getEventPosition(startTime, endTime, dayStartMinutes, dayEndMinutes) {
+        const eventStart = new Date(startTime);
+        const eventEnd = new Date(endTime);
+        
+        const eventStartMinutes = eventStart.getHours() * 60 + eventStart.getMinutes();
+        const eventEndMinutes = eventEnd.getHours() * 60 + eventEnd.getMinutes();
+
+        const totalMinutes = dayEndMinutes - dayStartMinutes;
+        const startOffset = eventStartMinutes - dayStartMinutes;
+        const eventDuration = eventEndMinutes - eventStartMinutes;
+
+        // Calculer les positions en pourcentage (précision exacte)
+        const left = Math.max(0, (startOffset / totalMinutes) * 100);
+        const width = Math.max(3, (eventDuration / totalMinutes) * 100);
+
+        return { 
+            left: `${left.toFixed(3)}%`, 
+            width: `${width.toFixed(3)}%` 
+        };
     }
 
     // Toggle dark mode
@@ -201,11 +307,9 @@ export default function Home() {
 
     const groupByDay = events.reduce((acc, ev) => {
         const d = new Date(ev.start);
-        const key = d.toLocaleDateString("fr-FR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-        });
+        const weekday = d.toLocaleDateString("fr-FR", { weekday: "long" });
+        const date = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+        const key = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${date}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(ev);
         return acc;
@@ -246,8 +350,8 @@ export default function Home() {
                         <h1 className="page-title">Mon Emploi du Temps</h1>
                         <p className="page-subtitle">Consultez votre planning de la semaine</p>
                     </div>
-                    <button 
-                        className="theme-toggle" 
+                    <button
+                        className="theme-toggle"
                         onClick={() => setDarkMode(!darkMode)}
                         title={darkMode ? "Mode clair" : "Mode sombre"}
                     >
@@ -266,8 +370,6 @@ export default function Home() {
             {!loading && (
                 <>
                     <div className="controls">
-                        <button className="refresh-btn" onClick={fetchEvents} title="Actualiser">🔄</button>
-
                         {availableWeeks.length > 0 && selectedWeek && (
                             <div className="week-picker">
                                 <button
@@ -303,6 +405,8 @@ export default function Home() {
                                 )}
                             </div>
                         )}
+                        <button className="refresh-btn" onClick={fetchEvents} title="Actualiser">Actualiser</button>
+
                     </div>
 
                     {error && <div className="error">{error}</div>}
@@ -311,49 +415,105 @@ export default function Home() {
                             Aucun événement trouvé pour cette période
                         </div>
                     )}
-                    {Object.entries(groupByDay).map(([day, evs]) => (
-                        <div key={day} className="day-block">
-                            <h2>{day}</h2>
-                            <div className="events-container">
-                                <ul>
-                                    {evs.map((ev, idx) => {
-                                        const {matiere, prof, description} = getEventTitle(ev);
-                                        const location = ev.location?.replace(/^Salle\s*:\s*/, "").trim();
-                                        const colorIndex = getColorIndexForSubject(matiere || description);
+                    {Object.entries(groupByDay).map(([day, evs]) => {
+                        const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
+                        const todayCheck = isToday(dayDate);
+                        
+                        // Calculer la plage horaire dynamique pour ce jour
+                        const { startMinutes, endMinutes } = getDayTimeRange(evs);
+                        const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
+                        const currentPos = todayCheck ? getCurrentTimePosition(dayDate, startMinutes, endMinutes) : null;
 
-                                        return (
-                                            <li
-                                                key={idx}
-                                                className="event-card"
-                                                data-index={colorIndex}
-                                            >
-                                                <div className="event-time">
-                                                    {new Date(ev.start).toLocaleTimeString("fr-FR", {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit"
-                                                    })} - {new Date(ev.end).toLocaleTimeString("fr-FR", {
-                                                    hour: "2-digit",
-                                                    minute: "2-digit"
-                                                })}
+                        return (
+                            <div key={day} className="day-block">
+                                <h2>{day}</h2>
+                                <div className="timeline-wrapper">
+                                    {/* Grille horaire */}
+                                    <div className="time-markers">
+                                        {timeMarkers.map((marker, idx) => {
+                                            // Calculer la position du marqueur en %
+                                            const totalDuration = endMinutes - startMinutes;
+                                            const markerPosition = ((marker.totalMinutes - startMinutes) / totalDuration) * 100;
+                                            
+                                            return (
+                                                <div 
+                                                    key={idx} 
+                                                    className={`time-marker ${marker.isHour ? 'hour-marker' : ''}`}
+                                                    style={{ left: `${markerPosition}%` }}
+                                                >
+                                                    {marker.isHour && <span className="time-label">{marker.label}</span>}
                                                 </div>
-                                                <div className="event-info">
-                                                    {matiere && matiere !== ":" ? (
-                                                        <strong>{matiere}</strong>
-                                                    ) : (
-                                                        description && <strong>{description}</strong>
-                                                    )}
-                                                    {prof && <span className="prof">{prof}</span>}
-                                                    {location && (
-                                                        <div className="location">{location}</div>
-                                                    )}
-                                                </div>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Zone de temps passé (fond grisé) */}
+                                    {todayCheck && currentPos !== null && (
+                                        <div 
+                                            className="time-passed-overlay" 
+                                            style={{ width: `${currentPos}%` }}
+                                        />
+                                    )}
+
+                                    {/* Indicateur de l'heure actuelle */}
+                                    {todayCheck && currentPos !== null && (
+                                        <div 
+                                            className="current-time-indicator" 
+                                            style={{ left: `${currentPos}%` }}
+                                        >
+                                            <div className="current-time-line"></div>
+                                            <div className="current-time-dot"></div>
+                                        </div>
+                                    )}
+
+                                    {/* Conteneur des cours */}
+                                    <div className="events-container">
+                                        <ul>
+                                            {evs.map((ev, idx) => {
+                                                const {matiere, prof, description} = getEventTitle(ev);
+                                                const location = ev.location?.replace(/^Salle\s*:\s*/, "").trim();
+                                                const colorIndex = getColorIndexForSubject(matiere || description);
+                                                const position = getEventPosition(ev.start, ev.end, startMinutes, endMinutes);
+
+                                                return (
+                                                    <li
+                                                        key={idx}
+                                                        className="event-card"
+                                                        data-index={colorIndex}
+                                                        style={{
+                                                            left: position.left,
+                                                            width: position.width
+                                                        }}
+                                                    >
+                                                        <div className="event-time">
+                                                            {new Date(ev.start).toLocaleTimeString("fr-FR", {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit"
+                                                            })} - {new Date(ev.end).toLocaleTimeString("fr-FR", {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit"
+                                                        })}
+                                                        </div>
+                                                        <div className="event-info">
+                                                            {matiere && matiere !== ":" ? (
+                                                                <strong>{matiere}</strong>
+                                                            ) : (
+                                                                description && <strong>{description}</strong>
+                                                            )}
+                                                            {prof && <span className="prof">{prof}</span>}
+                                                            {location && (
+                                                                <div className="location">{location}</div>
+                                                            )}
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </>
             )}
         </main>
