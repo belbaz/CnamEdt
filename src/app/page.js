@@ -436,10 +436,12 @@ export default function Home() {
                                             const markerPosition = ((marker.totalMinutes - startMinutes) / totalDuration) * 100;
                                             
                                             return (
-                                                <div 
-                                                    key={idx} 
+                                                <div
+                                                    key={idx}
                                                     className={`time-marker ${marker.isHour ? 'hour-marker' : ''}`}
-                                                    style={{ left: `${markerPosition}%` }}
+                                                    style={window.innerWidth <= 650
+                                                        ? { top: `${markerPosition}%` }
+                                                        : { left: `${markerPosition}%` }}
                                                 >
                                                     {marker.isHour && <span className="time-label">{marker.label}</span>}
                                                 </div>
@@ -457,9 +459,12 @@ export default function Home() {
 
                                     {/* Indicateur de l'heure actuelle */}
                                     {todayCheck && currentPos !== null && (
-                                        <div 
-                                            className="current-time-indicator" 
-                                            style={{ left: `${currentPos}%` }}
+                                        <div
+                                            className="current-time-indicator"
+                                            style={window.innerWidth <= 480
+                                                ? { top: `${currentPos}%` } // mode vertical
+                                                : { left: `${currentPos}%` } // mode horizontal
+                                            }
                                         >
                                             <div className="current-time-line"></div>
                                             <div className="current-time-dot"></div>
