@@ -1,0 +1,29 @@
+/* Zone de temps passé (fond grisé) */
+.time-passed-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.23);
+    border-radius: 15px;
+    z-index: 2;
+    pointer-events: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode .time-passed-overlay {
+    background: rgba(0, 0, 0, 0.35);
+    border-right: 1px solid rgba(255, 255, 255, 0.01);
+}
+
+@media (max-width: 650px) {
+    /* Zone de temps écoulé */
+    .time-passed-overlay {
+        left: 0;
+        right: 0;
+        top: 0;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+}

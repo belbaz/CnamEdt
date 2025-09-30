@@ -1,0 +1,142 @@
+/* Marqueurs horaires - Timeline 8h45-18h45 */
+.time-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Conteneur des labels (au-dessus des cours) */
+.time-labels-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.time-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.time-marker::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-light);
+    opacity: 0.4;
+}
+
+.time-marker.hour-marker::before {
+    width: 2px;
+    background: var(--border-color);
+    opacity: 1;
+}
+
+/* Wrapper pour positionner chaque label */
+.time-label-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
+.time-label {
+    position: absolute;
+    bottom: .28rem;
+    left: 0;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+    pointer-events: auto;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .time-label {
+        font-size: 0.7rem;
+        padding: 0.175rem 0.4rem;
+        bottom: -2.15rem;
+    }
+}
+
+@media (max-width: 650px) {
+    .time-markers {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 3rem;
+    }
+
+    .time-labels-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 3rem;
+    }
+
+    .time-marker {
+        position: absolute;
+        left: 2.5rem;
+        right: 0;
+        height: 1px;
+    }
+
+    .time-marker::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        height: 1px;
+        background: var(--border-light);
+        opacity: 0.4;
+    }
+
+    .time-marker.hour-marker::before {
+        background: var(--border-color);
+        height: 2px;
+        opacity: 1;
+    }
+
+    /* Wrapper pour positionner chaque label en mobile */
+    .time-label-wrapper {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1px;
+    }
+
+    /* Labels d'heure */
+    .time-label {
+        position: absolute;
+        right: 100%;
+        margin-right: 0.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: none;
+        padding: 0;
+        box-shadow: none;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+}

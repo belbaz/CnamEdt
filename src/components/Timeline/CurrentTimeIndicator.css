@@ -1,0 +1,90 @@
+/* Indicateur de l'heure actuelle */
+.current-time-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.current-time-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0.4) 100%);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    animation: pulse-line 2s ease-in-out infinite;
+}
+
+.current-time-dot {
+    position: absolute;
+    top: 50%;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border: 2px solid white;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-line {
+    0%, 100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 2px 12px rgba(239, 68, 68, 0.8);
+    }
+}
+
+@media (max-width: 650px) {
+    /* Curseur de l'heure */
+    .current-time-indicator {
+        left: 0;
+        right: 0;
+        height: 2px;
+        width: 100%;
+    }
+
+    .current-time-line {
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(90deg,
+        rgba(239, 68, 68, 0.8) 0%,
+        rgba(239, 68, 68, 0.4) 100%
+        );
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        animation: pulse-line 2s ease-in-out infinite;
+    }
+
+    .current-time-dot {
+        position: absolute;
+        left: -5px;
+        top: -4px;
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+}
