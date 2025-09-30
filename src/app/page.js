@@ -5,18 +5,30 @@ export default function Home() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [selectedWeek, setSelectedWeek] = useState(null);
+    const [darkMode, setDarkMode] = useState(false);
+    const [subjectColors, setSubjectColors] = useState({});
 
     const fetchEvents = async () => {
         try {
+            setLoading(true);
             setError(null);
             const res = await fetch("/api/fetch-ics");
-            if (!res.ok) throw new Error("Impossible de récupérer l'EDT");
+            if (!res.ok) throw new Error("Impossible de récupérer l'emploi du temps");
             const data = await res.json();
+
+            if (!data || data.length === 0) {
+                throw new Error("Aucun emploi du temps trouvé");
+            }
 
             data.sort((a, b) => new Date(a.start) - new Date(b.start));
             setAllEvents(data);
+
+            // Créer le mapping des couleurs par matière
+            const colorMapping = createSubjectColorMapping(data);
+            setSubjectColors(colorMapping);
 
             const weeks = extractAvailableWeeks(data);
             setAvailableWeeks(weeks);
@@ -26,17 +38,53 @@ export default function Home() {
             setSelectedWeek(weekToSelect?.monday);
 
             localStorage.setItem("events", JSON.stringify(data));
+            localStorage.setItem("subjectColors", JSON.stringify(colorMapping));
         } catch (err) {
             setError(err.message);
             const saved = localStorage.getItem("events");
+            const savedColors = localStorage.getItem("subjectColors");
             if (saved) {
                 const data = JSON.parse(saved);
                 setAllEvents(data);
                 const weeks = extractAvailableWeeks(data);
                 setAvailableWeeks(weeks);
                 if (weeks.length > 0) setSelectedWeek(weeks[0].monday);
+                
+                if (savedColors) {
+                    setSubjectColors(JSON.parse(savedColors));
+                } else {
+                    setSubjectColors(createSubjectColorMapping(data));
+                }
             }
+        } finally {
+            setLoading(false);
         }
+    };
+
+    // Créer un mapping des matières vers les couleurs
+    const createSubjectColorMapping = (data) => {
+        const subjectsSet = new Set();
+        
+        // Extraire toutes les matières uniques
+        data.forEach(event => {
+            let matiere = event.summary?.trim() || "";
+            matiere = matiere.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, "").trim();
+            
+            if (matiere && matiere !== ":") {
+                subjectsSet.add(matiere);
+            }
+        });
+
+        // Convertir en tableau et trier alphabétiquement pour cohérence
+        const subjects = Array.from(subjectsSet).sort();
+        
+        // Assigner une couleur fixe à chaque matière
+        const mapping = {};
+        subjects.forEach((subject, index) => {
+            mapping[subject] = index % 5; // 5 couleurs disponibles
+        });
+
+        return mapping;
     };
 
     const extractAvailableWeeks = (data) => {
@@ -104,6 +152,11 @@ export default function Home() {
     }, [selectedWeek, allEvents]);
 
     useEffect(() => {
+        // Charger les couleurs sauvegardées au démarrage
+        const savedColors = localStorage.getItem("subjectColors");
+        if (savedColors) {
+            setSubjectColors(JSON.parse(savedColors));
+        }
         fetchEvents();
     }, []);
 
@@ -122,6 +175,30 @@ export default function Home() {
         return {matiere, prof, description};
     }
 
+    // Obtenir l'index de couleur pour une matière
+    function getColorIndexForSubject(matiere) {
+        if (!matiere) return 0;
+        // Utiliser le mapping prédéfini
+        return subjectColors[matiere] ?? 0;
+    }
+
+    // Toggle dark mode
+    useEffect(() => {
+        const savedMode = localStorage.getItem("darkMode");
+        if (savedMode) {
+            setDarkMode(savedMode === "true");
+        }
+    }, []);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add("dark-mode");
+        } else {
+            document.documentElement.classList.remove("dark-mode");
+        }
+        localStorage.setItem("darkMode", darkMode.toString());
+    }, [darkMode]);
+
     const groupByDay = events.reduce((acc, ev) => {
         const d = new Date(ev.start);
         const key = d.toLocaleDateString("fr-FR", {
@@ -133,8 +210,6 @@ export default function Home() {
         acc[key].push(ev);
         return acc;
     }, {});
-
-    const colors = ["#FF6B6B", "#4ECDC4", "#FFD93D", "#6A4C93", "#FFA69E"];
 
     const goToPreviousWeek = () => {
         const currentIndex = availableWeeks.findIndex(w => w.monday.getTime() === selectedWeek.getTime());
@@ -165,89 +240,122 @@ export default function Home() {
 
     return (
         <main className="container">
-            <div className="controls">
-                <button onClick={fetchEvents}>🔄</button>
-
-                {availableWeeks.length > 0 && selectedWeek && (
-                    <div className="week-picker">
-                        <button
-                            className="week-nav"
-                            onClick={goToPreviousWeek}
-                            disabled={isFirstWeek}
-                        >
-                            ◀
-                        </button>
-
-                        <div className="week-display">
-                            <div className="week-label">Semaine du</div>
-                            <div className="week-date">
-                                {availableWeeks[currentIndex]?.label}
-                            </div>
-                        </div>
-
-                        <button
-                            className="week-nav"
-                            onClick={goToNextWeek}
-                            disabled={isLastWeek}
-                        >
-                            ▶
-                        </button>
-
-                        {!isCurrentWeek && (
-                            <button
-                                className="today-btn"
-                                onClick={goToCurrentWeek}
-                            >
-                                Aujourd'hui
-                            </button>
-                        )}
+            <div className="page-header">
+                <div className="header-content">
+                    <div>
+                        <h1 className="page-title">Mon Emploi du Temps</h1>
+                        <p className="page-subtitle">Consultez votre planning de la semaine</p>
                     </div>
-                )}
+                    <button 
+                        className="theme-toggle" 
+                        onClick={() => setDarkMode(!darkMode)}
+                        title={darkMode ? "Mode clair" : "Mode sombre"}
+                    >
+                        {darkMode ? "☀️" : "🌙"}
+                    </button>
+                </div>
             </div>
 
-            {error && <p className="error">{error}</p>}
-            {Object.keys(groupByDay).length === 0 && <p>Aucun événement trouvé.</p>}
-            {Object.entries(groupByDay).map(([day, evs]) => (
-                <div key={day} className="day-block">
-                    <h2>{day}</h2>
-                    <ul>
-                        {evs.map((ev, idx) => {
-                            const {matiere, prof, description} = getEventTitle(ev);
-                            // Simplification du traitement de location
-                            const location = ev.location?.replace(/^Salle\s*:\s*/, "").trim();
-
-                            return (
-                                <li
-                                    key={idx}
-                                    className="event-card"
-                                    style={{borderLeft: `6px solid ${colors[idx % colors.length]}`}}
-                                >
-                                    <div className="event-time">
-                                        {new Date(ev.start).toLocaleTimeString("fr-FR", {
-                                            hour: "2-digit",
-                                            minute: "2-digit"
-                                        })} → {new Date(ev.end).toLocaleTimeString("fr-FR", {
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                    })}
-                                    </div>
-                                    <div className="event-info">
-                                        {matiere && matiere !== ":" ? (
-                                            <strong>{matiere}</strong>
-                                        ) : (
-                                            description && <strong>{description}</strong>
-                                        )}
-                                        {prof && <span className="prof"> – {prof}</span>}
-                                        {location && (
-                                            <div className="location">Salle : {location}</div>
-                                        )}
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
+            {loading && (
+                <div className="loading-container">
+                    <div className="spinner"></div>
+                    <p>Chargement de votre emploi du temps...</p>
                 </div>
-            ))}
+            )}
+
+            {!loading && (
+                <>
+                    <div className="controls">
+                        <button className="refresh-btn" onClick={fetchEvents} title="Actualiser">🔄</button>
+
+                        {availableWeeks.length > 0 && selectedWeek && (
+                            <div className="week-picker">
+                                <button
+                                    className="week-nav"
+                                    onClick={goToPreviousWeek}
+                                    disabled={isFirstWeek}
+                                >
+                                    ◀
+                                </button>
+
+                                <div className="week-display">
+                                    <div className="week-label">Semaine du</div>
+                                    <div className="week-date">
+                                        {availableWeeks[currentIndex]?.label}
+                                    </div>
+                                </div>
+
+                                <button
+                                    className="week-nav"
+                                    onClick={goToNextWeek}
+                                    disabled={isLastWeek}
+                                >
+                                    ▶
+                                </button>
+
+                                {!isCurrentWeek && (
+                                    <button
+                                        className="today-btn"
+                                        onClick={goToCurrentWeek}
+                                    >
+                                        Aujourd'hui
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {error && <div className="error">{error}</div>}
+                    {Object.keys(groupByDay).length === 0 && !error && (
+                        <div className="no-events">
+                            Aucun événement trouvé pour cette période
+                        </div>
+                    )}
+                    {Object.entries(groupByDay).map(([day, evs]) => (
+                        <div key={day} className="day-block">
+                            <h2>{day}</h2>
+                            <div className="events-container">
+                                <ul>
+                                    {evs.map((ev, idx) => {
+                                        const {matiere, prof, description} = getEventTitle(ev);
+                                        const location = ev.location?.replace(/^Salle\s*:\s*/, "").trim();
+                                        const colorIndex = getColorIndexForSubject(matiere || description);
+
+                                        return (
+                                            <li
+                                                key={idx}
+                                                className="event-card"
+                                                data-index={colorIndex}
+                                            >
+                                                <div className="event-time">
+                                                    {new Date(ev.start).toLocaleTimeString("fr-FR", {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit"
+                                                    })} - {new Date(ev.end).toLocaleTimeString("fr-FR", {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit"
+                                                })}
+                                                </div>
+                                                <div className="event-info">
+                                                    {matiere && matiere !== ":" ? (
+                                                        <strong>{matiere}</strong>
+                                                    ) : (
+                                                        description && <strong>{description}</strong>
+                                                    )}
+                                                    {prof && <span className="prof">{prof}</span>}
+                                                    {location && (
+                                                        <div className="location">{location}</div>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
         </main>
     );
 }
