@@ -23,7 +23,6 @@ button {
     border: none;
     color: white;
     padding: 0.7rem 1.5rem;
-    margin-bottom: 1.5rem;
     border-radius: 999px;
     cursor: pointer;
     font-weight: 600;
@@ -33,6 +32,12 @@ button {
 button:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .error {
@@ -58,6 +63,7 @@ button:hover {
 }
 
 ul {
+    display: flex;
     list-style: none;
     padding: 0;
 }
@@ -98,11 +104,140 @@ ul {
     font-style: italic;
 }
 
+.controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.week-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: white;
+    padding: 0.6rem 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.week-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.week-nav:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.week-nav:disabled {
+    background: #e0e0e0;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.week-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 180px;
+}
+
+.week-label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.week-date {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin-top: 0.2rem;
+}
+
+.today-btn {
+    background: linear-gradient(90deg, #FF6B6B, #FFA69E);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.today-btn:hover {
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 0 0.5rem;
     }
-    li {
+
+    .event-card {
         font-size: 14px;
     }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.8rem;
+    }
+
+    .week-picker {
+        justify-content: center;
+    }
+
+    .week-display {
+        min-width: 140px;
+    }
+
+    .week-date {
+        font-size: 0.95rem;
+    }
+}
+
+.date-picker {
+    position: relative;
+    display: inline-block;
+}
+
+.date-btn {
+    background: linear-gradient(90deg, #4e54c8, #8f94fb);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.date-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.date-input {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: white;
+    cursor: pointer;
 }

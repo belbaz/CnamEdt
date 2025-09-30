@@ -1,5 +1,5 @@
 // ---- src/app/api/fetch-ics/route.js ----
-import { NextResponse } from "next/server";
+import {NextResponse} from "next/server";
 import ical from "node-ical";
 
 export async function GET() {
@@ -26,6 +26,6 @@ export async function GET() {
 
         return NextResponse.json(events);
     } catch (err) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({error: err.message}, {status: 500});
     }
 }
