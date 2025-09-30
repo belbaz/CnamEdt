@@ -43,13 +43,22 @@ export default function Home() {
     }, []);
 
     function getEventTitle(ev) {
-        const desc = ev.description || ev.summary || "";
-        const match = desc.match(/^(.*?)-?\s*Professeur\s*:\s*-?\s*(.*)$/i);
+        let matiere = ev.summary?.trim() || ""; // la matière est toujours dans SUMMARY
+        const description = ev.description || "";
+        let prof = "";
+
+        // Enlever le préfixe USS ou UAS suivi de lettres/chiffres
+        matiere = matiere.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, "").trim();
+
+        // Regex pour extraire le prof depuis la description
+        const match = description.match(/Professeur\s*:\s*-?\s*(.*)$/i);
         if (match) {
-            return {title: match[1].trim(), prof: match[2].trim()};
+            prof = match[1].trim();
         }
-        return {title: desc.trim(), prof: ""};
+
+        return { matiere, prof };
     }
+
 
     const groupByDay = events.reduce((acc, ev) => {
         const d = new Date(ev.start);
@@ -78,12 +87,12 @@ export default function Home() {
                     <h2>{day}</h2>
                     <ul>
                         {evs.map((ev, idx) => {
-                            const {title, prof} = getEventTitle(ev);
+                            const { matiere, prof } = getEventTitle(ev);
                             return (
                                 <li
                                     key={idx}
                                     className="event-card"
-                                    style={{borderLeft: `6px solid ${colors[idx % colors.length]}`}}
+                                    style={{ borderLeft: `6px solid ${colors[idx % colors.length]}` }}
                                 >
                                     <div className="event-time">
                                         {new Date(ev.start).toLocaleTimeString("fr-FR", {
@@ -95,11 +104,11 @@ export default function Home() {
                                     })}
                                     </div>
                                     <div className="event-info">
-                                        <strong>{title}</strong>
-                                        {prof && <span className="prof"> - {prof}</span>}
+                                        <strong>{matiere}</strong>
+                                        {prof && <span className="prof"> – {prof}</span>}
                                         {ev.location && (
                                             <div className="location">
-                                                {ev.location.replace(/^(Salle\s*:\s*)/, "").trim()}
+                                                {ev.location.replace(/^(Salle\\s*:\\s*)/, "").trim()}
                                             </div>
                                         )}
                                     </div>
