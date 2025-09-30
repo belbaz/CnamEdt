@@ -5,9 +5,19 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "build:mobile": "next build && npx cap sync",
+    "mobile:android": "npx cap open android",
+    "mobile:sync": "npx cap sync android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/preferences": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
     "@supabase/supabase-js": "^2.45.3",
     "next": "15.4.7",
     "node-ical": "^0.21.0",
@@ -15,6 +25,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
     "@types/react": "19.1.15",
     "typescript": "5.9.2"
   }
