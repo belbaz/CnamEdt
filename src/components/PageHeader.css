@@ -30,6 +30,13 @@
     display: inline-block;
 }
 
+.cnam-logo {
+    height: 18px;
+    width: auto;
+    margin-left: 8px;
+    opacity: 0.9;
+}
+
 .page-title::after {
     content: '';
     position: absolute;
@@ -74,6 +81,10 @@
         font-size: 1.25rem;
     }
 
+    /*.cnam-logo {*/
+    /*    height: 16px;*/
+    /*    margin-left: 6px;*/
+    /*}*/
     .theme-toggle {
         width: 40px;
         height: 40px;
@@ -92,6 +103,7 @@
     .page-title {
         font-size: 1.125rem;
     }
+
 
     .theme-toggle {
         width: 38px;

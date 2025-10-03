@@ -4,7 +4,7 @@
     right: 1.5rem;
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 15px;
     background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;
     border: none;
@@ -56,6 +56,6 @@
         width: 40px;
         height: 40px;
         font-size: 1rem;
-        border-radius: 10px;
+        border-radius: 22px;
     }
 }

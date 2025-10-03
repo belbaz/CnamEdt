@@ -144,7 +144,6 @@ export default function Home() {
         // Charger immédiatement depuis le cache si disponible
         const cached = loadEventsFromCache();
         if (cached) {
-            console.log('[EDT] Cache chargé, affichage immédiat');
             setAllEvents(cached.events);
             setSubjectColors(cached.colors);
 
@@ -166,6 +165,18 @@ export default function Home() {
         const interval = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
+
+    // Fermer la modale d'événement avec la touche Échap
+    useEffect(() => {
+        if (!selectedEvent) return;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setSelectedEvent(null);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [selectedEvent]);
 
     // Détecter un petit écran (smartphone) côté web pour adopter l'UI mobile
     useEffect(() => {
@@ -219,6 +230,9 @@ export default function Home() {
         if (darkMode) document.documentElement.classList.add("dark-mode");
         else document.documentElement.classList.remove("dark-mode");
         localStorage.setItem("darkMode", darkMode.toString());
+        try {
+            document.cookie = `darkMode=${darkMode ? 'true' : 'false'}; path=/; SameSite=Lax`;
+        } catch (e) {}
     }, [darkMode]);
 
     // Scroll vers aujourd'hui quand les événements sont chargés
