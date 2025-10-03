@@ -12,7 +12,8 @@ export default function TimelineWrapper({
     totalMinutes,
     currentPos,
     events,
-    subjectColors
+    subjectColors,
+    onOpenEventDetails
 }) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
@@ -38,6 +39,7 @@ export default function TimelineWrapper({
                 endMinutes={endMinutes}
                 totalMinutes={totalMinutes}
                 subjectColors={subjectColors}
+                onOpenEventDetails={onOpenEventDetails}
             />
         </div>
     );

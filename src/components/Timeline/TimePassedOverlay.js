@@ -9,7 +9,7 @@ export default function TimePassedOverlay({currentPos}) {
     return (
         <div
             className="time-passed-overlay"
-            style={isMobile ? {height: `${currentPos}%`} : {width: `${currentPos}%`}}
+            style={isMobile ? {height: `${currentPos+4}%`} : {width: `${currentPos}%`}}
         />
     );
 }

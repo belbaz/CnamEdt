@@ -3,7 +3,7 @@ import EventCard from "./EventCard";
 import {getEventPosition, getEventPositionVertical} from "@/utils/timelineUtils";
 import "./EventsList.css";
 
-export default function EventsList({events, startMinutes, endMinutes, totalMinutes, subjectColors}) {
+export default function EventsList({events, startMinutes, endMinutes, totalMinutes, subjectColors, onOpenEventDetails}) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
     return (
@@ -33,6 +33,7 @@ export default function EventsList({events, startMinutes, endMinutes, totalMinut
                             event={ev}
                             stylePos={stylePos}
                             subjectColors={subjectColors}
+                            onOpenEventDetails={onOpenEventDetails}
                         />
                     );
                 })}

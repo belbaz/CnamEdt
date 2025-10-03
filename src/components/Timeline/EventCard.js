@@ -1,27 +1,25 @@
 "use client";
+import {useEffect, useRef, useState} from "react";
 import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./EventCard.css";
 
-export default function EventCard({event, stylePos, subjectColors}) {
+export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
     const {matiere, prof, description} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
+    const cardRef = useRef(null);
+
+    const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
 
     return (
         <li
-            className="event-card"
+            className={`event-card`}
             style={stylePos}
             data-index={getColorIndexForSubject(matiere || description, subjectColors)}
+            ref={cardRef}
+            onClick={() => { onOpenEventDetails && onOpenEventDetails(event); }}
         >
             <div className="event-time">
-                {new Date(event.start).toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                })}
-                {" - "}
-                {new Date(event.end).toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                })}
+                {formatTime(event.start)}{" - "}{formatTime(event.end)}
             </div>
             <div className="event-info">
                 {matiere && matiere !== ":" ? (

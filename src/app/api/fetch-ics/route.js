@@ -20,7 +20,7 @@ export async function GET() {
                 start: e.start,
                 description: e.description,
                 end: e.end,
-                location: e.location || "",
+                location: e.location,
             }));
 
 

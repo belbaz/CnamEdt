@@ -19,10 +19,10 @@
 @media (max-width: 650px) {
     /* Zone de temps écoulé */
     .time-passed-overlay {
-        left: 0;
-        right: 0;
-        top: 0;
-        width: 100%;
+        left: -0.4rem;
+        right: 1.4rem;
+        top: -1.4rem;
+        width: 103%;
         border-right: none;
         border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     }

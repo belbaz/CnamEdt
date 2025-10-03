@@ -1,9 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./SettingsMenu.css";
 
-export default function SettingsMenu({ autoScrollToday, onToggleAutoScroll }) {
+export default function SettingsMenu({ autoScrollToday, onToggleAutoScroll, onOpenChange }) {
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        if (typeof onOpenChange === 'function') {
+            onOpenChange(isOpen);
+        }
+    }, [isOpen, onOpenChange]);
 
     return (
         <>

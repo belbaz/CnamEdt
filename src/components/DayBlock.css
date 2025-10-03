@@ -2,11 +2,17 @@
 .day-block {
     background: var(--bg-secondary);
     border-radius: 16px;
-    margin-bottom: .5rem;
+    margin-bottom: .4rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
-    padding: .5rem 1.26rem;
+    padding: .3rem 1.1rem;
+}
+
+/* Day Block avec État collapsed */
+.day-block.collapsed {
+    padding-bottom: 0;
+    margin-bottom: .8rem;
 }
 
 /* Highlight pour le jour actuel */
@@ -20,10 +26,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 30px;
     cursor: pointer;
     user-select: none;
-    margin-bottom: 0.875rem;
-    padding-bottom: 0.625rem;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--border-light);
     transition: all 0.2s ease;
 }
@@ -33,26 +40,31 @@
 }
 
 .day-block h2 {
-    margin: 0;
     font-size: 0.9rem;
     color: var(--text-primary);
     font-weight: 700;
     letter-spacing: 0.25px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
 .collapse-toggle {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 35px;
+    height: 30px;
+    border-radius: 15px;
     font-size: 0.875rem;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    padding: 0;
+    line-height: 0;
+    box-sizing: border-box;
 }
 
 .collapse-toggle:hover {
@@ -60,20 +72,35 @@
     transform: scale(1.05);
 }
 
-/* État collapsed */
-.day-block.collapsed {
-    padding-bottom: 0.5rem;
+/* Assure la visibilité et la bonne taille du chevron */
+.collapse-toggle svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
+.collapse-toggle svg path {
+    stroke: currentColor;
+}
+
+/* Contraste explicite selon thème */
+:root:not(.dark-mode) .collapse-toggle {
+    color: #111;
+}
+
+.dark-mode .collapse-toggle {
+    color: #fff;
 }
 
 .day-block.collapsed .day-header {
     margin-bottom: 0;
-    padding-bottom: 0.5rem;
+    padding-bottom: .3rem;
 }
 
 /* Mobile */
 @media (max-width: 768px) {
     .day-block {
-        padding: 1rem;
+        /*padding: 1rem;*/
         margin-bottom: 1rem;
         border-radius: 14px;
     }
@@ -86,13 +113,11 @@
 
 @media (max-width: 650px) {
     .day-block {
-        padding: 0.875rem;
+        /*padding: 0.875rem;*/
         border-radius: 14px;
     }
 
     .day-block h2 {
         font-size: 0.8rem;
-        margin-bottom: 0.625rem;
-        padding-bottom: 0.5rem;
     }
 }
