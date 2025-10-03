@@ -6,7 +6,9 @@ export default function WeekPicker({
     selectedWeek,
     onWeekChange,
     onRefresh,
-    onToday
+    onToday,
+    showRefreshButton = true,
+    isMobile = false
 }) {
     const currentWeekIndex = availableWeeks.findIndex(
         w => selectedWeek && w.monday.getTime() === selectedWeek.getTime()
@@ -32,10 +34,12 @@ export default function WeekPicker({
     };
 
     return (
-        <div className="controls">
-            <button className="refresh-btn" onClick={onRefresh} title="Actualiser">
-                🔄 Actualiser
-            </button>
+        <div className={`controls ${isMobile ? 'mobile' : ''}`}>
+            {showRefreshButton && (
+                <button className="refresh-btn" onClick={onRefresh} title="Actualiser">
+                    ↻
+                </button>
+            )}
 
             <div className="week-picker">
                 <button
@@ -63,7 +67,7 @@ export default function WeekPicker({
             </div>
 
             <button className="today-btn" onClick={onToday} title="Retour à la semaine actuelle">
-                📅 Aujourd'hui
+                📅 {isMobile ? '' : 'Aujourd\'hui'}
             </button>
         </div>
     );

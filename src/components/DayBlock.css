@@ -9,14 +9,65 @@
     padding: .5rem 1.26rem;
 }
 
+/* Highlight pour le jour actuel */
+.day-block.today {
+    border: 2px solid #4299e1;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+/* Header du jour avec bouton collapse */
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.875rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 2px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.day-header:hover {
+    opacity: 0.8;
+}
+
 .day-block h2 {
-    margin: 0 0 0.875rem 0;
+    margin: 0;
     font-size: 0.9rem;
     color: var(--text-primary);
     font-weight: 700;
     letter-spacing: 0.25px;
-    padding-bottom: 0.625rem;
-    border-bottom: 2px solid var(--border-light);
+}
+
+.collapse-toggle {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.collapse-toggle:hover {
+    background: var(--bg-primary);
+    transform: scale(1.05);
+}
+
+/* État collapsed */
+.day-block.collapsed {
+    padding-bottom: 0.5rem;
+}
+
+.day-block.collapsed .day-header {
+    margin-bottom: 0;
+    padding-bottom: 0.5rem;
 }
 
 /* Mobile */

@@ -1,10 +1,11 @@
 "use client";
+import {forwardRef} from "react";
 import {isToday} from "@/utils/dateUtils";
 import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
 import TimelineWrapper from "./Timeline/TimelineWrapper";
 import "./DayBlock.css";
 
-export default function DayBlock({day, events, subjectColors}) {
+const DayBlock = forwardRef(({day, events, subjectColors, isCollapsed, onToggle}, ref) => {
     const dayDate = events[0] ? new Date(events[0].start) : new Date();
     const todayCheck = isToday(dayDate);
     const {startMinutes, endMinutes} = getDayTimeRange(events);
@@ -13,17 +14,28 @@ export default function DayBlock({day, events, subjectColors}) {
     const totalMinutes = endMinutes - startMinutes;
 
     return (
-        <div className="day-block">
-            <h2>{day}</h2>
-            <TimelineWrapper
-                timeMarkers={timeMarkers}
-                startMinutes={startMinutes}
-                endMinutes={endMinutes}
-                totalMinutes={totalMinutes}
-                currentPos={currentPos}
-                events={events}
-                subjectColors={subjectColors}
-            />
+        <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`} ref={todayCheck ? ref : null}>
+            <div className="day-header" onClick={onToggle}>
+                <h2>{todayCheck ? `📍 ${day}` : day}</h2>
+                <button className="collapse-toggle" aria-label={isCollapsed ? 'Ouvrir' : 'Fermer'}>
+                    {isCollapsed ? '▼' : '▲'}
+                </button>
+            </div>
+            {!isCollapsed && (
+                <TimelineWrapper
+                    timeMarkers={timeMarkers}
+                    startMinutes={startMinutes}
+                    endMinutes={endMinutes}
+                    totalMinutes={totalMinutes}
+                    currentPos={currentPos}
+                    events={events}
+                    subjectColors={subjectColors}
+                />
+            )}
         </div>
     );
-}
+});
+
+DayBlock.displayName = 'DayBlock';
+
+export default DayBlock;

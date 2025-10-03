@@ -1,13 +1,14 @@
 "use client";
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {getMonday, getCurrentWeek, extractAvailableWeeks} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay} from "@/utils/eventUtils";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
-import PageHeader from "@/components/PageHeader";
+import {usePullToRefresh} from "@/hooks/usePullToRefresh";
+import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import WeekPicker from "@/components/WeekPicker";
 import DayBlock from "@/components/DayBlock";
+import ScrollToTop from "@/components/ScrollToTop";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -21,12 +22,20 @@ export default function Home() {
     const [darkMode, setDarkMode] = useState(false);
     const [subjectColors, setSubjectColors] = useState({});
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [autoScrollToday, setAutoScrollToday] = useState(true);
+    const [collapsedDays, setCollapsedDays] = useState({});
     
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
     
     // Gérer le splash screen (cacher quand chargé)
     useSplashScreen(SplashScreen, !loading);
+    
+    // Pull-to-refresh sur mobile
+    usePullToRefresh(isNative, () => fetchEvents());
+    
+    // Ref pour le jour actuel
+    const todayRef = useRef(null);
 
     const fetchEvents = async () => {
         try {
@@ -160,6 +169,18 @@ export default function Home() {
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode");
         if (savedMode) setDarkMode(savedMode === "true");
+        
+        const savedAutoScroll = localStorage.getItem("autoScrollToday");
+        if (savedAutoScroll !== null) setAutoScrollToday(savedAutoScroll === "true");
+        
+        const savedCollapsedDays = localStorage.getItem("collapsedDays");
+        if (savedCollapsedDays) {
+            try {
+                setCollapsedDays(JSON.parse(savedCollapsedDays));
+            } catch (e) {
+                console.error('Erreur chargement collapsed days:', e);
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -167,6 +188,37 @@ export default function Home() {
         else document.documentElement.classList.remove("dark-mode");
         localStorage.setItem("darkMode", darkMode.toString());
     }, [darkMode]);
+
+    // Scroll vers aujourd'hui quand les événements sont chargés
+    useEffect(() => {
+        if (!loading && autoScrollToday && events.length > 0) {
+            // Attendre que le DOM soit rendu (un peu plus long pour l'animation)
+            setTimeout(scrollToToday, 800);
+        }
+    }, [loading, autoScrollToday, events]);
+
+    // Fonction pour scroller vers le jour actuel avec animation
+    const scrollToToday = () => {
+        if (todayRef.current) {
+            // Calculer la hauteur de la navbar
+            const navbar = document.querySelector('.navbar-container');
+            const navbarHeight = navbar ? navbar.offsetHeight : 0;
+            
+            // Position de l'élément
+            const element = todayRef.current;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - navbarHeight - 20;
+            
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+            
+            console.log('[Scroll] Navbar height:', navbarHeight);
+            console.log('[Scroll] Element position:', elementPosition);
+            console.log('[Scroll] Scrolling to:', offsetPosition);
+        }
+    };
 
     const handleRefresh = () => {
         fetchEvents();
@@ -177,6 +229,8 @@ export default function Home() {
         const weekToSelect = availableWeeks.find(w => w.monday.getTime() === currentWeek.getTime());
         if (weekToSelect) {
             setSelectedWeek(weekToSelect.monday);
+            // Scroll après un délai pour laisser le temps au DOM de se mettre à jour
+            setTimeout(scrollToToday, 400);
         }
     };
 
@@ -184,21 +238,39 @@ export default function Home() {
         setSelectedWeek(newWeekMonday);
     };
 
+    const handleToggleAutoScroll = (enabled) => {
+        setAutoScrollToday(enabled);
+        localStorage.setItem('autoScrollToday', enabled.toString());
+    };
+
+    const handleToggleDay = (day) => {
+        const newCollapsedDays = {
+            ...collapsedDays,
+            [day]: !collapsedDays[day]
+        };
+        setCollapsedDays(newCollapsedDays);
+        localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
+    };
+
     const groupByDay = groupEventsByDay(events);
 
     return (
-        <main className={styles.container}>
-            <PageHeader darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)}/>
+        <>
+            <Navbar
+                darkMode={darkMode}
+                onToggleDarkMode={() => setDarkMode(!darkMode)}
+                availableWeeks={availableWeeks}
+                selectedWeek={selectedWeek}
+                onWeekChange={handleWeekChange}
+                onRefresh={handleRefresh}
+                onToday={handleToday}
+                autoScrollToday={autoScrollToday}
+                onToggleAutoScroll={handleToggleAutoScroll}
+                showRefreshButton={!isNative}
+                isMobile={isNative}
+            />
 
-            {!loading && availableWeeks.length > 0 && (
-                <WeekPicker
-                    availableWeeks={availableWeeks}
-                    selectedWeek={selectedWeek}
-                    onWeekChange={handleWeekChange}
-                    onRefresh={handleRefresh}
-                    onToday={handleToday}
-                />
-            )}
+            <main className={styles.container}>
 
             {error && (
                 <div style={{
@@ -251,14 +323,20 @@ export default function Home() {
 
             {loading && <LoadingSpinner/>}
 
-            {!loading && Object.entries(groupByDay).map(([day, evs]) => (
-                <DayBlock
-                    key={day}
-                    day={day}
-                    events={evs}
-                    subjectColors={subjectColors}
-                />
-            ))}
-        </main>
+                {!loading && Object.entries(groupByDay).map(([day, evs]) => (
+                    <DayBlock
+                        key={day}
+                        ref={todayRef}
+                        day={day}
+                        events={evs}
+                        subjectColors={subjectColors}
+                        isCollapsed={collapsedDays[day] || false}
+                        onToggle={() => handleToggleDay(day)}
+                    />
+                ))}
+            </main>
+            
+            <ScrollToTop />
+        </>
     );
 }
