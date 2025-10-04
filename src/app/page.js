@@ -3,6 +3,7 @@ import {useState, useEffect, useRef} from "react";
 import {getMonday, getCurrentWeek, extractAvailableWeeks} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay} from "@/utils/eventUtils";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
+import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import Navbar from "@/components/Navbar";
@@ -29,6 +30,7 @@ export default function Home() {
     const [isOnline, setIsOnline] = useState(true);
     const [showOfflineToast, setShowOfflineToast] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [testMode, setTestModeState] = useState(false);
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -58,7 +60,7 @@ export default function Home() {
 
             let data;
             try {
-                // Utiliser le service ICS unifié
+                // Récupérer les données normales
                 data = await fetchICSEvents(isNative, Http);
             } catch (fetchError) {
                 debug.fetchError = fetchError.message;
@@ -140,6 +142,9 @@ export default function Home() {
     useEffect(() => {
         // Attendre que Capacitor soit prêt avant de charger
         if (!capacitorReady) return;
+
+        // Initialiser le mode test
+        setTestModeState(isTestModeEnabled());
 
         // Charger immédiatement depuis le cache si disponible
         const cached = loadEventsFromCache();
@@ -283,6 +288,51 @@ export default function Home() {
         const weekToSelect = availableWeeks.find(w => w.monday.getTime() === currentWeek.getTime());
         if (weekToSelect) {
             setSelectedWeek(weekToSelect.monday);
+            
+            // Trouver le jour d'aujourd'hui
+            const today = new Date();
+            const todayDayName = today.toLocaleDateString('fr-FR', { weekday: 'long' });
+            const todayFormatted = todayDayName.charAt(0).toUpperCase() + todayDayName.slice(1);
+            
+            console.log('[Aujourd\'hui] Nom du jour détecté:', todayFormatted);
+            
+            // Fermer tous les jours sauf aujourd'hui
+            const newCollapsedDays = { ...collapsedDays }; // Copier l'état existant
+            
+            // Trouver le jour d'aujourd'hui dans groupByDay en comparant les dates
+            let todayDayKey = null;
+            const todayDateString = today.toDateString();
+            
+            Object.keys(groupByDay).forEach(dayKey => {
+                // Fermer tous les jours d'abord
+                newCollapsedDays[dayKey] = true;
+                console.log('[Aujourd\'hui] Fermeture de:', dayKey);
+                
+                // Vérifier si ce jour correspond à aujourd'hui
+                const dayEvents = groupByDay[dayKey];
+                if (dayEvents && dayEvents.length > 0) {
+                    const firstEventDate = new Date(dayEvents[0].start);
+                    if (firstEventDate.toDateString() === todayDateString) {
+                        todayDayKey = dayKey;
+                        console.log('[Aujourd\'hui] Jour d\'aujourd\'hui trouvé:', dayKey);
+                    }
+                }
+            });
+            
+            // Ouvrir seulement le jour d'aujourd'hui s'il existe
+            if (todayDayKey) {
+                newCollapsedDays[todayDayKey] = false; // Ouvrir aujourd'hui
+                console.log('[Aujourd\'hui] Ouverture de:', todayDayKey);
+            } else {
+                console.log('[Aujourd\'hui] Aucun événement trouvé pour aujourd\'hui');
+            }
+            
+            setCollapsedDays(newCollapsedDays);
+            localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
+            
+            console.log('[Aujourd\'hui] Jour d\'aujourd\'hui ouvert:', todayFormatted);
+            console.log('[Aujourd\'hui] Tous les autres jours fermés');
+            
             // Scroll après un délai pour laisser le temps au DOM de se mettre à jour
             setTimeout(scrollToToday, 400);
         }
@@ -318,6 +368,93 @@ export default function Home() {
         localStorage.setItem('collapsedDays', JSON.stringify(nextCollapsed));
     };
 
+    const handleToggleTestMode = () => {
+        if (!testMode) {
+            // Activer le mode test : ajouter des cours pour aujourd'hui si nécessaire
+            console.log('[Test Mode] Tentative d\'ajout de cours de test...');
+            
+            // Vérifier si aujourd'hui a déjà des cours (version simplifiée)
+            const today = new Date();
+            const todayString = today.toDateString();
+            const hasCoursesToday = allEvents.some(event => {
+                if (!event.start) return false;
+                const eventDate = new Date(event.start);
+                return eventDate.toDateString() === todayString;
+            });
+            
+            console.log('[Test Mode] Aujourd\'hui a des cours:', hasCoursesToday);
+            
+            if (hasCoursesToday) {
+                console.log('[Test Mode] Aujourd\'hui a déjà des cours, pas d\'ajout');
+                alert('Aujourd\'hui a déjà des cours ! Le bouton n\'ajoute des cours de test que si la journée est vide.');
+                return;
+            }
+            
+            // Créer des cours de test pour aujourd'hui
+            const testEvents = [];
+            const courses = [
+                { subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: 'Salle A101' },
+                { subject: 'Informatique', prof: 'Mme Martin', location: 'Labo Informatique' },
+                { subject: 'Économie', prof: 'M. Bernard', location: 'Salle B205' },
+                { subject: 'Gestion de Projet', prof: 'Mme Dubois', location: 'Salle C301' }
+            ];
+            
+            for (let i = 0; i < 4; i++) {
+                const startHour = 9 + i * 2; // 9h, 11h, 13h, 15h
+                const course = courses[i];
+                
+                const startTime = new Date(today);
+                startTime.setHours(startHour, 0, 0, 0);
+                
+                const endTime = new Date(today);
+                endTime.setHours(startHour + 2, 0, 0, 0);
+                
+                testEvents.push({
+                    summary: course.subject,
+                    start: startTime,
+                    end: endTime,
+                    location: course.location,
+                    description: `Professeur : ${course.prof}\nMatière : ${course.subject}\n\n[Cours de test généré automatiquement]`
+                });
+            }
+            
+            const eventsWithTest = [...allEvents, ...testEvents];
+            console.log('[Test Mode] Cours de test créés:', testEvents.length);
+            console.log('[Test Mode] Total d\'événements après ajout:', eventsWithTest.length);
+            
+            setAllEvents(eventsWithTest);
+            
+            // Mettre à jour les couleurs et semaines
+            const colorMapping = createSubjectColorMapping(eventsWithTest);
+            setSubjectColors(colorMapping);
+            
+            const weeks = extractAvailableWeeks(eventsWithTest);
+            setAvailableWeeks(weeks);
+            
+            // S'assurer que la semaine actuelle est sélectionnée
+            const currentWeek = getCurrentWeek();
+            const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime());
+            if (weekToSelect) {
+                setSelectedWeek(weekToSelect.monday);
+                console.log('[Test Mode] Semaine actuelle sélectionnée:', weekToSelect.monday.toDateString());
+            }
+            
+            // Sauvegarder dans le cache
+            saveEventsToCache(eventsWithTest, colorMapping);
+            
+            setTestModeState(true);
+            setTestMode(true);
+            
+            console.log('[Test Mode] Cours de test ajoutés avec succès !');
+        } else {
+            // Désactiver le mode test : recharger les données normales
+            console.log('[Test Mode] Désactivation du mode test...');
+            setTestModeState(false);
+            setTestMode(false);
+            fetchEvents();
+        }
+    };
+
     const groupByDay = groupEventsByDay(events);
 
     return (
@@ -337,6 +474,8 @@ export default function Home() {
                 onSettingsOpenChange={setSettingsOpen}
                 onToggleAllDays={handleToggleAllDays}
                 allDaysCollapsed={Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => collapsedDays[d])}
+                testMode={testMode}
+                onToggleTestMode={handleToggleTestMode}
             />
 
             <main className={styles.container}>

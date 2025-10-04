@@ -18,7 +18,9 @@ export default function Navbar({
     isMobile = false,
     onSettingsOpenChange,
     onToggleAllDays,
-    allDaysCollapsed = false
+    allDaysCollapsed = false,
+    testMode = false,
+    onToggleTestMode
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -85,6 +87,14 @@ export default function Navbar({
                                     <span>Défilement auto</span>
                                 </label>
                             </div>
+                            <button
+                                className={`test-mode-btn ${testMode ? 'active' : ''}`}
+                                onClick={onToggleTestMode}
+                                title={testMode ? "Désactiver les cours de test" : "Ajouter des cours de test pour aujourd'hui"}
+                                aria-label={testMode ? "Désactiver les cours de test" : "Ajouter des cours de test pour aujourd'hui"}
+                            >
+                                🧪 {testMode ? 'Cours Test' : 'Ajouter Cours'}
+                            </button>
                             <button
                                 className="expand-all-btn"
                                 onClick={onToggleAllDays}

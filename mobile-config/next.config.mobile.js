@@ -18,8 +18,7 @@ const nextConfig = {
     } : false,
   },
   
-  // Minification
-  swcMinify: true,
+  // Minification (Next 15+ utilise SWC par défaut; option legacy supprimée)
   
   // Variables d'environnement accessibles côté client
   env: {

@@ -7,11 +7,11 @@ echo.
 REM Remonter dans le dossier parent du projet
 cd ..
 
-echo [1/4] Nettoyage...
+echo [1/6] Nettoyage...
 if exist out rmdir /s /q out
 if exist android\app\build rmdir /s /q android\app\build
 
-echo [2/4] Preparation pour mobile (swap configs + deplacer API)...
+echo [2/6] Preparation pour mobile (swap configs + deplacer API)...
 REM Sauvegarder la config web et utiliser la config mobile
 if exist next.config.js (
     copy /Y next.config.js next.config.web.backup
@@ -26,7 +26,7 @@ if exist src\app\api (
     echo Dossier API temporairement deplace hors de src/app/
 )
 
-echo [3/4] Build Next.js (export statique)...
+echo [3/6] Build Next.js (export statique)...
 call npm run build
 if errorlevel 1 (
     echo ERREUR: Build Next.js a echoue
@@ -45,7 +45,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [4/4] Restauration (config web + API)...
+echo [4/6] Restauration (config web + API)...
 REM Restaurer la config web
 if exist next.config.web.backup (
     copy /Y next.config.web.backup next.config.js
@@ -60,7 +60,7 @@ if exist .api_temp (
     echo Dossier API restaure
 )
 
-echo [5/4] Synchronisation avec Android...
+echo [5/6] Synchronisation avec Android...
 call npx cap sync android
 if errorlevel 1 (
     echo ERREUR: Sync Capacitor a echoue
@@ -68,9 +68,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [6/4] Build de l'APK...
+echo [6/6] Build de l'APK...
 cd android
-call gradlew assembleDebug
+REM Utiliser explicitement le wrapper Windows et nettoyer avant build
+call .\gradlew.bat clean assembleDebug
 if errorlevel 1 (
     echo ERREUR: Build APK a echoue
     cd ..

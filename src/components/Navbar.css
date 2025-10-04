@@ -60,6 +60,40 @@
     user-select: none;
 }
 
+/* Bouton mode test */
+.test-mode-btn {
+    background: var(--bg-secondary);
+    padding: 0.625rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.test-mode-btn:hover {
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.test-mode-btn.active {
+    background: #4299e1;
+    color: white;
+    border-color: #3182ce;
+}
+
+.test-mode-btn.active:hover {
+    background: #3182ce;
+}
+
 /* Bouton étendre/replier tout (desktop) réutilise le style mobile */
 .expand-all-btn {
     width: 44px;
