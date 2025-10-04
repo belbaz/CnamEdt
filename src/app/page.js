@@ -31,6 +31,7 @@ export default function Home() {
     const [showOfflineToast, setShowOfflineToast] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [testMode, setTestModeState] = useState(false);
+    const [todaySpacing, setTodaySpacing] = useState(0);
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -192,6 +193,29 @@ export default function Home() {
         return () => mq.removeEventListener('change', update);
     }, []);
 
+    // Recalculer l'espacement quand la fenêtre est redimensionnée
+    useEffect(() => {
+        const handleResize = () => {
+            if (todaySpacing > 0) {
+                // Recalculer l'espacement après redimensionnement
+                setTimeout(() => {
+                    if (todayRef.current) {
+                        const navbar = document.querySelector('.navbar-container');
+                        const isNavbarVisible = navbar && !navbar.classList.contains('scrolled');
+                        const navbarHeight = isNavbarVisible ? navbar.offsetHeight : 0;
+                        const viewportHeight = window.innerHeight;
+                        const dayHeight = todayRef.current.offsetHeight;
+                        const newSpacing = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20);
+                        setTodaySpacing(newSpacing);
+                    }
+                }, 100);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [todaySpacing]);
+
     // Suivre l'état en ligne/hors-ligne et afficher un toast discret sur mobile
     useEffect(() => {
         const setOnline = () => setIsOnline(true);
@@ -226,7 +250,7 @@ export default function Home() {
             try {
                 setCollapsedDays(JSON.parse(savedCollapsedDays));
             } catch (e) {
-                console.error('Erreur chargement collapsed days:', e);
+                // Erreur silencieuse lors du chargement des jours repliés
             }
         }
     }, []);
@@ -259,23 +283,30 @@ export default function Home() {
     // Fonction pour scroller vers le jour actuel avec animation
     const scrollToToday = () => {
         if (todayRef.current) {
-            // Calculer la hauteur de la navbar
+            // Vérifier si la navbar est visible (pas en mode scrolled)
             const navbar = document.querySelector('.navbar-container');
-            const navbarHeight = navbar ? navbar.offsetHeight : 0;
+            const isNavbarVisible = navbar && !navbar.classList.contains('scrolled');
+            const navbarHeight = isNavbarVisible ? navbar.offsetHeight : 0;
 
             // Position de l'élément
             const element = todayRef.current;
             const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - navbarHeight - 20;
+            
+            // Calculer l'espacement nécessaire pour positionner le jour juste sous la navbar
+            const viewportHeight = window.innerHeight;
+            const dayHeight = element.offsetHeight;
+            const spacingNeeded = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20); // 20px de marge réduite
+            
+            // Définir l'espacement pour le jour d'aujourd'hui
+            setTodaySpacing(spacingNeeded);
+            
+            // Position finale : juste sous la navbar (ou en haut si navbar cachée)
+            const offsetPosition = elementPosition + window.pageYOffset - (isNavbarVisible ? navbarHeight + 10 : 10);
 
             window.scrollTo({
                 top: offsetPosition,
                 behavior: 'smooth'
             });
-
-            console.log('[Scroll] Navbar height:', navbarHeight);
-            console.log('[Scroll] Element position:', elementPosition);
-            console.log('[Scroll] Scrolling to:', offsetPosition);
         }
     };
 
@@ -291,10 +322,6 @@ export default function Home() {
             
             // Trouver le jour d'aujourd'hui
             const today = new Date();
-            const todayDayName = today.toLocaleDateString('fr-FR', { weekday: 'long' });
-            const todayFormatted = todayDayName.charAt(0).toUpperCase() + todayDayName.slice(1);
-            
-            console.log('[Aujourd\'hui] Nom du jour détecté:', todayFormatted);
             
             // Fermer tous les jours sauf aujourd'hui
             const newCollapsedDays = { ...collapsedDays }; // Copier l'état existant
@@ -306,7 +333,6 @@ export default function Home() {
             Object.keys(groupByDay).forEach(dayKey => {
                 // Fermer tous les jours d'abord
                 newCollapsedDays[dayKey] = true;
-                console.log('[Aujourd\'hui] Fermeture de:', dayKey);
                 
                 // Vérifier si ce jour correspond à aujourd'hui
                 const dayEvents = groupByDay[dayKey];
@@ -314,7 +340,6 @@ export default function Home() {
                     const firstEventDate = new Date(dayEvents[0].start);
                     if (firstEventDate.toDateString() === todayDateString) {
                         todayDayKey = dayKey;
-                        console.log('[Aujourd\'hui] Jour d\'aujourd\'hui trouvé:', dayKey);
                     }
                 }
             });
@@ -322,19 +347,15 @@ export default function Home() {
             // Ouvrir seulement le jour d'aujourd'hui s'il existe
             if (todayDayKey) {
                 newCollapsedDays[todayDayKey] = false; // Ouvrir aujourd'hui
-                console.log('[Aujourd\'hui] Ouverture de:', todayDayKey);
-            } else {
-                console.log('[Aujourd\'hui] Aucun événement trouvé pour aujourd\'hui');
             }
             
             setCollapsedDays(newCollapsedDays);
             localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
             
-            console.log('[Aujourd\'hui] Jour d\'aujourd\'hui ouvert:', todayFormatted);
-            console.log('[Aujourd\'hui] Tous les autres jours fermés');
-            
             // Scroll après un délai pour laisser le temps au DOM de se mettre à jour
-            setTimeout(scrollToToday, 400);
+            setTimeout(() => {
+                scrollToToday();
+            }, 400);
         }
     };
 
@@ -371,7 +392,6 @@ export default function Home() {
     const handleToggleTestMode = () => {
         if (!testMode) {
             // Activer le mode test : ajouter des cours pour aujourd'hui si nécessaire
-            console.log('[Test Mode] Tentative d\'ajout de cours de test...');
             
             // Vérifier si aujourd'hui a déjà des cours (version simplifiée)
             const today = new Date();
@@ -382,10 +402,7 @@ export default function Home() {
                 return eventDate.toDateString() === todayString;
             });
             
-            console.log('[Test Mode] Aujourd\'hui a des cours:', hasCoursesToday);
-            
             if (hasCoursesToday) {
-                console.log('[Test Mode] Aujourd\'hui a déjà des cours, pas d\'ajout');
                 alert('Aujourd\'hui a déjà des cours ! Le bouton n\'ajoute des cours de test que si la journée est vide.');
                 return;
             }
@@ -419,8 +436,6 @@ export default function Home() {
             }
             
             const eventsWithTest = [...allEvents, ...testEvents];
-            console.log('[Test Mode] Cours de test créés:', testEvents.length);
-            console.log('[Test Mode] Total d\'événements après ajout:', eventsWithTest.length);
             
             setAllEvents(eventsWithTest);
             
@@ -436,7 +451,6 @@ export default function Home() {
             const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime());
             if (weekToSelect) {
                 setSelectedWeek(weekToSelect.monday);
-                console.log('[Test Mode] Semaine actuelle sélectionnée:', weekToSelect.monday.toDateString());
             }
             
             // Sauvegarder dans le cache
@@ -444,11 +458,8 @@ export default function Home() {
             
             setTestModeState(true);
             setTestMode(true);
-            
-            console.log('[Test Mode] Cours de test ajoutés avec succès !');
         } else {
             // Désactiver le mode test : recharger les données normales
-            console.log('[Test Mode] Désactivation du mode test...');
             setTestModeState(false);
             setTestMode(false);
             fetchEvents();
@@ -535,18 +546,34 @@ export default function Home() {
 
                 {loading && <LoadingSpinner/>}
 
-                {!loading && Object.entries(groupByDay).map(([day, evs]) => (
-                    <DayBlock
-                        key={day}
-                        ref={todayRef}
-                        day={day}
-                        events={evs}
-                        subjectColors={subjectColors}
-                        isCollapsed={collapsedDays[day] || false}
-                        onToggle={() => handleToggleDay(day)}
-                        onOpenEventDetails={(ev) => setSelectedEvent(ev)}
-                    />
-                ))}
+                {!loading && Object.entries(groupByDay).map(([day, evs], index) => {
+                    const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
+                    const isToday = dayDate.toDateString() === new Date().toDateString();
+                    
+                    return (
+                        <div key={day}>
+                            <DayBlock
+                                ref={isToday ? todayRef : null}
+                                day={day}
+                                events={evs}
+                                subjectColors={subjectColors}
+                                isCollapsed={collapsedDays[day] || false}
+                                onToggle={() => handleToggleDay(day)}
+                                onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                            />
+                            {isToday && todaySpacing > 0 && (
+                                <div 
+                                    style={{
+                                        height: `${todaySpacing}px`,
+                                        width: '100%',
+                                        background: 'transparent'
+                                    }}
+                                    aria-hidden="true"
+                                />
+                            )}
+                        </div>
+                    );
+                })}
             </main>
 
             <ScrollToTop/>

@@ -33,9 +33,9 @@ export default function Navbar({
                     const scrollY = window.scrollY;
 
                     // Hystérésis : deux seuils différents pour éviter le clignotement
-                    if (scrollY > 200 && !isScrolled) {
+                    if (scrollY > 80 && !isScrolled) {
                         setIsScrolled(true);
-                    } else if (scrollY < 100 && isScrolled) {
+                    } else if (scrollY < 40 && isScrolled) {
                         setIsScrolled(false);
                     }
 
