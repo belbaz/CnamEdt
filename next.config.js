@@ -1,28 +1,32 @@
 /** @type {import('next').NextConfig} */
+
+// Détecter si on build pour mobile ou web
+const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+
 const nextConfig = {
-  // Configuration pour build statique (nécessaire pour Capacitor)
-  output: 'export',
+  // Configuration conditionnelle selon le mode
+  // Mobile : export statique (pas d'API routes)
+  // Web : mode normal (avec API routes serverless)
+  ...(isMobileBuild ? { output: 'export' } : {}),
   
-  // Désactiver l'optimisation d'images (non compatible avec export statique)
+  // Images non optimisées (compatible avec les deux modes)
   images: {
     unoptimized: true
   },
   
-  // Désactiver le trailing slash
+  // Trailing slash
   trailingSlash: true,
   
-  // Optimisations pour mobile
+  // Optimisations
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn']
     } : false,
   },
   
-  // Minification (Next 15+ utilise SWC par défaut; option legacy supprimée)
-  
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: 'mobile'
+    NEXT_PUBLIC_APP_MODE: isMobileBuild ? 'mobile' : 'web'
   }
 }
 

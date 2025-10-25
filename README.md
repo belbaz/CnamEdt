@@ -326,6 +326,17 @@ Lancement 2+ :
 
 ## 🔧 Configuration
 
+### Modes de Build (Web vs Mobile)
+
+Le projet utilise une configuration conditionnelle basée sur `BUILD_MODE` :
+
+| Mode | Commande | Configuration |
+|------|----------|---------------|
+| **Web** | `npm run build` | Mode normal (avec API routes) |
+| **Mobile** | `.\build-apk.bat` | Export statique (`BUILD_MODE=mobile`) |
+
+**Détails** : Voir `BUILD_MODES.md`
+
 ### Changer l'URL ICS
 Éditer `src/services/icsService.js` :
 ```javascript
@@ -356,6 +367,7 @@ Projet personnel - EICNAM
 - 🔧 **Fix "Failed to fetch"** : URL par défaut intégrée, plus besoin de `.env.local` obligatoire
 - 🎯 **Meilleure gestion d'erreur** : Messages plus clairs, timeout de 10s, anti-cache
 - 📝 **Logs détaillés** : Console logs pour faciliter le debugging
+- 🏗️ **Configuration conditionnelle** : Build web et mobile séparés avec `BUILD_MODE`
 
 ### v1.0 (Octobre 2024)
 - 🎉 Version initiale
