@@ -75,15 +75,45 @@ async function fetchEventsForMobile(CapacitorHttp) {
 async function fetchEventsForWeb() {
     console.log('[ICS Service] Fetching from web API route');
     
-    const res = await fetch("/api/fetch-ics");
-    if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    try {
+        const res = await fetch("/api/fetch-ics", {
+            headers: {
+                'Accept': 'application/json',
+            },
+            cache: 'no-cache' // Éviter les problèmes de cache
+        });
+        
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            const errorMessage = errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+            throw new Error(errorMessage);
+        }
+        
+        const data = await res.json();
+        
+        // Vérifier si c'est un objet d'erreur
+        if (data.error) {
+            throw new Error(data.error + (data.details ? ` - ${data.details}` : ''));
+        }
+        
+        // Vérifier que c'est bien un tableau d'événements
+        if (!Array.isArray(data)) {
+            throw new Error('Format de réponse invalide (attendu: array)');
+        }
+        
+        console.log('[ICS Service] Events fetched:', data.length);
+        
+        return data;
+    } catch (err) {
+        console.error('[ICS Service] Error in fetchEventsForWeb:', err.message);
+        
+        // Améliorer le message d'erreur pour les erreurs réseau
+        if (err.message === 'Failed to fetch') {
+            throw new Error('Impossible de contacter le serveur. Vérifier la connexion réseau.');
+        }
+        
+        throw err;
     }
-    
-    const events = await res.json();
-    console.log('[ICS Service] Events fetched:', events.length);
-    
-    return events;
 }
 
 /**

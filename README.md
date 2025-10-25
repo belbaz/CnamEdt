@@ -139,13 +139,30 @@ User → App Android (Capacitor)
 - **Web** : Passe par API serverless (parse côté serveur)
 - **Mobile** : Fetch direct + parse côté client (pas d'API)
 
+### Sélection Intelligente de Semaine 🎯
+
+L'application choisit automatiquement la semaine à afficher selon cette logique :
+
+```
+1. Semaine actuelle (si elle contient des cours) ✅
+   ↓
+2. Prochaine semaine future avec cours ✅
+   ↓
+3. Première semaine disponible (fallback)
+```
+
+**Exemple** : Si on est le 19 octobre et que cette semaine n'a pas de cours, l'app affiche automatiquement la prochaine semaine avec cours (même si c'est en février).
+
+**Bouton "Aujourd'hui" 📅** : Utilise la même logique intelligente. Si la semaine actuelle n'a pas de cours, il vous amène directement à la prochaine semaine avec cours.
+
 ---
 
 ## 🎨 Features
 
-### Version actuelle (v1.0)
+### Version actuelle (v1.1)
 - ✅ Timeline responsive (horizontal desktop, vertical mobile)
 - ✅ Sélecteur de semaine (navigation ← →)
+- ✅ **Sélection intelligente de semaine** (affiche la prochaine semaine avec cours)
 - ✅ Mode sombre/clair
 - ✅ Bouton actualiser
 - ✅ Indicateur temps actuel (ligne rouge)
@@ -153,6 +170,10 @@ User → App Android (Capacitor)
 - ✅ Couleurs par matière (5 couleurs auto-assignées)
 - ✅ Cache localStorage (chargement rapide)
 - ✅ Splash screen natif (mobile)
+- ✅ Mode test 🧪 (ajout de cours fictifs)
+- ✅ Jours dépliables/repliables
+- ✅ Scroll automatique vers aujourd'hui
+- ✅ Pull-to-refresh (mobile)
 
 ### Version future (v2.0) - Optionnel
 - 🔄 Notifications push automatiques
@@ -166,7 +187,7 @@ User → App Android (Capacitor)
 
 ## 🔑 Variables d'environnement
 
-`.env.local` :
+`.env.local` (optionnel) :
 ```bash
 # URL du fichier ICS EICNAM
 ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
@@ -174,6 +195,8 @@ ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
 # Pour mobile (facultatif, hardcodé dans icsService.js)
 NEXT_PUBLIC_ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
 ```
+
+**Note** : Le fichier `.env.local` n'est plus obligatoire. L'API utilise une URL par défaut si non configurée.
 
 ---
 
@@ -324,4 +347,19 @@ Projet personnel - EICNAM
 
 ---
 
-**Version actuelle : v1.0**
+**Version actuelle : v1.1**
+
+## 📝 Changelog
+
+### v1.1 (25 octobre 2024)
+- ✨ **Sélection intelligente de semaine** : Affiche automatiquement la prochaine semaine avec cours si la semaine actuelle est vide
+- 🔧 **Fix "Failed to fetch"** : URL par défaut intégrée, plus besoin de `.env.local` obligatoire
+- 🎯 **Meilleure gestion d'erreur** : Messages plus clairs, timeout de 10s, anti-cache
+- 📝 **Logs détaillés** : Console logs pour faciliter le debugging
+
+### v1.0 (Octobre 2024)
+- 🎉 Version initiale
+- ✅ Timeline responsive
+- ✅ Mode sombre/clair
+- ✅ Cache localStorage
+- ✅ Application mobile (APK)

@@ -53,3 +53,32 @@ export function extractAvailableWeeks(data) {
     });
     return Array.from(weeksMap.values()).sort((a, b) => a.monday - b.monday);
 }
+
+/**
+ * Sélectionne la meilleure semaine à afficher :
+ * 1. La semaine actuelle si elle existe
+ * 2. Sinon, la prochaine semaine future avec des cours
+ * 3. Sinon, la première semaine disponible
+ */
+export function selectBestWeek(weeks) {
+    if (!weeks || weeks.length === 0) return null;
+    
+    const currentWeek = getCurrentWeek();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // 1. Chercher la semaine actuelle
+    let weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime());
+    
+    // 2. Si pas trouvée, chercher la prochaine semaine future
+    if (!weekToSelect) {
+        weekToSelect = weeks.find(w => w.monday.getTime() >= today.getTime());
+    }
+    
+    // 3. Si aucune semaine future, prendre la première disponible
+    if (!weekToSelect) {
+        weekToSelect = weeks[0];
+    }
+    
+    return weekToSelect;
+}

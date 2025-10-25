@@ -1,6 +1,6 @@
 "use client";
 import {useState, useEffect, useRef} from "react";
-import {getMonday, getCurrentWeek, extractAvailableWeeks} from "@/utils/dateUtils";
+import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay} from "@/utils/eventUtils";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
@@ -32,6 +32,7 @@ export default function Home() {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [testMode, setTestModeState] = useState(false);
     const [todaySpacing, setTodaySpacing] = useState(0);
+    const [shouldScrollToToday, setShouldScrollToToday] = useState(false);
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -83,8 +84,7 @@ export default function Home() {
             const weeks = extractAvailableWeeks(data);
             setAvailableWeeks(weeks);
 
-            const currentWeek = getCurrentWeek();
-            const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime()) || weeks[0];
+            const weekToSelect = selectBestWeek(weeks);
             setSelectedWeek(weekToSelect?.monday);
 
             // Sauvegarder dans le cache
@@ -108,7 +108,11 @@ export default function Home() {
                 setAllEvents(data);
                 const weeks = extractAvailableWeeks(data);
                 setAvailableWeeks(weeks);
-                if (weeks.length > 0) setSelectedWeek(weeks[0].monday);
+                
+                if (weeks.length > 0) {
+                    const weekToSelect = selectBestWeek(weeks);
+                    setSelectedWeek(weekToSelect?.monday);
+                }
 
                 if (savedColors) {
                     setSubjectColors(JSON.parse(savedColors));
@@ -156,8 +160,7 @@ export default function Home() {
             const weeks = extractAvailableWeeks(cached.events);
             setAvailableWeeks(weeks);
 
-            const currentWeek = getCurrentWeek();
-            const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime()) || weeks[0];
+            const weekToSelect = selectBestWeek(weeks);
             setSelectedWeek(weekToSelect?.monday);
 
             setLoading(false);
@@ -280,6 +283,54 @@ export default function Home() {
         }
     }, [settingsOpen]);
 
+    // Gérer l'ouverture du jour d'aujourd'hui après avoir changé de semaine via le bouton "Aujourd'hui"
+    useEffect(() => {
+        if (!shouldScrollToToday || events.length === 0) return;
+
+        // Attendre que groupByDay soit mis à jour
+        setTimeout(() => {
+            const today = new Date();
+            const todayDateString = today.toDateString();
+            const newCollapsedDays = { ...collapsedDays };
+            let todayDayKey = null;
+
+            // Fermer tous les jours de la semaine actuelle
+            Object.keys(groupByDay).forEach(dayKey => {
+                newCollapsedDays[dayKey] = true;
+
+                // Vérifier si ce jour correspond à aujourd'hui
+                const dayEvents = groupByDay[dayKey];
+                if (dayEvents && dayEvents.length > 0) {
+                    const firstEventDate = new Date(dayEvents[0].start);
+                    if (firstEventDate.toDateString() === todayDateString) {
+                        todayDayKey = dayKey;
+                    }
+                }
+            });
+
+            // Ouvrir seulement le jour d'aujourd'hui s'il existe dans cette semaine
+            if (todayDayKey) {
+                newCollapsedDays[todayDayKey] = false;
+            } else {
+                // Si aujourd'hui n'existe pas dans cette semaine, ouvrir tous les jours
+                Object.keys(groupByDay).forEach(dayKey => {
+                    newCollapsedDays[dayKey] = false;
+                });
+            }
+
+            setCollapsedDays(newCollapsedDays);
+            localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
+
+            // Scroll vers le jour
+            setTimeout(() => {
+                scrollToToday();
+            }, 200);
+
+            // Réinitialiser le flag
+            setShouldScrollToToday(false);
+        }, 100);
+    }, [shouldScrollToToday, events]);
+
     // Fonction pour scroller vers le jour actuel avec animation
     const scrollToToday = () => {
         if (todayRef.current) {
@@ -315,47 +366,13 @@ export default function Home() {
     };
 
     const handleToday = () => {
-        const currentWeek = getCurrentWeek();
-        const weekToSelect = availableWeeks.find(w => w.monday.getTime() === currentWeek.getTime());
+        // Utiliser la sélection intelligente de semaine
+        const weekToSelect = selectBestWeek(availableWeeks);
+        
         if (weekToSelect) {
             setSelectedWeek(weekToSelect.monday);
-            
-            // Trouver le jour d'aujourd'hui
-            const today = new Date();
-            
-            // Fermer tous les jours sauf aujourd'hui
-            const newCollapsedDays = { ...collapsedDays }; // Copier l'état existant
-            
-            // Trouver le jour d'aujourd'hui dans groupByDay en comparant les dates
-            let todayDayKey = null;
-            const todayDateString = today.toDateString();
-            
-            Object.keys(groupByDay).forEach(dayKey => {
-                // Fermer tous les jours d'abord
-                newCollapsedDays[dayKey] = true;
-                
-                // Vérifier si ce jour correspond à aujourd'hui
-                const dayEvents = groupByDay[dayKey];
-                if (dayEvents && dayEvents.length > 0) {
-                    const firstEventDate = new Date(dayEvents[0].start);
-                    if (firstEventDate.toDateString() === todayDateString) {
-                        todayDayKey = dayKey;
-                    }
-                }
-            });
-            
-            // Ouvrir seulement le jour d'aujourd'hui s'il existe
-            if (todayDayKey) {
-                newCollapsedDays[todayDayKey] = false; // Ouvrir aujourd'hui
-            }
-            
-            setCollapsedDays(newCollapsedDays);
-            localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
-            
-            // Scroll après un délai pour laisser le temps au DOM de se mettre à jour
-            setTimeout(() => {
-                scrollToToday();
-            }, 400);
+            // Indiquer qu'on doit ouvrir le jour d'aujourd'hui après le changement de semaine
+            setShouldScrollToToday(true);
         }
     };
 
