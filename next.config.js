@@ -1,28 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuration pour build statique (nécessaire pour Capacitor)
-  output: 'export',
+  // Mode web normal - API routes activées
+  // Pas de "output: 'export'" pour permettre les API routes serverless
   
-  // Désactiver l'optimisation d'images (non compatible avec export statique)
+  // Optimisation d'images activée
   images: {
-    unoptimized: true
+    unoptimized: false
   },
   
-  // Désactiver le trailing slash
-  trailingSlash: true,
-  
-  // Optimisations pour mobile
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
-  },
-  
-  // Minification (Next 15+ utilise SWC par défaut; option legacy supprimée)
+  // Trailing slash désactivé (mode web standard)
+  trailingSlash: false,
   
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: 'mobile'
+    NEXT_PUBLIC_APP_MODE: 'web'
   }
 }
 
