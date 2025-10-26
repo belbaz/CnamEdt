@@ -22,7 +22,10 @@ export default function Navbar({
     testMode = false,
     onToggleTestMode,
     compactMode,
-    onCompactModeChange
+    onCompactModeChange,
+    isNative = false,
+    currentVersion = null,
+    onCheckUpdates = null
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -65,6 +68,9 @@ export default function Navbar({
                     onCompactModeChange={onCompactModeChange}
                     testMode={testMode}
                     onToggleTestMode={onToggleTestMode}
+                    isNative={isNative}
+                    currentVersion={currentVersion}
+                    onCheckUpdates={onCheckUpdates}
                 />
 
                 <div className="navbar-controls">

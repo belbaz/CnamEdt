@@ -35,13 +35,41 @@ cd mobile-config
 .\build-apk.bat
 ```
 
-Le script fait automatiquement :
-1. Build de l'APK
-2. Upload vers Supabase Storage
-3. Suppression de l'ancien APK (si existant)
+Le script vous demandera une version (format `X.Y.Z`, ex: `1.0.0`) et fera automatiquement :
+1. Build de l'APK avec versioning
+2. Renommage : `edt_cnam_v1.0.0.apk`
+3. Upload vers Supabase Storage
+4. Suppression des anciens APK (pour économiser l'espace)
 
-**APK généré dans :** `android\app\build\outputs\apk\debug\app-debug.apk`
-**APK en ligne :** Voir `.env.local` pour l'URL Supabase
+**APK généré dans :** `android\app\build\outputs\apk\debug\edt_cnam_vX.X.X.apk`
+**APK en ligne :** `https://supabase.../apk/edt_cnam_vX.X.X.apk`
+
+### ⚠️ Après chaque build avec une nouvelle version
+
+Mettez à jour manuellement ces 3 fichiers :
+
+1. **`src/app/api/version/route.js`** - Ligne 7
+   ```javascript
+   const currentVersion = "1.0.0"; // ← Nouvelle version
+   ```
+
+2. **`src/app/page.js`** - Ligne 505
+   ```javascript
+   <UpdateChecker currentVersion="1.0.0" isNative={isNative} />
+   ```
+
+3. **`capacitor.config.ts`** - Ligne 7
+   ```typescript
+   version: '1.0.0', // ← Nouvelle version
+   ```
+
+### Système de mise à jour automatique
+
+L'application mobile vérifie automatiquement au démarrage si une nouvelle version est disponible :
+- ✅ Compare la version locale avec l'API `/api/version`
+- ✅ Affiche une popup si mise à jour disponible
+- ✅ Télécharge directement depuis Supabase
+- ✅ **Aucun fichier `.env` dans l'APK** - tout passe par l'API web
 
 ### Configuration Supabase
 
@@ -184,7 +212,7 @@ L'application choisit automatiquement la semaine à afficher selon cette logique
 
 ## 🎨 Features
 
-### Version actuelle (v1.1)
+### Version actuelle (v1.3.0)
 - ✅ Timeline responsive (horizontal desktop, vertical mobile)
 - ✅ Sélecteur de semaine (navigation ← →)
 - ✅ **Sélection intelligente de semaine** (affiche la prochaine semaine avec cours)
@@ -200,6 +228,8 @@ L'application choisit automatiquement la semaine à afficher selon cette logique
 - ✅ Scroll automatique vers aujourd'hui
 - ✅ Pull-to-refresh (mobile)
 - ✅ 📲 **Popup de téléchargement APK** (Android web uniquement)
+- ✅ 🔄 **Vérification automatique des mises à jour** (app native)
+- ✅ 🎯 **Système de versioning** (APK avec numéro de version)
 
 ### Version future (v2.0) - Optionnel
 - 🔄 Notifications push automatiques
@@ -372,9 +402,17 @@ Projet personnel - EICNAM
 
 ---
 
-**Version actuelle : v1.2.1**
+**Version actuelle : v1.3.0**
 
 ## 📝 Changelog
+
+### v1.3.0 (26 octobre 2024)
+- 🎯 **Système de versioning** : APK nommé `edt_cnam_vX.X.X.apk` avec version incrémentale
+- 🔄 **Vérification automatique des mises à jour** : L'app vérifie au démarrage si nouvelle version disponible
+- 🌐 **API /api/version** : Endpoint pour récupérer la dernière version disponible
+- 📱 **UpdateChecker** : Popup de mise à jour dans l'app native
+- 🗑️ **Nettoyage automatique** : Suppression des anciennes versions sur Supabase
+- 🔒 **Sécurité** : Aucun fichier `.env` dans l'APK - tout passe par l'API web
 
 ### v1.2.1 (26 octobre 2024)
 - 🔧 **Fix upload Supabase** : Correction de la configuration (bucket `Apk Edt Eicnam`, dossier `apk/`, variable `SUPABASE_SERVICE_ROLE`)

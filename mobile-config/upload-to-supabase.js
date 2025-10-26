@@ -1,16 +1,35 @@
 /**
  * Script pour uploader l'APK vers Supabase Storage
- * Usage: node upload-to-supabase.js
+ * Usage: node upload-to-supabase.js [version]
+ * Exemple: node upload-to-supabase.js 1.0.0
  */
 
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+// Récupérer la version depuis les arguments
+const version = process.argv[2];
+
+if (!version) {
+  console.error('❌ Version manquante !');
+  console.error('   Usage: node upload-to-supabase.js [version]');
+  console.error('   Exemple: node upload-to-supabase.js 1.0.0');
+  process.exit(1);
+}
+
+// Valider le format de version (X.Y.Z)
+if (!/^\d+\.\d+\.\d+$/.test(version)) {
+  console.error('❌ Format de version invalide !');
+  console.error('   Format attendu: X.Y.Z (exemple: 1.0.0)');
+  process.exit(1);
+}
+
 // Configuration
-const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+const APK_NAME = `edt_cnam_v${version}.apk`;
+const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
 const BUCKET_NAME = 'Apk Edt Eicnam';
-const FILE_PATH = 'apk/app-debug.apk';
+const FILE_PATH = `apk/${APK_NAME}`;
 
 // Charger les variables d'environnement depuis .env.local
 function loadEnvFile() {
@@ -42,7 +61,7 @@ function loadEnvFile() {
 
 async function uploadAPK() {
   console.log('\n========================================');
-  console.log('   Upload APK vers Supabase');
+  console.log(`   Upload APK v${version} vers Supabase`);
   console.log('========================================\n');
 
   // Charger les variables d'environnement
@@ -108,28 +127,34 @@ async function uploadAPK() {
       console.log('✅ Bucket trouvé !');
     }
 
-    // Supprimer l'ancien APK s'il existe
-    console.log(`\n🗑️  Vérification de l'ancien APK...`);
+    // Lister et supprimer tous les anciens APKs
+    console.log(`\n🗑️  Vérification des anciens APKs...`);
     const { data: existingFiles } = await supabase.storage
       .from(BUCKET_NAME)
       .list('apk', { limit: 100 });
 
-    const oldFileExists = existingFiles && existingFiles.some(f => f.name === 'app-debug.apk');
+    if (existingFiles && existingFiles.length > 0) {
+      const apkFiles = existingFiles.filter(f => f.name.startsWith('edt_cnam_v') && f.name.endsWith('.apk'));
+      
+      if (apkFiles.length > 0) {
+        console.log(`🗑️  Suppression de ${apkFiles.length} ancien(s) APK(s)...`);
+        const filesToDelete = apkFiles.map(f => `apk/${f.name}`);
+        
+        const { error: deleteError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .remove(filesToDelete);
 
-    if (oldFileExists) {
-      console.log('🗑️  Suppression de l\'ancien APK...');
-      const { error: deleteError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .remove([FILE_PATH]);
-
-      if (deleteError) {
-        console.error('⚠️  Erreur lors de la suppression :', deleteError.message);
-        console.log('   Tentative d\'upload malgré tout...');
+        if (deleteError) {
+          console.error('⚠️  Erreur lors de la suppression :', deleteError.message);
+          console.log('   Tentative d\'upload malgré tout...');
+        } else {
+          console.log(`✅ ${apkFiles.length} ancien(s) APK(s) supprimé(s) !`);
+        }
       } else {
-        console.log('✅ Ancien APK supprimé !');
+        console.log('ℹ️  Aucun ancien APK à supprimer');
       }
     } else {
-      console.log('ℹ️  Aucun ancien APK à supprimer');
+      console.log('ℹ️  Aucun fichier dans le dossier apk/');
     }
 
     // Uploader le nouveau APK

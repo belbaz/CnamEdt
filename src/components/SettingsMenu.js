@@ -10,7 +10,10 @@ export default function SettingsMenu({
     onCompactModeChange,
     testMode,
     onToggleTestMode,
-    isMobile = false
+    isMobile = false,
+    isNative = false,
+    currentVersion = null,
+    onCheckUpdates = null
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
@@ -81,6 +84,26 @@ export default function SettingsMenu({
                                         />
                                         <span>Mode Test (Cours de test)</span>
                                     </label>
+                                </div>
+                            )}
+
+                            {isNative && currentVersion && (
+                                <div className="setting-item setting-button-item">
+                                    <button 
+                                        className="check-updates-button"
+                                        onClick={() => {
+                                            if (onCheckUpdates) {
+                                                onCheckUpdates();
+                                                setIsOpen(false);
+                                            }
+                                        }}
+                                    >
+                                        <span className="button-icon">🔄</span>
+                                        <div className="button-content">
+                                            <span className="button-label">Vérifier les mises à jour</span>
+                                            <span className="button-version">Version actuelle : {currentVersion}</span>
+                                        </div>
+                                    </button>
                                 </div>
                             )}
                         </div>

@@ -4,6 +4,24 @@ echo   Build APK EDT EICNAM
 echo ========================================
 echo.
 
+REM Demander la version
+set /p VERSION="Entrez la version (ex: 1.0.0): "
+
+REM Valider le format de version
+echo %VERSION% | findstr /R "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >NUL
+if errorlevel 1 (
+    echo.
+    echo ERREUR: Format de version invalide !
+    echo Format attendu: X.Y.Z (exemple: 1.0.0^)
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Version: %VERSION%
+echo.
+
 REM Remonter dans le dossier parent du projet
 cd ..
 
@@ -119,18 +137,37 @@ if errorlevel 1 (
 )
 cd ..
 
+echo [6.5/7] Renommage de l'APK avec la version...
+set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
+set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+
+if exist "%APK_SOURCE%" (
+    move /Y "%APK_SOURCE%" "%APK_DEST%"
+    if exist "%APK_DEST%" (
+        echo APK renomme: edt_cnam_v%VERSION%.apk
+    ) else (
+        echo ERREUR: Impossible de renommer l'APK
+        pause
+        exit /b 1
+    )
+) else (
+    echo ERREUR: APK source introuvable
+    pause
+    exit /b 1
+)
+
 echo.
 echo ========================================
 echo   BUILD APK TERMINE !
 echo ========================================
 echo.
 echo APK genere dans:
-echo android\app\build\outputs\apk\debug\app-debug.apk
+echo android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
 echo.
 
 echo [7/7] Upload vers Supabase...
 cd mobile-config
-node upload-to-supabase.js
+node upload-to-supabase.js %VERSION%
 if errorlevel 1 (
     echo.
     echo ========================================
@@ -141,7 +178,7 @@ if errorlevel 1 (
     echo Verifiez votre configuration .env.local
     echo.
     echo Pour installer sur ton telephone:
-    echo adb install ..\android\app\build\outputs\apk\debug\app-debug.apk
+    echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
     echo.
     pause
     exit /b 0
@@ -153,11 +190,24 @@ echo   BUILD ET UPLOAD TERMINES !
 echo ========================================
 echo.
 echo APK genere localement:
-echo android\app\build\outputs\apk\debug\app-debug.apk
+echo android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
 echo.
 echo APK disponible sur Supabase - Voir l'URL ci-dessus
 echo.
 echo Pour installer sur ton telephone:
-echo adb install ..\android\app\build\outputs\apk\debug\app-debug.apk
+echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+echo.
+echo ========================================
+echo   N'OUBLIEZ PAS DE METTRE A JOUR:
+echo ========================================
+echo.
+echo 1. src/app/api/version/route.js
+echo    - Changez currentVersion = "%VERSION%"
+echo.
+echo 2. src/app/page.js
+echo    - Changez UpdateChecker currentVersion="%VERSION%"
+echo.
+echo 3. capacitor.config.ts
+echo    - Changez version: '%VERSION%'
 echo.
 pause

@@ -15,38 +15,67 @@ export default function ApkDownloadPopup() {
 
     useEffect(() => {
         // Vérifier si on est côté client
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined') {
+            console.log('[APK Popup] Pas côté client');
+            return;
+        }
+
+        console.log('[APK Popup] Début de la vérification...');
 
         // Vérifier si on est dans l'app native (Capacitor)
         let isNativeApp = false;
         try {
             const { Capacitor } = require('@capacitor/core');
             isNativeApp = Capacitor && Capacitor.isNativePlatform();
+            console.log('[APK Popup] isNativeApp:', isNativeApp);
         } catch (e) {
             // Pas de Capacitor, donc on est sur le web
             isNativeApp = false;
+            console.log('[APK Popup] Capacitor non trouvé, on est sur le web');
         }
 
         // Ne pas afficher dans l'app native
-        if (isNativeApp) return;
+        if (isNativeApp) {
+            console.log('[APK Popup] App native détectée, pas de popup');
+            return;
+        }
 
         // Vérifier si l'utilisateur est sur Android
         const userAgent = navigator.userAgent.toLowerCase();
         const isAndroid = /android/.test(userAgent);
+        console.log('[APK Popup] User Agent:', userAgent);
+        console.log('[APK Popup] isAndroid:', isAndroid);
 
         // Ne pas afficher si ce n'est pas Android
-        if (!isAndroid) return;
+        if (!isAndroid) {
+            console.log('[APK Popup] Pas sur Android, pas de popup');
+            return;
+        }
 
         // Vérifier si l'utilisateur a déjà refusé la popup
         const hasDeclined = localStorage.getItem('apk_download_declined');
-        if (hasDeclined === 'true') return;
+        console.log('[APK Popup] hasDeclined:', hasDeclined);
+        if (hasDeclined === 'true') {
+            console.log('[APK Popup] Utilisateur a refusé, pas de popup');
+            return;
+        }
 
         // Vérifier si la popup a déjà été affichée dans cette session
         const hasSeenInSession = sessionStorage.getItem('apk_popup_shown');
-        if (hasSeenInSession === 'true') return;
+        console.log('[APK Popup] hasSeenInSession:', hasSeenInSession);
+        if (hasSeenInSession === 'true') {
+            console.log('[APK Popup] Déjà vu dans cette session, pas de popup');
+            return;
+        }
+
+        // Vérifier l'URL de l'APK
+        const apkUrl = process.env.NEXT_PUBLIC_APK_URL;
+        console.log('[APK Popup] NEXT_PUBLIC_APK_URL:', apkUrl);
 
         // Attendre un peu avant d'afficher (pour une meilleure UX)
+        console.log('[APK Popup] Affichage de la popup dans 2 secondes...');
         const timer = setTimeout(() => {
+            console.log('[APK Popup] 🎉 AFFICHAGE DE LA POPUP !');
             setIsVisible(true);
             sessionStorage.setItem('apk_popup_shown', 'true');
         }, 2000); // Attendre 2 secondes après le chargement

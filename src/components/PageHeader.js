@@ -12,7 +12,10 @@ export default function PageHeader({
                                        compactMode,
                                        onCompactModeChange,
                                        testMode,
-                                       onToggleTestMode
+                                       onToggleTestMode,
+                                       isNative = false,
+                                       currentVersion = null,
+                                       onCheckUpdates = null
                                    }) {
     return (
         <div className="page-header">
@@ -34,6 +37,9 @@ export default function PageHeader({
                         testMode={testMode}
                         onToggleTestMode={onToggleTestMode}
                         isMobile={isMobile}
+                        isNative={isNative}
+                        currentVersion={currentVersion}
+                        onCheckUpdates={onCheckUpdates}
                     />
                     <button
                         className="theme-toggle"

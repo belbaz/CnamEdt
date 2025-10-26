@@ -11,6 +11,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
 import ScrollToTop from "@/components/ScrollToTop";
 import ApkDownloadPopup from "@/components/ApkDownloadPopup";
+import UpdateChecker from "@/components/UpdateChecker";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -47,6 +48,9 @@ export default function Home() {
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
+    
+    // Ref pour le UpdateChecker
+    const updateCheckerRef = useRef(null);
 
     const fetchEvents = async () => {
         try {
@@ -493,12 +497,25 @@ export default function Home() {
         }
     };
 
+    const handleCheckUpdates = () => {
+        if (updateCheckerRef.current) {
+            updateCheckerRef.current.checkForUpdates();
+        }
+    };
+
     const groupByDay = groupEventsByDay(events);
 
     return (
         <div>
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
             <ApkDownloadPopup />
+            
+            {/* Vérification des mises à jour (app native uniquement) */}
+            <UpdateChecker 
+                ref={updateCheckerRef}
+                currentVersion="1.0.0" 
+                isNative={isNative} 
+            />
 
             <Navbar
                 darkMode={darkMode}
@@ -519,6 +536,9 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
+                isNative={isNative}
+                currentVersion="1.0.0"
+                onCheckUpdates={handleCheckUpdates}
             />
 
             <main className={styles.container}>
