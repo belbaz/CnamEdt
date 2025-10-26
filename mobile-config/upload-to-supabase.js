@@ -27,7 +27,7 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
 
 // Configuration
 const APK_NAME = `edt_cnam_v${version}.apk`;
-const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
+const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
 const BUCKET_NAME = 'Apk Edt Eicnam';
 const FILE_PATH = `apk/${APK_NAME}`;
 

@@ -44,15 +44,61 @@ if defined PARAM_VERSION (
 )
 echo.
 
-echo [1/7] Arret processus Node.js...
+echo [0/8] Verification signature APK...
+if not exist edt-cnam-release-key.keystore (
+    echo Cle de signature non trouvee, creation automatique...
+    
+    REM Lire le mot de passe depuis .env.local
+    set KEYSTORE_PASSWORD=
+    if exist .env.local (
+        for /f "tokens=1,2 delims==" %%a in ('findstr /C:"KEYSTORE_PASSWORD" .env.local') do set KEYSTORE_PASSWORD=%%b
+    )
+    
+    if "!KEYSTORE_PASSWORD!"=="" (
+        echo ERREUR: KEYSTORE_PASSWORD non trouve dans .env.local
+        echo Ajoutez: KEYSTORE_PASSWORD=VotreMotDePasse
+        pause
+        exit /b 1
+    )
+    
+    REM Creer la cle
+    keytool -genkey -v -keystore edt-cnam-release-key.keystore -alias edt-cnam -keyalg RSA -keysize 2048 -validity 10000 -storepass !KEYSTORE_PASSWORD! -keypass !KEYSTORE_PASSWORD! -dname "CN=EDT EICNAM, OU=EICNAM, O=EICNAM, L=Paris, ST=Ile-de-France, C=FR" >nul 2>&1
+    
+    if errorlevel 1 (
+        echo ERREUR: Creation cle echouee
+        pause
+        exit /b 1
+    )
+    
+    REM Creer keystore.properties
+    (
+    echo storeFile=../edt-cnam-release-key.keystore
+    echo storePassword=!KEYSTORE_PASSWORD!
+    echo keyAlias=edt-cnam
+    echo keyPassword=!KEYSTORE_PASSWORD!
+    ) > android\keystore.properties
+    
+    REM Configurer build.gradle automatiquement
+    powershell -Command "(Get-Content android\app\build.gradle) -replace 'apply plugin: ''com.android.application''', 'def keystorePropertiesFile = rootProject.file(\"keystore.properties\")%0Adef keystoreProperties = new Properties()%0Aif (keystorePropertiesFile.exists()) {%0A    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))%0A}%0A%0Aapply plugin: ''com.android.application''' | Set-Content android\app\build.gradle"
+    
+    powershell -Command "(Get-Content android\app\build.gradle) -replace '    buildTypes \{', '    signingConfigs {%0A        release {%0A            if (keystorePropertiesFile.exists()) {%0A                keyAlias keystoreProperties[''keyAlias'']%0A                keyPassword keystoreProperties[''keyPassword'']%0A                storeFile file(keystoreProperties[''storeFile''])%0A                storePassword keystoreProperties[''storePassword'']%0A            }%0A        }%0A    }%0A%0A    buildTypes {' | Set-Content android\app\build.gradle"
+    
+    powershell -Command "(Get-Content android\app\build.gradle) -replace '        release \{', '        release {%0A            signingConfig signingConfigs.release' | Set-Content android\app\build.gradle"
+    
+    echo Signature configuree automatiquement
+) else (
+    echo Cle de signature trouvee
+)
+
+echo [1/8] Arret processus Node.js...
 taskkill /F /IM node.exe /T >NUL 2>&1
 timeout /t 1 /nobreak >NUL
 
-echo [2/7] Nettoyage...
+echo [2/8] Nettoyage...
 if exist out rmdir /s /q out 2>NUL
 if exist android\app\build rmdir /s /q android\app\build 2>NUL
 
-echo [3/7] Configuration mobile...
+echo [3/8] Configuration mobile...
 set BUILD_MODE=mobile
 if exist next.config.js copy /Y next.config.js next.config.web.backup >nul
 copy /Y mobile-config\next.config.mobile.js next.config.js >nul
@@ -67,7 +113,7 @@ if exist src\app\api (
     )
 )
 
-echo [4/7] Build Next.js...
+echo [4/8] Build Next.js...
 call npm run build
 if errorlevel 1 (
     echo ERREUR: Build Next.js echoue
@@ -94,7 +140,7 @@ if exist next.config.web.backup (
     copy /Y next.config.web.js next.config.js >nul
 )
 
-echo [5/7] Sync Capacitor...
+echo [5/8] Sync Capacitor...
 call npx cap sync android
 if errorlevel 1 (
     echo ERREUR: Sync Capacitor echoue
@@ -102,9 +148,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [6/7] Build APK...
+echo [6/8] Build APK (signe)...
 cd android
-call .\gradlew.bat clean assembleDebug
+call .\gradlew.bat clean assembleRelease
 if errorlevel 1 (
     echo ERREUR: Build APK echoue
     cd ..
@@ -113,12 +159,12 @@ if errorlevel 1 (
 )
 cd ..
 
-set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
-set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
+set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
+set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
 move /Y "%APK_SOURCE%" "%APK_DEST%" >nul
-echo APK: edt_cnam_v!VERSION!.apk
+echo APK signe: edt_cnam_v!VERSION!.apk
 
-echo [7/7] Upload Supabase...
+echo [7/8] Upload Supabase...
 node mobile-config\upload-to-supabase.js !VERSION!
 if errorlevel 1 (
     echo ATTENTION: Upload Supabase echoue (continue quand meme^)
@@ -149,7 +195,7 @@ echo   DEPLOY TERMINE !
 echo ========================================
 echo.
 echo Version: !VERSION!
-echo APK: android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
+echo APK signe: android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
 echo Vercel: Deploiement en cours...
 echo.
 pause

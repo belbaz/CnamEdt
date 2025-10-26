@@ -33,23 +33,30 @@ let errorCount = 0;
 // Mettre à jour chaque fichier
 filesToUpdate.forEach(file => {
     try {
-        if (!fs.existsSync(file.path)) {
-            console.log(`⚠️  Fichier introuvable : ${path.relative(path.join(__dirname, '..'), file.path)}`);
-            errorCount++;
-            return;
+        // Vérifier d'abord si le fichier est temporairement dans _api_backup
+        let filePath = file.path;
+        if (!fs.existsSync(filePath)) {
+            const backupPath = filePath.replace(/\\api\\/, '\\_api_backup\\').replace(/\/api\//, '/_api_backup/');
+            if (fs.existsSync(backupPath)) {
+                filePath = backupPath;
+                console.log(`🔄 Utilisation du backup : ${path.relative(path.join(__dirname, '..'), backupPath)}`);
+            } else {
+                console.log(`⚠️  Fichier ignoré (temporairement déplacé) : ${path.relative(path.join(__dirname, '..'), file.path)}`);
+                return; // Pas d'erreur, juste ignoré
+            }
         }
 
-        let content = fs.readFileSync(file.path, 'utf-8');
+        let content = fs.readFileSync(filePath, 'utf-8');
         const originalContent = content;
         
         content = content.replace(file.regex, file.replacement);
         
         if (content !== originalContent) {
-            fs.writeFileSync(file.path, content, 'utf-8');
-            console.log(`✅ ${path.relative(path.join(__dirname, '..'), file.path)}`);
+            fs.writeFileSync(filePath, content, 'utf-8');
+            console.log(`✅ ${path.relative(path.join(__dirname, '..'), filePath)}`);
             successCount++;
         } else {
-            console.log(`ℹ️  ${path.relative(path.join(__dirname, '..'), file.path)} (déjà à jour)`);
+            console.log(`ℹ️  ${path.relative(path.join(__dirname, '..'), filePath)} (déjà à jour)`);
             successCount++;
         }
     } catch (error) {
