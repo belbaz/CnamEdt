@@ -138,7 +138,7 @@ NEXT_PUBLIC_SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE=...
 ```
 
-Le script vous demandera si vous voulez continuer le deploy sans l'upload.
+Le script continue automatiquement avec le Git push même si l'upload échoue.
 
 ### Erreur : "Git push a échoué"
 

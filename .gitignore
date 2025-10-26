@@ -54,3 +54,8 @@ local.properties
 # Logs
 *.log
 .vercel
+ 
+# Cle de signature (NE PAS COMMITER) 
+*.keystore 
+android/keystore.properties 
+edt-cnam-release-key.keystore 
