@@ -42,23 +42,41 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         try {
             // Appeler l'API du site web pour obtenir la dernière version
             const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
-            const response = await fetch(`${apiUrl}/api/version`, {
+            const versionUrl = `${apiUrl}/api/version`;
+            
+            console.log('[UpdateChecker] Vérification des mises à jour...');
+            console.log('[UpdateChecker] URL API:', versionUrl);
+            console.log('[UpdateChecker] Version actuelle:', currentVersion);
+            
+            const response = await fetch(versionUrl, {
+                method: 'GET',
                 cache: 'no-store',
                 headers: {
                     'Cache-Control': 'no-cache'
                 }
             });
 
+            console.log('[UpdateChecker] Réponse HTTP:', response.status, response.statusText);
+
             if (!response.ok) {
-                console.error('[UpdateChecker] Erreur API:', response.status);
+                const errorText = await response.text();
+                console.error('[UpdateChecker] Erreur API:', response.status, errorText);
                 if (isManual) {
-                    alert('Erreur lors de la vérification des mises à jour. Veuillez réessayer plus tard.');
+                    alert(`Erreur lors de la vérification des mises à jour.\nCode: ${response.status}\nVeuillez réessayer plus tard.`);
                 }
                 return;
             }
 
             const data = await response.json();
             console.log('[UpdateChecker] Réponse API:', data);
+
+            if (!data.version) {
+                console.error('[UpdateChecker] Réponse invalide - version manquante');
+                if (isManual) {
+                    alert('Erreur: réponse invalide du serveur.');
+                }
+                return;
+            }
 
             setLatestVersion(data.version);
             setDownloadUrl(data.url);
@@ -67,6 +85,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             // Comparer les versions
             const needsUpdate = compareVersions(currentVersion, data.version);
             console.log('[UpdateChecker] Mise à jour nécessaire:', needsUpdate);
+            console.log('[UpdateChecker] Version locale:', currentVersion, '→ Version distante:', data.version);
 
             if (needsUpdate) {
                 setUpdateAvailable(true);
@@ -77,8 +96,10 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             }
         } catch (error) {
             console.error('[UpdateChecker] Erreur lors de la vérification:', error);
+            console.error('[UpdateChecker] Type d\'erreur:', error.name);
+            console.error('[UpdateChecker] Message:', error.message);
             if (isManual) {
-                alert('Erreur lors de la vérification des mises à jour. Veuillez réessayer plus tard.');
+                alert(`Erreur lors de la vérification des mises à jour.\nDétails: ${error.message}\nVeuillez vérifier votre connexion internet.`);
             }
         } finally {
             setIsChecking(false);
