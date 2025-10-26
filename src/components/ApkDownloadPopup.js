@@ -86,11 +86,26 @@ export default function ApkDownloadPopup() {
     const handleDownload = () => {
         const apkUrl = process.env.NEXT_PUBLIC_APK_URL || 'https://aeftxgwfokzlspojzisx.supabase.co/storage/v1/object/public/Apk%20Edt%20Eicnam/apk/app-debug.apk';
         
-        // Ouvrir le lien de téléchargement
-        window.open(apkUrl, '_blank');
+        console.log('[APK Popup] Téléchargement APK:', apkUrl);
         
-        // Fermer la popup
-        handleClose();
+        // Créer un élément <a> temporaire pour forcer le téléchargement
+        const link = document.createElement('a');
+        link.href = apkUrl;
+        link.download = 'edt_cnam.apk'; // Nom du fichier téléchargé
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        
+        // Déclencher le téléchargement
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('[APK Popup] Téléchargement déclenché');
+        
+        // Fermer la popup après un court délai
+        setTimeout(() => {
+            handleClose();
+        }, 500);
     };
 
     const handleDecline = () => {

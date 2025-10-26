@@ -124,7 +124,20 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
     const handleUpdate = () => {
         if (downloadUrl) {
             console.log('[UpdateChecker] Téléchargement:', downloadUrl);
-            window.open(downloadUrl, '_system');
+            
+            // Créer un élément <a> temporaire pour forcer le téléchargement
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `edt_cnam_v${latestVersion}.apk`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Déclencher le téléchargement
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('[UpdateChecker] Téléchargement déclenché');
         }
     };
 
