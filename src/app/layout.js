@@ -1,7 +1,7 @@
 import "./global.css";
 
 export const metadata = {
-    title: "Mon Emploi du Temps - EICNAM",
+    title: "Edt EICNAM",
     description: "Consultez votre emploi du temps EICNAM",
 };
 
