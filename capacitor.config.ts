@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.eicnam.edt',
   appName: 'EDT EICNAM',
   webDir: 'out',
-  version: '1.0.0', // Version de l'application
   server: {
     androidScheme: 'https',
     cleartext: true

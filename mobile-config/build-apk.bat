@@ -1,28 +1,60 @@
 @echo off
+setlocal enabledelayedexpansion
 echo ========================================
 echo   Build APK EDT EICNAM
 echo ========================================
 echo.
 
-REM Demander la version
-set /p VERSION="Entrez la version (ex: 1.0.0): "
-
-REM Valider le format de version
-echo %VERSION% | findstr /R "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >NUL
-if errorlevel 1 (
+REM Verifier si une version est passee en parametre
+set PARAM_VERSION=%~1
+if defined PARAM_VERSION (
+    set VERSION=%PARAM_VERSION%
+    echo Version specifiee en parametre : !VERSION!
     echo.
-    echo ERREUR: Format de version invalide !
-    echo Format attendu: X.Y.Z (exemple: 1.0.0^)
+    echo Mise a jour de package.json avec la version !VERSION!...
+    call node set-version.js !VERSION!
+    if errorlevel 1 (
+        echo ERREUR: Mise a jour de package.json echouee
+        pause
+        exit /b 1
+    )
+    echo Mise a jour des fichiers avec la version !VERSION!...
+    call node update-version-in-files.js
+    if errorlevel 1 (
+        echo ERREUR: Mise a jour des fichiers echouee
+        pause
+        exit /b 1
+    )
+) else (
+    REM Recuperer la version actuelle depuis package.json
+    echo Lecture de la version actuelle...
+    for /f "delims=" %%i in ('node get-version.js') do set CURRENT_VERSION=%%i
+    
+    echo Version actuelle : !CURRENT_VERSION!
+    echo Incrementation automatique de la version ^(+0.0.1^)...
+    
+    REM Incrementer automatiquement
+    for /f "tokens=*" %%a in ('node increment-version.js ^| findstr /C:"NEW_VERSION="') do set %%a
+    if errorlevel 1 (
+        echo ERREUR: Incrementation echouee
+        pause
+        exit /b 1
+    )
+    set VERSION=!NEW_VERSION!
+    echo Nouvelle version : !VERSION!
     echo.
-    pause
-    exit /b 1
+    echo Mise a jour des fichiers avec la nouvelle version...
+    call node update-version-in-files.js
+    if errorlevel 1 (
+        echo ERREUR: Mise a jour des fichiers echouee
+        pause
+        exit /b 1
+    )
 )
 
 echo.
-echo Version: %VERSION%
-echo.
 
-REM Remonter dans le dossier parent du projet
+REM Se deplacer a la racine du projet
 cd ..
 
 echo [0/6] Verification des processus Node.js/Next.js...
@@ -139,12 +171,12 @@ cd ..
 
 echo [6.5/7] Renommage de l'APK avec la version...
 set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
-set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 
 if exist "%APK_SOURCE%" (
     move /Y "%APK_SOURCE%" "%APK_DEST%"
     if exist "%APK_DEST%" (
-        echo APK renomme: edt_cnam_v%VERSION%.apk
+        echo APK renomme: edt_cnam_v!VERSION!.apk
     ) else (
         echo ERREUR: Impossible de renommer l'APK
         pause
@@ -162,12 +194,12 @@ echo   BUILD APK TERMINE !
 echo ========================================
 echo.
 echo APK genere dans:
-echo android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 echo.
 
 echo [7/7] Upload vers Supabase...
 cd mobile-config
-node upload-to-supabase.js %VERSION%
+node upload-to-supabase.js !VERSION!
 if errorlevel 1 (
     echo.
     echo ========================================
@@ -178,7 +210,7 @@ if errorlevel 1 (
     echo Verifiez votre configuration .env.local
     echo.
     echo Pour installer sur ton telephone:
-    echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+    echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
     echo.
     pause
     exit /b 0
@@ -190,24 +222,14 @@ echo   BUILD ET UPLOAD TERMINES !
 echo ========================================
 echo.
 echo APK genere localement:
-echo android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
-echo.
-echo APK disponible sur Supabase - Voir l'URL ci-dessus
-echo.
-echo Pour installer sur ton telephone:
-echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v%VERSION%.apk
+echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 echo.
 echo ========================================
-echo   N'OUBLIEZ PAS DE METTRE A JOUR:
+echo   VERSIONS MISES A JOUR AUTOMATIQUEMENT:
 echo ========================================
 echo.
-echo 1. src/app/api/version/route.js
-echo    - Changez currentVersion = "%VERSION%"
-echo.
-echo 2. src/app/page.js
-echo    - Changez UpdateChecker currentVersion="%VERSION%"
-echo.
-echo 3. capacitor.config.ts
-echo    - Changez version: '%VERSION%'
+echo - package.json : !VERSION!
+echo - src/app/api/version/route.js : !VERSION!
+echo - src/app/page.js : !VERSION!
 echo.
 pause

@@ -30,38 +30,42 @@ Push sur GitHub → Vercel déploie automatiquement
 ## 📱 Version Mobile (APK Android)
 
 ### Créer l'APK et l'uploader sur Supabase
+
+**Option 1 : Auto-incrémentation (par défaut)**
 ```bash
 cd mobile-config
 .\build-apk.bat
 ```
+→ Incrémente automatiquement la version (+0.0.1) : `1.1.1` → `1.1.2`
 
-Le script vous demandera une version (format `X.Y.Z`, ex: `1.0.0`) et fera automatiquement :
-1. Build de l'APK avec versioning
-2. Renommage : `edt_cnam_v1.0.0.apk`
-3. Upload vers Supabase Storage
-4. Suppression des anciens APK (pour économiser l'espace)
+**Option 2 : Version spécifique**
+```bash
+cd mobile-config
+.\build-apk.bat 2.0.0
+```
+→ Utilise directement la version spécifiée : `2.0.0`
+
+Le script fera automatiquement :
+1. **Incrémentation automatique** (+0.0.1) ou version paramètre
+2. **Mise à jour automatique** de tous les fichiers avec la nouvelle version :
+   - `package.json`
+   - `src/app/api/version/route.js`
+   - `src/app/page.js`
+4. Build de l'APK avec versioning
+5. Renommage : `edt_cnam_v1.1.1.apk`
+6. Upload vers Supabase Storage
+7. Suppression des anciens APK (pour économiser l'espace)
 
 **APK généré dans :** `android\app\build\outputs\apk\debug\edt_cnam_vX.X.X.apk`
 **APK en ligne :** `https://supabase.../apk/edt_cnam_vX.X.X.apk`
 
-### ⚠️ Après chaque build avec une nouvelle version
+### 🎯 Gestion automatique des versions
 
-Mettez à jour manuellement ces 3 fichiers :
-
-1. **`src/app/api/version/route.js`** - Ligne 7
-   ```javascript
-   const currentVersion = "1.0.0"; // ← Nouvelle version
-   ```
-
-2. **`src/app/page.js`** - Ligne 505
-   ```javascript
-   <UpdateChecker currentVersion="1.0.0" isNative={isNative} />
-   ```
-
-3. **`capacitor.config.ts`** - Ligne 7
-   ```typescript
-   version: '1.0.0', // ← Nouvelle version
-   ```
+La version est gérée centralement dans `package.json` et **incrémentée automatiquement à chaque build** :
+- **Par défaut** : +0.0.1 automatique (ex: `1.1.1` → `1.1.2`)
+- **Avec paramètre** : version spécifique (ex: `.\build-apk.bat 2.0.0`)
+- **Synchronisation** : tous les fichiers mis à jour automatiquement
+- **Zéro interaction** : plus de question posée !
 
 ### Système de mise à jour automatique
 
@@ -402,9 +406,16 @@ Projet personnel - EICNAM
 
 ---
 
-**Version actuelle : v1.3.0**
+**Version actuelle : v1.4.0**
 
 ## 📝 Changelog
+
+### v1.4.0 (26 octobre 2024)
+- 🤖 **Gestion automatique des versions** : Version centralisée dans `package.json`
+- ⬆️ **Auto-incrémentation** : +0.0.1 automatique à chaque build
+- 🔄 **Synchronisation automatique** : Mise à jour de tous les fichiers automatiquement
+- 🎯 **Plus de modification manuelle** : Le script gère tout !
+- ✅ **Bouton "Vérifier les mises à jour"** dans les paramètres de l'app
 
 ### v1.3.0 (26 octobre 2024)
 - 🎯 **Système de versioning** : APK nommé `edt_cnam_vX.X.X.apk` avec version incrémentale
