@@ -6,12 +6,11 @@ Application web et mobile pour consulter l'emploi du temps EICNAM.
 
 ## 🛠️ Technologies
 
-- **Frontend** : React 18.3 + Next.js 15.4
+- **Frontend** : React 19 + Next.js 16
 - **Web** : Vercel (serverless functions)
 - **Mobile** : Capacitor 6.0 (APK Android)
 - **Styling** : CSS modules + CSS custom properties
-- **Backend** : Supabase (à venir - v2.0)
-- **Notifications** : Firebase FCM (à venir - v2.0)
+- **Storage** : Supabase (hébergement APK)
 
 ---
 
@@ -30,27 +29,53 @@ Push sur GitHub → Vercel déploie automatiquement
 
 ## 📱 Version Mobile (APK Android)
 
-### Créer l'APK
+### Créer l'APK et l'uploader sur Supabase
 ```bash
 cd mobile-config
 .\build-apk.bat
 ```
 
+Le script fait automatiquement :
+1. Build de l'APK
+2. Upload vers Supabase Storage
+3. Suppression de l'ancien APK (si existant)
+
 **APK généré dans :** `android\app\build\outputs\apk\debug\app-debug.apk`
+**APK en ligne :** Voir `.env.local` pour l'URL Supabase
+
+### Configuration Supabase
+
+Créez un fichier `.env.local` à la racine avec :
+```env
+# URL du projet Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://votre-project-id.supabase.co
+SUPABASE_SERVICE_ROLE=votre-service-role-key
+
+# URL publique de l'APK (pour la popup de téléchargement)
+NEXT_PUBLIC_APK_URL=https://votre-project-id.supabase.co/storage/v1/object/public/Apk%20Edt%20Eicnam/apk/app-debug.apk
+
+# URL du fichier ICS EICNAM
+ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
+NEXT_PUBLIC_ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
+```
+
+**Note :** La `SUPABASE_SERVICE_ROLE` est nécessaire pour uploader l'APK automatiquement. Trouvez-la dans : Supabase Dashboard → Project Settings → API → service_role key
 
 ### Installer sur téléphone
+
+**Via URL directe :**
+L'APK est uploadé sur Supabase et accessible via l'URL configurée dans `.env.local`
 
 **Via USB :**
 ```bash
 adb install android\app\build\outputs\apk\debug\app-debug.apk
 ```
 
-**Via fichier :**
-Copier l'APK sur le téléphone et l'installer directement
-
 ### Prérequis
 - Android Studio installé
 - JDK 17+ installé
+- Compte Supabase (gratuit)
+- Bucket Supabase `Apk Edt Eicnam` créé et configuré en public
 
 ---
 
@@ -174,6 +199,7 @@ L'application choisit automatiquement la semaine à afficher selon cette logique
 - ✅ Jours dépliables/repliables
 - ✅ Scroll automatique vers aujourd'hui
 - ✅ Pull-to-refresh (mobile)
+- ✅ 📲 **Popup de téléchargement APK** (Android web uniquement)
 
 ### Version future (v2.0) - Optionnel
 - 🔄 Notifications push automatiques
@@ -187,16 +213,7 @@ L'application choisit automatiquement la semaine à afficher selon cette logique
 
 ## 🔑 Variables d'environnement
 
-`.env.local` (optionnel) :
-```bash
-# URL du fichier ICS EICNAM
-ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
-
-# Pour mobile (facultatif, hardcodé dans icsService.js)
-NEXT_PUBLIC_ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
-```
-
-**Note** : Le fichier `.env.local` n'est plus obligatoire. L'API utilise une URL par défaut si non configurée.
+Voir la section "Configuration Supabase" ci-dessus pour le fichier `.env.local` complet.
 
 ---
 
@@ -280,10 +297,9 @@ cd mobile-config
 
 ## 📚 Documentation
 
-- **ORGANISATION.md** - Structure du projet
-- **REFACTORING_MOBILE.md** - Détails du refactoring mobile
-- **mobile-config/README.md** - Doc build APK
-- **mobile-config/*.md** - Guides détaillés
+- **CONFIGURATION.md** - Configuration Supabase et variables d'environnement
+- **mobile-config/GUIDE.md** - Guide complet pour créer l'APK
+- **env.example** - Template des variables d'environnement
 
 ---
 
@@ -335,8 +351,6 @@ Le projet utilise une configuration conditionnelle basée sur `BUILD_MODE` :
 | **Web** | `npm run build` | Mode normal (avec API routes) |
 | **Mobile** | `.\build-apk.bat` | Export statique (`BUILD_MODE=mobile`) |
 
-**Détails** : Voir `BUILD_MODES.md`
-
 ### Changer l'URL ICS
 Éditer `src/services/icsService.js` :
 ```javascript
@@ -358,9 +372,19 @@ Projet personnel - EICNAM
 
 ---
 
-**Version actuelle : v1.1**
+**Version actuelle : v1.2.1**
 
 ## 📝 Changelog
+
+### v1.2.1 (26 octobre 2024)
+- 🔧 **Fix upload Supabase** : Correction de la configuration (bucket `Apk Edt Eicnam`, dossier `apk/`, variable `SUPABASE_SERVICE_ROLE`)
+- 🗑️ **Suppression automatique** : L'ancien APK est supprimé avant l'upload du nouveau
+- 📚 **Documentation mise à jour** : Toutes les références corrigées dans README, CONFIGURATION.md, et guides
+
+### v1.2 (26 octobre 2024)
+- 📤 **Upload automatique vers Supabase** : L'APK est automatiquement uploadé sur Supabase après chaque build
+- 🔧 **Fix restauration configuration** : Le script restaure automatiquement `next.config.js` en mode web après le build APK
+- ⚙️ **Configuration Supabase** : Guide complet pour configurer l'upload automatique
 
 ### v1.1 (25 octobre 2024)
 - ✨ **Sélection intelligente de semaine** : Affiche automatiquement la prochaine semaine avec cours si la semaine actuelle est vide

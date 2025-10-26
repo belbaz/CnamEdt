@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
 import ScrollToTop from "@/components/ScrollToTop";
+import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -496,6 +497,9 @@ export default function Home() {
 
     return (
         <div>
+            {/* Popup de téléchargement APK pour Android (web uniquement) */}
+            <ApkDownloadPopup />
+
             <Navbar
                 darkMode={darkMode}
                 onToggleDarkMode={() => setDarkMode(!darkMode)}
