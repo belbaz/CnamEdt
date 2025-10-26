@@ -1,15 +1,12 @@
 /* Timeline wrapper */
 .timeline-wrapper {
     position: relative;
-    /*padding: 0.5rem 0;*/
+    height: auto;
 }
 
 @media (max-width: 650px) {
     /* Timeline verticale */
     .timeline-wrapper {
-        display: flex;
-        align-items: flex-start;
         position: relative;
-        padding-left: 3.5rem;
     }
 }

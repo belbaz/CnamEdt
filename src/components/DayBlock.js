@@ -2,21 +2,38 @@
 import {forwardRef} from "react";
 import {isToday} from "@/utils/dateUtils";
 import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
+import {getCompactModeValues} from "@/utils/compactModeUtils";
 import TimelineWrapper from "./Timeline/TimelineWrapper";
 import "./DayBlock.css";
 
-const DayBlock = forwardRef(({day, events, subjectColors, isCollapsed, onToggle, onOpenEventDetails}, ref) => {
+const DayBlock = forwardRef(({
+    day, 
+    events, 
+    subjectColors, 
+    isCollapsed, 
+    onToggle, 
+    onOpenEventDetails,
+    compactMode = 5
+}, ref) => {
     const dayDate = events[0] ? new Date(events[0].start) : new Date();
     const todayCheck = isToday(dayDate);
     const {startMinutes, endMinutes} = getDayTimeRange(events);
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
     const currentPos = todayCheck ? getCurrentTimePosition(dayDate, startMinutes, endMinutes) : null;
     const totalMinutes = endMinutes - startMinutes;
+    const {dayHeaderMargin, dayHeaderPadding} = getCompactModeValues(compactMode);
 
     return (
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
              ref={todayCheck ? ref : null}>
-            <div className="day-header" onClick={onToggle}>
+            <div 
+                className="day-header" 
+                onClick={onToggle}
+                style={{
+                    marginBottom: `${dayHeaderMargin}rem`,
+                    paddingBottom: `${dayHeaderPadding}rem`
+                }}
+            >
                 <h2>{todayCheck ? `${day}📍` : day}</h2>
                 <button className="collapse-toggle" aria-label={isCollapsed ? 'Ouvrir' : 'Fermer'}>
                     {isCollapsed ? (
@@ -44,6 +61,7 @@ const DayBlock = forwardRef(({day, events, subjectColors, isCollapsed, onToggle,
                     events={events}
                     subjectColors={subjectColors}
                     onOpenEventDetails={onOpenEventDetails}
+                    compactMode={compactMode}
                 />
             )}
         </div>

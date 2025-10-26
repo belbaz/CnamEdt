@@ -33,9 +33,9 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 1px;
+    width: 2px;
     background: var(--border-light);
-    opacity: 0.4;
+    opacity: 0.8;
 }
 
 .time-marker.hour-marker::before {
@@ -52,6 +52,7 @@
 }
 
 .time-label {
+    border: 1px solid var(--border-color);
     position: absolute;
     bottom: .28rem;
     left: 0;
@@ -60,7 +61,7 @@
     font-weight: 600;
     color: var(--text-primary);
     background: var(--bg-secondary);
-    padding: 0.2rem 0.5rem;
+    padding: 0.2rem 0.3rem;
     border-radius: 6px;
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -82,21 +83,21 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 3rem;
+        width: 1rem;
     }
 
     .time-labels-container {
         position: absolute;
         left: 0;
         top: 0;
-        width: 3rem;
+        width: 1rem;
     }
 
     .time-marker {
         position: absolute;
-        left: 2.5rem;
-        right: 0;
-        height: 1px;
+        left: 0.8rem;
+        width: 0.2rem;
+        height: 2px;
     }
 
     .time-marker::before {
@@ -104,16 +105,21 @@
         position: absolute;
         left: 0;
         top: 0;
-        right: 0;
-        height: 1px;
-        background: var(--border-light);
+        width: 100%;
+        height: 2px;
+        background: var(--border-color);
         opacity: 0.4;
     }
 
+    .time-marker.hour-marker {
+        width: 0.3rem;
+        height: 3px;
+    }
+    
     .time-marker.hour-marker::before {
-        background: var(--border-color);
-        height: 2px;
-        opacity: 1;
+        background: var(--text-primary);
+        height: 3px;
+        opacity: 0.6;
     }
 
     /* Wrapper pour positionner chaque label en mobile */
@@ -121,22 +127,26 @@
         position: absolute;
         left: 0;
         right: 0;
-        height: 1px;
+        height: 0;
     }
 
     /* Labels d'heure */
     .time-label {
         position: absolute;
-        right: 100%;
-        margin-right: 0.4rem;
-        top: 50%;
+        left: 0;
+        top: 0;
         transform: translateY(-50%);
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 600;
         background: none;
         padding: 0;
+        padding-right: 0.2rem;
         box-shadow: none;
-        color: var(--text-primary);
+        color: var(--text-muted);
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        width: 0.5rem;
     }
 }

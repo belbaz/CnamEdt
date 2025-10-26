@@ -2,8 +2,18 @@
 import { useState, useEffect } from "react";
 import "./SettingsMenu.css";
 
-export default function SettingsMenu({ autoScrollToday, onToggleAutoScroll, onOpenChange }) {
+export default function SettingsMenu({ 
+    autoScrollToday, 
+    onToggleAutoScroll, 
+    onOpenChange,
+    compactMode,
+    onCompactModeChange,
+    testMode,
+    onToggleTestMode,
+    isMobile = false
+}) {
     const [isOpen, setIsOpen] = useState(false);
+    const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
 
     useEffect(() => {
         if (typeof onOpenChange === 'function') {
@@ -41,6 +51,38 @@ export default function SettingsMenu({ autoScrollToday, onToggleAutoScroll, onOp
                                     <span>Défiler automatiquement vers aujourd'hui</span>
                                 </label>
                             </div>
+
+                            <div className="setting-item slider-item">
+                                <div className="slider-label">
+                                    <span>Compacité</span>
+                                    <span className="slider-value">
+                                        {compactMode <= 3 ? 'Compact' : 
+                                         compactMode <= 6 ? 'Assez compact' : 'Normal'}
+                                    </span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="10"
+                                    step="1"
+                                    value={compactMode}
+                                    onChange={(e) => onCompactModeChange(parseInt(e.target.value))}
+                                    className="slider"
+                                />
+                            </div>
+
+                            {isDev && (
+                                <div className="setting-item">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={testMode}
+                                            onChange={(e) => onToggleTestMode(e.target.checked)}
+                                        />
+                                        <span>Mode Test (Cours de test)</span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </>

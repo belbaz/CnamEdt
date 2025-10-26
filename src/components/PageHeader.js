@@ -8,7 +8,11 @@ export default function PageHeader({
                                        isMobile = false,
                                        autoScrollToday,
                                        onToggleAutoScroll,
-                                       onSettingsOpenChange
+                                       onSettingsOpenChange,
+                                       compactMode,
+                                       onCompactModeChange,
+                                       testMode,
+                                       onToggleTestMode
                                    }) {
     return (
         <div className="page-header">
@@ -21,13 +25,16 @@ export default function PageHeader({
 
                 </div>
                 <div className="header-actions">
-                    {isMobile && (
-                        <SettingsMenu
-                            autoScrollToday={autoScrollToday}
-                            onToggleAutoScroll={onToggleAutoScroll}
-                            onOpenChange={onSettingsOpenChange}
-                        />
-                    )}
+                    <SettingsMenu
+                        autoScrollToday={autoScrollToday}
+                        onToggleAutoScroll={onToggleAutoScroll}
+                        onOpenChange={onSettingsOpenChange}
+                        compactMode={compactMode}
+                        onCompactModeChange={onCompactModeChange}
+                        testMode={testMode}
+                        onToggleTestMode={onToggleTestMode}
+                        isMobile={isMobile}
+                    />
                     <button
                         className="theme-toggle"
                         onClick={onToggleDarkMode}

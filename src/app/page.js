@@ -33,6 +33,7 @@ export default function Home() {
     const [testMode, setTestModeState] = useState(false);
     const [todaySpacing, setTodaySpacing] = useState(0);
     const [shouldScrollToToday, setShouldScrollToToday] = useState(false);
+    const [compactMode, setCompactMode] = useState(5); // 0-10, default 5 (Normal)
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -256,6 +257,9 @@ export default function Home() {
                 // Erreur silencieuse lors du chargement des jours repliés
             }
         }
+
+        const savedCompactMode = localStorage.getItem("compactMode");
+        if (savedCompactMode !== null) setCompactMode(parseInt(savedCompactMode));
     }, []);
 
     useEffect(() => {
@@ -385,6 +389,11 @@ export default function Home() {
         localStorage.setItem('autoScrollToday', enabled.toString());
     };
 
+    const handleCompactModeChange = (mode) => {
+        setCompactMode(mode);
+        localStorage.setItem('compactMode', mode.toString());
+    };
+
     const handleToggleDay = (day) => {
         const newCollapsedDays = {
             ...collapsedDays,
@@ -504,6 +513,8 @@ export default function Home() {
                 allDaysCollapsed={Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => collapsedDays[d])}
                 testMode={testMode}
                 onToggleTestMode={handleToggleTestMode}
+                compactMode={compactMode}
+                onCompactModeChange={handleCompactModeChange}
             />
 
             <main className={styles.container}>
@@ -577,6 +588,7 @@ export default function Home() {
                                 isCollapsed={collapsedDays[day] || false}
                                 onToggle={() => handleToggleDay(day)}
                                 onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                compactMode={compactMode}
                             />
                             {isToday && todaySpacing > 0 && (
                                 <div 

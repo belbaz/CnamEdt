@@ -4,6 +4,9 @@ import "./TimeMarkers.css";
 export default function TimeMarkers({markers, startMinutes, endMinutes, totalMinutes}) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
+    // Utiliser les mêmes valeurs que pour les événements (non arrondies)
+    const total = endMinutes - startMinutes;
+
     return (
         <>
             {/* Conteneur pour les traits (sous les cours) */}
@@ -12,7 +15,6 @@ export default function TimeMarkers({markers, startMinutes, endMinutes, totalMin
                 style={isMobile ? {height: `${totalMinutes}px`} : {}}
             >
                 {markers.map((marker, idx) => {
-                    const total = endMinutes - startMinutes;
                     const markerPos = ((marker.totalMinutes - startMinutes) / total) * 100;
                     return (
                         <div
@@ -31,7 +33,6 @@ export default function TimeMarkers({markers, startMinutes, endMinutes, totalMin
             >
                 {markers.map((marker, idx) => {
                     if (!marker.isHour) return null;
-                    const total = endMinutes - startMinutes;
                     const markerPos = ((marker.totalMinutes - startMinutes) / total) * 100;
                     return (
                         <div
