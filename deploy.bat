@@ -54,6 +54,9 @@ if not exist edt-cnam-release-key.keystore (
         for /f "tokens=1,2 delims==" %%a in ('findstr /C:"KEYSTORE_PASSWORD" .env.local') do set KEYSTORE_PASSWORD=%%b
     )
     
+    REM Enlever les guillemets si presents
+    set KEYSTORE_PASSWORD=!KEYSTORE_PASSWORD:"=!
+    
     if "!KEYSTORE_PASSWORD!"=="" (
         echo ERREUR: KEYSTORE_PASSWORD non trouve dans .env.local
         echo Ajoutez: KEYSTORE_PASSWORD=VotreMotDePasse
@@ -70,7 +73,10 @@ if not exist edt-cnam-release-key.keystore (
         exit /b 1
     )
     
-    REM Creer keystore.properties
+    REM Copier la cle dans le dossier android
+    copy /Y edt-cnam-release-key.keystore android\edt-cnam-release-key.keystore >nul
+    
+    REM Creer keystore.properties (chemin relatif depuis android/app/)
     (
     echo storeFile=../edt-cnam-release-key.keystore
     echo storePassword=!KEYSTORE_PASSWORD!
@@ -78,14 +84,11 @@ if not exist edt-cnam-release-key.keystore (
     echo keyPassword=!KEYSTORE_PASSWORD!
     ) > android\keystore.properties
     
-    REM Configurer build.gradle automatiquement
-    powershell -Command "(Get-Content android\app\build.gradle) -replace 'apply plugin: ''com.android.application''', 'def keystorePropertiesFile = rootProject.file(\"keystore.properties\")%0Adef keystoreProperties = new Properties()%0Aif (keystorePropertiesFile.exists()) {%0A    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))%0A}%0A%0Aapply plugin: ''com.android.application''' | Set-Content android\app\build.gradle"
-    
-    powershell -Command "(Get-Content android\app\build.gradle) -replace '    buildTypes \{', '    signingConfigs {%0A        release {%0A            if (keystorePropertiesFile.exists()) {%0A                keyAlias keystoreProperties[''keyAlias'']%0A                keyPassword keystoreProperties[''keyPassword'']%0A                storeFile file(keystoreProperties[''storeFile''])%0A                storePassword keystoreProperties[''storePassword'']%0A            }%0A        }%0A    }%0A%0A    buildTypes {' | Set-Content android\app\build.gradle"
-    
-    powershell -Command "(Get-Content android\app\build.gradle) -replace '        release \{', '        release {%0A            signingConfig signingConfigs.release' | Set-Content android\app\build.gradle"
-    
-    echo Signature configuree automatiquement
+    echo Cle de signature creee
+    echo.
+    echo IMPORTANT: Le fichier android\app\build.gradle doit etre configure pour la signature.
+    echo Si ce n'est pas deja fait, consultez SIGNING_GUIDE.md
+    echo.
 ) else (
     echo Cle de signature trouvee
 )
