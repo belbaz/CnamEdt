@@ -1,0 +1,490 @@
+.vertical-schedule-empty {
+    width: 100%;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.vertical-schedule-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    margin-bottom: 2rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-secondary);
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Force le scroll horizontal sur mobile uniquement */
+@media (max-width: 768px) {
+    .vertical-schedule-container {
+        overflow-x: scroll;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        width: 100%;
+        max-width: 100vw;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .vertical-schedule-wrapper {
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+    }
+
+    .vertical-schedule-header {
+        min-width: max-content;
+        width: max-content;
+        max-width: none;
+    }
+
+    .vertical-schedule-body {
+        min-width: max-content;
+        width: max-content;
+        max-width: none;
+    }
+}
+
+.vertical-schedule-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.vertical-schedule-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.vertical-schedule-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.vertical-schedule-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+.vertical-schedule-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-width: fit-content;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* En-tête avec les jours */
+.vertical-schedule-header {
+    display: grid;
+    grid-template-columns: 60px repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    position: sticky;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-secondary);
+    padding: 0.5rem 0;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.vertical-time-column-header {
+    /* Colonne vide pour aligner avec les heures */
+}
+
+.vertical-day-header {
+    padding: 0.75rem 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.vertical-day-header.today {
+    border: 2px solid #4299e1;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+.vertical-day-header h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Corps du planning */
+.vertical-schedule-body {
+    display: grid;
+    grid-template-columns: 60px repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+    position: relative;
+}
+
+/* Colonne des heures */
+.vertical-time-column {
+    position: sticky;
+    left: 0;
+    z-index: 50;
+    background: var(--bg-secondary);
+    border-right: 2px solid var(--border-color);
+    padding-right: 0.5rem;
+}
+
+.vertical-time-label {
+    position: absolute;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Colonnes des jours - Les colonnes sont maintenant directement dans le grid de .vertical-schedule-body */
+
+.vertical-day-column {
+    position: relative;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    min-height: 400px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.vertical-day-column.today {
+    border: 2px solid #4299e1;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+/* Marqueurs de temps */
+.vertical-time-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.vertical-time-marker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-top: 1px solid var(--border-light);
+    opacity: 0.4;
+}
+
+.vertical-time-marker.hour {
+    border-top: 2px solid var(--border-color);
+    opacity: 0.6;
+}
+
+/* Indicateur de temps actuel */
+.vertical-current-time-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.vertical-current-time-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #4299e1;
+    box-shadow: 0 0 4px rgba(66, 153, 225, 0.6);
+}
+
+.vertical-current-time-dot {
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: #4299e1;
+    border: 2px solid var(--bg-secondary);
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(66, 153, 225, 0.6);
+}
+
+/* Overlay pour le temps passé */
+.vertical-time-passed-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(66, 153, 225, 0.05);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Conteneur des événements */
+.vertical-events-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    padding: 0.2rem;
+    box-sizing: border-box;
+    z-index: 5;
+    overflow: hidden;
+}
+
+/* Styles spécifiques pour les cartes d'événements en mode vertical - une seule ligne */
+.vertical-events-container .event-card {
+    overflow: hidden;
+    padding: 0.5rem 0.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    min-height: auto;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.vertical-events-container .event-time {
+    margin-bottom: 0.25rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+.vertical-events-container .event-info {
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    width: 100%;
+}
+
+.vertical-events-container .event-info strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    max-height: 1.2em;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
+    line-height: 1.2em;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+/* Afficher prof et location de manière compacte en mode vertical */
+.vertical-events-container .prof {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin: 0;
+    margin-top: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.vertical-events-container .location {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin: 0;
+    margin-top: 0.12rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.vertical-events-container .prof::before {
+    content: "👤 ";
+    opacity: 0.7;
+}
+
+.vertical-events-container .location::before {
+    content: "📍 ";
+    opacity: 0.7;
+}
+
+/* S'assurer que le conteneur peut contenir tout de manière compacte */
+.vertical-events-container .event-card {
+    min-height: fit-content;
+    max-height: 100%;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .vertical-schedule-header {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 140px);
+        gap: 0.3rem;
+        padding: 0.3rem 0;
+        width: max-content;
+    }
+
+    .vertical-day-header {
+        padding: 0.5rem 0.3rem;
+        border-radius: 10px;
+        width: 140px;
+        flex-shrink: 0;
+    }
+
+    .vertical-day-header h3 {
+        font-size: 0.75rem;
+    }
+
+    .vertical-schedule-body {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 140px);
+        gap: 0.3rem;
+        width: max-content;
+    }
+
+    .vertical-day-column {
+        width: 140px;
+        max-width: 140px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        min-height: 300px;
+        box-sizing: border-box;
+    }
+
+    .vertical-time-label {
+        font-size: 0.7rem;
+        right: 0.3rem;
+    }
+
+    .vertical-events-container {
+        padding: 0.15rem;
+    }
+
+    /* Ajustements responsive pour les événements */
+    .vertical-events-container .event-card {
+        padding: 0.45rem 0.4rem;
+        padding-top: 0.4rem;
+        padding-bottom: 0.4rem;
+    }
+
+    .vertical-events-container .event-time {
+        font-size: 0.6rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .vertical-events-container .event-info strong {
+        font-size: 0.75rem;
+        margin-bottom: 0.12rem;
+        line-height: 1.15;
+    }
+
+    .vertical-events-container .prof {
+        font-size: 0.6rem;
+        margin-top: 0.1rem;
+        line-height: 1.25;
+    }
+
+    .vertical-events-container .location {
+        font-size: 0.6rem;
+        margin-top: 0.08rem;
+        line-height: 1.25;
+    }
+}
+
+@media (max-width: 650px) {
+    .vertical-schedule-header {
+        display: grid;
+        grid-template-columns: 45px repeat(7, 130px);
+        gap: 0.25rem;
+        width: max-content;
+    }
+
+    .vertical-day-header {
+        width: 130px;
+        flex-shrink: 0;
+    }
+
+    .vertical-day-header h3 {
+        font-size: 0.7rem;
+    }
+
+    .vertical-schedule-body {
+        display: grid;
+        grid-template-columns: 45px repeat(7, 130px);
+        gap: 0.25rem;
+        width: max-content;
+    }
+
+    .vertical-day-column {
+        width: 130px;
+        max-width: 130px;
+        flex-shrink: 0;
+        min-height: 250px;
+        box-sizing: border-box;
+    }
+
+    .vertical-time-label {
+        font-size: 0.65rem;
+    }
+
+    .vertical-events-container {
+        padding: 0.12rem;
+    }
+
+    /* Ajustements très compacts pour petits écrans */
+    .vertical-events-container .event-card {
+        padding: 0.4rem 0.35rem;
+        padding-top: 0.35rem;
+        padding-bottom: 0.35rem;
+    }
+
+    .vertical-events-container .event-time {
+        font-size: 0.55rem;
+        margin-bottom: 0.12rem;
+    }
+
+    .vertical-events-container .event-info strong {
+        font-size: 0.7rem;
+        margin-bottom: 0.1rem;
+        line-height: 1.1;
+    }
+
+    .vertical-events-container .prof {
+        font-size: 0.55rem;
+        margin-top: 0.08rem;
+        line-height: 1.2;
+    }
+
+    .vertical-events-container .location {
+        font-size: 0.55rem;
+        margin-top: 0.06rem;
+        line-height: 1.2;
+    }
+}

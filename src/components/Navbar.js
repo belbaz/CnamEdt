@@ -25,7 +25,9 @@ export default function Navbar({
     onCompactModeChange,
     isNative = false,
     currentVersion = null,
-    onCheckUpdates = null
+    onCheckUpdates = null,
+    viewMode = 'horizontal',
+    onViewModeChange = null
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -71,6 +73,8 @@ export default function Navbar({
                     isNative={isNative}
                     currentVersion={currentVersion}
                     onCheckUpdates={onCheckUpdates}
+                    viewMode={viewMode}
+                    onViewModeChange={onViewModeChange}
                 />
 
                 <div className="navbar-controls">

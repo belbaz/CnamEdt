@@ -9,6 +9,7 @@ import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
+import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
 import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
@@ -37,6 +38,7 @@ export default function Home() {
     const [todaySpacing, setTodaySpacing] = useState(0);
     const [shouldScrollToToday, setShouldScrollToToday] = useState(false);
     const [compactMode, setCompactMode] = useState(5); // 0-10, default 5 (Normal)
+    const [viewMode, setViewMode] = useState('horizontal'); // 'horizontal' or 'vertical'
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -266,6 +268,9 @@ export default function Home() {
 
         const savedCompactMode = localStorage.getItem("compactMode");
         if (savedCompactMode !== null) setCompactMode(parseInt(savedCompactMode));
+
+        const savedViewMode = localStorage.getItem("viewMode");
+        if (savedViewMode) setViewMode(savedViewMode);
     }, []);
 
     useEffect(() => {
@@ -400,6 +405,11 @@ export default function Home() {
         localStorage.setItem('compactMode', mode.toString());
     };
 
+    const handleViewModeChange = (mode) => {
+        setViewMode(mode);
+        localStorage.setItem('viewMode', mode);
+    };
+
     const handleToggleDay = (day) => {
         const newCollapsedDays = {
             ...collapsedDays,
@@ -514,7 +524,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.37" 
+                currentVersion="1.1.39" 
                 isNative={isNative} 
             />
 
@@ -538,8 +548,10 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.37"
+                currentVersion="1.1.39"
                 onCheckUpdates={handleCheckUpdates}
+                viewMode={viewMode}
+                onViewModeChange={handleViewModeChange}
             />
 
             <main className={styles.container}>
@@ -599,35 +611,44 @@ export default function Home() {
 
                 {loading && <LoadingSpinner/>}
 
-                {!loading && Object.entries(groupByDay).map(([day, evs], index) => {
-                    const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
-                    const isToday = dayDate.toDateString() === new Date().toDateString();
-                    
-                    return (
-                        <div key={day}>
-                            <DayBlock
-                                ref={isToday ? todayRef : null}
-                                day={day}
-                                events={evs}
-                                subjectColors={subjectColors}
-                                isCollapsed={collapsedDays[day] || false}
-                                onToggle={() => handleToggleDay(day)}
-                                onOpenEventDetails={(ev) => setSelectedEvent(ev)}
-                                compactMode={compactMode}
-                            />
-                            {isToday && todaySpacing > 0 && (
-                                <div 
-                                    style={{
-                                        height: `${todaySpacing}px`,
-                                        width: '100%',
-                                        background: 'transparent'
-                                    }}
-                                    aria-hidden="true"
+                {!loading && viewMode === 'vertical' ? (
+                    <VerticalSchedule
+                        events={events}
+                        subjectColors={subjectColors}
+                        onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                        compactMode={compactMode}
+                    />
+                ) : (
+                    Object.entries(groupByDay).map(([day, evs], index) => {
+                        const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
+                        const isToday = dayDate.toDateString() === new Date().toDateString();
+                        
+                        return (
+                            <div key={day}>
+                                <DayBlock
+                                    ref={isToday ? todayRef : null}
+                                    day={day}
+                                    events={evs}
+                                    subjectColors={subjectColors}
+                                    isCollapsed={collapsedDays[day] || false}
+                                    onToggle={() => handleToggleDay(day)}
+                                    onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                    compactMode={compactMode}
                                 />
-                            )}
-                        </div>
-                    );
-                })}
+                                {isToday && todaySpacing > 0 && (
+                                    <div 
+                                        style={{
+                                            height: `${todaySpacing}px`,
+                                            width: '100%',
+                                            background: 'transparent'
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                )}
+                            </div>
+                        );
+                    })
+                )}
             </main>
 
             <Footer />

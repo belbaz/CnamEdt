@@ -3,8 +3,13 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 1rem 1rem 1rem;
-    overflow-x: hidden;
+    overflow-x: visible;
     box-sizing: border-box;
+}
+
+/* Permettre le scroll horizontal pour la vue verticale du planning */
+.container:has(.vertical-schedule-container) {
+    overflow-x: visible;
 }
 
 /* Tablettes */
