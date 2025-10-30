@@ -31,66 +31,93 @@ function checkDeploymentStatus() {
             return { available: false, error: 'Vercel CLI non disponible' };
         }
 
-        // Récupérer les déploiements récents
-        // Essayer plusieurs formats de sortie selon la version de Vercel CLI
+        // Récupérer les déploiements récents avec plusieurs méthodes
+        let latest = null;
         let output;
+        
+        // Essayer vercel ls --json (format le plus simple)
         try {
-            output = execSync('vercel ls --limit 1 --json', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-        } catch (error) {
-            // Si --json ne fonctionne pas, essayer sans JSON et parser
-            try {
-                output = execSync('vercel ls --limit 1', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-                // Si c'est du texte, on ne peut pas parser facilement
-                return { available: true, status: 'PARSING_ERROR', message: 'Format de sortie non-JSON' };
-            } catch {
-                return { available: true, error: 'Impossible d\'exécuter vercel ls', status: 'ERROR_CHECK' };
-            }
-        }
-
-        // Parser le JSON
-        let deployments;
-        try {
-            // Vercel peut retourner plusieurs lignes JSON ou un seul objet
-            const lines = output.trim().split('\n').filter(line => line.trim());
-            if (lines.length === 0) {
-                return { available: true, status: 'NO_DEPLOYMENT', message: 'Aucun déploiement trouvé' };
-            }
+            output = execSync('vercel ls --limit 5 --json', { 
+                encoding: 'utf-8', 
+                stdio: ['ignore', 'pipe', 'ignore'],
+                timeout: 15000
+            });
             
-            // Essayer de parser chaque ligne comme JSON
-            deployments = lines.map(line => {
-                try {
-                    return JSON.parse(line);
-                } catch {
-                    return null;
+            if (output && output.trim()) {
+                const lines = output.trim().split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    return trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['));
+                });
+                
+                const deployments = [];
+                for (const line of lines) {
+                    try {
+                        const parsed = JSON.parse(line);
+                        if (Array.isArray(parsed)) {
+                            deployments.push(...parsed);
+                        } else if (parsed && typeof parsed === 'object') {
+                            deployments.push(parsed);
+                        }
+                    } catch (e) {
+                        // Ignorer les lignes non-JSON valides
+                    }
                 }
-            }).filter(Boolean);
-            
-            if (deployments.length === 0) {
-                // Essayer de parser toute la sortie comme un tableau JSON
-                deployments = JSON.parse(output);
+                
+                if (deployments.length > 0) {
+                    // Trier par date (plus récent en premier)
+                    deployments.sort((a, b) => {
+                        const timeA = a.createdAt || a.created || 0;
+                        const timeB = b.createdAt || b.created || 0;
+                        return timeB - timeA;
+                    });
+                    latest = deployments[0];
+                } else if (output.trim().length > 0) {
+                    // Si on a une sortie mais pas de JSON valide, afficher un warning
+                    // Mais continuer quand même
+                }
             }
-        } catch (parseError) {
-            return { available: true, error: 'Erreur de parsing: ' + parseError.message, status: 'ERROR_CHECK' };
+        } catch (error) {
+            // Si vercel ls échoue, on retourne une erreur avec plus d'infos
+            return { 
+                available: true, 
+                error: `Erreur vercel ls: ${error.message || 'Commande échouée'}. Essayez: vercel login`, 
+                status: 'ERROR_CHECK' 
+            };
         }
         
-        if (!deployments || deployments.length === 0) {
+        if (!latest) {
             return { available: true, status: 'NO_DEPLOYMENT', message: 'Aucun déploiement trouvé' };
         }
 
-        // Si c'est un tableau, prendre le premier élément
-        const latest = Array.isArray(deployments) ? deployments[0] : deployments;
-        const state = latest.state || latest.status || 'UNKNOWN';
-        const url = latest.url || latest.ready?.url || 'N/A';
+        // Extraire les informations du déploiement
+        const state = latest.state || latest.readyState || latest.status || 'UNKNOWN';
+        const url = latest.url || latest.ready?.url || latest.deployment?.url || latest.target?.url || 'N/A';
         const createdAt = latest.createdAt ? new Date(latest.createdAt * 1000).toLocaleTimeString('fr-FR') : 
-                         latest.created ? new Date(latest.created).toLocaleTimeString('fr-FR') : 'N/A';
+                         latest.created ? new Date(latest.created * 1000).toLocaleTimeString('fr-FR') :
+                         latest.readyAt ? new Date(latest.readyAt * 1000).toLocaleTimeString('fr-FR') : 'N/A';
+
+        // Normaliser le statut - Vercel utilise différents noms
+        const normalizedState = String(state).toUpperCase().trim();
+        // READY, DEPLOYED, COMPLETED sont terminés
+        // BUILDING, QUEUED, INITIALIZING, ANALYZING sont en cours
+        // ERROR, FAILED, CANCELED sont en erreur
+        const isReady = normalizedState === 'READY' || 
+                       normalizedState === 'DEPLOYED' || 
+                       normalizedState === 'COMPLETED' ||
+                       normalizedState === 'PREVIEW';
+        const isError = normalizedState.includes('ERROR') || 
+                       normalizedState === 'CANCELED' || 
+                       normalizedState === 'FAILED' || 
+                       normalizedState.includes('BUILD_ERROR') ||
+                       normalizedState.includes('FAIL');
 
         return {
             available: true,
-            status: state,
+            status: normalizedState,
             url: url,
             createdAt: createdAt,
-            ready: state === 'READY' || state === 'DEPLOYED',
-            error: state === 'ERROR' || state === 'CANCELED' || state === 'FAILED'
+            ready: isReady,
+            error: isError
         };
     } catch (error) {
         return { available: true, error: error.message, status: 'ERROR_CHECK' };
@@ -112,9 +139,21 @@ async function monitorDeployment() {
         }
 
         if (result.error && result.status === 'ERROR_CHECK') {
-            // Erreur de vérification, continuer à vérifier
+            // Erreur de vérification, afficher l'erreur et continuer
+            if (checks === 0 || checks % 6 === 0) {
+                console.log(`\n⚠️  ${result.error || 'Impossible de récupérer le statut'}`);
+                console.log(`   Le déploiement est probablement terminé.`);
+                console.log(`   Consultez le dashboard: https://vercel.com/dashboard`);
+                console.log(`   Ou vérifiez manuellement: vercel ls\n`);
+            }
             process.stdout.write(`\r⏳ Vérification... (${checks + 1}/${maxChecks})`);
         } else if (result.status === 'NO_DEPLOYMENT') {
+            // Si on n'a pas de déploiement après plusieurs tentatives, considérer qu'il est terminé
+            if (checks >= 6) {
+                console.log(`\n\n✅ Déploiement probablement terminé (détection impossible)`);
+                console.log(`   Vérifiez manuellement: https://vercel.com/dashboard\n`);
+                process.exit(0);
+            }
             process.stdout.write(`\r⏳ En attente du démarrage du déploiement... (${checks + 1}/${maxChecks})`);
         } else if (result.ready) {
             console.log(`\n\n✅ ========================================`);
@@ -134,8 +173,16 @@ async function monitorDeployment() {
         } else {
             // En cours (BUILDING, QUEUED, etc.)
             const statusEmoji = result.status === 'BUILDING' ? '🔨' : 
-                              result.status === 'QUEUED' ? '⏸️' : '⏳';
-            process.stdout.write(`\r${statusEmoji} Statut: ${result.status}... (${checks + 1}/${maxChecks})`);
+                              result.status === 'QUEUED' ? '⏸️' : 
+                              result.status === 'INITIALIZING' ? '🚀' :
+                              result.status === 'ANALYZING' ? '🔍' : '⏳';
+            
+            // Afficher le statut avec plus d'infos toutes les 3 vérifications
+            if (checks % 3 === 0) {
+                process.stdout.write(`\r${statusEmoji} Statut: ${result.status}... (${checks + 1}/${maxChecks})`);
+            } else {
+                process.stdout.write(`\r${statusEmoji} ${result.status}... (${checks + 1}/${maxChecks})`);
+            }
         }
 
         checks++;

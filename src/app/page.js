@@ -513,7 +513,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.29" 
+                currentVersion="1.1.30" 
                 isNative={isNative} 
             />
 
@@ -537,7 +537,7 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.29"
+                currentVersion="1.1.30"
                 onCheckUpdates={handleCheckUpdates}
             />
 

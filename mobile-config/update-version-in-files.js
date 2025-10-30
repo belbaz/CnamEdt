@@ -18,7 +18,31 @@ function versionToCode(version) {
     const parts = version.split('.').map(Number);
     // Format: X.Y.Z -> X*10000 + Y*100 + Z (ex: 1.1.23 -> 10000 + 100 + 23 = 10123)
     // Support jusqu'à 99.99.99 (versionCode max: 999999)
-    return parts[0] * 10000 + parts[1] * 100 + (parts[2] || 0);
+    let code = parts[0] * 10000 + parts[1] * 100 + (parts[2] || 0);
+    
+    // S'assurer que le versionCode est toujours supérieur au précédent
+    // Lire le versionCode actuel depuis build.gradle
+    const buildGradlePath = path.join(__dirname, '..', 'android', 'app', 'build.gradle');
+    if (fs.existsSync(buildGradlePath)) {
+        try {
+            const buildGradleContent = fs.readFileSync(buildGradlePath, 'utf-8');
+            const currentCodeMatch = buildGradleContent.match(/versionCode (\d+)/);
+            if (currentCodeMatch) {
+                const currentCode = parseInt(currentCodeMatch[1], 10);
+                // Si le nouveau code est inférieur ou égal, l'incrémenter
+                if (code <= currentCode) {
+                    console.log(`⚠️  Attention: Le versionCode calculé (${code}) est inférieur ou égal au versionCode actuel (${currentCode})`);
+                    console.log(`   Incrémentation du versionCode à ${currentCode + 1} pour éviter les conflits d'update`);
+                    code = currentCode + 1;
+                }
+            }
+        } catch (error) {
+            // Si on ne peut pas lire le fichier, continuer avec le code calculé
+            console.log(`⚠️  Impossible de vérifier le versionCode actuel: ${error.message}`);
+        }
+    }
+    
+    return code;
 }
 
 // Liste des fichiers à mettre à jour
