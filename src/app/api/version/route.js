@@ -3,9 +3,12 @@
  * Utilisée par l'application mobile pour vérifier les mises à jour
  */
 
+// Note: Les routes API ne fonctionnent pas avec output: 'export'
+// Le dossier API doit être renommé avant le build (voir scripts de build ou package.json)
+
 export async function GET() {
   // Version actuelle de l'APK
-  const currentVersion = "1.1.39";
+  const currentVersion = "1.1.40";
   
   // URL de l'APK sur Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aeftxgwfokzlspojzisx.supabase.co';
