@@ -12,6 +12,7 @@ import DayBlock from "@/components/DayBlock";
 import ScrollToTop from "@/components/ScrollToTop";
 import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
+import Footer from "@/components/Footer";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -513,7 +514,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.30" 
+                currentVersion="1.1.31" 
                 isNative={isNative} 
             />
 
@@ -537,7 +538,7 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.30"
+                currentVersion="1.1.31"
                 onCheckUpdates={handleCheckUpdates}
             />
 
@@ -628,6 +629,8 @@ export default function Home() {
                     );
                 })}
             </main>
+
+            <Footer />
 
             <ScrollToTop/>
 

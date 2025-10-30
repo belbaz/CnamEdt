@@ -66,6 +66,9 @@
     border: 2px solid rgba(66, 153, 225, 0.15);
     position: relative;
     overflow: hidden;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    min-width: 0;
 }
 
 .update-popup-versions::before {
@@ -92,6 +95,9 @@
     padding: 1rem;
     border-radius: 12px;
     transition: transform 0.3s ease;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .update-version:hover {
@@ -130,6 +136,9 @@
     font-weight: 900;
     letter-spacing: -1px;
     line-height: 1.2;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-all;
 }
 
 .update-version-current .update-version-number {
@@ -390,6 +399,9 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     letter-spacing: -0.5px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-all;
 }
 
 .up-to-date-message {

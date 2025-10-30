@@ -31,6 +31,18 @@ function checkDeploymentStatus() {
             return { available: false, error: 'Vercel CLI non disponible' };
         }
 
+        // Vérifier si l'utilisateur est connecté à Vercel
+        try {
+            execSync('vercel whoami', { stdio: 'ignore', timeout: 5000 });
+        } catch (authError) {
+            return { 
+                available: true, 
+                error: 'Non connecté à Vercel. Exécutez: vercel login', 
+                status: 'NOT_LOGGED_IN',
+                needsLogin: true
+            };
+        }
+
         // Récupérer les déploiements récents avec plusieurs méthodes
         let latest = null;
         let output;
@@ -138,7 +150,17 @@ async function monitorDeployment() {
             process.exit(0);
         }
 
-        if (result.error && result.status === 'ERROR_CHECK') {
+        if (result.needsLogin || result.status === 'NOT_LOGGED_IN') {
+            // Utilisateur non connecté
+            console.log(`\n⚠️  ========================================`);
+            console.log(`   VERCEL CLI NON CONNECTE`);
+            console.log(`========================================\n`);
+            console.log(`Pour suivre le déploiement, connectez-vous avec:`);
+            console.log(`   vercel login`);
+            console.log(`\nLe déploiement est probablement en cours.`);
+            console.log(`Consultez le dashboard: https://vercel.com/dashboard\n`);
+            process.exit(0);
+        } else if (result.error && result.status === 'ERROR_CHECK') {
             // Erreur de vérification, afficher l'erreur et continuer
             if (checks === 0 || checks % 6 === 0) {
                 console.log(`\n⚠️  ${result.error || 'Impossible de récupérer le statut'}`);
