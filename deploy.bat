@@ -143,22 +143,32 @@ if exist next.config.web.backup (
     copy /Y next.config.web.js next.config.js >nul
 )
 
-echo [5/8] Sync Capacitor...
-call npx cap sync android
+echo [5/8] Copy fichiers vers Android ^(cap copy - RAPIDE^)...
+REM Utiliser cap copy au lieu de cap sync (plus rapide)
+call npx cap copy android
 if errorlevel 1 (
-    echo ERREUR: Sync Capacitor echoue
-    pause
-    exit /b 1
+    echo ATTENTION: cap copy echoue, essai avec cap sync...
+    call npx cap sync android
+    if errorlevel 1 (
+        echo ERREUR: Sync Capacitor echoue
+        pause
+        exit /b 1
+    )
 )
 
-echo [6/8] Build APK (signe)...
+echo [6/8] Build APK (signe, incremental)...
 cd android
-call .\gradlew.bat clean assembleRelease
+REM Build incremental sans clean (plus rapide), fallback sur clean si necessaire
+call .\gradlew.bat assembleRelease --parallel
 if errorlevel 1 (
-    echo ERREUR: Build APK echoue
-    cd ..
-    pause
-    exit /b 1
+    echo ATTENTION: Build incremental echoue, essai avec clean...
+    call .\gradlew.bat clean assembleRelease --parallel
+    if errorlevel 1 (
+        echo ERREUR: Build APK echoue
+        cd ..
+        pause
+        exit /b 1
+    )
 )
 cd ..
 
@@ -174,22 +184,56 @@ if errorlevel 1 (
 )
 
 echo.
-echo Git commit et push...
+echo [8/8] Commit Git ^(sauvegarde des changements^)...
+REM Commit les changements pour garder l'historique
 git --version >NUL 2>&1
-if errorlevel 1 (
-    echo ERREUR: Git non installe
-    pause
-    exit /b 1
+if not errorlevel 1 (
+    git add . >nul 2>&1
+    git commit -m "Update version to !VERSION!" >nul 2>&1
+    if errorlevel 1 (
+        echo ATTENTION: Commit Git echoue ^(peut-etre aucun changement^)
+    ) else (
+        echo Changements commites localement
+    )
 )
 
-git add . >nul 2>&1
-git commit -m "Update version to !VERSION!" >nul 2>&1
-git push
-
+echo.
+echo [9/9] Deploiement Vercel...
+REM Verifier si Vercel CLI est installe
+vercel --version >NUL 2>&1
 if errorlevel 1 (
-    echo ERREUR: Git push echoue
-    pause
-    exit /b 1
+    echo ERREUR: Vercel CLI non installe
+    echo.
+    echo Installez Vercel CLI avec:
+    echo npm install -g vercel
+    echo.
+    echo Utilisation de Git push pour declencher le deploiement...
+    git push
+    if errorlevel 1 (
+        echo ERREUR: Git push echoue
+        pause
+        exit /b 1
+    )
+    echo Deploiement Vercel declenche via Git push (plus lent^)...
+) else (
+    echo Deploiement en production avec Vercel CLI ^(RAPIDE^)...
+    vercel deploy --prod --yes
+    if errorlevel 1 (
+        echo.
+        echo ATTENTION: Deploiement Vercel echoue
+        echo Tentative avec Git push...
+        git push
+        if errorlevel 1 (
+            echo ERREUR: Git push echoue aussi
+        ) else (
+            echo Deploiement Vercel declenche via Git push...
+        )
+    ) else (
+        echo Vercel deploy reussi !
+        echo.
+        echo Pour pusher les changements sur Git:
+        echo git push
+    )
 )
 
 echo.
@@ -199,7 +243,7 @@ echo ========================================
 echo.
 echo Version: !VERSION!
 echo APK signe: android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
-echo Vercel: Deploiement en cours...
+echo Site: Deploy sur Vercel
 echo.
 pause
 

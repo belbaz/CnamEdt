@@ -214,11 +214,13 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 </h2>
                 
                 <div className="update-popup-versions">
-                    <div className="update-version">
+                    <div className="update-version update-version-current">
                         <span className="update-version-label">Version actuelle</span>
                         <span className="update-version-number">{currentVersion}</span>
                     </div>
-                    <div className="update-version-arrow">→</div>
+                    <div className="update-version-arrow-container">
+                        <div className="update-version-arrow">→</div>
+                    </div>
                     <div className="update-version update-version-new">
                         <span className="update-version-label">Nouvelle version</span>
                         <span className="update-version-number">{latestVersion}</span>

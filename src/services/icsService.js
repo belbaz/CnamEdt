@@ -2,8 +2,10 @@
  * Service pour récupérer et parser les fichiers ICS
  */
 
-// URL de ton ICS EICNAM
-const ICS_URL = 'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
+// URL de l'ICS EICNAM (utilise la variable d'environnement si disponible, sinon fallback)
+// Next.js remplace process.env.NEXT_PUBLIC_* au moment du build
+const ICS_URL = process.env.NEXT_PUBLIC_ICS_URL || 
+    'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
 
 /**
  * Parse un fichier ICS en format texte vers un tableau d'événements

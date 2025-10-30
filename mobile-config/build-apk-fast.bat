@@ -1,8 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 echo ========================================
-echo   Build APK EDT EICNAM
+echo   Build APK RAPIDE EDT EICNAM
 echo ========================================
+echo.
+echo MODE RAPIDE: Skip clean, utilise cap copy, builds incrementaux
 echo.
 
 REM Verifier si une version est passee en parametre
@@ -57,8 +59,7 @@ echo.
 REM Se deplacer a la racine du projet
 cd ..
 
-echo [0/6] Verification des processus Node.js/Next.js...
-REM Tuer tous les processus node.exe qui pourraient verrouiller les fichiers
+echo [1/6] Verification des processus Node.js/Next.js...
 tasklist /FI "IMAGENAME eq node.exe" 2>NUL | find /I /N "node.exe">NUL
 if "%ERRORLEVEL%"=="0" (
     echo Processus Node.js detectes - Arret en cours...
@@ -69,88 +70,68 @@ if "%ERRORLEVEL%"=="0" (
         pause
     ) else (
         echo Processus Node.js arretes avec succes
-        timeout /t 2 /nobreak >NUL
+        timeout /t 1 /nobreak >NUL
     )
 ) else (
     echo Aucun processus Node.js en cours d'execution
 )
 
-echo [1/7] Nettoyage...
-if exist out rmdir /s /q out
-if exist android\app\build rmdir /s /q android\app\build
-
-echo [2/7] Preparation pour mobile...
+echo [2/6] Preparation pour mobile...
 REM Definir la variable d'environnement pour le build mobile
 set BUILD_MODE=mobile
 
 REM Sauvegarder la configuration web actuelle
 if exist next.config.js (
-    copy /Y next.config.js next.config.web.backup
-    echo Configuration web sauvegardee
+    copy /Y next.config.js next.config.web.backup >nul
 )
 
 REM Copier la configuration mobile de Next.js
-copy /Y mobile-config\next.config.mobile.js next.config.js
-echo Configuration Next.js mobile activee
+copy /Y mobile-config\next.config.mobile.js next.config.js >nul
 
 REM Renommer temporairement le dossier API (incompatible avec export statique)
-REM On utilise rename au lieu de move pour eviter les problemes de permissions
 if exist src\app\api (
-    if exist src\app\_api_backup rmdir /s /q src\app\_api_backup
-    rename src\app\api _api_backup
-    if exist src\app\_api_backup (
-        echo Dossier API temporairement renomme
-    ) else (
-        echo ATTENTION: Impossible de renommer le dossier API
-        echo Assurez-vous qu'aucun fichier n'est ouvert dans l'IDE
-        pause
-        exit /b 1
-    )
+    if exist src\app\_api_backup rmdir /s /q src\app\_api_backup 2>NUL
+    rename src\app\api _api_backup >nul 2>&1
 )
 
-echo [3/7] Build Next.js (export statique avec BUILD_MODE=mobile)...
+echo [3/6] Build Next.js (export statique avec BUILD_MODE=mobile)...
 call npm run build
 if errorlevel 1 (
     echo ERREUR: Build Next.js a echoue
     REM Restaurer le dossier API renomme
     if exist src\app\_api_backup (
-        if exist src\app\api rmdir /s /q src\app\api
-        rename src\app\_api_backup api
-        echo Dossier API restaure apres erreur
+        if exist src\app\api rmdir /s /q src\app\api 2>NUL
+        rename src\app\_api_backup api >nul 2>&1
     )
     REM Restaurer la configuration web
     if exist next.config.web.backup (
-        copy /Y next.config.web.backup next.config.js
+        copy /Y next.config.web.backup next.config.js >nul
         del next.config.web.backup
-        echo Configuration web restauree apres erreur
     )
     pause
     exit /b 1
 )
 
-echo [4/7] Restauration du dossier API et configuration web...
+echo [4/6] Restauration du dossier API et configuration web...
 REM Restaurer le dossier API renomme
 if exist src\app\_api_backup (
-    if exist src\app\api rmdir /s /q src\app\api
-    rename src\app\_api_backup api
-    echo Dossier API restaure
+    if exist src\app\api rmdir /s /q src\app\api 2>NUL
+    rename src\app\_api_backup api >nul 2>&1
 )
 
 REM Restaurer la configuration web
 if exist next.config.web.backup (
-    copy /Y next.config.web.backup next.config.js
+    copy /Y next.config.web.backup next.config.js >nul
     del next.config.web.backup
-    echo Configuration web restauree
 ) else (
-    REM Si pas de backup, utiliser la config web par defaut
     if exist next.config.web.js (
-        copy /Y next.config.web.js next.config.js
-        echo Configuration web restauree depuis next.config.web.js
+        copy /Y next.config.web.js next.config.js >nul
     )
 )
 
-echo [5/7] Copy fichiers vers Android ^(cap copy - RAPIDE^)...
-REM Utiliser cap copy au lieu de cap sync (plus rapide)
+echo [5/6] Copie des fichiers vers Android ^(cap copy - RAPIDE^)...
+REM Utiliser cap copy au lieu de cap sync (beaucoup plus rapide)
+REM cap copy copie juste les fichiers web, sans mettre a jour les dependances natives
 call npx cap copy android
 if errorlevel 1 (
     echo ATTENTION: cap copy echoue, essai avec cap sync...
@@ -162,9 +143,10 @@ if errorlevel 1 (
     )
 )
 
-echo [6/7] Build de l'APK ^(incremental, sans clean^)...
+echo [6/6] Build de l'APK ^(incremental - SANS clean^)...
 cd android
-REM Build incremental sans clean (plus rapide), fallback sur clean si necessaire
+REM PAS de clean pour build incremental - beaucoup plus rapide !
+REM Utiliser assembleDebug directement (plus rapide que release)
 call .\gradlew.bat assembleDebug --parallel
 if errorlevel 1 (
     echo ATTENTION: Build incremental echoue, essai avec clean...
@@ -178,12 +160,12 @@ if errorlevel 1 (
 )
 cd ..
 
-echo [6.5/7] Renommage de l'APK avec la version...
+echo [6.5/6] Renommage de l'APK avec la version...
 set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
 set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 
 if exist "%APK_SOURCE%" (
-    move /Y "%APK_SOURCE%" "%APK_DEST%"
+    move /Y "%APK_SOURCE%" "%APK_DEST%" >nul 2>&1
     if exist "%APK_DEST%" (
         echo APK renomme: edt_cnam_v!VERSION!.apk
     ) else (
@@ -218,9 +200,6 @@ if errorlevel 1 (
     echo APK cree localement mais non uploade sur Supabase
     echo Verifiez votre configuration .env.local
     echo.
-    echo Pour installer sur ton telephone:
-    echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
-    echo.
     pause
     exit /b 0
 )
@@ -240,5 +219,7 @@ echo.
 echo - package.json : !VERSION!
 echo - src/app/api/version/route.js : !VERSION!
 echo - src/app/page.js : !VERSION!
+echo - android/app/build.gradle : !VERSION!
 echo.
 pause
+

@@ -5,7 +5,7 @@
 
 export async function GET() {
   // Version actuelle de l'APK
-  const currentVersion = "1.1.25";
+  const currentVersion = "1.1.26";
   
   // URL de l'APK sur Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aeftxgwfokzlspojzisx.supabase.co';
