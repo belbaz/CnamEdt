@@ -1,9 +1,12 @@
 .app-footer {
-    margin-top: 4rem;
+    margin-top: auto;
     padding: 1.5rem 1rem;
     border-top: 1px solid var(--border-color);
     background: var(--bg-primary);
     text-align: center;
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .app-footer-content {

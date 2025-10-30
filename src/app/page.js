@@ -507,14 +507,14 @@ export default function Home() {
     const groupByDay = groupEventsByDay(events);
 
     return (
-        <div>
+        <div className={styles.pageWrapper}>
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
             <ApkDownloadPopup />
             
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.32" 
+                currentVersion="1.1.35" 
                 isNative={isNative} 
             />
 
@@ -538,7 +538,7 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.32"
+                currentVersion="1.1.35"
                 onCheckUpdates={handleCheckUpdates}
             />
 

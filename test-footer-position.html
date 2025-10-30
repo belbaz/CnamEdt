@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Footer Position</title>
+    <style>
+        :root {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #2d3748;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
+            color: var(--text-secondary);
+            min-height: 100vh;
+        }
+
+        body > div {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            flex: 1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            flex: 1;
+        }
+
+        .app-footer {
+            margin-top: auto;
+            padding: 1.5rem 1rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            text-align: center;
+            position: relative;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .app-footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .app-footer-text {
+            font-weight: 500;
+        }
+
+        .app-footer-separator {
+            opacity: 0.4;
+        }
+
+        .app-footer-version {
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .test-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 0.5rem 0;
+            padding: 0.5rem 1rem;
+            background: #2d3748;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .test-controls button:hover {
+            background: #1a202c;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #2d3748;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .content-item {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .status {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            background: #2d3748;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="navbar">
+            <h1>EDT EICNAM - Test Footer Position</h1>
+        </div>
+
+        <main class="container" id="content">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Chargement en cours...</p>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="app-footer-content">
+                <span class="app-footer-text">EDT EICNAM</span>
+                <span class="app-footer-separator">•</span>
+                <span class="app-footer-version">Version 1.1.32</span>
+            </div>
+        </footer>
+    </div>
+
+    <div class="test-controls">
+        <h3 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Tests</h3>
+        <button onclick="showLoading()">État: Chargement</button>
+        <button onclick="showShortContent()">Contenu court</button>
+        <button onclick="showLongContent()">Contenu long</button>
+        <button onclick="showNoContent()">Aucun contenu</button>
+    </div>
+
+    <div class="status" id="status">
+        ✅ Footer devrait être en bas
+    </div>
+
+    <script>
+        const content = document.getElementById('content');
+        const status = document.getElementById('status');
+
+        function showLoading() {
+            content.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Chargement en cours...</p>
+                </div>
+            `;
+            status.textContent = '⏳ Chargement - Footer doit rester en bas';
+        }
+
+        function showShortContent() {
+            content.innerHTML = `
+                <h2>Contenu court</h2>
+                <div class="content-item">
+                    <h3>Cours 1</h3>
+                    <p>Mathématiques - 8h00 - 10h00</p>
+                </div>
+                <div class="content-item">
+                    <h3>Cours 2</h3>
+                    <p>Physique - 10h15 - 12h15</p>
+                </div>
+            `;
+            status.textContent = '✅ Contenu court - Footer doit être en bas';
+        }
+
+        function showLongContent() {
+            let html = '<h2>Contenu long (scroll requis)</h2>';
+            for (let i = 1; i <= 20; i++) {
+                html += `
+                    <div class="content-item">
+                        <h3>Cours ${i}</h3>
+                        <p>Matière ${i} - ${8 + i}h00 - ${10 + i}h00</p>
+                        <p>Professeur: Prof ${i}</p>
+                        <p>Salle: A${100 + i}</p>
+                    </div>
+                `;
+            }
+            content.innerHTML = html;
+            status.textContent = '✅ Contenu long - Footer après le contenu';
+        }
+
+        function showNoContent() {
+            content.innerHTML = '<h2>Aucun événement</h2><p style="color: #718096; margin-top: 1rem;">Aucun cours trouvé.</p>';
+            status.textContent = '✅ Aucun contenu - Footer doit être en bas';
+        }
+
+        // Démarrer avec l'état de chargement
+        showLoading();
+
+        // Simuler un chargement puis afficher du contenu court
+        setTimeout(() => {
+            showShortContent();
+        }, 2000);
+    </script>
+</body>
+</html>
+

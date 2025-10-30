@@ -33,7 +33,11 @@ function checkDeploymentStatus() {
 
         // Vérifier si l'utilisateur est connecté à Vercel
         try {
-            execSync('vercel whoami', { stdio: 'ignore', timeout: 5000 });
+            execSync('vercel whoami', { 
+                stdio: 'ignore', 
+                timeout: 10000, // Augmenté à 10 secondes
+                windowsHide: true // Cacher la fenêtre sur Windows
+            });
         } catch (authError) {
             return { 
                 available: true, 
@@ -52,7 +56,8 @@ function checkDeploymentStatus() {
             output = execSync('vercel ls --limit 5 --json', { 
                 encoding: 'utf-8', 
                 stdio: ['ignore', 'pipe', 'ignore'],
-                timeout: 15000
+                timeout: 20000, // Augmenté à 20 secondes pour les connexions lentes
+                windowsHide: true // Cacher la fenêtre sur Windows
             });
             
             if (output && output.trim()) {
@@ -90,9 +95,20 @@ function checkDeploymentStatus() {
             }
         } catch (error) {
             // Si vercel ls échoue, on retourne une erreur avec plus d'infos
+            const errorMsg = error.message || 'Commande échouée';
+            const isTimeout = errorMsg.includes('timeout') || errorMsg.includes('ETIMEDOUT');
+            const isNetwork = errorMsg.includes('ENOTFOUND') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('network');
+            
+            let friendlyError = `Erreur vercel ls: ${errorMsg}`;
+            if (isTimeout) {
+                friendlyError = 'Timeout lors de la connexion à Vercel (connexion lente ou API indisponible)';
+            } else if (isNetwork) {
+                friendlyError = 'Erreur réseau lors de la connexion à Vercel API';
+            }
+            
             return { 
                 available: true, 
-                error: `Erreur vercel ls: ${error.message || 'Commande échouée'}. Essayez: vercel login`, 
+                error: friendlyError, 
                 status: 'ERROR_CHECK' 
             };
         }
@@ -147,7 +163,8 @@ async function monitorDeployment() {
         if (!result.available) {
             console.log(`⚠️  ${result.error}`);
             console.log(`   Le déploiement est probablement en cours, mais Vercel CLI n'est pas disponible pour vérifier.`);
-            process.exit(0);
+            console.log(`   Consultez le dashboard: https://vercel.com/dashboard\n`);
+            process.exit(2); // Code 2 = CLI non disponible (pas une vraie erreur)
         }
 
         if (result.needsLogin || result.status === 'NOT_LOGGED_IN') {
@@ -159,24 +176,33 @@ async function monitorDeployment() {
             console.log(`   vercel login`);
             console.log(`\nLe déploiement est probablement en cours.`);
             console.log(`Consultez le dashboard: https://vercel.com/dashboard\n`);
-            process.exit(0);
+            process.exit(2); // Code 2 = non connecté (pas une vraie erreur)
         } else if (result.error && result.status === 'ERROR_CHECK') {
             // Erreur de vérification, afficher l'erreur et continuer
-            if (checks === 0 || checks % 6 === 0) {
+            if (checks === 0) {
                 console.log(`\n⚠️  ${result.error || 'Impossible de récupérer le statut'}`);
-                console.log(`   Le déploiement est probablement terminé.`);
-                console.log(`   Consultez le dashboard: https://vercel.com/dashboard`);
-                console.log(`   Ou vérifiez manuellement: vercel ls\n`);
+                console.log(`   Tentative de vérification en cours...`);
             }
-            process.stdout.write(`\r⏳ Vérification... (${checks + 1}/${maxChecks})`);
+            
+            // Après plusieurs échecs consécutifs, abandonner
+            if (checks >= 12) { // 1 minute de tentatives
+                console.log(`\n\n⚠️  Impossible de vérifier le statut du déploiement`);
+                console.log(`   Erreur: ${result.error || 'Commande Vercel échouée'}`);
+                console.log(`   Le déploiement est probablement en cours ou terminé.`);
+                console.log(`   Consultez le dashboard: https://vercel.com/dashboard\n`);
+                process.exit(2); // Code 2 = impossible de vérifier (pas une vraie erreur de deploy)
+            }
+            
+            process.stdout.write(`\r⏳ Vérification... tentative ${checks + 1}/${maxChecks}`);
         } else if (result.status === 'NO_DEPLOYMENT') {
-            // Si on n'a pas de déploiement après plusieurs tentatives, considérer qu'il est terminé
-            if (checks >= 6) {
-                console.log(`\n\n✅ Déploiement probablement terminé (détection impossible)`);
+            // Si on n'a pas de déploiement après plusieurs tentatives
+            if (checks >= 12) { // 1 minute d'attente
+                console.log(`\n\n⚠️  Aucun déploiement détecté par Vercel CLI`);
+                console.log(`   Le déploiement est peut-être en cours de détection par Vercel.`);
                 console.log(`   Vérifiez manuellement: https://vercel.com/dashboard\n`);
-                process.exit(0);
+                process.exit(2); // Code 2 = pas encore détecté (pas une erreur)
             }
-            process.stdout.write(`\r⏳ En attente du démarrage du déploiement... (${checks + 1}/${maxChecks})`);
+            process.stdout.write(`\r⏳ En attente du démarrage... (${checks + 1}/${maxChecks})`);
         } else if (result.ready) {
             console.log(`\n\n✅ ========================================`);
             console.log(`   DEPLOIEMENT VERCEL TERMINE !`);
@@ -184,14 +210,15 @@ async function monitorDeployment() {
             console.log(`🌐 URL: ${result.url}`);
             console.log(`⏰ Créé à: ${result.createdAt}`);
             console.log(`\n✅ Le site est maintenant en ligne !\n`);
-            process.exit(0);
+            process.exit(0); // Code 0 = succès
         } else if (result.error) {
             console.log(`\n\n❌ ========================================`);
             console.log(`   DEPLOIEMENT VERCEL EN ERREUR`);
             console.log(`========================================\n`);
             console.log(`État: ${result.status}`);
-            console.log(`Consultez le dashboard Vercel pour plus de détails.`);
-            process.exit(1);
+            console.log(`Consultez le dashboard Vercel pour plus de détails:`);
+            console.log(`https://vercel.com/dashboard\n`);
+            process.exit(1); // Code 1 = erreur de déploiement
         } else {
             // En cours (BUILDING, QUEUED, etc.)
             const statusEmoji = result.status === 'BUILDING' ? '🔨' : 
@@ -216,8 +243,8 @@ async function monitorDeployment() {
 
     console.log(`\n\n⚠️  Timeout atteint (${timeoutSeconds} secondes)`);
     console.log(`   Le déploiement est probablement toujours en cours.`);
-    console.log(`   Consultez le dashboard Vercel: https://vercel.com/dashboard`);
-    process.exit(0);
+    console.log(`   Consultez le dashboard Vercel: https://vercel.com/dashboard\n`);
+    process.exit(2); // Code 2 = timeout (pas une erreur, juste trop long)
 }
 
 monitorDeployment().catch(error => {

@@ -237,11 +237,24 @@ if errorlevel 1 (
         echo Surveillance du deploiement Vercel en cours...
         echo.
         node mobile-config\check-vercel-deployment.js
-        if errorlevel 1 (
+        set VERCEL_CHECK_EXIT=!errorlevel!
+        
+        if !VERCEL_CHECK_EXIT! EQU 1 (
+            REM Code 1 = Erreur de deploiement Vercel
             echo.
-            echo ATTENTION: Impossible de verifier le statut du deploy
-            echo Consultez le dashboard Vercel: https://vercel.com/dashboard
+            echo ========================================
+            echo   ATTENTION: ERREUR DE DEPLOIEMENT
+            echo ========================================
+            echo.
+            echo Le deploiement Vercel a rencontre une erreur.
+            echo Verifiez les logs sur: https://vercel.com/dashboard
+            echo.
+        ) else if !VERCEL_CHECK_EXIT! EQU 2 (
+            REM Code 2 = Impossible de verifier (CLI non dispo, non connecte, timeout)
+            REM Ce n'est pas une erreur, juste une verification impossible
+            echo Note: Verification automatique non disponible.
         )
+        REM Code 0 = Succes (deja affiche par le script Node)
     )
 )
 

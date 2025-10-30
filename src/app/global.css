@@ -37,6 +37,13 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+/* Support for flexbox layout on pages that need footer at bottom */
+body > div {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 /* Animation de scroll plus douce */
 html {
     scroll-behavior: smooth;
