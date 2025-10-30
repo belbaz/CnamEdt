@@ -1,6 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
+// Ne renommer le dossier API que si on est en mode mobile (export statique)
+// Sur Vercel (build web), on doit garder les routes API actives
+const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+
+if (!isMobileBuild) {
+  console.log('Build web détecté - Routes API conservées pour Vercel');
+  process.exit(0);
+}
+
 const apiDir = path.join(__dirname, '../src/app/api');
 const backupDir = path.join(__dirname, '../src/app/_api_backup');
 
