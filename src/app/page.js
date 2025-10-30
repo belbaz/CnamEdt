@@ -507,18 +507,19 @@ export default function Home() {
     const groupByDay = groupEventsByDay(events);
 
     return (
-        <div className={styles.pageWrapper}>
+        <>
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
             <ApkDownloadPopup />
             
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.35" 
+                currentVersion="1.1.36" 
                 isNative={isNative} 
             />
 
-            <Navbar
+            <div className={styles.pageWrapper}>
+                <Navbar
                 darkMode={darkMode}
                 onToggleDarkMode={() => setDarkMode(!darkMode)}
                 availableWeeks={availableWeeks}
@@ -538,7 +539,7 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.35"
+                currentVersion="1.1.36"
                 onCheckUpdates={handleCheckUpdates}
             />
 
@@ -630,7 +631,8 @@ export default function Home() {
                 })}
             </main>
 
-            <Footer />
+                <Footer />
+            </div>
 
             <ScrollToTop/>
 
@@ -682,6 +684,6 @@ export default function Home() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }

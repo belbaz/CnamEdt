@@ -4,8 +4,6 @@
     border-top: 1px solid var(--border-color);
     background: var(--bg-primary);
     text-align: center;
-    position: relative;
-    width: 100%;
     flex-shrink: 0;
 }
 
