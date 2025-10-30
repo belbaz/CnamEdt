@@ -17,6 +17,8 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
     const [isClosing, setIsClosing] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
     const [manualCheck, setManualCheck] = useState(false);
+    const [isUpToDateVisible, setIsUpToDateVisible] = useState(false);
+    const [isUpToDateClosing, setIsUpToDateClosing] = useState(false);
 
     // Exposer la méthode checkForUpdates via la ref
     useImperativeHandle(ref, () => ({
@@ -91,8 +93,8 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 setUpdateAvailable(true);
                 setIsVisible(true);
             } else if (isManual) {
-                // Si vérification manuelle et pas de mise à jour, afficher un message
-                alert(`Vous utilisez la dernière version (${currentVersion}) 🎉`);
+                // Si vérification manuelle et pas de mise à jour, afficher une belle modale
+                setIsUpToDateVisible(true);
             }
         } catch (error) {
             console.error('[UpdateChecker] Erreur lors de la vérification:', error);
@@ -152,6 +154,51 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             setIsClosing(false);
         }, 300);
     };
+
+    const handleCloseUpToDate = () => {
+        setIsUpToDateClosing(true);
+        setTimeout(() => {
+            setIsUpToDateVisible(false);
+            setIsUpToDateClosing(false);
+        }, 300);
+    };
+
+    // Modale "à jour"
+    if (isUpToDateVisible) {
+        return (
+            <div className={`update-popup-overlay ${isUpToDateClosing ? 'closing' : ''}`} onClick={handleCloseUpToDate}>
+                <div className={`update-popup up-to-date-popup ${isUpToDateClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+                    <div className="update-popup-icon up-to-date-icon">
+                        ✅
+                    </div>
+                    
+                    <h2 className="update-popup-title up-to-date-title">
+                        Vous êtes à jour !
+                    </h2>
+                    
+                    <div className="up-to-date-version-info">
+                        <div className="up-to-date-version-badge">
+                            <span className="up-to-date-version-label">Version actuelle</span>
+                            <span className="up-to-date-version-number">{currentVersion}</span>
+                        </div>
+                    </div>
+
+                    <p className="up-to-date-message">
+                        Vous utilisez déjà la dernière version de l'application. 🎉
+                    </p>
+                    
+                    <div className="update-popup-buttons">
+                        <button 
+                            className="update-popup-button update-popup-button-primary"
+                            onClick={handleCloseUpToDate}
+                        >
+                            Parfait !
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!isVisible || !updateAvailable) return null;
 

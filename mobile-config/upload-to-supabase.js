@@ -27,7 +27,8 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
 
 // Configuration
 const APK_NAME = `edt_cnam_v${version}.apk`;
-const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
+// Le build-apk.bat génère l'APK en mode debug, donc on cherche dans debug/ et non release/
+const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
 const BUCKET_NAME = 'Apk Edt Eicnam';
 const FILE_PATH = `apk/${APK_NAME}`;
 
@@ -77,16 +78,26 @@ async function uploadAPK() {
     process.exit(1);
   }
 
-  // Vérifier que l'APK existe
-  if (!fs.existsSync(APK_PATH)) {
-    console.error(`❌ APK introuvable : ${APK_PATH}`);
-    process.exit(1);
+  // Vérifier que l'APK existe (chercher d'abord en debug, puis en release)
+  let finalAPKPath = APK_PATH;
+  if (!fs.existsSync(finalAPKPath)) {
+    // Essayer le dossier release si debug n'existe pas
+    const releasePath = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
+    if (fs.existsSync(releasePath)) {
+      finalAPKPath = releasePath;
+      console.log(`ℹ️  APK trouvé en mode release`);
+    } else {
+      console.error(`❌ APK introuvable dans les deux emplacements :`);
+      console.error(`   - Debug : ${APK_PATH}`);
+      console.error(`   - Release : ${releasePath}`);
+      process.exit(1);
+    }
   }
 
-  console.log(`📦 APK trouvé : ${APK_PATH}`);
+  console.log(`📦 APK trouvé : ${finalAPKPath}`);
   
   // Lire le fichier APK
-  const fileBuffer = fs.readFileSync(APK_PATH);
+  const fileBuffer = fs.readFileSync(finalAPKPath);
   const fileSizeInMB = (fileBuffer.length / 1024 / 1024).toFixed(2);
   console.log(`📊 Taille : ${fileSizeInMB} MB`);
 
