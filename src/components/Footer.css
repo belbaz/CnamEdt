@@ -4,7 +4,6 @@
     border-top: 1px solid var(--border-color);
     background: var(--bg-primary);
     text-align: center;
-    flex-shrink: 0;
 }
 
 .app-footer-content {

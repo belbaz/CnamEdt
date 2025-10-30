@@ -6,6 +6,7 @@
     border-radius: 16px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
+    box-sizing: border-box;
 }
 
 .header-content {
@@ -28,6 +29,8 @@
     margin: 0 0 0.375rem 0;
     position: relative;
     display: inline-block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .cnam-logo {
@@ -81,10 +84,6 @@
         font-size: 1.25rem;
     }
 
-    /*.cnam-logo {*/
-    /*    height: 16px;*/
-    /*    margin-left: 6px;*/
-    /*}*/
     .theme-toggle {
         width: 40px;
         height: 40px;

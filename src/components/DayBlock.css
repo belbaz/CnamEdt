@@ -7,6 +7,9 @@
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     padding: .3rem 1.1rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Day Block avec État collapsed */
@@ -47,6 +50,8 @@
     line-height: 1;
     display: flex;
     align-items: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .collapse-toggle {
@@ -100,7 +105,6 @@
 /* Mobile */
 @media (max-width: 768px) {
     .day-block {
-        /*padding: 1rem;*/
         margin-bottom: 1rem;
         border-radius: 14px;
     }
@@ -113,7 +117,6 @@
 
 @media (max-width: 650px) {
     .day-block {
-        /*padding: 0.875rem;*/
         border-radius: 14px;
     }
 

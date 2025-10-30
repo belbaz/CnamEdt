@@ -65,6 +65,7 @@
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .week-nav {
@@ -168,7 +169,6 @@
     .controls.mobile .week-picker {
         flex: 1;
         gap: 0.375rem;
-        /*padding: 0.5rem 0.625rem;*/
     }
 
     .controls.mobile .week-nav {

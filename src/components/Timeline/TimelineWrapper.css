@@ -2,11 +2,16 @@
 .timeline-wrapper {
     position: relative;
     height: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 @media (max-width: 650px) {
     /* Timeline verticale */
     .timeline-wrapper {
         position: relative;
+        width: 100%;
+        max-width: 100%;
     }
 }

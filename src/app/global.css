@@ -35,11 +35,24 @@ body {
     color: var(--text-secondary);
     min-height: 100vh;
     transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
 }
 
 /* Animation de scroll plus douce */
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+}
+
+/* S'assurer que les divs principaux ne débordent pas horizontalement */
+body > div {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
 /* Styles de base pour les boutons */

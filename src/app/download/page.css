@@ -12,6 +12,7 @@
     width: 100%;
     text-align: center;
     animation: fadeInUp 0.5s ease-out;
+    box-sizing: border-box;
 }
 
 .download-icon {
@@ -30,6 +31,8 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .download-description {
@@ -68,6 +71,7 @@
     border-radius: 16px;
     margin: 2rem 0;
     border: 1px solid rgba(66, 153, 225, 0.1);
+    box-sizing: border-box;
 }
 
 .download-info p {
@@ -83,6 +87,7 @@
     margin: 2rem 0;
     text-align: left;
     border: 1px solid rgba(66, 153, 225, 0.08);
+    box-sizing: border-box;
 }
 
 .download-steps h3 {

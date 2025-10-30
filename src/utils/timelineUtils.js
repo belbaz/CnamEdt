@@ -73,6 +73,7 @@ export function getEventPosition(startTime, endTime, dayStart, dayEnd) {
 
 /**
  * Calcule la position verticale d'un événement (mobile)
+ * Note: Utilise calc() pour soustraire le padding du haut et du bas
  */
 export function getEventPositionVertical(startTime, endTime, dayStart, dayEnd) {
     const s = new Date(startTime), e = new Date(endTime);
@@ -81,8 +82,15 @@ export function getEventPositionVertical(startTime, endTime, dayStart, dayEnd) {
     const total = dayEnd - dayStart;
     const startOffset = sMin - dayStart;
     const dur = eMin - sMin;
+    
+    // Calcul de la position de base en pourcentage
+    const topPercent = (startOffset / total * 100);
+    const heightPercent = Math.max(5, (dur / total * 100));
+    
+    // Utiliser calc() pour soustraire le padding-top et padding-bottom réduit
+    // padding-top: 0.4rem, padding-bottom: 0.15rem = 0.55rem total
     return {
-        top: `${(startOffset / total * 100).toFixed(3)}%`,
-        height: `${Math.max(5, (dur / total * 100)).toFixed(3)}%`
+        top: `${topPercent.toFixed(3)}%`,
+        height: `calc(${heightPercent.toFixed(3)}% - 0.55rem)`
     };
 }

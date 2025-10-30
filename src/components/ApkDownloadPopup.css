@@ -29,6 +29,7 @@
     position: relative;
     text-align: center;
     animation: apkSlideUp 0.3s ease-out;
+    box-sizing: border-box;
 }
 
 .apk-popup.closing {
@@ -69,6 +70,8 @@
     font-weight: 700;
     color: var(--text-primary, #000);
     margin: 0 0 0.75rem 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .apk-popup-description {
@@ -76,6 +79,8 @@
     color: var(--text-secondary, #666);
     margin: 0 0 1.5rem 0;
     line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .apk-popup-features {
@@ -223,7 +228,8 @@
 @media (max-width: 480px) {
     .apk-popup {
         padding: 1.5rem;
-        max-width: 95%;
+        max-width: calc(100% - 2rem);
+        margin: 0 1rem;
     }
     
     .apk-popup-title {
