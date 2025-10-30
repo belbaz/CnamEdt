@@ -5,15 +5,14 @@ import { useState, useEffect } from 'react';
 
 export default function Footer() {
     const { isNative } = useCapacitor();
-    const [version, setVersion] = useState("1.1.30");
+    const [version, setVersion] = useState("1.1.31");
     
-    // Ne pas afficher dans l'app native
-    if (isNative) {
-        return null;
-    }
-    
-    // Récupérer la version depuis l'API
+    // Récupérer la version depuis l'API (seulement si pas native)
     useEffect(() => {
+        if (isNative) {
+            return; // Ne pas faire le fetch si native
+        }
+        
         fetch('/api/version')
             .then(res => res.json())
             .then(data => {
@@ -24,7 +23,12 @@ export default function Footer() {
             .catch(() => {
                 // En cas d'erreur, garder la version par défaut
             });
-    }, []);
+    }, [isNative]);
+    
+    // Ne pas afficher dans l'app native
+    if (isNative) {
+        return null;
+    }
     
     return (
         <footer className="app-footer">
