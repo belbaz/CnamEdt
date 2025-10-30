@@ -202,37 +202,92 @@ echo [9/9] Deploiement Vercel...
 REM Verifier si Vercel CLI est installe
 vercel --version >NUL 2>&1
 if errorlevel 1 (
-    echo ERREUR: Vercel CLI non installe
+    echo ATTENTION: Vercel CLI non installe
     echo.
     echo Installez Vercel CLI avec:
     echo npm install -g vercel
+    echo.
+    echo Puis connectez-vous avec:
+    echo vercel login
     echo.
     echo Utilisation de Git push pour declencher le deploiement...
     git push
     if errorlevel 1 (
         echo ERREUR: Git push echoue
+        echo.
+        echo Le deploy de l'APK est termine mais le site n'a pas ete deploye.
+        echo Vous pouvez pusher manuellement avec: git push
         pause
-        exit /b 1
+        exit /b 0
     )
     echo Deploiement Vercel declenche via Git push (plus lent^)...
 ) else (
-    echo Deploiement en production avec Vercel CLI ^(RAPIDE^)...
-    vercel deploy --prod --yes
+    echo Verification de la connexion Vercel...
+    vercel whoami >NUL 2>&1
     if errorlevel 1 (
+        echo ATTENTION: Vous n'etes pas connecte a Vercel
         echo.
-        echo ATTENTION: Deploiement Vercel echoue
-        echo Tentative avec Git push...
+        echo Connectez-vous avec:
+        echo vercel login
+        echo.
+        echo Utilisation de Git push pour declencher le deploiement...
         git push
         if errorlevel 1 (
-            echo ERREUR: Git push echoue aussi
+            echo ERREUR: Git push echoue
+            echo.
+            echo Le deploy de l'APK est termine mais le site n'a pas ete deploye.
+            echo Vous pouvez pusher manuellement avec: git push
         ) else (
             echo Deploiement Vercel declenche via Git push...
         )
     ) else (
-        echo Vercel deploy reussi !
+        echo Deploiement en production avec Vercel CLI ^(RAPIDE^)...
         echo.
-        echo Pour pusher les changements sur Git:
-        echo git push
+        echo ATTENTION: Cette commande peut prendre quelques secondes...
+        echo.
+        vercel deploy --prod --yes
+        if errorlevel 1 (
+            echo.
+            echo ========================================
+            echo   ATTENTION: Deploiement Vercel CLI echoue
+            echo ========================================
+            echo.
+            echo Causes possibles:
+            echo - Probleme de connexion internet
+            echo - Projet Vercel non lie
+            echo - Erreur de configuration
+            echo.
+            echo Tentative avec Git push...
+            echo.
+            git push
+            if errorlevel 1 (
+                echo.
+                echo ========================================
+                echo   ERREUR: Git push echoue aussi
+                echo ========================================
+                echo.
+                echo Le deploy de l'APK est termine avec succes !
+                echo Mais le site n'a pas ete deploye automatiquement.
+                echo.
+                echo Pour deployer manuellement:
+                echo 1. Pusher sur Git: git push
+                echo 2. Ou utiliser Vercel CLI: vercel deploy --prod
+            ) else (
+                echo.
+                echo Deploiement Vercel declenche via Git push...
+                echo (Le deploy prendra 1-2 minutes via le webhook Git)
+            )
+        ) else (
+            echo.
+            echo ========================================
+            echo   VERCEL DEPLOY REUSSI !
+            echo ========================================
+            echo.
+            echo Le site a ete deploye sur Vercel en production.
+            echo.
+            echo Pour pusher les changements sur Git:
+            echo git push
+        )
     )
 )
 
