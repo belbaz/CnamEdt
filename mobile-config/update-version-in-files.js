@@ -13,6 +13,14 @@ const version = packageJson.version;
 
 console.log(`\n📝 Mise à jour de la version vers ${version} dans tous les fichiers...\n`);
 
+// Fonction pour convertir version X.Y.Z en versionCode (ex: 1.1.23 -> 10123)
+function versionToCode(version) {
+    const parts = version.split('.').map(Number);
+    // Format: X.Y.Z -> X*10000 + Y*100 + Z (ex: 1.1.23 -> 10000 + 100 + 23 = 10123)
+    // Support jusqu'à 99.99.99 (versionCode max: 999999)
+    return parts[0] * 10000 + parts[1] * 100 + (parts[2] || 0);
+}
+
 // Liste des fichiers à mettre à jour
 const filesToUpdate = [
     {
@@ -24,6 +32,16 @@ const filesToUpdate = [
         path: path.join(__dirname, '..', 'src', 'app', 'page.js'),
         regex: /currentVersion=["'][\d.]+["']/g,
         replacement: `currentVersion="${version}"`
+    },
+    {
+        path: path.join(__dirname, '..', 'android', 'app', 'build.gradle'),
+        regex: /versionCode \d+/,
+        replacement: `versionCode ${versionToCode(version)}`
+    },
+    {
+        path: path.join(__dirname, '..', 'android', 'app', 'build.gradle'),
+        regex: /versionName ["'][\d.]+["']/,
+        replacement: `versionName "${version}"`
     }
 ];
 

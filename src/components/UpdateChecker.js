@@ -169,11 +169,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             <div className={`update-popup-overlay ${isUpToDateClosing ? 'closing' : ''}`} onClick={handleCloseUpToDate}>
                 <div className={`update-popup up-to-date-popup ${isUpToDateClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
                     <div className="update-popup-icon up-to-date-icon">
-                        ✅
+                        {/* Icône discrète */}
                     </div>
                     
                     <h2 className="update-popup-title up-to-date-title">
-                        Vous êtes à jour !
+                        Vous êtes à jour
                     </h2>
                     
                     <div className="up-to-date-version-info">
@@ -184,7 +184,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     </div>
 
                     <p className="up-to-date-message">
-                        Vous utilisez déjà la dernière version de l'application. 🎉
+                        Vous utilisez déjà la dernière version de l'application.
                     </p>
                     
                     <div className="update-popup-buttons">
@@ -192,7 +192,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                             className="update-popup-button update-popup-button-primary"
                             onClick={handleCloseUpToDate}
                         >
-                            Parfait !
+                            Compris
                         </button>
                     </div>
                 </div>
