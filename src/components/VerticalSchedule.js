@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { getDayTimeRange, generateTimeMarkers, getCurrentTimePosition } from "@/utils/timelineUtils";
 import { groupEventsByDay } from "@/utils/eventUtils";
 import { isToday } from "@/utils/dateUtils";
@@ -47,6 +47,65 @@ export default function VerticalSchedule({
     const totalMinutes = endMinutes - startMinutes;
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    
+    // Détecter si on a besoin de scroll horizontal sur PC
+    const [needsScroll, setNeedsScroll] = useState(false);
+    const wrapperRef = useRef(null);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (isMobile || days.length === 0) {
+            setNeedsScroll(false);
+            return;
+        }
+
+        const checkIfNeedsScroll = () => {
+            if (!containerRef.current) return;
+            
+            const containerWidth = containerRef.current.clientWidth;
+            
+            // Calculer la largeur minimale nécessaire avec des colonnes fixes de 180px
+            // Colonne temps : 60px (header) ou 35px (body), on prend le max
+            const timeColumnWidth = 60;
+            const minColumnWidth = 180;
+            const gapSize = 8; // 0.5rem = 8px
+            const gaps = (days.length + 1) * gapSize; // gaps entre toutes les colonnes
+            const minRequiredWidth = timeColumnWidth + (days.length * minColumnWidth) + gaps;
+            
+            // Si la largeur minimale nécessaire dépasse la largeur disponible, activer le scroll
+            setNeedsScroll(minRequiredWidth > containerWidth);
+        };
+
+        // Attendre que le DOM soit complètement rendu
+        const timeoutId = setTimeout(() => {
+            checkIfNeedsScroll();
+        }, 0);
+        
+        // Réécouter le redimensionnement de la fenêtre
+        const handleResize = () => {
+            // Utiliser requestAnimationFrame pour attendre le reflow
+            requestAnimationFrame(() => {
+                checkIfNeedsScroll();
+            });
+        };
+        
+        window.addEventListener('resize', handleResize);
+        
+        // Utiliser ResizeObserver pour détecter les changements de taille du conteneur
+        const resizeObserver = new ResizeObserver(() => {
+            checkIfNeedsScroll();
+        });
+        
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+        
+        return () => {
+            clearTimeout(timeoutId);
+            window.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
+        };
+    }, [days.length, isMobile]);
 
     // Fonction pour obtenir la position verticale d'un événement
     const getEventVerticalPosition = (startTime, endTime) => {
@@ -79,8 +138,18 @@ export default function VerticalSchedule({
     }
 
     return (
-        <div className="vertical-schedule-container">
-            <div className="vertical-schedule-wrapper">
+        <div 
+            ref={containerRef}
+            className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
+            style={{
+                '--days-count': days.length
+            }}
+        >
+            <div 
+                ref={wrapperRef}
+                className="vertical-schedule-wrapper"
+                data-needs-scroll={needsScroll ? "true" : "false"}
+            >
                 {/* En-tête avec les jours */}
                 {days.length > 0 && (
                     <div className="vertical-schedule-header">

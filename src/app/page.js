@@ -57,7 +57,10 @@ export default function Home() {
 
     const fetchEvents = async () => {
         try {
-            setLoading(true);
+            // Ne pas remettre loading à true si on a déjà des données à afficher
+            if (allEvents.length === 0) {
+                setLoading(true);
+            }
             setError(null);
             setDebugInfo(null);
 
@@ -524,7 +527,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.42" 
+                currentVersion="1.1.43" 
                 isNative={isNative} 
             />
 
@@ -548,7 +551,7 @@ export default function Home() {
                 compactMode={compactMode}
                 onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.42"
+                currentVersion="1.1.43"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -609,9 +612,9 @@ export default function Home() {
                     </div>
                 )}
 
-                {loading && <LoadingSpinner/>}
+                {loading && events.length === 0 && <LoadingSpinner/>}
 
-                {!loading && viewMode === 'vertical' ? (
+                {(!loading || events.length > 0) && viewMode === 'vertical' ? (
                     <VerticalSchedule
                         events={events}
                         subjectColors={subjectColors}

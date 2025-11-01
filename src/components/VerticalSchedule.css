@@ -51,6 +51,41 @@
     }
 }
 
+/* Force le scroll horizontal sur PC si l'écran est trop petit pour tout afficher */
+@media (min-width: 769px) {
+    /* Si le contenu dépasse, activer le scroll horizontal */
+    .vertical-schedule-container.has-scroll {
+        overflow-x: scroll;
+        overflow-y: hidden;
+    }
+    
+    .vertical-schedule-wrapper[data-needs-scroll="true"] {
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+    }
+    
+    .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-schedule-header {
+        min-width: max-content;
+        width: max-content;
+        max-width: none;
+        grid-template-columns: 60px repeat(var(--days-count, 7), minmax(180px, 180px));
+    }
+    
+    .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-schedule-body {
+        min-width: max-content;
+        width: max-content;
+        max-width: none;
+        grid-template-columns: 35px repeat(var(--days-count, 7), minmax(180px, 180px));
+    }
+    
+    .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-day-column {
+        min-width: 180px;
+        max-width: 180px;
+        width: 180px;
+    }
+}
+
 .vertical-schedule-container::-webkit-scrollbar {
     height: 8px;
 }
@@ -81,7 +116,8 @@
 /* En-tête avec les jours */
 .vertical-schedule-header {
     display: grid;
-    grid-template-columns: 60px repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 35px repeat(auto-fit, minmax(180px, 1fr));
+    border-radius: .5rem 0;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
     position: sticky;
@@ -124,19 +160,32 @@
 /* Corps du planning */
 .vertical-schedule-body {
     display: grid;
-    grid-template-columns: 60px repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 35px repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.5rem;
     position: relative;
 }
 
 /* Colonne des heures */
 .vertical-time-column {
+    width: 1.8rem;
     position: sticky;
     left: 0;
     z-index: 50;
     background: var(--bg-secondary);
-    border-right: 2px solid var(--border-color);
     padding-right: 0.5rem;
+}
+
+.vertical-time-column::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    z-index: -1;
+    height: 100vh;
 }
 
 .vertical-time-label {
@@ -238,7 +287,7 @@
     position: relative;
     width: 100%;
     max-width: 100%;
-    padding: 0.2rem;
+    padding: 0 0.2rem;
     box-sizing: border-box;
     z-index: 5;
     overflow: hidden;
@@ -381,10 +430,22 @@
     .vertical-time-label {
         font-size: 0.7rem;
         right: 0.3rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0.15rem 0.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.8rem;
+        box-sizing: border-box;
+        line-height: 1;
+        color: var(--text-muted);
+        font-weight: 600;
     }
 
     .vertical-events-container {
-        padding: 0.15rem;
+        padding: 0 0.15rem;
     }
 
     /* Ajustements responsive pour les événements */
@@ -421,7 +482,7 @@
 @media (max-width: 650px) {
     .vertical-schedule-header {
         display: grid;
-        grid-template-columns: 45px repeat(7, 130px);
+        grid-template-columns: 35px repeat(7, 130px);
         gap: 0.25rem;
         width: max-content;
     }
@@ -437,8 +498,8 @@
 
     .vertical-schedule-body {
         display: grid;
-        grid-template-columns: 45px repeat(7, 130px);
-        gap: 0.25rem;
+        grid-template-columns: 35px repeat(7, 130px);
+        gap: 0.35rem;
         width: max-content;
     }
 
@@ -452,10 +513,23 @@
 
     .vertical-time-label {
         font-size: 0.65rem;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0.15rem 0.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.8rem;
+        box-sizing: border-box;
+        line-height: 1;
+        color: var(--text-muted);
+        font-weight: 600;
+        right: 0.25rem;
     }
 
     .vertical-events-container {
-        padding: 0.12rem;
+        padding: 0 0.12rem;
     }
 
     /* Ajustements très compacts pour petits écrans */

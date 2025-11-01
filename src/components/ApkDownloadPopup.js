@@ -83,29 +83,42 @@ export default function ApkDownloadPopup() {
         return () => clearTimeout(timer);
     }, []);
 
-    const handleDownload = () => {
-        const apkUrl = process.env.NEXT_PUBLIC_APK_URL || 'https://aeftxgwfokzlspojzisx.supabase.co/storage/v1/object/public/Apk%20Edt%20Eicnam/apk/app-debug.apk';
-        
-        console.log('[APK Popup] Téléchargement APK:', apkUrl);
-        
-        // Créer un élément <a> temporaire pour forcer le téléchargement
-        const link = document.createElement('a');
-        link.href = apkUrl;
-        link.download = 'edt_cnam.apk'; // Nom du fichier téléchargé
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        
-        // Déclencher le téléchargement
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        console.log('[APK Popup] Téléchargement déclenché');
-        
-        // Fermer la popup après un court délai
-        setTimeout(() => {
-            handleClose();
-        }, 500);
+    const handleDownload = async () => {
+        try {
+            // Récupérer l'URL signée depuis l'API
+            const response = await fetch('/api/version');
+            
+            if (!response.ok) {
+                throw new Error('Impossible de récupérer l\'URL de l\'APK');
+            }
+            
+            const data = await response.json();
+            const apkUrl = data.url;
+            
+            console.log('[APK Popup] Téléchargement APK:', apkUrl);
+            
+            // Créer un élément <a> temporaire pour forcer le téléchargement
+            const link = document.createElement('a');
+            link.href = apkUrl;
+            link.download = `edt_cnam_v${data.version}.apk`; // Nom du fichier téléchargé
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Déclencher le téléchargement
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('[APK Popup] Téléchargement déclenché');
+            
+            // Fermer la popup après un court délai
+            setTimeout(() => {
+                handleClose();
+            }, 500);
+        } catch (error) {
+            console.error('[APK Popup] Erreur lors du téléchargement:', error);
+            alert('Erreur lors du téléchargement de l\'APK. Veuillez réessayer.');
+        }
     };
 
     const handleDecline = () => {
