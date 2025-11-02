@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import './UpdateChecker.css';
+import { downloadAndInstall, initAppUpdater } from '@/utils/appUpdater';
 
 /**
  * Composant pour vérifier les mises à jour de l'APK
@@ -19,6 +20,9 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
     const [manualCheck, setManualCheck] = useState(false);
     const [isUpToDateVisible, setIsUpToDateVisible] = useState(false);
     const [isUpToDateClosing, setIsUpToDateClosing] = useState(false);
+    const [isInstalling, setIsInstalling] = useState(false);
+    const [installProgress, setInstallProgress] = useState(null);
+    const [appUpdaterReady, setAppUpdaterReady] = useState(false);
 
     // Exposer la méthode checkForUpdates via la ref
     useImperativeHandle(ref, () => ({
@@ -27,6 +31,16 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             checkForUpdates(true);
         }
     }));
+
+    useEffect(() => {
+        // Initialiser AppUpdater si on est en mode natif
+        if (isNative) {
+            initAppUpdater().then((ready) => {
+                setAppUpdaterReady(ready);
+                console.log('[UpdateChecker] AppUpdater initialisé:', ready);
+            });
+        }
+    }, [isNative]);
 
     useEffect(() => {
         // Ne vérifier que dans l'app native
@@ -123,23 +137,80 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         return false; // Versions identiques
     };
 
-    const handleUpdate = () => {
-        if (downloadUrl) {
-            console.log('[UpdateChecker] Téléchargement:', downloadUrl);
-            
-            // Créer un élément <a> temporaire pour forcer le téléchargement
+    const handleUpdate = async () => {
+        if (!downloadUrl || !latestVersion) {
+            console.error('[UpdateChecker] URL ou version manquante');
+            return;
+        }
+
+        if (!isNative) {
+            // Fallback pour le web : téléchargement classique
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = `edt_cnam_v${latestVersion}.apk`;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            
-            // Déclencher le téléchargement
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            return;
+        }
+
+        // En mode natif, utiliser le plugin d'installation automatique
+        setIsInstalling(true);
+        setInstallProgress({ status: 'starting', message: 'Préparation...' });
+
+        try {
+            console.log('[UpdateChecker] Démarrage de l\'installation automatique...');
+            console.log('[UpdateChecker] URL:', downloadUrl);
+            console.log('[UpdateChecker] Version:', latestVersion);
+
+            await downloadAndInstall(
+                downloadUrl,
+                latestVersion
+            );
             
-            console.log('[UpdateChecker] Téléchargement déclenché');
+            // Mettre à jour l'état de progression manuellement
+            setInstallProgress({ 
+                status: 'downloading', 
+                message: 'Téléchargement en cours...' 
+            });
+
+            // Succès - l'installation va démarrer
+            setInstallProgress({ 
+                status: 'success', 
+                message: 'Installation démarrée. Suivez les instructions à l\'écran.' 
+            });
+            
+            // Fermer la popup après un court délai
+            setTimeout(() => {
+                handleClose();
+                setIsInstalling(false);
+                setInstallProgress(null);
+            }, 2000);
+
+        } catch (error) {
+            console.error('[UpdateChecker] Erreur lors de l\'installation:', error);
+            setInstallProgress({ 
+                status: 'error', 
+                message: error.message || 'Erreur lors de l\'installation' 
+            });
+            
+            // Afficher un message d'erreur à l'utilisateur
+            setTimeout(() => {
+                alert(`Erreur lors de l'installation automatique:\n${error.message}\n\nVoulez-vous télécharger manuellement l'APK ?`);
+                // Fallback : téléchargement manuel
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = `edt_cnam_v${latestVersion}.apk`;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setIsInstalling(false);
+                setInstallProgress(null);
+            }, 1000);
         }
     };
 
@@ -233,24 +304,56 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     </p>
                 )}
                 
+                {/* Affichage de la progression si installation en cours */}
+                {isInstalling && installProgress && (
+                    <div className="update-install-progress">
+                        <div className="update-progress-message">
+                            {installProgress.status === 'downloading' && installProgress.progress !== undefined ? (
+                                <>
+                                    <div className="update-progress-bar-container">
+                                        <div 
+                                            className="update-progress-bar"
+                                            style={{ width: `${installProgress.progress}%` }}
+                                        />
+                                    </div>
+                                    <p className="update-progress-text">
+                                        {installProgress.message || `Téléchargement: ${installProgress.progress}%`}
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="update-progress-text">
+                                    {installProgress.message || 'En cours...'}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 <div className="update-popup-buttons">
                     <button 
                         className="update-popup-button update-popup-button-primary"
                         onClick={handleUpdate}
+                        disabled={isInstalling}
                     >
-                        Télécharger
+                        {isInstalling ? 'Installation...' : 'Mettre à jour'}
                     </button>
                     
-                    <button 
-                        className="update-popup-button update-popup-button-secondary"
-                        onClick={handleLater}
-                    >
-                        Plus tard
-                    </button>
+                    {!isInstalling && (
+                        <button 
+                            className="update-popup-button update-popup-button-secondary"
+                            onClick={handleLater}
+                        >
+                            Plus tard
+                        </button>
+                    )}
                 </div>
                 
                 <p className="update-popup-info">
-                    <small>💡 La mise à jour s'installera automatiquement après le téléchargement</small>
+                    <small>
+                        {isNative 
+                            ? '💡 La mise à jour sera téléchargée et installée automatiquement'
+                            : '💡 La mise à jour s\'installera automatiquement après le téléchargement'}
+                    </small>
                 </p>
             </div>
         </div>
