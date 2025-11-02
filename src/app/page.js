@@ -102,6 +102,8 @@ export default function Home() {
 
             // Sauvegarder dans le cache
             saveEventsToCache(data, colorMapping);
+            // Mettre à jour le timestamp dans l'état
+            setLastUpdateTimestamp(new Date().toISOString());
         } catch (err) {
             setError(err.message);
             if (!debugInfo) {
@@ -272,6 +274,19 @@ export default function Home() {
             window.removeEventListener('online', setOnline);
             window.removeEventListener('offline', setOffline);
         };
+    }, []);
+
+    // État pour le timestamp de dernière mise à jour
+    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
+
+    // Charger le timestamp au montage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const timestamp = localStorage.getItem('lastUpdateTimestamp');
+            if (timestamp) {
+                setLastUpdateTimestamp(timestamp);
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -561,7 +576,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.1" 
+                currentVersion="2.0.2" 
                 isNative={isNative} 
             />
 
@@ -584,7 +599,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.1"
+                currentVersion="2.0.2"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -698,19 +713,29 @@ export default function Home() {
             {(isNative || isSmallScreen) && showOfflineToast && (
                 <div style={{
                     position: 'fixed',
-                    top: '10px',
+                    bottom: '20px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: 'var(--shadow-lg)',
-                    borderRadius: '999px',
-                    padding: '0.4rem 0.8rem',
+                    background: '#10b981',
+                    color: 'white',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.6rem 1rem',
                     fontSize: '0.85rem',
-                    zIndex: 10001
+                    zIndex: 10001,
+                    maxWidth: 'calc(100% - 2rem)',
+                    textAlign: 'center'
                 }}>
-                    Vous êtes hors connexion
+                    {lastUpdateTimestamp 
+                        ? `Dernière mise à jour : ${new Date(lastUpdateTimestamp).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}`
+                        : 'Mode hors connexion'
+                    }
                 </div>
             )}
 

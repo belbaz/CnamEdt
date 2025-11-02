@@ -47,7 +47,6 @@ export default function VerticalSchedule({
     const { startMinutes, endMinutes } = globalTimeRange;
     const totalMinutes = endMinutes - startMinutes;
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
     
     // Détecter si on a besoin de scroll horizontal sur PC
     const [needsScroll, setNeedsScroll] = useState(false);
@@ -58,6 +57,17 @@ export default function VerticalSchedule({
     const [isOnline, setIsOnline] = useState(true);
     const [showOfflineNotification, setShowOfflineNotification] = useState(false);
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Détecter un petit écran (mobile)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const mq = window.matchMedia('(max-width: 768px)');
+        const update = () => setIsMobile(mq.matches);
+        update(); // Appeler immédiatement pour définir la valeur initiale
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
 
     // Détecter l'état en ligne/hors ligne
     useEffect(() => {
@@ -74,6 +84,8 @@ export default function VerticalSchedule({
 
     // Afficher la notification hors ligne sur mobile
     useEffect(() => {
+        // Vérifier les conditions : mobile ET hors ligne
+        // La notification s'affiche même sans timestamp (avec un message différent)
         if (isMobile && !isOnline) {
             setShowOfflineNotification(true);
             const timeout = setTimeout(() => {
@@ -83,9 +95,9 @@ export default function VerticalSchedule({
         } else {
             setShowOfflineNotification(false);
         }
-    }, [isOnline, isMobile]);
+    }, [isOnline, isMobile, lastUpdateTimestamp]);
 
-    // Charger le timestamp de dernière mise à jour
+    // Charger le timestamp de dernière mise à jour au montage et quand les événements changent
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const timestamp = localStorage.getItem('lastUpdateTimestamp');
@@ -93,7 +105,17 @@ export default function VerticalSchedule({
                 setLastUpdateTimestamp(timestamp);
             }
         }
-    }, [events]); // Recharger quand les événements changent
+    }, []); // Charger au montage
+
+    // Recharger aussi quand les événements changent
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const timestamp = localStorage.getItem('lastUpdateTimestamp');
+            if (timestamp) {
+                setLastUpdateTimestamp(timestamp);
+            }
+        }
+    }, [events]);
 
     useEffect(() => {
         if (isMobile || days.length === 0) {
@@ -199,11 +221,13 @@ export default function VerticalSchedule({
     return (
         <>
             {/* Notification hors ligne mobile */}
-            {isMobile && showOfflineNotification && lastUpdateTimestamp && (
+            {isMobile && showOfflineNotification && (
                 <div className="offline-notification-banner">
-                    <span className="offline-icon">📡</span>
                     <span className="offline-text">
-                        Mode hors ligne - Dernière mise à jour : {formatLastUpdate(lastUpdateTimestamp)}
+                        {lastUpdateTimestamp 
+                            ? `Dernière mise à jour : ${formatLastUpdate(lastUpdateTimestamp)}`
+                            : 'Mode hors connexion'
+                        }
                     </span>
                 </div>
             )}

@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
   // Version actuelle de l'APK
-  const currentVersion = "2.0.1";
+  const currentVersion = "2.0.2";
   
   // Configuration Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aeftxgwfokzlspojzisx.supabase.co';
