@@ -1,5 +1,25 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+// En mode dev, on utilise la config web (sans output: 'export') pour permettre les routes API
+// En mode build, on utilise la config mobile (avec output: 'export') pour Capacitor
+const isDev = process.env.NODE_ENV === 'development';
+
+const nextConfig = isDev ? {
+  // Mode dev - API routes activées
+  // Pas de "output: 'export'" pour permettre les API routes
+  
+  // Optimisation d'images activée en dev
+  images: {
+    unoptimized: false
+  },
+  
+  // Trailing slash désactivé (mode web standard)
+  trailingSlash: false,
+  
+  // Variables d'environnement accessibles côté client
+  env: {
+    NEXT_PUBLIC_APP_MODE: 'web'
+  }
+} : {
   // Configuration pour build statique (nécessaire pour Capacitor)
   output: 'export',
   

@@ -8,6 +8,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const BUCKET_NAME = 'Apk Edt Eicnam';
 
+// Force dynamic rendering pour cette route API
+export const dynamic = 'force-dynamic';
+
 // Fonction pour comparer deux versions (gère X.X et X.X.X)
 function compareVersions(v1, v2) {
   const parts1 = v1.split('.').map(Number);
@@ -42,7 +45,10 @@ async function getLatestVersionFromStorage(isTest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
   
+  // Ne pas essayer d'accéder à Supabase si les credentials ne sont pas disponibles
+  // (par exemple lors du build sur Vercel si les variables ne sont pas configurées)
   if (!supabaseUrl || !supabaseKey) {
+    console.log('[API Version] Supabase non configuré, utilisation de la version par défaut');
     return null;
   }
   
@@ -54,13 +60,28 @@ async function getLatestVersionFromStorage(isTest) {
       }
     });
     
-    // Lister tous les fichiers APK
-    const { data: files, error } = await supabase.storage
+    // Lister tous les fichiers APK avec un timeout
+    const listPromise = supabase.storage
       .from(BUCKET_NAME)
       .list('apk', { limit: 100 });
     
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => resolve({ data: null, error: { message: 'Timeout' } }), 5000)
+    );
+    
+    // Utiliser Promise.race avec gestion d'erreur
+    let result;
+    try {
+      result = await Promise.race([listPromise, timeoutPromise]);
+    } catch (raceError) {
+      console.warn('[API Version] Erreur Promise.race:', raceError.message);
+      return null;
+    }
+    
+    const { data: files, error } = result || {};
+    
     if (error || !files) {
-      console.error('[API Version] Erreur lors de la récupération des fichiers:', error);
+      console.warn('[API Version] Erreur lors de la récupération des fichiers:', error?.message || 'Fichiers introuvables');
       return null;
     }
     
@@ -76,12 +97,12 @@ async function getLatestVersionFromStorage(isTest) {
     });
     
     if (relevantFiles.length === 0) {
+      console.log('[API Version] Aucun APK trouvé pour le type:', isTest ? 'test' : 'prod');
       return null;
     }
     
     // Extraire les versions et trouver la plus récente
     let latestVersion = null;
-    let latestFile = null;
     
     for (const file of relevantFiles) {
       const version = extractVersion(file.name, isTest);
@@ -89,13 +110,17 @@ async function getLatestVersionFromStorage(isTest) {
       
       if (!latestVersion || compareVersions(version, latestVersion) > 0) {
         latestVersion = version;
-        latestFile = file;
       }
+    }
+    
+    if (latestVersion) {
+      console.log('[API Version] Dernière version trouvée:', latestVersion, isTest ? '(test)' : '(prod)');
     }
     
     return latestVersion;
   } catch (error) {
-    console.error('[API Version] Erreur lors de la récupération:', error);
+    // Erreur silencieuse - on retourne null pour utiliser la version par défaut
+    console.warn('[API Version] Erreur lors de la récupération (utilisation version par défaut):', error.message);
     return null;
   }
 }
