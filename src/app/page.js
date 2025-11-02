@@ -14,6 +14,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
+import OfflineNotification from "@/components/OfflineNotification";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -31,9 +32,8 @@ export default function Home() {
     const [collapsedDays, setCollapsedDays] = useState({});
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [isSmallScreen, setIsSmallScreen] = useState(false);
-    const [isOnline, setIsOnline] = useState(true);
-    const [showOfflineToast, setShowOfflineToast] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [hasNetworkError, setHasNetworkError] = useState(false);
     const [testMode, setTestModeState] = useState(false);
     const [todaySpacing, setTodaySpacing] = useState(0);
     const [shouldScrollToToday, setShouldScrollToToday] = useState(false);
@@ -65,6 +65,28 @@ export default function Home() {
             setError(null);
             setDebugInfo(null);
 
+            // Vérifier si on est en ligne avant d'essayer de fetch
+            const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+            if (!isOnline) {
+                // En mode hors ligne, utiliser le cache si disponible
+                const cached = loadEventsFromCache();
+                if (cached) {
+                    console.log('[Page] Mode hors ligne - Utilisation du cache');
+                    setAllEvents(cached.events);
+                    setSubjectColors(cached.colors);
+                    const weeks = extractAvailableWeeks(cached.events);
+                    setAvailableWeeks(weeks);
+                    if (weeks.length > 0) {
+                        const weekToSelect = selectBestWeek(weeks);
+                        setSelectedWeek(weekToSelect?.monday);
+                    }
+                    setLoading(false);
+                    return; // Sortir sans erreur
+                } else {
+                    throw new Error('Mode hors connexion - Aucune donnée en cache disponible');
+                }
+            }
+
             const debug = {
                 capacitorAvailable: !!Capacitor,
                 isNativePlatform: isNative,
@@ -78,6 +100,35 @@ export default function Home() {
                 // Récupérer les données normales
                 data = await fetchICSEvents(isNative, Http);
             } catch (fetchError) {
+                // Si l'erreur est due à la connexion, essayer le cache
+                const isNetworkError = !isOnline || 
+                    fetchError.message.includes('Failed to fetch') || 
+                    fetchError.message.includes('réseau') ||
+                    fetchError.message.includes('network') ||
+                    fetchError.message.includes('fetch failed');
+                
+                if (isNetworkError) {
+                    setHasNetworkError(true); // Déclencher la notification hors ligne
+                    const cached = loadEventsFromCache();
+                    if (cached) {
+                        console.log('[Page] Erreur réseau - Utilisation du cache');
+                        setAllEvents(cached.events);
+                        setSubjectColors(cached.colors);
+                        const weeks = extractAvailableWeeks(cached.events);
+                        setAvailableWeeks(weeks);
+                        if (weeks.length > 0) {
+                            const weekToSelect = selectBestWeek(weeks);
+                            setSelectedWeek(weekToSelect?.monday);
+                        }
+                        setLoading(false);
+                        // Ne pas afficher l'erreur si on a réussi à charger depuis le cache
+                        setError(null);
+                        setDebugInfo(null);
+                        return; // Sortir sans erreur
+                    }
+                }
+                
+                // Si on arrive ici, on n'a pas de cache ou ce n'est pas une erreur réseau
                 debug.fetchError = fetchError.message;
                 debug.fetchStack = fetchError.stack;
                 setDebugInfo(debug);
@@ -104,35 +155,61 @@ export default function Home() {
             saveEventsToCache(data, colorMapping);
             // Mettre à jour le timestamp dans l'état
             setLastUpdateTimestamp(new Date().toISOString());
+            // Réinitialiser l'erreur réseau si on a réussi à charger
+            setHasNetworkError(false);
         } catch (err) {
-            setError(err.message);
-            if (!debugInfo) {
-                setDebugInfo({
-                    error: err.message,
-                    stack: err.stack,
-                    capacitorAvailable: !!Capacitor,
-                    isNativePlatform: Capacitor && Capacitor.isNativePlatform(),
-                    protocol: window.location.protocol,
-                    href: window.location.href
-                });
-            }
-            const saved = localStorage.getItem("events");
-            const savedColors = localStorage.getItem("subjectColors");
-            if (saved) {
-                const data = JSON.parse(saved);
-                setAllEvents(data);
-                const weeks = extractAvailableWeeks(data);
+            // Vérifier si c'est une erreur réseau et si on a du cache
+            const isNetworkError = err.message.includes('Failed to fetch') || 
+                err.message.includes('réseau') ||
+                err.message.includes('network') ||
+                err.message.includes('fetch failed');
+            
+            const saved = loadEventsFromCache();
+            if (isNetworkError && saved) {
+                setHasNetworkError(true); // Déclencher la notification hors ligne
+                // Si c'est une erreur réseau et qu'on a du cache, utiliser le cache sans afficher l'erreur
+                console.log('[Page] Erreur réseau - Utilisation du cache (fallback)');
+                setAllEvents(saved.events);
+                setSubjectColors(saved.colors);
+                const weeks = extractAvailableWeeks(saved.events);
                 setAvailableWeeks(weeks);
-                
                 if (weeks.length > 0) {
                     const weekToSelect = selectBestWeek(weeks);
                     setSelectedWeek(weekToSelect?.monday);
                 }
+                setError(null);
+                setDebugInfo(null);
+            } else {
+                // Afficher l'erreur seulement si on n'a pas de cache ou si ce n'est pas une erreur réseau
+                setError(err.message);
+                if (!debugInfo) {
+                    setDebugInfo({
+                        error: err.message,
+                        stack: err.stack,
+                        capacitorAvailable: !!Capacitor,
+                        isNativePlatform: Capacitor && Capacitor.isNativePlatform(),
+                        protocol: window.location.protocol,
+                        href: window.location.href
+                    });
+                }
+                
+                // Essayer quand même le cache comme dernier recours
+                if (saved) {
+                    const data = saved.events;
+                    setAllEvents(data);
+                    const weeks = extractAvailableWeeks(data);
+                    setAvailableWeeks(weeks);
+                    
+                    if (weeks.length > 0) {
+                        const weekToSelect = selectBestWeek(weeks);
+                        setSelectedWeek(weekToSelect?.monday);
+                    }
 
-                if (savedColors) {
-                    setSubjectColors(JSON.parse(savedColors));
-                } else {
-                    setSubjectColors(createSubjectColorMapping(data));
+                    if (saved.colors) {
+                        setSubjectColors(saved.colors);
+                    } else {
+                        setSubjectColors(createSubjectColorMapping(data));
+                    }
                 }
             }
         } finally {
@@ -166,9 +243,13 @@ export default function Home() {
         // Initialiser le mode test
         setTestModeState(isTestModeEnabled());
 
+        // Vérifier si on est en ligne
+        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
         // Charger immédiatement depuis le cache si disponible
         const cached = loadEventsFromCache();
         if (cached) {
+            console.log('[Page] Chargement depuis le cache');
             setAllEvents(cached.events);
             setSubjectColors(cached.colors);
 
@@ -181,8 +262,15 @@ export default function Home() {
             setLoading(false);
         }
 
-        // Puis refresh en arrière-plan
-        fetchEvents();
+        // Si on est en ligne, faire un refresh en arrière-plan pour mettre à jour
+        // Si on est hors ligne, on utilise seulement le cache (déjà chargé)
+        if (isOnline) {
+            fetchEvents();
+        } else {
+            console.log('[Page] Mode hors ligne - Utilisation du cache uniquement');
+            // Si on est hors ligne, déclencher la notification une seule fois
+            setHasNetworkError(true);
+        }
     }, [capacitorReady]);
 
     useEffect(() => {
@@ -263,19 +351,6 @@ export default function Home() {
         return () => window.removeEventListener('resize', handleResize);
     }, [todaySpacing]);
 
-    // Suivre l'état en ligne/hors-ligne et afficher un toast discret sur mobile
-    useEffect(() => {
-        const setOnline = () => setIsOnline(true);
-        const setOffline = () => setIsOnline(false);
-        setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
-        window.addEventListener('online', setOnline);
-        window.addEventListener('offline', setOffline);
-        return () => {
-            window.removeEventListener('online', setOnline);
-            window.removeEventListener('offline', setOffline);
-        };
-    }, []);
-
     // État pour le timestamp de dernière mise à jour
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
 
@@ -288,15 +363,6 @@ export default function Home() {
             }
         }
     }, []);
-
-    useEffect(() => {
-        const isMobile = isNative || isSmallScreen;
-        if (isMobile && !isOnline) {
-            setShowOfflineToast(true);
-            const t = setTimeout(() => setShowOfflineToast(false), 3000);
-            return () => clearTimeout(t);
-        }
-    }, [isOnline, isNative, isSmallScreen]);
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode");
@@ -576,7 +642,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.16" 
+                currentVersion="2.0.17" 
                 isNative={isNative} 
             />
 
@@ -599,7 +665,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.16"
+                currentVersion="2.0.17"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -707,95 +773,11 @@ export default function Home() {
                 )}
             </main>
 
-            <Footer onCheckUpdates={handleCheckUpdates} />
-
-            {/* Bouton de test pour forcer la mise à jour avec la version actuelle (mobile uniquement) */}
-            {isNative && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
-                    zIndex: 10000
-                }}>
-                    <button
-                        onClick={async () => {
-                            try {
-                                const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
-                                const versionUrl = `${apiUrl}/api/version`;
-                                
-                                const response = await fetch(versionUrl);
-                                if (!response.ok) {
-                                    throw new Error('Erreur lors de la récupération de la version');
-                                }
-                                
-                                const data = await response.json();
-                                const currentVersion = "2.0.12";
-                                
-                                // Utiliser la fonction de mise à jour
-                                const { downloadAndInstall } = require('@/utils/appUpdater');
-                                await downloadAndInstall(data.url, currentVersion);
-                            } catch (error) {
-                                console.error('[Test Update] Erreur:', error);
-                                alert(`Erreur lors de la mise à jour de test:\n${error.message}`);
-                            }
-                        }}
-                        style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '12px',
-                            padding: '12px 20px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                            transition: 'transform 0.2s, box-shadow 0.2s'
-                        }}
-                        onMouseOver={(e) => {
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                        }}
-                        title="Test: Réinstaller l'app avec la version actuelle"
-                    >
-                        🧪 Test Update
-                    </button>
-                </div>
-            )}
+            <Footer />
 
             <ScrollToTop/>
 
-            {(isNative || isSmallScreen) && showOfflineToast && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: '#10b981',
-                    color: 'white',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                    borderRadius: '8px',
-                    padding: '0.6rem 1rem',
-                    fontSize: '0.85rem',
-                    zIndex: 10001,
-                    maxWidth: 'calc(100% - 2rem)',
-                    textAlign: 'center'
-                }}>
-                    {lastUpdateTimestamp 
-                        ? `Dernière mise à jour : ${new Date(lastUpdateTimestamp).toLocaleString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}`
-                        : 'Mode hors connexion'
-                    }
-                </div>
-            )}
+            <OfflineNotification forceShow={hasNetworkError} />
 
             {selectedEvent && (
                 <div className="event-modal-layer" aria-modal="true" role="dialog">

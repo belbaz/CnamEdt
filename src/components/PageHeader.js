@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import SettingsMenu from "./SettingsMenu";
 import "./PageHeader.css";
 
@@ -20,6 +21,44 @@ export default function PageHeader({
                                        showTimeLabels = true,
                                        onToggleTimeLabels = null
                                    }) {
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadAPK = async () => {
+        setIsDownloading(true);
+        try {
+            // Récupérer l'URL de l'APK depuis l'API version
+            const response = await fetch('/api/version');
+            
+            if (!response.ok) {
+                throw new Error('Impossible de récupérer l\'URL de l\'APK');
+            }
+            
+            const data = await response.json();
+            const apkUrl = data.url;
+            
+            console.log('[PageHeader] Téléchargement APK:', apkUrl);
+            
+            // Créer un élément <a> temporaire pour forcer le téléchargement
+            const link = document.createElement('a');
+            link.href = apkUrl;
+            link.download = `edt_cnam_v${data.version}.apk`;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Déclencher le téléchargement
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('[PageHeader] Téléchargement déclenché');
+        } catch (error) {
+            console.error('[PageHeader] Erreur lors du téléchargement:', error);
+            alert('Erreur lors du téléchargement de l\'APK. Veuillez réessayer.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <div className="page-header">
             <div className="header-content">
@@ -37,6 +76,16 @@ export default function PageHeader({
 
                 </div>
                 <div className="header-actions">
+                    {!isNative && (
+                        <button
+                            className="download-apk-button"
+                            onClick={handleDownloadAPK}
+                            disabled={isDownloading}
+                            title="Télécharger l'APK Android"
+                        >
+                            {isDownloading ? '⏳' : '📱'}
+                        </button>
+                    )}
                     <SettingsMenu
                         autoScrollToday={autoScrollToday}
                         onToggleAutoScroll={onToggleAutoScroll}
@@ -74,7 +123,14 @@ export default function PageHeader({
                         onClick={onToggleDarkMode}
                         title={darkMode ? "Mode clair" : "Mode sombre"}
                     >
-                        {darkMode ? "☀️" : "🌙"}
+                        {darkMode ? (
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <circle cx="12" cy="12" r="4.5" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1"/>
+                                <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05l-2.12-2.12" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                        ) : (
+                            "🌙"
+                        )}
                     </button>
                 </div>
             </div>

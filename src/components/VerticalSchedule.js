@@ -54,11 +54,8 @@ export default function VerticalSchedule({
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
 
-    // États pour la notification hors ligne
-    const [isOnline, setIsOnline] = useState(true);
-    const [showOfflineNotification, setShowOfflineNotification] = useState(false);
-    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
 
     // Détecter un petit écran (mobile) OU app native
     useEffect(() => {
@@ -74,34 +71,6 @@ export default function VerticalSchedule({
         mq.addEventListener('change', update);
         return () => mq.removeEventListener('change', update);
     }, [isNative]);
-
-    // Détecter l'état en ligne/hors ligne
-    useEffect(() => {
-        const setOnline = () => setIsOnline(true);
-        const setOffline = () => setIsOnline(false);
-        setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
-        window.addEventListener('online', setOnline);
-        window.addEventListener('offline', setOffline);
-        return () => {
-            window.removeEventListener('online', setOnline);
-            window.removeEventListener('offline', setOffline);
-        };
-    }, []);
-
-    // Afficher la notification hors ligne sur mobile
-    useEffect(() => {
-        // Vérifier les conditions : mobile ET hors ligne
-        // La notification s'affiche même sans timestamp (avec un message différent)
-        if (isMobile && !isOnline) {
-            setShowOfflineNotification(true);
-            const timeout = setTimeout(() => {
-                setShowOfflineNotification(false);
-            }, 3000);
-            return () => clearTimeout(timeout);
-        } else {
-            setShowOfflineNotification(false);
-        }
-    }, [isOnline, isMobile, lastUpdateTimestamp]);
 
     // Charger le timestamp de dernière mise à jour au montage et quand les événements changent
     useEffect(() => {
@@ -227,18 +196,6 @@ export default function VerticalSchedule({
 
     return (
         <>
-            {/* Notification hors ligne mobile */}
-            {isMobile && showOfflineNotification && (
-                <div className="offline-notification-banner">
-                    <span className="offline-text">
-                        {lastUpdateTimestamp
-                            ? `Dernière mise à jour : ${formatLastUpdate(lastUpdateTimestamp)}`
-                            : 'Mode hors connexion'
-                        }
-                    </span>
-                </div>
-            )}
-
             <div
                 ref={containerRef}
                 className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}

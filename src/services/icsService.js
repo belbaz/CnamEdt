@@ -107,13 +107,18 @@ async function fetchEventsForWeb() {
         
         return data;
     } catch (err) {
-        console.error('[ICS Service] Error in fetchEventsForWeb:', err.message);
-        
-        // Améliorer le message d'erreur pour les erreurs réseau
-        if (err.message === 'Failed to fetch') {
+        // Pour les erreurs réseau, ne pas logger comme une erreur critique
+        // (sera géré en amont avec le cache)
+        if (err.message === 'Failed to fetch' || err.message.includes('fetch failed')) {
+            // Logger en mode debug seulement, pas comme erreur
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[ICS Service] Erreur réseau (mode hors ligne probable):', err.message);
+            }
             throw new Error('Impossible de contacter le serveur. Vérifier la connexion réseau.');
         }
         
+        // Pour les autres erreurs, logger normalement
+        console.error('[ICS Service] Error in fetchEventsForWeb:', err.message);
         throw err;
     }
 }
