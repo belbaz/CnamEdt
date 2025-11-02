@@ -726,7 +726,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.27" 
+                currentVersion="2.0.28" 
                 isNative={isNative} 
             />
 
@@ -749,7 +749,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.27"
+                currentVersion="2.0.28"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -863,7 +863,7 @@ export default function Home() {
 
             <OfflineNotification forceShow={hasNetworkError} />
 
-            <TestModeIndicator currentVersion="2.0.27" isNative={isNative} />
+            <TestModeIndicator currentVersion="2.0.28" isNative={isNative} />
 
             {selectedEvent && (
                 <div className="event-modal-layer" aria-modal="true" role="dialog">

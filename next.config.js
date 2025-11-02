@@ -1,13 +1,19 @@
 /** @type {import('next').NextConfig} */
 // En mode dev, on utilise la config web (sans output: 'export') pour permettre les routes API
-// En mode build, on utilise la config mobile (avec output: 'export') pour Capacitor
+// Sur Vercel, on utilise aussi la config web (sans output: 'export') pour permettre les routes API
+// En mode build local mobile, on utilise la config mobile (avec output: 'export') pour Capacitor
 const isDev = process.env.NODE_ENV === 'development';
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
+const isMobileBuild = process.env.BUILD_MODE === 'mobile';
 
-const nextConfig = isDev ? {
-  // Mode dev - API routes activées
+// Si on est sur Vercel ou en dev, on ne peut pas utiliser output: 'export' (nécessite les routes API)
+const shouldUseExport = !isDev && !isVercel && isMobileBuild;
+
+const nextConfig = (isDev || isVercel) ? {
+  // Mode dev/Vercel - API routes activées
   // Pas de "output: 'export'" pour permettre les API routes
   
-  // Optimisation d'images activée en dev
+  // Optimisation d'images activée en dev/Vercel
   images: {
     unoptimized: false
   },
@@ -20,8 +26,9 @@ const nextConfig = isDev ? {
     NEXT_PUBLIC_APP_MODE: 'web'
   }
 } : {
-  // Configuration pour build statique (nécessaire pour Capacitor)
-  output: 'export',
+  // Configuration pour build statique mobile (nécessaire pour Capacitor)
+  // Seulement utilisé lors d'un build local avec BUILD_MODE=mobile
+  ...(shouldUseExport && { output: 'export' }),
   
   // Désactiver l'optimisation d'images (non compatible avec export statique)
   images: {
