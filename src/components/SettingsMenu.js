@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./SettingsMenu.css";
+import EasterEgg from "./EasterEgg";
+import Toast from "./Toast";
 
 export default function SettingsMenu({ 
     autoScrollToday, 
@@ -17,7 +19,32 @@ export default function SettingsMenu({
     onToggleTimeLabels = null
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [showEasterEgg, setShowEasterEgg] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+    const [showToast, setShowToast] = useState(false);
+    const [version, setVersion] = useState(currentVersion || null);
+    const copyrightClickCount = useRef(0);
+    const copyrightClickTimeout = useRef(null);
     const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
+
+    // Récupérer la version depuis l'API ou utiliser currentVersion
+    useEffect(() => {
+        if (currentVersion) {
+            setVersion(currentVersion);
+        } else if (!isNative && typeof window !== 'undefined') {
+            // Pour le web, récupérer depuis l'API
+            fetch('/api/version')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.version) {
+                        setVersion(data.version);
+                    }
+                })
+                .catch(() => {
+                    // En cas d'erreur, garder null
+                });
+        }
+    }, [isNative, currentVersion]);
 
     useEffect(() => {
         if (typeof onOpenChange === 'function') {
@@ -38,6 +65,88 @@ export default function SettingsMenu({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
+
+    // Gérer les clics sur le bouton Copyright
+    const handleCopyrightClick = async () => {
+        copyrightClickCount.current += 1;
+
+        // Réinitialiser le compteur après 3 secondes d'inactivité
+        if (copyrightClickTimeout.current) {
+            clearTimeout(copyrightClickTimeout.current);
+        }
+        copyrightClickTimeout.current = setTimeout(() => {
+            copyrightClickCount.current = 0;
+        }, 3000);
+
+        // Si 5 clics, déclencher l'easter egg et basculer le mode test
+        if (copyrightClickCount.current >= 5) {
+            copyrightClickCount.current = 0;
+            
+            // Activer/désactiver le mode test
+            const currentTestMode = localStorage.getItem('updateTestMode') === 'true';
+            const newTestMode = !currentTestMode;
+            localStorage.setItem('updateTestMode', newTestMode.toString());
+            
+            // Afficher les confettis
+            setShowEasterEgg(true);
+
+            // Afficher un toast avec le message
+            setToastMessage(newTestMode ? 'Mode test activé' : 'Mode test désactivé');
+            setShowToast(true);
+
+            // Afficher une notification Android si on est sur l'app native (optionnel)
+            // Utiliser une fonction asynchrone séparée pour éviter l'import au build time
+            if (isNative && typeof window !== 'undefined') {
+                // Délai pour éviter les problèmes de build
+                setTimeout(async () => {
+                    try {
+                        // Essayer d'utiliser LocalNotifications (nécessite @capacitor/local-notifications)
+                        // Utiliser Function() pour éviter l'analyse statique de Next.js
+                        const dynamicImport = new Function('moduleName', 'return import(moduleName)');
+                        const moduleName = '@' + 'capacitor/' + 'local-notifications';
+                        const module = await dynamicImport(moduleName);
+                        const { LocalNotifications } = module;
+                        
+                        // Vérifier les permissions
+                        const permResult = await LocalNotifications.checkPermissions();
+                        if (permResult.display === 'granted') {
+                            await LocalNotifications.schedule({
+                                notifications: [
+                                    {
+                                        title: '🎉 Easter Egg !',
+                                        body: 'Merci d\'avoir découvert ce secret ! 🎊',
+                                        id: Date.now()
+                                    }
+                                ]
+                            });
+                        } else {
+                            // Demander les permissions si elles ne sont pas accordées
+                            await LocalNotifications.requestPermissions();
+                            const newPermResult = await LocalNotifications.checkPermissions();
+                            if (newPermResult.display === 'granted') {
+                                await LocalNotifications.schedule({
+                                    notifications: [
+                                        {
+                                            title: '🎉 Easter Egg !',
+                                            body: 'Merci d\'avoir découvert ce secret ! 🎊',
+                                            id: Date.now()
+                                        }
+                                    ]
+                                });
+                            }
+                        }
+                    } catch (localNotifError) {
+                        // Si LocalNotifications n'est pas disponible, on continue (le toast est déjà affiché)
+                        // Erreur silencieuse car le package est optionnel
+                    }
+                }, 100);
+            }
+        }
+    };
+
+    const handleCloseEasterEgg = () => {
+        setShowEasterEgg(false);
+    };
 
     return (
         <>
@@ -113,10 +222,45 @@ export default function SettingsMenu({
                                     </button>
                                 </div>
                             )}
+
+                            <div className="setting-item setting-button-item">
+                                <a 
+                                    href={"https://belbaz.vercel.app/contact"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="contact-button"
+                                >
+                                    <span className="button-icon">✉️</span>
+                                    <span className="button-label">Contact</span>
+                                </a>
+                            </div>
+
+                            <div className="setting-item copyright-item">
+                                {version && (
+                                    <div className="copyright-line">
+                                        <span className="copyright-text">Version {version}</span>
+                                    </div>
+                                )}
+                                <div className="copyright-line">
+                                    <span 
+                                        className="copyright-text"
+                                        onClick={handleCopyrightClick}
+                                    >
+                                        © {new Date().getFullYear()} EDT CNAM
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </>
             )}
+
+            <EasterEgg isActive={showEasterEgg} onClose={handleCloseEasterEgg} />
+            <Toast 
+                message={toastMessage} 
+                isVisible={showToast} 
+                onClose={() => setShowToast(false)} 
+            />
         </>
     );
 }

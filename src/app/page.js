@@ -15,6 +15,7 @@ import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
+import TestModeIndicator from "@/components/TestModeIndicator";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -318,6 +319,89 @@ export default function Home() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [availableWeeks, selectedWeek]);
+
+    // Navigation par swipe horizontal pour changer de semaine (mobile uniquement)
+    useEffect(() => {
+        // Ne s'activer que sur mobile
+        if (!isNative && !isSmallScreen) return;
+
+        let touchStartX = null;
+        let touchStartY = null;
+        let touchStartTime = null;
+        const minSwipeDistance = 50; // Distance minimale pour considérer un swipe
+        const maxSwipeTime = 500; // Temps maximum pour un swipe (ms)
+        const maxVerticalDistance = 100; // Distance verticale maximale pour considérer un swipe horizontal
+
+        const handleTouchStart = (e) => {
+            const touch = e.touches[0];
+            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // Vérifier que le touch ne part pas de la zone VerticalSchedule (EDT)
+            const verticalScheduleContainer = document.querySelector('.vertical-schedule-container');
+            if (verticalScheduleContainer && verticalScheduleContainer.contains(targetElement)) {
+                return; // Ne pas gérer le swipe si on est dans la zone EDT
+            }
+
+            // Autoriser le swipe partout ailleurs, y compris sur le WeekPicker
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchStartTime = Date.now();
+        };
+
+        const handleTouchEnd = (e) => {
+            if (touchStartX === null || touchStartY === null || touchStartTime === null) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const touchEndTime = Date.now();
+
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            const deltaTime = touchEndTime - touchStartTime;
+
+            // Réinitialiser les valeurs
+            touchStartX = null;
+            touchStartY = null;
+            touchStartTime = null;
+
+            // Vérifier que c'est un swipe horizontal (plus horizontal que vertical)
+            if (Math.abs(deltaY) > Math.abs(deltaX) || Math.abs(deltaY) > maxVerticalDistance) {
+                return; // C'est un swipe vertical, on l'ignore
+            }
+
+            // Vérifier la distance et le temps
+            if (Math.abs(deltaX) < minSwipeDistance || deltaTime > maxSwipeTime) {
+                return; // Trop court ou trop lent
+            }
+
+            // Vérifier qu'on a des semaines disponibles
+            if (availableWeeks.length === 0 || !selectedWeek) return;
+
+            const currentWeekIndex = availableWeeks.findIndex(
+                w => selectedWeek && w.monday.getTime() === selectedWeek.getTime()
+            );
+
+            if (currentWeekIndex === -1) return;
+
+            // Swipe gauche = semaine suivante, swipe droite = semaine précédente
+            if (deltaX < 0 && currentWeekIndex < availableWeeks.length - 1) {
+                // Swipe vers la gauche = semaine suivante
+                setSelectedWeek(availableWeeks[currentWeekIndex + 1].monday);
+            } else if (deltaX > 0 && currentWeekIndex > 0) {
+                // Swipe vers la droite = semaine précédente
+                setSelectedWeek(availableWeeks[currentWeekIndex - 1].monday);
+            }
+        };
+
+        // Ajouter les listeners sur le document
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            document.removeEventListener('touchstart', handleTouchStart);
+            document.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isNative, isSmallScreen, availableWeeks, selectedWeek]);
 
     // Détecter un petit écran (smartphone) côté web pour adopter l'UI mobile
     useEffect(() => {
@@ -642,7 +726,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.20" 
+                currentVersion="2.0.23" 
                 isNative={isNative} 
             />
 
@@ -665,7 +749,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.20"
+                currentVersion="2.0.23"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -778,6 +862,8 @@ export default function Home() {
             <ScrollToTop/>
 
             <OfflineNotification forceShow={hasNetworkError} />
+
+            <TestModeIndicator currentVersion="2.0.23" isNative={isNative} />
 
             {selectedEvent && (
                 <div className="event-modal-layer" aria-modal="true" role="dialog">

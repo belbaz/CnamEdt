@@ -10,25 +10,29 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Récupérer la version depuis les arguments
 const version = process.argv[2];
+const isTest = process.argv[3] === 'test';
 
 if (!version) {
   console.error('❌ Version manquante !');
-  console.error('   Usage: node upload-to-supabase.js [version]');
-  console.error('   Exemple: node upload-to-supabase.js 1.0.0');
+  console.error('   Usage: node upload-to-supabase.js [version] [test]');
+  console.error('   Exemple: node upload-to-supabase.js 2.0.20');
+  console.error('   Exemple test: node upload-to-supabase.js 2.0.20 test');
   process.exit(1);
 }
 
-// Valider le format de version (X.Y.Z)
-if (!/^\d+\.\d+\.\d+$/.test(version)) {
+// Valider le format de version (X.Y ou X.Y.Z)
+if (!/^\d+\.\d+(\.\d+)?$/.test(version)) {
   console.error('❌ Format de version invalide !');
-  console.error('   Format attendu: X.Y.Z (exemple: 1.0.0)');
+  console.error('   Format attendu: X.Y ou X.Y.Z (exemple: 2.0 ou 2.0.20)');
   process.exit(1);
 }
 
 // Configuration
-const APK_NAME = `edt_cnam_v${version}.apk`;
-// Le build-apk.bat génère l'APK en mode debug, donc on cherche dans debug/ et non release/
-const APK_PATH = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
+// Format: edt_cnam_v_test_X.X.X.apk pour test, edt_cnam_vX.X.apk pour prod
+const APK_NAME = isTest ? `edt_cnam_v_test_${version}.apk` : `edt_cnam_v${version}.apk`;
+// Le deploy.bat génère l'APK en mode release
+const APK_PATH_RELEASE = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
+const APK_PATH_DEBUG = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
 const BUCKET_NAME = 'Apk Edt Eicnam';
 const FILE_PATH = `apk/${APK_NAME}`;
 
@@ -78,18 +82,17 @@ async function uploadAPK() {
     process.exit(1);
   }
 
-  // Vérifier que l'APK existe (chercher d'abord en debug, puis en release)
-  let finalAPKPath = APK_PATH;
+  // Vérifier que l'APK existe (chercher d'abord en release, puis en debug)
+  let finalAPKPath = APK_PATH_RELEASE;
   if (!fs.existsSync(finalAPKPath)) {
-    // Essayer le dossier release si debug n'existe pas
-    const releasePath = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
-    if (fs.existsSync(releasePath)) {
-      finalAPKPath = releasePath;
-      console.log(`ℹ️  APK trouvé en mode release`);
+    // Essayer le dossier debug si release n'existe pas
+    if (fs.existsSync(APK_PATH_DEBUG)) {
+      finalAPKPath = APK_PATH_DEBUG;
+      console.log(`ℹ️  APK trouvé en mode debug`);
     } else {
       console.error(`❌ APK introuvable dans les deux emplacements :`);
-      console.error(`   - Debug : ${APK_PATH}`);
-      console.error(`   - Release : ${releasePath}`);
+      console.error(`   - Release : ${APK_PATH_RELEASE}`);
+      console.error(`   - Debug : ${APK_PATH_DEBUG}`);
       process.exit(1);
     }
   }
@@ -145,7 +148,14 @@ async function uploadAPK() {
       .list('apk', { limit: 100 });
 
     if (existingFiles && existingFiles.length > 0) {
-      const apkFiles = existingFiles.filter(f => f.name.startsWith('edt_cnam_v') && f.name.endsWith('.apk'));
+      // Filtrer selon le type : test ou production
+      const apkFiles = existingFiles.filter(f => {
+        if (isTest) {
+          return f.name.startsWith('edt_cnam_v_test_') && f.name.endsWith('.apk');
+        } else {
+          return f.name.startsWith('edt_cnam_v') && !f.name.includes('_test_') && f.name.endsWith('.apk');
+        }
+      });
       
       if (apkFiles.length > 0) {
         console.log(`🗑️  Suppression de ${apkFiles.length} ancien(s) APK(s)...`);

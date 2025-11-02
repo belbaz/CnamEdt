@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 cls
 echo ========================================
-echo   DEPLOY EDT EICNAM - VERSION TEST
+echo   DEPLOY EDT EICNAM - PRODUCTION
 echo ========================================
 echo.
 
@@ -164,14 +164,18 @@ if errorlevel 1 (
 )
 cd ..
 
+REM Convertir la version en format X.X (2 numéros) pour la production
+for /f "tokens=1,2 delims=." %%a in ("!VERSION!") do set MAJOR=%%a && set MINOR=%%b
+set PROD_VERSION=!MAJOR!.!MINOR!
+
 set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
-set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
+set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!PROD_VERSION!.apk
 move /Y "%APK_SOURCE%" "%APK_DEST%" >nul
-echo APK signe: edt_cnam_v_test_!VERSION!.apk
+echo APK signe: edt_cnam_v!PROD_VERSION!.apk
 
 echo [7/8] Upload Supabase...
-REM Upload avec format test
-node mobile-config\upload-to-supabase.js !VERSION! test
+REM Utiliser la version en format X.X pour l'upload
+node mobile-config\upload-to-supabase.js !PROD_VERSION!
 if errorlevel 1 (
     echo ATTENTION: Upload Supabase echoue (continue quand meme^)
 )
@@ -256,8 +260,8 @@ echo ========================================
 echo   DEPLOY TERMINE !
 echo ========================================
 echo.
-echo Version: !VERSION! (TEST)
-echo APK signe: android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
+echo Version: !VERSION! (Production: !PROD_VERSION!)
+echo APK signe: android\app\build\outputs\apk\release\edt_cnam_v!PROD_VERSION!.apk
 echo Site: Deploy sur Vercel
 echo.
 pause

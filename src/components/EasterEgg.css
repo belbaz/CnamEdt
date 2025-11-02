@@ -1,0 +1,86 @@
+.easter-egg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 10000;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    top: -20px;
+    width: var(--size);
+    height: var(--size);
+    background-color: var(--color);
+    animation: confettiFall var(--duration) ease-out forwards;
+    animation-delay: var(--delay);
+    opacity: 0;
+}
+
+.confetti-circle {
+    border-radius: 50%;
+}
+
+.confetti-square {
+    border-radius: 2px;
+}
+
+.confetti-triangle {
+    width: 0;
+    height: 0;
+    background: transparent;
+    border-left: calc(var(--size) / 2) solid transparent;
+    border-right: calc(var(--size) / 2) solid transparent;
+    border-bottom: var(--size) solid var(--color);
+    background: none;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-20px) translateX(0) rotate(0deg) scale(1);
+        opacity: 0;
+    }
+    5% {
+        opacity: 1;
+    }
+    95% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(calc(100vh + 20px)) translateX(var(--x-drift, 0px)) rotate(calc(var(--rotation) + 720deg)) scale(0.8);
+        opacity: 0;
+    }
+}
+
+/* Variations pour chaque confetti - mouvement horizontal */
+.confetti:nth-child(3n) {
+    --x-drift: -30px;
+}
+
+.confetti:nth-child(3n+1) {
+    --x-drift: 30px;
+}
+
+.confetti:nth-child(3n+2) {
+    --x-drift: 0px;
+}
+
+.confetti:nth-child(5n) {
+    --x-drift: -50px;
+}
+
+.confetti:nth-child(5n+1) {
+    --x-drift: 50px;
+}
+
+/* Effet de dispersion */
+.confetti:nth-child(odd) {
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.confetti:nth-child(even) {
+    animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+}

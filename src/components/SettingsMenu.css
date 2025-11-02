@@ -268,3 +268,67 @@
         font-size: 0.7rem;
     }
 }
+
+/* Contact button */
+.contact-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.contact-button:hover {
+    background: var(--bg-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.1);
+}
+
+.contact-button .button-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.contact-button .button-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Copyright text (invisible button) */
+.copyright-item {
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--border-light);
+    padding-top: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.copyright-line {
+    display: block;
+}
+
+.copyright-text {
+    display: inline-block;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    opacity: 0.6;
+    user-select: none;
+}
+
+.copyright-text:hover {
+    opacity: 0.8;
+}

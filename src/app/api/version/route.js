@@ -7,8 +7,12 @@
 // Le dossier API doit être renommé avant le build (voir scripts de build ou package.json)
 
 export async function GET(request) {
+  // Vérifier si on demande les versions test
+  const searchParams = new URL(request.url).searchParams;
+  const isTest = searchParams.get('test') === 'true';
+  
   // Version actuelle de l'APK
-  const currentVersion = "2.0.20";
+  const currentVersion = "2.0.23";
   
   // Récupérer l'URL de base du site pour construire l'URL de l'API
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
@@ -16,12 +20,14 @@ export async function GET(request) {
   
   // Utiliser la route API de l'application comme proxy pour le téléchargement
   // Cela permet de passer par le serveur pour accéder au bucket privé
-  const apkUrl = `${siteUrl}/api/download/apk?version=${currentVersion}`;
+  // download/apk reconstruit le nom du fichier avec le format correct
+  const apkUrl = `${siteUrl}/api/download/apk?version=${currentVersion}&test=${isTest}`;
   
   return Response.json({
     version: currentVersion,
     url: apkUrl,
-    changelog: "Version initiale avec système de mise à jour automatique"
+    changelog: isTest ? "Version de test - Préprod/Dev" : "Version initiale avec système de mise à jour automatique",
+    isTest: isTest
   }, {
     headers: {
       // Cache

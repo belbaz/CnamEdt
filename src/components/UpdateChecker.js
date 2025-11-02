@@ -56,13 +56,17 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         setIsChecking(true);
         
         try {
+            // Vérifier si le mode test est activé
+            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            
             // Appeler l'API du site web pour obtenir la dernière version
             const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
-            const versionUrl = `${apiUrl}/api/version`;
+            const versionUrl = `${apiUrl}/api/version${testMode ? '?test=true' : ''}`;
             
             console.log('[UpdateChecker] Vérification des mises à jour...');
             console.log('[UpdateChecker] URL API:', versionUrl);
             console.log('[UpdateChecker] Version actuelle:', currentVersion);
+            console.log('[UpdateChecker] Mode test:', testMode);
             
             const response = await fetch(versionUrl, {
                 method: 'GET',
@@ -97,6 +101,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             setLatestVersion(data.version);
             setDownloadUrl(data.url);
             setChangelog(data.changelog);
+            
+            // Si c'est une version test, enregistrer dans localStorage
+            if (data.isTest && typeof window !== 'undefined') {
+                localStorage.setItem('isTestVersion', 'true');
+            }
 
             // Comparer les versions
             const needsUpdate = compareVersions(currentVersion, data.version);
@@ -145,9 +154,13 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
 
         if (!isNative) {
             // Fallback pour le web : téléchargement classique
+            // Vérifier si c'est une version test
+            const isTestVersion = downloadUrl.includes('test');
+            const fileName = isTestVersion ? `edt_cnam_v_test_${latestVersion}.apk` : `edt_cnam_v${latestVersion}.apk`;
+            
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `edt_cnam_v${latestVersion}.apk`;
+            link.download = fileName;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             document.body.appendChild(link);

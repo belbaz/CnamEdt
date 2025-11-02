@@ -1,18 +1,18 @@
 "use client";
 import './Footer.css';
-import { useCapacitor } from '@/hooks/useCapacitor';
-import { useState, useEffect } from 'react';
+import {useCapacitor} from '@/hooks/useCapacitor';
+import {useState, useEffect} from 'react';
 
 export default function Footer() {
-    const { isNative } = useCapacitor();
-    const [version, setVersion] = useState("1.1.31");
-    
+    const {isNative} = useCapacitor();
+    const [version, setVersion] = useState("Loading ...");
+
     // Récupérer la version depuis l'API (seulement si pas native)
     useEffect(() => {
         if (isNative) {
             return; // Ne pas faire le fetch si native
         }
-        
+
         fetch('/api/version')
             .then(res => res.json())
             .then(data => {
@@ -24,12 +24,12 @@ export default function Footer() {
                 // En cas d'erreur, garder la version par défaut
             });
     }, [isNative]);
-    
+
     // Ne pas afficher dans l'app native
     if (isNative) {
         return null;
     }
-    
+
     return (
         <footer className="app-footer">
             <div className="app-footer-content">

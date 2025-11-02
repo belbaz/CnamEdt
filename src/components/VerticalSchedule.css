@@ -133,6 +133,7 @@
     padding: 0.5rem 0;
     border-bottom: 2px solid var(--border-color);
     justify-items: center;
+    user-select: none;
 }
 
 .vertical-schedule-header.no-time-column {

@@ -15,8 +15,25 @@ export async function GET(request) {
   
   // Récupérer la version depuis le query param ou utiliser la version par défaut
   const { searchParams } = new URL(request.url);
-  const version = searchParams.get('version') || '2.0.4';
-  const FILE_PATH = `apk/edt_cnam_v${version}.apk`;
+  const version = searchParams.get('version') || '2.0';
+  const isTest = searchParams.get('test') === 'true';
+  
+  // Construire le nom du fichier :
+  // - Test: edt_cnam_v_test_X.X.X.apk (format complet avec 3 numéros)
+  // - Prod: edt_cnam_vX.X.apk (format avec 2 numéros)
+  let fileName;
+  if (isTest) {
+    // Pour les versions test, on garde le format X.X.X complet
+    fileName = `edt_cnam_v_test_${version}.apk`;
+  } else {
+    // Pour la production, on s'assure d'avoir seulement X.X (2 numéros)
+    const versionParts = version.split('.');
+    const prodVersion = versionParts.length >= 2 
+      ? `${versionParts[0]}.${versionParts[1]}` 
+      : version;
+    fileName = `edt_cnam_v${prodVersion}.apk`;
+  }
+  const FILE_PATH = `apk/${fileName}`;
   
   if (!supabaseServiceRole) {
     return new Response('Service role non configuré', { 
