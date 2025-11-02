@@ -1,19 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Configuration pour build statique (nécessaire pour Capacitor)
-  // Désactiver en mode dev pour permettre les routes API
-  // Active uniquement en mode build/production
-  ...(process.env.NODE_ENV === 'production' && process.env.BUILD_MODE === 'mobile' ? {
-    output: 'export',
-  } : {}),
+  output: 'export',
   
   // Désactiver l'optimisation d'images (non compatible avec export statique)
   images: {
-    unoptimized: process.env.NODE_ENV === 'production' && process.env.BUILD_MODE === 'mobile' ? true : false
+    unoptimized: true
   },
   
-  // Désactiver le trailing slash seulement en mode mobile
-  trailingSlash: process.env.NODE_ENV === 'production' && process.env.BUILD_MODE === 'mobile' ? true : false,
+  // Désactiver le trailing slash
+  trailingSlash: true,
   
   // Optimisations pour mobile
   compiler: {
@@ -26,7 +22,7 @@ const nextConfig = {
   
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: process.env.BUILD_MODE === 'mobile' ? 'mobile' : 'web'
+    NEXT_PUBLIC_APP_MODE: 'mobile'
   }
 }
 

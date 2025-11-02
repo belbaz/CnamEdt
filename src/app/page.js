@@ -576,7 +576,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.11" 
+                currentVersion="2.0.13" 
                 isNative={isNative} 
             />
 
@@ -599,7 +599,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.11"
+                currentVersion="2.0.13"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -708,6 +708,63 @@ export default function Home() {
             </main>
 
             <Footer onCheckUpdates={handleCheckUpdates} />
+
+            {/* Bouton de test pour forcer la mise à jour avec la version actuelle (mobile uniquement) */}
+            {isNative && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: 10000
+                }}>
+                    <button
+                        onClick={async () => {
+                            try {
+                                const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
+                                const versionUrl = `${apiUrl}/api/version`;
+                                
+                                const response = await fetch(versionUrl);
+                                if (!response.ok) {
+                                    throw new Error('Erreur lors de la récupération de la version');
+                                }
+                                
+                                const data = await response.json();
+                                const currentVersion = "2.0.12";
+                                
+                                // Utiliser la fonction de mise à jour
+                                const { downloadAndInstall } = require('@/utils/appUpdater');
+                                await downloadAndInstall(data.url, currentVersion);
+                            } catch (error) {
+                                console.error('[Test Update] Erreur:', error);
+                                alert(`Erreur lors de la mise à jour de test:\n${error.message}`);
+                            }
+                        }}
+                        style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px 20px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                            transition: 'transform 0.2s, box-shadow 0.2s'
+                        }}
+                        onMouseOver={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                        }}
+                        title="Test: Réinstaller l'app avec la version actuelle"
+                    >
+                        🧪 Test Update
+                    </button>
+                </div>
+            )}
 
             <ScrollToTop/>
 

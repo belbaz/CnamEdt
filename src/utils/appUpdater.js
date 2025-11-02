@@ -2,44 +2,29 @@
 
 /**
  * Service pour gérer la mise à jour automatique de l'application
- * Utilise le plugin Capacitor personnalisé AppUpdater
+ * Utilise directement l'interface JavaScript native Android
  */
 
-let AppUpdaterPlugin = null;
+/**
+ * Vérifie si l'interface native est disponible
+ * @returns {boolean}
+ */
+function isNativeInterfaceAvailable() {
+    return typeof window !== 'undefined' && 
+           window.AndroidAppUpdater !== undefined &&
+           typeof window.AndroidAppUpdater.downloadAndInstallApk === 'function';
+}
 
 /**
- * Initialise le plugin AppUpdater
- * @returns {Promise<boolean>} true si le plugin est disponible
+ * Initialise le service de mise à jour
+ * @returns {Promise<boolean>} true si le service est disponible
  */
 export async function initAppUpdater() {
     if (typeof window === 'undefined') return false;
-
-    try {
-        const { registerPlugin } = require('@capacitor/core');
-        AppUpdaterPlugin = registerPlugin('AppUpdater');
-        
-        console.log('[AppUpdater] Tentative d\'enregistrement du plugin');
-        console.log('[AppUpdater] Plugin enregistré:', AppUpdaterPlugin);
-        
-        // Tester si le plugin répond
-        if (AppUpdaterPlugin) {
-            // Essayer d'appeler une méthode pour vérifier
-            try {
-                const test = await AppUpdaterPlugin.canRequestPackageInstalls();
-                console.log('[AppUpdater] Plugin fonctionnel, test réussi:', test);
-                return true;
-            } catch (testError) {
-                console.error('[AppUpdater] Erreur lors du test du plugin:', testError);
-                // Le plugin peut quand même être disponible même si le test échoue
-                return AppUpdaterPlugin !== null;
-            }
-        }
-        
-        return false;
-    } catch (error) {
-        console.error('[AppUpdater] Erreur lors de l\'initialisation:', error);
-        return false;
-    }
+    
+    const available = isNativeInterfaceAvailable();
+    console.log('[AppUpdater] Interface native disponible:', available);
+    return available;
 }
 
 /**
@@ -47,17 +32,13 @@ export async function initAppUpdater() {
  * @returns {Promise<{canRequest: boolean}>}
  */
 export async function canRequestPackageInstalls() {
-    if (!AppUpdaterPlugin) {
-        await initAppUpdater();
-    }
-
-    if (!AppUpdaterPlugin) {
+    if (!isNativeInterfaceAvailable()) {
         return { canRequest: false };
     }
 
     try {
-        const result = await AppUpdaterPlugin.canRequestPackageInstalls();
-        return result;
+        const canRequest = window.AndroidAppUpdater.canRequestPackageInstalls();
+        return { canRequest };
     } catch (error) {
         console.error('[AppUpdater] Erreur lors de la vérification:', error);
         return { canRequest: false };
@@ -68,29 +49,45 @@ export async function canRequestPackageInstalls() {
  * Télécharge et installe automatiquement un APK
  * @param {string} url - URL de l'APK à télécharger
  * @param {string} version - Version de l'APK
- * @param {Function} onProgress - Callback pour le suivi de progression
  * @returns {Promise<{success: boolean, message: string}>}
  */
 export async function downloadAndInstall(url, version) {
-    if (!AppUpdaterPlugin) {
-        await initAppUpdater();
+    if (!isNativeInterfaceAvailable()) {
+        throw new Error('Interface native non disponible. Vérifiez que vous êtes dans l\'application Android.');
     }
 
-    if (!AppUpdaterPlugin) {
-        throw new Error('Plugin AppUpdater non disponible. Vérifiez que vous êtes dans l\'application native.');
-    }
-
-    try {
-        // Télécharger et installer
-        const result = await AppUpdaterPlugin.downloadAndInstall({
-            url,
-            version
-        });
+    return new Promise((resolve, reject) => {
+        // Écouter les événements de succès et d'erreur
+        const handleSuccess = (event) => {
+            window.removeEventListener('appUpdateSuccess', handleSuccess);
+            window.removeEventListener('appUpdateError', handleError);
+            resolve({ success: true, message: event.detail || 'Installation démarrée' });
+        };
         
-        return result;
-    } catch (error) {
-        console.error('[AppUpdater] Erreur lors du téléchargement/installation:', error);
-        throw error;
-    }
+        const handleError = (event) => {
+            window.removeEventListener('appUpdateSuccess', handleSuccess);
+            window.removeEventListener('appUpdateError', handleError);
+            reject(new Error(event.detail || 'Erreur lors de l\'installation'));
+        };
+        
+        window.addEventListener('appUpdateSuccess', handleSuccess);
+        window.addEventListener('appUpdateError', handleError);
+        
+        try {
+            // Appeler l'interface native
+            window.AndroidAppUpdater.downloadAndInstallApk(url, version);
+            
+            // Timeout après 30 secondes si pas de réponse
+            setTimeout(() => {
+                window.removeEventListener('appUpdateSuccess', handleSuccess);
+                window.removeEventListener('appUpdateError', handleError);
+                reject(new Error('Timeout: aucune réponse après 30 secondes'));
+            }, 30000);
+        } catch (error) {
+            window.removeEventListener('appUpdateSuccess', handleSuccess);
+            window.removeEventListener('appUpdateError', handleError);
+            reject(error);
+        }
+    });
 }
 
