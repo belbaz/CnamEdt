@@ -165,8 +165,13 @@ if errorlevel 1 (
 cd ..
 
 REM Convertir la version en format X.X (2 numéros) pour la production
-for /f "tokens=1,2 delims=." %%a in ("!VERSION!") do set MAJOR=%%a && set MINOR=%%b
+for /f "tokens=1,2 delims=." %%a in ("!VERSION!") do (
+    set MAJOR=%%a
+    set MINOR=%%b
+)
 set PROD_VERSION=!MAJOR!.!MINOR!
+REM Enlever les espaces éventuels
+set PROD_VERSION=!PROD_VERSION: =!
 
 set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
 set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!PROD_VERSION!.apk

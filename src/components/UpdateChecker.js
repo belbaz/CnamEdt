@@ -132,11 +132,15 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         }
     };
 
-    // Compare deux versions (format: "1.0.0")
+    // Compare deux versions (gère X.X et X.X.X)
     // Retourne true si remoteVersion > localVersion
     const compareVersions = (local, remote) => {
         const localParts = local.split('.').map(Number);
         const remoteParts = remote.split('.').map(Number);
+        
+        // Normaliser à 3 parties (ajouter 0 si manquant)
+        while (localParts.length < 3) localParts.push(0);
+        while (remoteParts.length < 3) remoteParts.push(0);
 
         for (let i = 0; i < 3; i++) {
             if (remoteParts[i] > localParts[i]) return true;
