@@ -6,47 +6,17 @@
 // Note: Les routes API ne fonctionnent pas avec output: 'export'
 // Le dossier API doit être renommé avant le build (voir scripts de build ou package.json)
 
-import { createClient } from '@supabase/supabase-js';
-
-export async function GET() {
+export async function GET(request) {
   // Version actuelle de l'APK
-  const currentVersion = "2.0.3";
+  const currentVersion = "2.0.8";
   
-  // Configuration Supabase
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aeftxgwfokzlspojzisx.supabase.co';
-  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
+  // Récupérer l'URL de base du site pour construire l'URL de l'API
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                  (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'https://edt-eicnam.vercel.app');
   
-  const BUCKET_NAME = 'Apk Edt Eicnam';
-  const FILE_PATH = `apk/edt_cnam_v${currentVersion}.apk`;
-  
-  let apkUrl;
-  
-  // Générer une URL signée si le bucket est privé
-  if (supabaseServiceRole) {
-    try {
-      const supabase = createClient(supabaseUrl, supabaseServiceRole);
-      
-      // Générer une URL signée valide pendant 1 heure
-      const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .createSignedUrl(FILE_PATH, 3600); // 1 heure
-      
-      if (error) {
-        console.error('Erreur lors de la génération de l\'URL signée:', error);
-        // Fallback vers l'URL publique si la génération échoue
-        apkUrl = `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(BUCKET_NAME)}/${FILE_PATH}`;
-      } else {
-        apkUrl = data.signedUrl;
-      }
-    } catch (error) {
-      console.error('Erreur lors de la connexion à Supabase:', error);
-      // Fallback vers l'URL publique
-      apkUrl = `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(BUCKET_NAME)}/${FILE_PATH}`;
-    }
-  } else {
-    // Si pas de service role, utiliser l'URL publique (bucket public)
-    apkUrl = `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(BUCKET_NAME)}/${FILE_PATH}`;
-  }
+  // Utiliser la route API de l'application comme proxy pour le téléchargement
+  // Cela permet de passer par le serveur pour accéder au bucket privé
+  const apkUrl = `${siteUrl}/api/download/apk?version=${currentVersion}`;
   
   return Response.json({
     version: currentVersion,
