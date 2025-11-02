@@ -17,9 +17,27 @@ export async function initAppUpdater() {
     try {
         const { registerPlugin } = require('@capacitor/core');
         AppUpdaterPlugin = registerPlugin('AppUpdater');
-        return AppUpdaterPlugin !== null;
+        
+        console.log('[AppUpdater] Tentative d\'enregistrement du plugin');
+        console.log('[AppUpdater] Plugin enregistré:', AppUpdaterPlugin);
+        
+        // Tester si le plugin répond
+        if (AppUpdaterPlugin) {
+            // Essayer d'appeler une méthode pour vérifier
+            try {
+                const test = await AppUpdaterPlugin.canRequestPackageInstalls();
+                console.log('[AppUpdater] Plugin fonctionnel, test réussi:', test);
+                return true;
+            } catch (testError) {
+                console.error('[AppUpdater] Erreur lors du test du plugin:', testError);
+                // Le plugin peut quand même être disponible même si le test échoue
+                return AppUpdaterPlugin !== null;
+            }
+        }
+        
+        return false;
     } catch (error) {
-        console.warn('[AppUpdater] Plugin non disponible:', error);
+        console.error('[AppUpdater] Erreur lors de l\'initialisation:', error);
         return false;
     }
 }

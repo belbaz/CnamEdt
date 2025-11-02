@@ -143,17 +143,13 @@ if exist next.config.web.backup (
     copy /Y next.config.web.js next.config.js >nul
 )
 
-echo [5/8] Copy fichiers vers Android ^(cap copy - RAPIDE^)...
-REM Utiliser cap copy au lieu de cap sync (plus rapide)
-call npx cap copy android
+echo [5/8] Sync fichiers vers Android ^(cap sync pour detecter plugins^)...
+REM Utiliser cap sync pour detecter les plugins personnalises correctement
+call npx cap sync android
 if errorlevel 1 (
-    echo ATTENTION: cap copy echoue, essai avec cap sync...
-    call npx cap sync android
-    if errorlevel 1 (
-        echo ERREUR: Sync Capacitor echoue
-        pause
-        exit /b 1
-    )
+    echo ERREUR: Sync Capacitor echoue
+    pause
+    exit /b 1
 )
 
 echo [6/8] Build APK (signe, avec clean)...
