@@ -1,7 +1,7 @@
 "use client";
 import "./TimeMarkers.css";
 
-export default function TimeMarkers({markers, startMinutes, endMinutes, totalMinutes}) {
+export default function TimeMarkers({markers, startMinutes, endMinutes, totalMinutes, showTimeLabels = true}) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
     // Utiliser les mêmes valeurs que pour les événements (non arrondies)
@@ -27,24 +27,26 @@ export default function TimeMarkers({markers, startMinutes, endMinutes, totalMin
             </div>
 
             {/* Conteneur pour les labels (au-dessus des cours) */}
-            <div
-                className="time-labels-container"
-                style={isMobile ? {height: `${totalMinutes}px`} : {}}
-            >
-                {markers.map((marker, idx) => {
-                    if (!marker.isHour) return null;
-                    const markerPos = ((marker.totalMinutes - startMinutes) / total) * 100;
-                    return (
-                        <div
-                            key={idx}
-                            className="time-label-wrapper"
-                            style={isMobile ? {top: `${markerPos}%`} : {left: `${markerPos}%`}}
-                        >
-                            <span className="time-label">{marker.label}</span>
-                        </div>
-                    );
-                })}
-            </div>
+            {showTimeLabels && (
+                <div
+                    className="time-labels-container"
+                    style={isMobile ? {height: `${totalMinutes}px`} : {}}
+                >
+                    {markers.map((marker, idx) => {
+                        if (!marker.isHour) return null;
+                        const markerPos = ((marker.totalMinutes - startMinutes) / total) * 100;
+                        return (
+                            <div
+                                key={idx}
+                                className="time-label-wrapper"
+                                style={isMobile ? {top: `${markerPos}%`} : {left: `${markerPos}%`}}
+                            >
+                                <span className="time-label">{marker.label}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </>
     );
 }

@@ -152,18 +152,16 @@
 }
 
 .event-info strong {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    display: block;
     margin-bottom: 0.3rem;
     color: var(--text-primary);
     font-size: 0.85rem;
     font-weight: 700;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: 1.2em;
-    max-height: 2.4em;
+    max-height: 1.2em;
 }
 
 .prof {

@@ -152,4 +152,6 @@ export function loadEventsFromCache() {
 export function saveEventsToCache(events, colors) {
     localStorage.setItem("events", JSON.stringify(events));
     localStorage.setItem("subjectColors", JSON.stringify(colors));
+    // Sauvegarder le timestamp de la dernière mise à jour
+    localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
 }

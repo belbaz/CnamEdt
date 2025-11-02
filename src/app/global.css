@@ -1,4 +1,5 @@
 :root {
+    --primary-color: #4299e1;
     --bg-primary: #f5f7fa;
     --bg-secondary: #ffffff;
     --bg-tertiary: #f8fafc;
@@ -14,6 +15,7 @@
 }
 
 .dark-mode {
+    --primary-color: #60a5fa;
     --bg-primary: #1a202c;
     --bg-secondary: #2d3748;
     --bg-tertiary: #374151;

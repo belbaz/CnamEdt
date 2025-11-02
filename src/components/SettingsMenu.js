@@ -7,13 +7,14 @@ export default function SettingsMenu({
     onToggleAutoScroll, 
     onOpenChange,
     compactMode,
-    onCompactModeChange,
     testMode,
     onToggleTestMode,
     isMobile = false,
     isNative = false,
     currentVersion = null,
-    onCheckUpdates = null
+    onCheckUpdates = null,
+    showTimeLabels = true,
+    onToggleTimeLabels = null
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
@@ -23,6 +24,20 @@ export default function SettingsMenu({
             onOpenChange(isOpen);
         }
     }, [isOpen, onOpenChange]);
+
+    // Fermer avec la touche Escape
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
 
     return (
         <>
@@ -55,23 +70,15 @@ export default function SettingsMenu({
                                 </label>
                             </div>
 
-                            <div className="setting-item slider-item">
-                                <div className="slider-label">
-                                    <span>Compacité</span>
-                                    <span className="slider-value">
-                                        {compactMode <= 3 ? 'Compact' : 
-                                         compactMode <= 6 ? 'Assez compact' : 'Normal'}
-                                    </span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    step="1"
-                                    value={compactMode}
-                                    onChange={(e) => onCompactModeChange(parseInt(e.target.value))}
-                                    className="slider"
-                                />
+                            <div className="setting-item">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={showTimeLabels}
+                                        onChange={(e) => onToggleTimeLabels && onToggleTimeLabels(e.target.checked)}
+                                    />
+                                    <span>Afficher les heures</span>
+                                </label>
                             </div>
 
                             {isDev && (

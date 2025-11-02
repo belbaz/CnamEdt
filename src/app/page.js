@@ -37,8 +37,9 @@ export default function Home() {
     const [testMode, setTestModeState] = useState(false);
     const [todaySpacing, setTodaySpacing] = useState(0);
     const [shouldScrollToToday, setShouldScrollToToday] = useState(false);
-    const [compactMode, setCompactMode] = useState(5); // 0-10, default 5 (Normal)
+    const compactMode = 5; // Fixe à 5 (Normal) - Modifier cette valeur pour changer la compacité
     const [viewMode, setViewMode] = useState('horizontal'); // 'horizontal' or 'vertical'
+    const [showTimeLabels, setShowTimeLabels] = useState(true); // Afficher les labels d'heures
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -199,6 +200,35 @@ export default function Home() {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [selectedEvent]);
 
+    // Navigation au clavier : Ctrl + Flèche droite/gauche pour changer de semaine
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Vérifier si Ctrl est pressé et si c'est une flèche gauche ou droite
+            if (e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault();
+                
+                if (availableWeeks.length === 0 || !selectedWeek) return;
+                
+                const currentWeekIndex = availableWeeks.findIndex(
+                    w => selectedWeek && w.monday.getTime() === selectedWeek.getTime()
+                );
+                
+                if (currentWeekIndex === -1) return;
+                
+                if (e.key === 'ArrowLeft' && currentWeekIndex > 0) {
+                    // Semaine précédente
+                    setSelectedWeek(availableWeeks[currentWeekIndex - 1].monday);
+                } else if (e.key === 'ArrowRight' && currentWeekIndex < availableWeeks.length - 1) {
+                    // Semaine suivante
+                    setSelectedWeek(availableWeeks[currentWeekIndex + 1].monday);
+                }
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [availableWeeks, selectedWeek]);
+
     // Détecter un petit écran (smartphone) côté web pour adopter l'UI mobile
     useEffect(() => {
         const mq = window.matchMedia('(max-width: 768px)');
@@ -269,11 +299,13 @@ export default function Home() {
             }
         }
 
-        const savedCompactMode = localStorage.getItem("compactMode");
-        if (savedCompactMode !== null) setCompactMode(parseInt(savedCompactMode));
+        // Compacité fixe, plus de sauvegarde dans localStorage
 
         const savedViewMode = localStorage.getItem("viewMode");
         if (savedViewMode) setViewMode(savedViewMode);
+
+        const savedShowTimeLabels = localStorage.getItem("showTimeLabels");
+        if (savedShowTimeLabels !== null) setShowTimeLabels(savedShowTimeLabels === "true");
     }, []);
 
     useEffect(() => {
@@ -403,14 +435,16 @@ export default function Home() {
         localStorage.setItem('autoScrollToday', enabled.toString());
     };
 
-    const handleCompactModeChange = (mode) => {
-        setCompactMode(mode);
-        localStorage.setItem('compactMode', mode.toString());
-    };
+    // Compacité fixe, plus de fonction de changement
 
     const handleViewModeChange = (mode) => {
         setViewMode(mode);
         localStorage.setItem('viewMode', mode);
+    };
+
+    const handleToggleTimeLabels = (enabled) => {
+        setShowTimeLabels(enabled);
+        localStorage.setItem('showTimeLabels', enabled.toString());
     };
 
     const handleToggleDay = (day) => {
@@ -527,7 +561,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="1.1.43" 
+                currentVersion="2.0.0" 
                 isNative={isNative} 
             />
 
@@ -549,12 +583,13 @@ export default function Home() {
                 testMode={testMode}
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
-                onCompactModeChange={handleCompactModeChange}
                 isNative={isNative}
-                currentVersion="1.1.43"
+                currentVersion="2.0.0"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
+                showTimeLabels={showTimeLabels}
+                onToggleTimeLabels={handleToggleTimeLabels}
             />
 
             <main className={styles.container}>
@@ -620,6 +655,7 @@ export default function Home() {
                         subjectColors={subjectColors}
                         onOpenEventDetails={(ev) => setSelectedEvent(ev)}
                         compactMode={compactMode}
+                        showTimeLabels={showTimeLabels}
                     />
                 ) : (
                     Object.entries(groupByDay).map(([day, evs], index) => {
@@ -637,6 +673,7 @@ export default function Home() {
                                     onToggle={() => handleToggleDay(day)}
                                     onOpenEventDetails={(ev) => setSelectedEvent(ev)}
                                     compactMode={compactMode}
+                                    showTimeLabels={showTimeLabels}
                                 />
                                 {isToday && todaySpacing > 0 && (
                                     <div 
@@ -654,7 +691,7 @@ export default function Home() {
                 )}
             </main>
 
-            <Footer />
+            <Footer onCheckUpdates={handleCheckUpdates} />
 
             <ScrollToTop/>
 

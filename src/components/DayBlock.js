@@ -13,7 +13,8 @@ const DayBlock = forwardRef(({
     isCollapsed, 
     onToggle, 
     onOpenEventDetails,
-    compactMode = 5
+    compactMode = 5,
+    showTimeLabels = true
 }, ref) => {
     const dayDate = events[0] ? new Date(events[0].start) : new Date();
     const todayCheck = isToday(dayDate);
@@ -21,7 +22,6 @@ const DayBlock = forwardRef(({
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
     const currentPos = todayCheck ? getCurrentTimePosition(dayDate, startMinutes, endMinutes) : null;
     const totalMinutes = endMinutes - startMinutes;
-    const {dayHeaderMargin, dayHeaderPadding} = getCompactModeValues(compactMode);
 
     return (
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
@@ -29,10 +29,6 @@ const DayBlock = forwardRef(({
             <div 
                 className="day-header" 
                 onClick={onToggle}
-                style={{
-                    marginBottom: `${dayHeaderMargin}rem`,
-                    paddingBottom: `${dayHeaderPadding}rem`
-                }}
             >
                 <h2>{todayCheck ? `${day}📍` : day}</h2>
                 <button className="collapse-toggle" aria-label={isCollapsed ? 'Ouvrir' : 'Fermer'}>
@@ -62,6 +58,7 @@ const DayBlock = forwardRef(({
                     subjectColors={subjectColors}
                     onOpenEventDetails={onOpenEventDetails}
                     compactMode={compactMode}
+                    showTimeLabels={showTimeLabels}
                 />
             )}
         </div>

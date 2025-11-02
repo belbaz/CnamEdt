@@ -3,7 +3,7 @@ import './Footer.css';
 import { useCapacitor } from '@/hooks/useCapacitor';
 import { useState, useEffect } from 'react';
 
-export default function Footer() {
+export default function Footer({ onCheckUpdates }) {
     const { isNative } = useCapacitor();
     const [version, setVersion] = useState("1.1.31");
     
@@ -37,6 +37,16 @@ export default function Footer() {
                 <span className="app-footer-separator">•</span>
                 <span className="app-footer-version">Version {version}</span>
             </div>
+            {/* Bouton de test pour les mises à jour */}
+            {onCheckUpdates && (
+                <button 
+                    className="footer-update-btn"
+                    onClick={onCheckUpdates}
+                    title="Vérifier les mises à jour (test)"
+                >
+                    🔄 Vérifier les mises à jour
+                </button>
+            )}
         </footer>
     );
 }

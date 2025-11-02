@@ -14,7 +14,8 @@ export default function TimelineWrapper({
     events,
     subjectColors,
     onOpenEventDetails,
-    compactMode = 5
+    compactMode = 5,
+    showTimeLabels = true
 }) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
@@ -28,6 +29,7 @@ export default function TimelineWrapper({
                 startMinutes={startMinutes}
                 endMinutes={endMinutes}
                 totalMinutes={totalMinutes}
+                showTimeLabels={showTimeLabels}
             />
 
             <TimePassedOverlay currentPos={currentPos}/>

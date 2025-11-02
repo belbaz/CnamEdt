@@ -66,6 +66,7 @@
     box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
     box-sizing: border-box;
+    position: relative;
 }
 
 .week-nav {
@@ -99,11 +100,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
     min-width: 160px;
     padding: 0.375rem 0.75rem;
     background: var(--bg-tertiary);
     border-radius: 10px;
     transition: all 0.3s ease;
+}
+
+.week-display:hover {
+    background: var(--bg-primary);
 }
 
 .week-label {
@@ -119,6 +125,150 @@
     font-weight: 700;
     color: var(--text-primary);
     margin-top: 0.25rem;
+}
+
+.week-arrow {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+/* Liste déroulante des semaines */
+.week-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    max-height: 300px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+    transform-origin: top;
+    /* État initial : caché */
+    opacity: 0;
+    transform: translateY(-10px) scaleY(0.95);
+    pointer-events: none;
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
+/* Conteneur interne pour le scroll */
+.week-dropdown-content {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+    transition: scroll-behavior 0.3s ease;
+}
+
+/* Scrollbar Webkit (Chrome, Safari, Edge) - Mode clair */
+.week-dropdown-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.week-dropdown-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.week-dropdown-content::-webkit-scrollbar-thumb {
+    background: #718096;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.week-dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: #4a5568;
+}
+
+/* Scrollbar Firefox - Mode clair */
+.week-dropdown-content {
+    scrollbar-width: thin;
+    scrollbar-color: #718096 rgba(0, 0, 0, 0.05);
+}
+
+/* Mode dark : scrollbar */
+.dark-mode .week-dropdown-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.dark-mode .week-dropdown-content::-webkit-scrollbar-thumb {
+    background: #a0aec0;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .week-dropdown-content::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e0;
+}
+
+.dark-mode .week-dropdown-content {
+    scrollbar-width: thin;
+    scrollbar-color: #a0aec0 rgba(255, 255, 255, 0.05);
+}
+
+/* État actif : visible et animé */
+.week-dropdown.active {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    pointer-events: auto;
+}
+
+.week-dropdown-item {
+    padding: 0.5rem .5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: background 0.2s ease;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.week-dropdown-item:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.week-dropdown-item:last-child {
+    border-bottom: none;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.week-dropdown-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.week-dropdown-item.selected {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.week-dropdown-item.selected:hover {
+    background: var(--primary-color);
+    opacity: 0.9;
+}
+
+/* Mode dark : ajuster la couleur de sélection */
+.dark-mode .week-dropdown-item.selected {
+    background: var(--primary-color);
+    color: white;
+}
+
+.dark-mode .week-dropdown-item.selected:hover {
+    background: var(--primary-color);
+    opacity: 0.85;
 }
 
 .today-btn {
@@ -195,5 +345,14 @@
         width: 44px;
         height: 44px;
         font-size: 1.2rem;
+    }
+
+    .week-dropdown {
+        max-height: 250px;
+        font-size: 0.8rem;
+    }
+
+    .week-dropdown-item {
+        padding: 0.6rem 0.85rem;
     }
 }

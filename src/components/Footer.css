@@ -29,6 +29,32 @@
     opacity: 0.8;
 }
 
+.footer-update-btn {
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-update-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+
+.footer-update-btn:active {
+    transform: translateY(0);
+}
+
 /* Dark mode */
 .dark-mode .app-footer {
     border-top-color: rgba(255, 255, 255, 0.1);
@@ -42,7 +68,7 @@
 /* Mobile */
 @media (max-width: 768px) {
     .app-footer {
-        margin-top: 3rem;
+        margin-top: 1.5rem;
         padding: 1.25rem 1rem;
     }
 

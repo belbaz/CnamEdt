@@ -10,20 +10,27 @@ export default function PageHeader({
                                        onToggleAutoScroll,
                                        onSettingsOpenChange,
                                        compactMode,
-                                       onCompactModeChange,
                                        testMode,
                                        onToggleTestMode,
                                        isNative = false,
                                        currentVersion = null,
                                        onCheckUpdates = null,
                                        viewMode = 'horizontal',
-                                       onViewModeChange = null
+                                       onViewModeChange = null,
+                                       showTimeLabels = true,
+                                       onToggleTimeLabels = null
                                    }) {
     return (
         <div className="page-header">
             <div className="header-content">
                 <div className="title-container">
-                    <h1 className="page-title">Edt
+                    <h1 
+                        className="page-title" 
+                        onClick={() => window.location.reload()}
+                        style={{ cursor: 'pointer' }}
+                        title="Actualiser la page"
+                    >
+                        Edt
                         <img src="/cnam.svg" alt="Logo CNAM" className="cnam-logo"
                              aria-hidden="true"/>
                     </h1>
@@ -35,13 +42,14 @@ export default function PageHeader({
                         onToggleAutoScroll={onToggleAutoScroll}
                         onOpenChange={onSettingsOpenChange}
                         compactMode={compactMode}
-                        onCompactModeChange={onCompactModeChange}
                         testMode={testMode}
                         onToggleTestMode={onToggleTestMode}
                         isMobile={isMobile}
                         isNative={isNative}
                         currentVersion={currentVersion}
                         onCheckUpdates={onCheckUpdates}
+                        showTimeLabels={showTimeLabels}
+                        onToggleTimeLabels={onToggleTimeLabels}
                     />
                     <button
                         className="view-toggle"

@@ -22,12 +22,13 @@ export default function Navbar({
     testMode = false,
     onToggleTestMode,
     compactMode,
-    onCompactModeChange,
     isNative = false,
     currentVersion = null,
     onCheckUpdates = null,
     viewMode = 'horizontal',
-    onViewModeChange = null
+    onViewModeChange = null,
+    showTimeLabels = true,
+    onToggleTimeLabels = null
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -67,7 +68,6 @@ export default function Navbar({
                     onToggleAutoScroll={onToggleAutoScroll}
                     onSettingsOpenChange={onSettingsOpenChange}
                     compactMode={compactMode}
-                    onCompactModeChange={onCompactModeChange}
                     testMode={testMode}
                     onToggleTestMode={onToggleTestMode}
                     isNative={isNative}
@@ -75,6 +75,8 @@ export default function Navbar({
                     onCheckUpdates={onCheckUpdates}
                     viewMode={viewMode}
                     onViewModeChange={onViewModeChange}
+                    showTimeLabels={showTimeLabels}
+                    onToggleTimeLabels={onToggleTimeLabels}
                 />
 
                 <div className="navbar-controls">

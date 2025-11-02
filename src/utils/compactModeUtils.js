@@ -22,7 +22,7 @@ export function getCompactModeValues(compactMode) {
     };
     
     // Normaliser compactMode entre 0 et 1
-    const t = compactMode / 10;
+    const t = compactMode / 7.9;
     
     return {
         dayHeightFactor: min.dayHeightFactor + (max.dayHeightFactor - min.dayHeightFactor) * t,

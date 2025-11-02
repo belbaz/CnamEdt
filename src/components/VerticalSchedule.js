@@ -10,7 +10,8 @@ export default function VerticalSchedule({
     events,
     subjectColors,
     onOpenEventDetails,
-    compactMode = 5
+    compactMode = 5,
+    showTimeLabels = true
 }) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events), [events]);
@@ -52,6 +53,47 @@ export default function VerticalSchedule({
     const [needsScroll, setNeedsScroll] = useState(false);
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
+    
+    // États pour la notification hors ligne
+    const [isOnline, setIsOnline] = useState(true);
+    const [showOfflineNotification, setShowOfflineNotification] = useState(false);
+    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
+
+    // Détecter l'état en ligne/hors ligne
+    useEffect(() => {
+        const setOnline = () => setIsOnline(true);
+        const setOffline = () => setIsOnline(false);
+        setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
+        window.addEventListener('online', setOnline);
+        window.addEventListener('offline', setOffline);
+        return () => {
+            window.removeEventListener('online', setOnline);
+            window.removeEventListener('offline', setOffline);
+        };
+    }, []);
+
+    // Afficher la notification hors ligne sur mobile
+    useEffect(() => {
+        if (isMobile && !isOnline) {
+            setShowOfflineNotification(true);
+            const timeout = setTimeout(() => {
+                setShowOfflineNotification(false);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        } else {
+            setShowOfflineNotification(false);
+        }
+    }, [isOnline, isMobile]);
+
+    // Charger le timestamp de dernière mise à jour
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const timestamp = localStorage.getItem('lastUpdateTimestamp');
+            if (timestamp) {
+                setLastUpdateTimestamp(timestamp);
+            }
+        }
+    }, [events]); // Recharger quand les événements changent
 
     useEffect(() => {
         if (isMobile || days.length === 0) {
@@ -137,19 +179,47 @@ export default function VerticalSchedule({
         );
     }
 
+    // Formater le timestamp pour l'affichage
+    const formatLastUpdate = (timestamp) => {
+        if (!timestamp) return null;
+        try {
+            const date = new Date(timestamp);
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return null;
+        }
+    };
+
     return (
-        <div 
-            ref={containerRef}
-            className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
-            style={{
-                '--days-count': days.length
-            }}
-        >
+        <>
+            {/* Notification hors ligne mobile */}
+            {isMobile && showOfflineNotification && lastUpdateTimestamp && (
+                <div className="offline-notification-banner">
+                    <span className="offline-icon">📡</span>
+                    <span className="offline-text">
+                        Mode hors ligne - Dernière mise à jour : {formatLastUpdate(lastUpdateTimestamp)}
+                    </span>
+                </div>
+            )}
+            
             <div 
-                ref={wrapperRef}
-                className="vertical-schedule-wrapper"
-                data-needs-scroll={needsScroll ? "true" : "false"}
+                ref={containerRef}
+                className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
+                style={{
+                    '--days-count': days.length
+                }}
             >
+                <div 
+                    ref={wrapperRef}
+                    className="vertical-schedule-wrapper"
+                    data-needs-scroll={needsScroll ? "true" : "false"}
+                >
                 {/* En-tête avec les jours */}
                 {days.length > 0 && (
                     <div className="vertical-schedule-header">
@@ -173,19 +243,21 @@ export default function VerticalSchedule({
                 {/* Corps du planning */}
                 <div className="vertical-schedule-body">
                     {/* Colonne des heures */}
-                    <div className="vertical-time-column">
-                        {timeMarkers.filter(m => m.isHour).map((marker, idx) => (
-                            <div
-                                key={idx}
-                                className="vertical-time-label"
-                                style={{
-                                    top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
-                                }}
-                            >
-                                {marker.label}
-                            </div>
-                        ))}
-                    </div>
+                    {showTimeLabels && (
+                        <div className="vertical-time-column">
+                            {timeMarkers.filter(m => m.isHour).map((marker, idx) => (
+                                <div
+                                    key={idx}
+                                    className="vertical-time-label"
+                                    style={{
+                                        top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
+                                    }}
+                                >
+                                    {marker.label}
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Colonnes des jours */}
                     {days.length > 0 && days.map((day, dayIdx) => {
@@ -265,6 +337,14 @@ export default function VerticalSchedule({
                     })}
                 </div>
             </div>
-        </div>
+            </div>
+            
+            {/* Affichage de la date et heure de dernière sauvegarde */}
+            {lastUpdateTimestamp && (
+                <div className="last-update-info">
+                    <span>Dernière sauvegarde : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                </div>
+            )}
+        </>
     );
 }

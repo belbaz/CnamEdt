@@ -32,8 +32,6 @@
     min-height: 30px;
     cursor: pointer;
     user-select: none;
-    margin-bottom: 0.4rem;
-    padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--border-light);
     transition: all 0.2s ease;
 }
