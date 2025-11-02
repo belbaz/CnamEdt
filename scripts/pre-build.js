@@ -7,6 +7,8 @@ const isMobileBuild = process.env.BUILD_MODE === 'mobile';
 
 if (!isMobileBuild) {
   console.log('Build web détecté - Routes API conservées pour Vercel');
+  // Flush stdout pour s'assurer que le message est visible
+  process.stdout.write('');
   process.exit(0);
 }
 
