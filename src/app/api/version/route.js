@@ -8,7 +8,7 @@
 
 export async function GET(request) {
   // Version actuelle de l'APK
-  const currentVersion = "2.0.10";
+  const currentVersion = "2.0.11";
   
   // Récupérer l'URL de base du site pour construire l'URL de l'API
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 

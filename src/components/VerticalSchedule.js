@@ -11,7 +11,8 @@ export default function VerticalSchedule({
     subjectColors,
     onOpenEventDetails,
     compactMode = 5,
-    showTimeLabels = true
+    showTimeLabels = true,
+    isNative = false
 }) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events), [events]);
@@ -59,15 +60,20 @@ export default function VerticalSchedule({
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
     const [isMobile, setIsMobile] = useState(false);
 
-    // Détecter un petit écran (mobile)
+    // Détecter un petit écran (mobile) OU app native
     useEffect(() => {
         if (typeof window === 'undefined') return;
+        // Si c'est une app native, considérer comme mobile
+        if (isNative) {
+            setIsMobile(true);
+            return;
+        }
         const mq = window.matchMedia('(max-width: 768px)');
         const update = () => setIsMobile(mq.matches);
         update(); // Appeler immédiatement pour définir la valeur initiale
         mq.addEventListener('change', update);
         return () => mq.removeEventListener('change', update);
-    }, []);
+    }, [isNative]);
 
     // Détecter l'état en ligne/hors ligne
     useEffect(() => {

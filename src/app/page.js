@@ -576,7 +576,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.10" 
+                currentVersion="2.0.11" 
                 isNative={isNative} 
             />
 
@@ -599,7 +599,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.10"
+                currentVersion="2.0.11"
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -671,6 +671,7 @@ export default function Home() {
                         onOpenEventDetails={(ev) => setSelectedEvent(ev)}
                         compactMode={compactMode}
                         showTimeLabels={showTimeLabels}
+                        isNative={isNative}
                     />
                 ) : (
                     Object.entries(groupByDay).map(([day, evs], index) => {
