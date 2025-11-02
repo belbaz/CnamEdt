@@ -332,3 +332,13 @@
 .copyright-text:hover {
     opacity: 0.8;
 }
+
+.copyright-text.test-mode-badge {
+    color: #f59e0b;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.dark-mode .copyright-text.test-mode-badge {
+    color: #fbbf24;
+}

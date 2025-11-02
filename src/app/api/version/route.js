@@ -34,7 +34,7 @@ function extractVersion(filename, isTest) {
     const match = filename.match(/edt_cnam_v_test_(\d+\.\d+\.\d+)\.apk$/);
     return match ? match[1] : null;
   } else {
-    // Format: edt_cnam_vX.X.apk
+    // Format: edt_cnam_vX.XX.apk (supporte aussi X.X pour compatibilité)
     const match = filename.match(/edt_cnam_v(\d+\.\d+)\.apk$/);
     return match ? match[1] : null;
   }
@@ -134,7 +134,8 @@ export async function GET(request) {
   const latestVersion = await getLatestVersionFromStorage(isTest);
   
   // Si aucune version trouvée dans Supabase, utiliser une version par défaut
-  const currentVersion = latestVersion || (isTest ? "2.0.20" : "2.0");
+  // Format prod: X.XX (ex: 2.00), Format test: X.X.X (ex: 2.0.20)
+  const currentVersion = latestVersion || (isTest ? "2.0.20" : "2.00");
   
   // Récupérer l'URL de base du site pour construire l'URL de l'API
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 

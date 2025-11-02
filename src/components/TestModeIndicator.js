@@ -6,27 +6,32 @@ export default function TestModeIndicator({ currentVersion, isNative }) {
     const [isTestMode, setIsTestMode] = useState(false);
 
     useEffect(() => {
-        if (!isNative || !currentVersion) {
+        if (typeof window === 'undefined') {
             setIsTestMode(false);
             return;
         }
 
-        // Vérifier dans localStorage si on a enregistré que c'est une version test
-        // Sinon, vérifier si la version contient "test"
-        const storedTestMode = typeof window !== 'undefined' && 
-                              localStorage.getItem('isTestVersion') === 'true';
-        const versionContainsTest = currentVersion.toLowerCase().includes('test');
+        // Vérifier si le mode test est activé (5 clics sur copyright)
+        const updateTestMode = localStorage.getItem('updateTestMode') === 'true';
         
-        setIsTestMode(storedTestMode || versionContainsTest);
+        // Pour mobile uniquement, vérifier aussi si c'est une version test installée
+        if (isNative) {
+            const storedTestVersion = localStorage.getItem('isTestVersion') === 'true';
+            const versionContainsTest = currentVersion?.toLowerCase().includes('test');
+            setIsTestMode(updateTestMode || storedTestVersion || versionContainsTest);
+        } else {
+            // Pour le web, afficher seulement si le mode test est activé via copyright
+            setIsTestMode(updateTestMode);
+        }
     }, [currentVersion, isNative]);
 
-    if (!isNative || !isTestMode) {
+    if (!isTestMode) {
         return null;
     }
 
     return (
         <div className="test-mode-indicator">
-            <span className="test-mode-text">Mode : version test</span>
+            <span className="test-mode-text">Version test</span>
         </div>
     );
 }

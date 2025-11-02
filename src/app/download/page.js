@@ -16,7 +16,10 @@ export default function DownloadPage() {
         const downloadAPK = async () => {
             try {
                 // Récupérer l'URL de l'APK depuis l'API version
-                const response = await fetch('/api/version');
+                // Vérifier si le mode test est activé
+                const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+                const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
                     throw new Error('Impossible de récupérer les informations de version');

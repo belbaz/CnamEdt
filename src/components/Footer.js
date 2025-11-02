@@ -13,16 +13,41 @@ export default function Footer() {
             return; // Ne pas faire le fetch si native
         }
 
-        fetch('/api/version')
-            .then(res => res.json())
-            .then(data => {
-                if (data.version) {
-                    setVersion(data.version);
-                }
-            })
-            .catch(() => {
-                // En cas d'erreur, garder la version par défaut
-            });
+        const fetchVersion = () => {
+            // Vérifier si le mode test est activé
+            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+            
+            fetch(apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.version) {
+                        setVersion(data.version);
+                    }
+                })
+                .catch(() => {
+                    // En cas d'erreur, garder la version par défaut
+                });
+        };
+
+        fetchVersion();
+
+        // Écouter les changements du mode test pour recharger la version
+        const handleStorageChange = (e) => {
+            if (e.key === 'updateTestMode') {
+                fetchVersion();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Vérifier aussi périodiquement (car localStorage peut changer dans le même onglet)
+        const interval = setInterval(fetchVersion, 1000);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
     }, [isNative]);
 
     // Ne pas afficher dans l'app native

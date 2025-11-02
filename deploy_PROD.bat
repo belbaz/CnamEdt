@@ -164,14 +164,24 @@ if errorlevel 1 (
 )
 cd ..
 
-REM Convertir la version en format X.X (2 numéros) pour la production
-for /f "tokens=1,2 delims=." %%a in ("!VERSION!") do (
+REM Convertir la version en format X.XX (2 chiffres après le point) pour la production
+for /f "tokens=1,2,3 delims=." %%a in ("!VERSION!") do (
     set MAJOR=%%a
     set MINOR=%%b
+    set PATCH=%%c
 )
-set PROD_VERSION=!MAJOR!.!MINOR!
 REM Enlever les espaces éventuels
-set PROD_VERSION=!PROD_VERSION: =!
+set MAJOR=!MAJOR: =!
+set MINOR=!MINOR: =!
+set PATCH=!PATCH: =!
+
+REM S'assurer que MINOR a toujours 2 chiffres (ex: 0 devient 00, 5 devient 05)
+if !MINOR! LSS 10 (
+    set MINOR=0!MINOR!
+)
+
+REM Construire la version au format X.XX (ex: 2.05)
+set PROD_VERSION=!MAJOR!.!MINOR!
 
 set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
 set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!PROD_VERSION!.apk
@@ -191,7 +201,7 @@ REM Commit les changements pour garder l'historique
 git --version >NUL 2>&1
 if not errorlevel 1 (
     git add . >nul 2>&1
-    git commit -m "Update version to !VERSION!" >nul 2>&1
+    git commit -m "Update version to V!PROD_VERSION!" >nul 2>&1
     if errorlevel 1 (
         echo ATTENTION: Commit Git echoue ^(peut-etre aucun changement^)
     ) else (

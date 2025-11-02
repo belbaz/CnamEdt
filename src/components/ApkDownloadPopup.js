@@ -86,7 +86,10 @@ export default function ApkDownloadPopup() {
     const handleDownload = async () => {
         try {
             // Récupérer l'URL signée depuis l'API
-            const response = await fetch('/api/version');
+            // Vérifier si le mode test est activé
+            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+            const response = await fetch(apiUrl);
             
             if (!response.ok) {
                 throw new Error('Impossible de récupérer l\'URL de l\'APK');

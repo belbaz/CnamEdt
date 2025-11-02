@@ -23,6 +23,7 @@ export default function SettingsMenu({
     const [toastMessage, setToastMessage] = useState("");
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
+    const [isTestMode, setIsTestMode] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
@@ -33,7 +34,11 @@ export default function SettingsMenu({
             setVersion(currentVersion);
         } else if (!isNative && typeof window !== 'undefined') {
             // Pour le web, récupérer depuis l'API
-            fetch('/api/version')
+            // Vérifier si le mode test est activé
+            const testMode = localStorage.getItem('updateTestMode') === 'true';
+            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+            
+            fetch(apiUrl)
                 .then(res => res.json())
                 .then(data => {
                     if (data.version) {
@@ -44,6 +49,44 @@ export default function SettingsMenu({
                     // En cas d'erreur, garder null
                 });
         }
+    }, [isNative, currentVersion]);
+
+    // Vérifier si le mode test est activé
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            setIsTestMode(false);
+            return;
+        }
+
+        const checkTestMode = () => {
+            const updateTestMode = localStorage.getItem('updateTestMode') === 'true';
+            if (isNative) {
+                const storedTestVersion = localStorage.getItem('isTestVersion') === 'true';
+                const versionContainsTest = currentVersion?.toLowerCase().includes('test');
+                setIsTestMode(updateTestMode || storedTestVersion || versionContainsTest);
+            } else {
+                setIsTestMode(updateTestMode);
+            }
+        };
+
+        checkTestMode();
+
+        // Écouter les changements de localStorage (pour détecter l'activation/désactivation)
+        const handleStorageChange = (e) => {
+            if (e.key === 'updateTestMode' || e.key === 'isTestVersion') {
+                checkTestMode();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Vérifier aussi périodiquement (car localStorage peut changer dans le même onglet)
+        const interval = setInterval(checkTestMode, 500);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
     }, [isNative, currentVersion]);
 
     useEffect(() => {
@@ -93,6 +136,21 @@ export default function SettingsMenu({
             // Afficher un toast avec le message
             setToastMessage(newTestMode ? 'Mode test activé' : 'Mode test désactivé');
             setShowToast(true);
+
+            // Recharger la version si on est sur web (pour afficher la bonne version test/prod)
+            if (!isNative && typeof window !== 'undefined') {
+                const apiUrl = `/api/version${newTestMode ? '?test=true' : ''}`;
+                fetch(apiUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.version) {
+                            setVersion(data.version);
+                        }
+                    })
+                    .catch(() => {
+                        // En cas d'erreur, ignorer
+                    });
+            }
 
             // Afficher une notification Android si on est sur l'app native (optionnel)
             // Utiliser une fonction asynchrone séparée pour éviter l'import au build time
@@ -236,6 +294,11 @@ export default function SettingsMenu({
                             </div>
 
                             <div className="setting-item copyright-item">
+                                {isTestMode && (
+                                    <div className="copyright-line">
+                                        <span className="copyright-text test-mode-badge">Version test</span>
+                                    </div>
+                                )}
                                 {version && (
                                     <div className="copyright-line">
                                         <span className="copyright-text">Version {version}</span>
