@@ -70,11 +70,19 @@
         grid-template-columns: 35px repeat(var(--days-count, 7), minmax(180px, 180px));
     }
 
+    .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-schedule-header.no-time-column {
+        grid-template-columns: repeat(var(--days-count, 7), minmax(180px, 180px));
+    }
+
     .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-schedule-body {
         min-width: max-content;
         width: max-content;
         max-width: none;
         grid-template-columns: 35px repeat(var(--days-count, 7), minmax(180px, 180px));
+    }
+
+    .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-schedule-body.no-time-column {
+        grid-template-columns: repeat(var(--days-count, 7), minmax(180px, 180px));
     }
 
     .vertical-schedule-wrapper[data-needs-scroll="true"] .vertical-day-column {
@@ -127,6 +135,10 @@
     justify-items: center;
 }
 
+.vertical-schedule-header.no-time-column {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 .vertical-time-column-header {
     /* Colonne vide pour aligner avec les heures */
 }
@@ -169,6 +181,10 @@
     grid-template-columns: 35px repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.5rem;
     position: relative;
+}
+
+.vertical-schedule-body.no-time-column {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 /* Colonne des heures */
@@ -403,6 +419,10 @@
         width: max-content;
     }
 
+    .vertical-schedule-header.no-time-column {
+        grid-template-columns: repeat(7, 140px);
+    }
+
     .vertical-day-header {
         padding: 0.5rem 0.3rem;
         border-radius: 10px;
@@ -419,6 +439,10 @@
         grid-template-columns: 50px repeat(7, 140px);
         gap: 0.3rem;
         width: max-content;
+    }
+
+    .vertical-schedule-body.no-time-column {
+        grid-template-columns: repeat(7, 140px);
     }
 
     .vertical-day-column {
@@ -490,6 +514,10 @@
         width: max-content;
     }
 
+    .vertical-schedule-header.no-time-column {
+        grid-template-columns: repeat(7, 130px);
+    }
+
     .vertical-day-header {
         width: 130px;
         flex-shrink: 0;
@@ -504,6 +532,10 @@
         grid-template-columns: 35px repeat(7, 130px);
         gap: 0.35rem;
         width: max-content;
+    }
+
+    .vertical-schedule-body.no-time-column {
+        grid-template-columns: repeat(7, 130px);
     }
 
     .vertical-day-column {

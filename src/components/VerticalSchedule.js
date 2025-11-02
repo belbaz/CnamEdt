@@ -1,22 +1,22 @@
 "use client";
-import { useMemo, useEffect, useState, useRef } from "react";
-import { getDayTimeRange, generateTimeMarkers, getCurrentTimePosition } from "@/utils/timelineUtils";
-import { groupEventsByDay } from "@/utils/eventUtils";
-import { isToday } from "@/utils/dateUtils";
+import {useMemo, useEffect, useState, useRef} from "react";
+import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
+import {groupEventsByDay} from "@/utils/eventUtils";
+import {isToday} from "@/utils/dateUtils";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
 
 export default function VerticalSchedule({
-    events,
-    subjectColors,
-    onOpenEventDetails,
-    compactMode = 5,
-    showTimeLabels = true,
-    isNative = false
-}) {
+                                             events,
+                                             subjectColors,
+                                             onOpenEventDetails,
+                                             compactMode = 5,
+                                             showTimeLabels = true,
+                                             isNative = false
+                                         }) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events), [events]);
-    
+
     // Obtenir tous les jours de la semaine
     const days = useMemo(() => {
         const sortedDays = Object.keys(groupByDay).sort((a, b) => {
@@ -30,7 +30,7 @@ export default function VerticalSchedule({
     // Calculer la plage horaire globale pour tous les jours
     const globalTimeRange = useMemo(() => {
         if (events.length === 0) {
-            return { startMinutes: 8 * 60 + 45, endMinutes: 18 * 60 + 45 };
+            return {startMinutes: 8 * 60 + 45, endMinutes: 18 * 60 + 45};
         }
         let minTime = Infinity, maxTime = -Infinity;
         events.forEach(ev => {
@@ -45,15 +45,15 @@ export default function VerticalSchedule({
         };
     }, [events]);
 
-    const { startMinutes, endMinutes } = globalTimeRange;
+    const {startMinutes, endMinutes} = globalTimeRange;
     const totalMinutes = endMinutes - startMinutes;
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
-    
+
     // Détecter si on a besoin de scroll horizontal sur PC
     const [needsScroll, setNeedsScroll] = useState(false);
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
-    
+
     // États pour la notification hors ligne
     const [isOnline, setIsOnline] = useState(true);
     const [showOfflineNotification, setShowOfflineNotification] = useState(false);
@@ -131,17 +131,18 @@ export default function VerticalSchedule({
 
         const checkIfNeedsScroll = () => {
             if (!containerRef.current) return;
-            
+
             const containerWidth = containerRef.current.clientWidth;
-            
+
             // Calculer la largeur minimale nécessaire avec des colonnes fixes de 180px
             // Colonne temps : 60px (header) ou 35px (body), on prend le max
-            const timeColumnWidth = 60;
+            // Mais seulement si showTimeLabels est true
+            const timeColumnWidth = showTimeLabels ? 60 : 0;
             const minColumnWidth = 180;
             const gapSize = 8; // 0.5rem = 8px
-            const gaps = (days.length + 1) * gapSize; // gaps entre toutes les colonnes
+            const gaps = (days.length + (showTimeLabels ? 1 : 0)) * gapSize; // gaps entre toutes les colonnes
             const minRequiredWidth = timeColumnWidth + (days.length * minColumnWidth) + gaps;
-            
+
             // Si la largeur minimale nécessaire dépasse la largeur disponible, activer le scroll
             setNeedsScroll(minRequiredWidth > containerWidth);
         };
@@ -150,7 +151,7 @@ export default function VerticalSchedule({
         const timeoutId = setTimeout(() => {
             checkIfNeedsScroll();
         }, 0);
-        
+
         // Réécouter le redimensionnement de la fenêtre
         const handleResize = () => {
             // Utiliser requestAnimationFrame pour attendre le reflow
@@ -158,24 +159,24 @@ export default function VerticalSchedule({
                 checkIfNeedsScroll();
             });
         };
-        
+
         window.addEventListener('resize', handleResize);
-        
+
         // Utiliser ResizeObserver pour détecter les changements de taille du conteneur
         const resizeObserver = new ResizeObserver(() => {
             checkIfNeedsScroll();
         });
-        
+
         if (containerRef.current) {
             resizeObserver.observe(containerRef.current);
         }
-        
+
         return () => {
             clearTimeout(timeoutId);
             window.removeEventListener('resize', handleResize);
             resizeObserver.disconnect();
         };
-    }, [days.length, isMobile]);
+    }, [days.length, isMobile, showTimeLabels]);
 
     // Fonction pour obtenir la position verticale d'un événement
     const getEventVerticalPosition = (startTime, endTime) => {
@@ -230,67 +231,67 @@ export default function VerticalSchedule({
             {isMobile && showOfflineNotification && (
                 <div className="offline-notification-banner">
                     <span className="offline-text">
-                        {lastUpdateTimestamp 
+                        {lastUpdateTimestamp
                             ? `Dernière mise à jour : ${formatLastUpdate(lastUpdateTimestamp)}`
                             : 'Mode hors connexion'
                         }
                     </span>
                 </div>
             )}
-            
-            <div 
+
+            <div
                 ref={containerRef}
                 className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
                 style={{
                     '--days-count': days.length
                 }}
             >
-                <div 
+                <div
                     ref={wrapperRef}
                     className="vertical-schedule-wrapper"
                     data-needs-scroll={needsScroll ? "true" : "false"}
                 >
-                {/* En-tête avec les jours */}
-                {days.length > 0 && (
-                    <div className="vertical-schedule-header">
-                        <div className="vertical-time-column-header"></div>
-                        {days.map((day, idx) => {
-                            const dayEvents = groupByDay[day];
-                            const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
-                            const isTodayDay = isToday(dayDate);
-                            return (
-                                <div 
-                                    key={idx} 
-                                    className={`vertical-day-header ${isTodayDay ? 'today' : ''}`}
-                                >
-                                    <h3>{isTodayDay ? `${day}📍` : day}</h3>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Corps du planning */}
-                <div className="vertical-schedule-body">
-                    {/* Colonne des heures */}
-                    {showTimeLabels && (
-                        <div className="vertical-time-column">
-                            {timeMarkers.filter(m => m.isHour).map((marker, idx) => (
-                                <div
-                                    key={idx}
-                                    className="vertical-time-label"
-                                    style={{
-                                        top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
-                                    }}
-                                >
-                                    {marker.label}
-                                </div>
-                            ))}
+                    {/* En-tête avec les jours */}
+                    {days.length > 0 && (
+                        <div className={`vertical-schedule-header ${!showTimeLabels ? 'no-time-column' : ''}`}>
+                            {showTimeLabels && <div className="vertical-time-column-header"></div>}
+                            {days.map((day, idx) => {
+                                const dayEvents = groupByDay[day];
+                                const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
+                                const isTodayDay = isToday(dayDate);
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`vertical-day-header ${isTodayDay ? 'today' : ''}`}
+                                    >
+                                        <h3>{isTodayDay ? `${day}📍` : day}</h3>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
-                    {/* Colonnes des jours */}
-                    {days.length > 0 && days.map((day, dayIdx) => {
+                    {/* Corps du planning */}
+                    <div className={`vertical-schedule-body ${!showTimeLabels ? 'no-time-column' : ''}`}>
+                        {/* Colonne des heures */}
+                        {showTimeLabels && (
+                            <div className="vertical-time-column">
+                                {timeMarkers.filter(m => m.isHour).map((marker, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="vertical-time-label"
+                                        style={{
+                                            top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
+                                        }}
+                                    >
+                                        {marker.label}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Colonnes des jours */}
+                        {days.length > 0 && days.map((day, dayIdx) => {
                             const dayEvents = groupByDay[day];
                             const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
                             const isTodayDay = isToday(dayDate);
@@ -299,15 +300,15 @@ export default function VerticalSchedule({
                                 : null;
 
                             return (
-                                <div 
-                                    key={dayIdx} 
+                                <div
+                                    key={dayIdx}
                                     className={`vertical-day-column ${isTodayDay ? 'today' : ''}`}
                                 >
                                     {/* Indicateur de temps actuel */}
                                     {currentPos !== null && (
                                         <div
                                             className="vertical-current-time-indicator"
-                                            style={{ top: `${currentPos}%` }}
+                                            style={{top: `${currentPos}%`}}
                                         >
                                             <div className="vertical-current-time-line"></div>
                                             <div className="vertical-current-time-dot"></div>
@@ -318,14 +319,14 @@ export default function VerticalSchedule({
                                     {currentPos !== null && (
                                         <div
                                             className="vertical-time-passed-overlay"
-                                            style={{ height: `${currentPos}%` }}
+                                            style={{height: `${currentPos}%`}}
                                         />
                                     )}
 
                                     {/* Marqueurs de temps */}
-                                    <div 
+                                    <div
                                         className="vertical-time-markers"
-                                        style={{ height: `${totalMinutes}px` }}
+                                        style={{height: `${totalMinutes}px`}}
                                     >
                                         {timeMarkers.map((marker, idx) => (
                                             <div
@@ -339,9 +340,9 @@ export default function VerticalSchedule({
                                     </div>
 
                                     {/* Événements */}
-                                    <div 
+                                    <div
                                         className="vertical-events-container"
-                                        style={{ height: `${totalMinutes}px` }}
+                                        style={{height: `${totalMinutes}px`}}
                                     >
                                         {dayEvents.map((ev, evIdx) => {
                                             const pos = getEventVerticalPosition(ev.start, ev.end);
@@ -364,11 +365,11 @@ export default function VerticalSchedule({
                                     </div>
                                 </div>
                             );
-                    })}
+                        })}
+                    </div>
                 </div>
             </div>
-            </div>
-            
+
             {/* Affichage de la date et heure de dernière sauvegarde */}
             {lastUpdateTimestamp && (
                 <div className="last-update-info">
