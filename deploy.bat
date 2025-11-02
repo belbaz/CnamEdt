@@ -156,19 +156,15 @@ if errorlevel 1 (
     )
 )
 
-echo [6/8] Build APK (signe, incremental)...
+echo [6/8] Build APK (signe, avec clean)...
 cd android
-REM Build incremental sans clean (plus rapide), fallback sur clean si necessaire
-call .\gradlew.bat assembleRelease --parallel
+REM Clean systematique avant chaque build pour eviter les erreurs de cache
+call .\gradlew.bat clean assembleRelease --parallel
 if errorlevel 1 (
-    echo ATTENTION: Build incremental echoue, essai avec clean...
-    call .\gradlew.bat clean assembleRelease --parallel
-    if errorlevel 1 (
-        echo ERREUR: Build APK echoue
-        cd ..
-        pause
-        exit /b 1
-    )
+    echo ERREUR: Build APK echoue
+    cd ..
+    pause
+    exit /b 1
 )
 cd ..
 
