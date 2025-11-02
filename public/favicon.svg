@@ -1,0 +1,53 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient for header -->
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  
+  <!-- Background with subtle gradient -->
+  <rect width="512" height="512" rx="80"/>
+  
+  <!-- Calendar body - white with rounded corners and shadow -->
+  <rect x="72" y="88" width="368" height="336" rx="30" fill="#ffffff" stroke="#2a2a2a" stroke-width="3" filter="url(#shadow)"/>
+
+  <!-- Red header with gradient -->
+  <rect x="72" y="88" width="368" height="90" rx="30" fill="url(#headerGradient)"/>
+
+  <!-- Header holes - more visible -->
+  <circle cx="208" cy="136" r="14" fill="#0f0f0f" opacity="0.8"/>
+  <circle cx="304" cy="136" r="14" fill="#0f0f0f" opacity="0.8"/>
+
+  <!-- Colorful blocks inside calendar - improved colors and spacing -->
+  <!-- Top left - lavender block -->
+  <rect x="100" y="200" width="70" height="60" rx="8" fill="#a78bfa" opacity="0.95"/>
+
+  <!-- Left column - yellow block (tall) -->
+  <rect x="100" y="270" width="70" height="135" rx="8" fill="#fbbf24" opacity="0.95"/>
+
+  <!-- Middle column - light green block (tall) -->
+  <rect x="180" y="200" width="70" height="158" rx="8" fill="#34d399" opacity="0.95"/>
+
+  <!-- Bottom middle - light blue block (small) -->
+  <rect x="180" y="370" width="70" height="36" rx="8" fill="#60a5fa" opacity="0.95"/>
+
+  <!-- Right column - light pink block (tall) -->
+  <rect x="260" y="200" width="70" height="158" rx="8" fill="#f472b6" opacity="0.95"/>
+
+  <!-- Middle right - light purple block (small) -->
+  <rect x="260" y="370" width="70" height="36" rx="8" fill="#c084fc" opacity="0.95"/>
+
+  <!-- Far right column - light blue block (tall) -->
+  <rect x="340" y="200" width="70" height="138" rx="8" fill="#38bdf8" opacity="0.95"/>
+
+  <!-- Far right bottom - yellow block (small) -->
+  <rect x="340" y="350" width="70" height="56" rx="8" fill="#facc15" opacity="0.95"/>
+
+</svg>
+
