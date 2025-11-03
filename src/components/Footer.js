@@ -10,19 +10,24 @@ export default function Footer() {
             ? process.env.NEXT_PUBLIC_APP_VERSION
             : "Loading ..."
     );
+    const [isTest, setIsTest] = useState(false);
 
     // Récupérer la version depuis l'API (seulement si pas native)
     useEffect(() => {
+        // Déterminer test mode (canal + bascule)
+        const computeIsTest = () => {
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
+            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            setIsTest(isTestChannel || toggleTest);
+        };
+        computeIsTest();
+
         if (isNative) {
             return; // Ne pas faire le fetch si native
         }
 
         const fetchVersion = () => {
-            // Vérifier si le mode test est activé (canal ou bascule)
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-            const testMode = isTestChannel || toggleTest;
-            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+            const apiUrl = `/api/version${isTest ? '?test=true' : ''}`;
             
             fetch(apiUrl)
                 .then(res => res.json())
@@ -41,6 +46,7 @@ export default function Footer() {
         // Écouter les changements du mode test pour recharger la version
         const handleStorageChange = (e) => {
             if (e.key === 'updateTestMode') {
+                computeIsTest();
                 fetchVersion();
             }
         };
@@ -50,7 +56,7 @@ export default function Footer() {
         return () => {
             window.removeEventListener('storage', handleStorageChange);
         };
-    }, [isNative]);
+    }, [isNative, isTest]);
 
     return (
         <footer className="app-footer">
@@ -58,6 +64,12 @@ export default function Footer() {
                 <span className="app-footer-text">EDT EICNAM</span>
                 <span className="app-footer-separator">•</span>
                 <span className="app-footer-version">Version {version}</span>
+                {isTest && (
+                    <>
+                        <span className="app-footer-separator">•</span>
+                        <span className="app-footer-test">test</span>
+                    </>
+                )}
             </div>
         </footer>
     );

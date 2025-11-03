@@ -29,6 +29,11 @@
     opacity: 0.8;
 }
 
+.app-footer-test {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
 .footer-update-btn {
     margin-top: 1rem;
     padding: 0.6rem 1.2rem;

@@ -15,7 +15,6 @@ import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
-import TestModeIndicator from "@/components/TestModeIndicator";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -890,7 +889,7 @@ export default function Home() {
 
             <OfflineNotification forceShow={hasNetworkError} />
 
-            <TestModeIndicator currentVersion={process.env.NEXT_PUBLIC_APP_VERSION} isNative={isNative} />
+            {/* Test mode indicator removed; show badge in footer instead */}
 
             {selectedEvent && (
                 <div className="event-modal-layer" aria-modal="true" role="dialog">
