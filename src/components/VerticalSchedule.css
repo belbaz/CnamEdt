@@ -223,6 +223,8 @@
 /* Colonnes des jours - Les colonnes sont maintenant directement dans le grid de .vertical-schedule-body */
 
 .vertical-day-column {
+    display: flex;
+    justify-content: center;
     position: relative;
     border-radius: 12px;
     overflow: hidden;
@@ -297,19 +299,19 @@
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(66, 153, 225, 0.05);
+    background: rgba(66, 153, 225, 0.5);
     pointer-events: none;
     z-index: 1;
 }
 
 /* Conteneur des événements */
 .vertical-events-container {
+    z-index: 10;
     position: relative;
-    width: 95%;
-    max-width: 95%;
+    width: 97%;
+    max-width: 97%;
     padding: 0 0.2rem;
     box-sizing: border-box;
-    z-index: 5;
     overflow: hidden;
 }
 
@@ -414,14 +416,14 @@
 @media (max-width: 768px) {
     .vertical-schedule-header {
         display: grid;
-        grid-template-columns: 50px repeat(7, 140px);
+        grid-template-columns: 50px repeat(var(--days-count, 7), 140px);
         gap: 0.3rem;
         padding: 0.3rem 0;
         width: max-content;
     }
 
     .vertical-schedule-header.no-time-column {
-        grid-template-columns: repeat(7, 140px);
+        grid-template-columns: repeat(var(--days-count, 7), 140px);
     }
 
     .vertical-day-header {
@@ -437,13 +439,13 @@
 
     .vertical-schedule-body {
         display: grid;
-        grid-template-columns: 50px repeat(7, 140px);
+        grid-template-columns: 50px repeat(var(--days-count, 7), 140px);
         gap: 0.3rem;
         width: max-content;
     }
 
     .vertical-schedule-body.no-time-column {
-        grid-template-columns: repeat(7, 140px);
+        grid-template-columns: repeat(var(--days-count, 7), 140px);
     }
 
     .vertical-day-column {
@@ -510,13 +512,13 @@
 @media (max-width: 650px) {
     .vertical-schedule-header {
         display: grid;
-        grid-template-columns: 35px repeat(7, 130px);
+        grid-template-columns: 35px repeat(var(--days-count, 7), 130px);
         gap: 0.25rem;
         width: max-content;
     }
 
     .vertical-schedule-header.no-time-column {
-        grid-template-columns: repeat(7, 130px);
+        grid-template-columns: repeat(var(--days-count, 7), 130px);
     }
 
     .vertical-day-header {
@@ -530,13 +532,13 @@
 
     .vertical-schedule-body {
         display: grid;
-        grid-template-columns: 35px repeat(7, 130px);
+        grid-template-columns: 35px repeat(var(--days-count, 7), 130px);
         gap: 0.35rem;
         width: max-content;
     }
 
     .vertical-schedule-body.no-time-column {
-        grid-template-columns: repeat(7, 130px);
+        grid-template-columns: repeat(var(--days-count, 7), 130px);
     }
 
     .vertical-day-column {
