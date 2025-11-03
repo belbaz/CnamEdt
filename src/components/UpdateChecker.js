@@ -61,9 +61,9 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
             const testMode = isTestChannel || toggleTest;
             
-            // Appeler l'API du site web pour obtenir la dernière version
-            const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
-            const versionUrl = `${apiUrl}/api/version${testMode ? '?test=true' : ''}`;
+            // Appeler l'API de l'origine courante pour éviter le CORS
+            const origin = typeof window !== 'undefined' ? window.location.origin : '';
+            const versionUrl = `${origin}/api/version`;
             
             console.log('[UpdateChecker] Vérification des mises à jour...');
             console.log('[UpdateChecker] URL API:', versionUrl);

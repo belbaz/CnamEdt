@@ -24,7 +24,8 @@ export default function SettingsMenu({
     const [isTestMode, setIsTestMode] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
-    const isDev = process.env.NEXT_PUBLIC_ENV === 'dev';
+    const isDev = (process.env.NEXT_PUBLIC_ENV || '').toUpperCase() === 'DEV';
+    const showUpdateButton = isDev ? true : (isMobile || isNative);
 
     // Récupérer la version depuis l'API ou utiliser currentVersion
     useEffect(() => {
@@ -245,7 +246,7 @@ export default function SettingsMenu({
                                 </div>
                             )}
 
-                            {isNative && (
+                            {showUpdateButton && (
                                 <div className="setting-item setting-button-item">
                                     <button
                                         className="settings-action check-updates-button"
@@ -280,11 +281,6 @@ export default function SettingsMenu({
                                 {isTestMode && (
                                     <div className="copyright-line">
                                         <span className="copyright-text test-mode-badge">Version test</span>
-                                    </div>
-                                )}
-                                {version && (
-                                    <div className="copyright-line">
-                                        <span className="copyright-text">Version {version}</span>
                                     </div>
                                 )}
                                 <div className="copyright-line">

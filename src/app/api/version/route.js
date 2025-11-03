@@ -127,10 +127,9 @@ async function getLatestVersionFromStorage(isTest) {
 }
 
 export async function GET(request) {
-  // Vérifier si on demande les versions test
-  const searchParams = new URL(request.url).searchParams;
-  const rawTest = searchParams.get('test');
-  const isTest = rawTest ? (rawTest.toLowerCase() === 'true' || rawTest === '1') : false;
+  // Déterminer le canal via l'environnement serveur (pas de query string)
+  const appChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
+  const isTest = appChannel === 'test';
   
   // Récupérer la dernière version depuis Supabase Storage
   const latestVersion = await getLatestVersionFromStorage(isTest);
@@ -141,13 +140,14 @@ export async function GET(request) {
   const fallbackProd = process.env.NEXT_PUBLIC_APP_VERSION || '2.0.0';
   const currentVersion = latestVersion || (isTest ? "2.0.20" : fallbackProd);
   
-  // Récupérer l'URL de base du site pour construire l'URL de l'API
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                  (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'https://edt-eicnam.vercel.app');
+  // Récupérer l'URL de base du site pour construire l'URL de l'API (toujours l'origine courante)
+  const host = request.headers.get('host');
+  const protocol = host && host.startsWith('localhost') ? 'http' : 'https';
+  const siteUrl = host ? `${protocol}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app');
   
   // Utiliser la route API de l'application comme proxy pour le téléchargement
   // Ne pas afficher test=false; n'ajouter le paramètre que si test=true
-  const apkUrl = `${siteUrl}/api/download/apk${isTest ? '?test=true' : ''}`;
+  const apkUrl = `${siteUrl}/api/download/apk`;
   
   const body = {
     version: currentVersion,

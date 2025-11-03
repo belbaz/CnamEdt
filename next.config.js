@@ -4,12 +4,9 @@
 const pkg = require('./package.json');
 const appChannel = process.env.APP_CHANNEL || 'prod';
 
-const isStaticExport = process.env.STATIC_EXPORT === 'true';
-
 const nextConfig = {
   // Configuration pour build statique (nécessaire pour Capacitor)
-  // Activée uniquement si STATIC_EXPORT=true est défini dans l'environnement
-  ...(isStaticExport ? { output: 'export' } : {}),
+  output: 'export',
   
   // Désactiver l'optimisation d'images (non compatible avec export statique)
   images: {
