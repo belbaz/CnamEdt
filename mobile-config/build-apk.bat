@@ -166,27 +166,39 @@ if errorlevel 1 (
     )
 )
 
-echo [6/7] Build de l'APK ^(incremental, sans clean^)...
+echo [6/7] Build de l'APK...
 cd android
-REM Build incremental sans clean (plus rapide), fallback sur clean si necessaire
-call .\gradlew.bat assembleDebug --parallel
-if errorlevel 1 (
-    echo ATTENTION: Build incremental echoue, essai avec clean...
-    call .\gradlew.bat clean assembleDebug --parallel
+if %IS_TEST%==1 (
+    echo Build RELEASE signe pour canal TEST ^(meme application que PROD^)...
+    call .\gradlew.bat clean assembleRelease --parallel
     if errorlevel 1 (
-        echo ERREUR: Build APK a echoue
+        echo ERREUR: Build release a echoue
         cd ..
         pause
         exit /b 1
+    )
+) else (
+    echo Build DEBUG incremental pour usage local...
+    call .\gradlew.bat assembleDebug --parallel
+    if errorlevel 1 (
+        echo ATTENTION: Build incremental echoue, essai avec clean...
+        call .\gradlew.bat clean assembleDebug --parallel
+        if errorlevel 1 (
+            echo ERREUR: Build APK a echoue
+            cd ..
+            pause
+            exit /b 1
+        )
     )
 )
 cd ..
 
 echo [6.5/7] Renommage de l'APK avec la version...
-set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
 if %IS_TEST%==1 (
-    set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v_test_!VERSION!.apk
+    set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
+    set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
 ) else (
+    set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
     set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 )
 
@@ -216,7 +228,7 @@ echo ========================================
 echo.
 echo APK genere dans:
 if %IS_TEST%==1 (
-    echo android\app\build\outputs\apk\debug\edt_cnam_v_test_!VERSION!.apk
+    echo android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
 ) else (
     echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 )
@@ -240,7 +252,7 @@ if errorlevel 1 (
     echo.
     echo Pour installer sur ton telephone:
     if %IS_TEST%==1 (
-        echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v_test_!VERSION!.apk
+        echo adb install ..\android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
     ) else (
         echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
     )
@@ -256,7 +268,7 @@ echo ========================================
 echo.
 echo APK genere localement:
 if %IS_TEST%==1 (
-    echo android\app\build\outputs\apk\debug\edt_cnam_v_test_!VERSION!.apk
+    echo android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
 ) else (
     echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
 )

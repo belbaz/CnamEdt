@@ -1,38 +1,12 @@
 /** @type {import('next').NextConfig} */
-// En mode dev, on utilise la config web (sans output: 'export') pour permettre les routes API
-// Sur Vercel, on utilise aussi la config web (sans output: 'export') pour permettre les routes API
-// En mode build local mobile, on utilise la config mobile (avec output: 'export') pour Capacitor
-const isDev = process.env.NODE_ENV === 'development';
-const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
-const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+// Attention: ce fichier est copié à la racine en tant que next.config.js avant le build.
+// Il doit donc référencer package.json comme s'il était à la racine.
 const pkg = require('./package.json');
-const appChannel = process.env.APP_CHANNEL || 'prod'; // 'test' | 'prod'
+const appChannel = process.env.APP_CHANNEL || 'prod';
 
-// Si on est sur Vercel ou en dev, on ne peut pas utiliser output: 'export' (nécessite les routes API)
-const shouldUseExport = !isDev && !isVercel && isMobileBuild;
-
-const nextConfig = (isDev || isVercel) ? {
-  // Mode dev/Vercel - API routes activées
-  // Pas de "output: 'export'" pour permettre les API routes
-  
-  // Optimisation d'images activée en dev/Vercel
-  images: {
-    unoptimized: false
-  },
-  
-  // Trailing slash désactivé (mode web standard)
-  trailingSlash: false,
-  
-  // Variables d'environnement accessibles côté client
-  env: {
-    NEXT_PUBLIC_APP_MODE: 'web',
-    NEXT_PUBLIC_APP_CHANNEL: appChannel,
-    NEXT_PUBLIC_APP_VERSION: pkg.version
-  }
-} : {
-  // Configuration pour build statique mobile (nécessaire pour Capacitor)
-  // Seulement utilisé lors d'un build local avec BUILD_MODE=mobile
-  ...(shouldUseExport && { output: 'export' }),
+const nextConfig = {
+  // Configuration pour build statique (nécessaire pour Capacitor)
+  output: 'export',
   
   // Désactiver l'optimisation d'images (non compatible avec export statique)
   images: {
