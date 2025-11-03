@@ -1,12 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import "./SettingsMenu.css";
-import EasterEgg from "./EasterEgg";
+import EasterEgg from "./EasterEgg";    
 import Toast from "./Toast";
 
 export default function SettingsMenu({ 
-    autoScrollToday, 
-    onToggleAutoScroll, 
     onOpenChange,
     compactMode,
     testMode,
@@ -35,7 +33,9 @@ export default function SettingsMenu({
         } else if (!isNative && typeof window !== 'undefined') {
             // Pour le web, récupérer depuis l'API
             // Vérifier si le mode test est activé
-            const testMode = localStorage.getItem('updateTestMode') === 'true';
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
+            const toggleTest = localStorage.getItem('updateTestMode') === 'true';
+            const testMode = isTestChannel || toggleTest;
             const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
             
             fetch(apiUrl)
@@ -59,21 +59,16 @@ export default function SettingsMenu({
         }
 
         const checkTestMode = () => {
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
             const updateTestMode = localStorage.getItem('updateTestMode') === 'true';
-            if (isNative) {
-                const storedTestVersion = localStorage.getItem('isTestVersion') === 'true';
-                const versionContainsTest = currentVersion?.toLowerCase().includes('test');
-                setIsTestMode(updateTestMode || storedTestVersion || versionContainsTest);
-            } else {
-                setIsTestMode(updateTestMode);
-            }
+            setIsTestMode(isTestChannel || updateTestMode);
         };
 
         checkTestMode();
 
         // Écouter les changements de localStorage (pour détecter l'activation/désactivation)
         const handleStorageChange = (e) => {
-            if (e.key === 'updateTestMode' || e.key === 'isTestVersion') {
+            if (e.key === 'updateTestMode') {
                 checkTestMode();
             }
         };
@@ -213,7 +208,7 @@ export default function SettingsMenu({
                 onClick={() => setIsOpen(!isOpen)}
                 title="Paramètres"
             >
-                ⚙️
+                <img src="/settings.svg" alt="Paramètres" width="22" height="22" aria-hidden="true" />
             </button>
 
             {isOpen && (
@@ -226,17 +221,6 @@ export default function SettingsMenu({
                         </div>
                         
                         <div className="settings-content">
-                            <div className="setting-item">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={autoScrollToday}
-                                        onChange={(e) => onToggleAutoScroll(e.target.checked)}
-                                    />
-                                    <span>Défiler automatiquement vers aujourd'hui</span>
-                                </label>
-                            </div>
-
                             <div className="setting-item">
                                 <label>
                                     <input

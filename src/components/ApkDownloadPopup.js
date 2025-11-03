@@ -86,8 +86,10 @@ export default function ApkDownloadPopup() {
     const handleDownload = async () => {
         try {
             // Récupérer l'URL signée depuis l'API
-            // Vérifier si le mode test est activé
-            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            // Vérifier si le mode test est activé (canal ou bascule)
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
+            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            const testMode = isTestChannel || toggleTest;
             const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
             const response = await fetch(apiUrl);
             

@@ -14,8 +14,10 @@ export default function Footer() {
         }
 
         const fetchVersion = () => {
-            // Vérifier si le mode test est activé
-            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            // Vérifier si le mode test est activé (canal ou bascule)
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
+            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            const testMode = isTestChannel || toggleTest;
             const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
             
             fetch(apiUrl)
@@ -40,13 +42,9 @@ export default function Footer() {
         };
 
         window.addEventListener('storage', handleStorageChange);
-        
-        // Vérifier aussi périodiquement (car localStorage peut changer dans le même onglet)
-        const interval = setInterval(fetchVersion, 1000);
 
         return () => {
             window.removeEventListener('storage', handleStorageChange);
-            clearInterval(interval);
         };
     }, [isNative]);
 

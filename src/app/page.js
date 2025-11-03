@@ -41,6 +41,9 @@ export default function Home() {
     const compactMode = 5; // Fixe à 5 (Normal) - Modifier cette valeur pour changer la compacité
     const [viewMode, setViewMode] = useState('horizontal'); // 'horizontal' or 'vertical'
     const [showTimeLabels, setShowTimeLabels] = useState(true); // Afficher les labels d'heures
+    // Animation de transition de semaine: 'next' | 'prev' | null
+    const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
+    const previousWeekIndexRef = useRef(null);
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -237,6 +240,18 @@ export default function Home() {
         setEvents(filtered);
     }, [selectedWeek, allEvents]);
 
+    // Déterminer la direction de transition lorsque la semaine change
+    useEffect(() => {
+        if (!selectedWeek || availableWeeks.length === 0) return;
+        const currentIndex = availableWeeks.findIndex(w => w.monday.getTime() === selectedWeek.getTime());
+        const previousIndex = previousWeekIndexRef.current;
+        if (previousIndex !== null && previousIndex !== undefined && currentIndex !== -1) {
+            if (currentIndex > previousIndex) setWeekTransitionDirection('next');
+            else if (currentIndex < previousIndex) setWeekTransitionDirection('prev');
+        }
+        if (currentIndex !== -1) previousWeekIndexRef.current = currentIndex;
+    }, [selectedWeek, availableWeeks]);
+
     useEffect(() => {
         // Attendre que Capacitor soit prêt avant de charger
         if (!capacitorReady) return;
@@ -425,7 +440,12 @@ export default function Home() {
                         const viewportHeight = window.innerHeight;
                         const dayHeight = todayRef.current.offsetHeight;
                         const newSpacing = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20);
-                        setTodaySpacing(newSpacing);
+                        // Conserver l'espacement uniquement sur desktop et en vue horizontale
+                        if (!(isNative || isSmallScreen) && viewMode === 'horizontal') {
+                            setTodaySpacing(newSpacing);
+                        } else {
+                            setTodaySpacing(0);
+                        }
                     }
                 }, 100);
             }
@@ -433,7 +453,7 @@ export default function Home() {
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [todaySpacing]);
+    }, [todaySpacing, isNative, isSmallScreen, viewMode]);
 
     // État pour le timestamp de dernière mise à jour
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
@@ -482,21 +502,15 @@ export default function Home() {
         } catch (e) {}
     }, [darkMode]);
 
-    // Scroll vers aujourd'hui quand les événements sont chargés
+    // Auto-scroll désactivé
     useEffect(() => {
-        if (settingsOpen) return;
-        if (!loading && autoScrollToday && events.length > 0) {
-            // Attendre que le DOM soit rendu (un peu plus long pour l'animation)
-            setTimeout(scrollToToday, 800);
-        }
-    }, [loading, autoScrollToday, events, settingsOpen]);
+        // Intentionnellement vide : auto-scroll supprimé
+    }, [loading, autoScrollToday, events, settingsOpen, selectedWeek]);
 
-    // Quand on ferme les paramètres, si autoScrollToday est activé, déclencher un scroll
+    // Auto-scroll désactivé à la fermeture des paramètres
     useEffect(() => {
-        if (!settingsOpen && autoScrollToday && events.length > 0) {
-            setTimeout(scrollToToday, 300);
-        }
-    }, [settingsOpen]);
+        // Intentionnellement vide : auto-scroll supprimé
+    }, [settingsOpen, autoScrollToday, events, selectedWeek]);
 
     // Gérer l'ouverture du jour d'aujourd'hui après avoir changé de semaine via le bouton "Aujourd'hui"
     useEffect(() => {
@@ -563,8 +577,12 @@ export default function Home() {
             const dayHeight = element.offsetHeight;
             const spacingNeeded = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20); // 20px de marge réduite
             
-            // Définir l'espacement pour le jour d'aujourd'hui
-            setTodaySpacing(spacingNeeded);
+            // Définir l'espacement uniquement sur desktop et en vue horizontale
+            if (!(isNative || isSmallScreen) && viewMode === 'horizontal') {
+                setTodaySpacing(spacingNeeded);
+            } else {
+                setTodaySpacing(0);
+            }
             
             // Position finale : juste sous la navbar (ou en haut si navbar cachée)
             const offsetPosition = elementPosition + window.pageYOffset - (isNavbarVisible ? navbarHeight + 10 : 10);
@@ -581,13 +599,10 @@ export default function Home() {
     };
 
     const handleToday = () => {
-        // Utiliser la sélection intelligente de semaine
+        // Utiliser la sélection intelligente de semaine sans déclencher de scroll
         const weekToSelect = selectBestWeek(availableWeeks);
-        
         if (weekToSelect) {
             setSelectedWeek(weekToSelect.monday);
-            // Indiquer qu'on doit ouvrir le jour d'aujourd'hui après le changement de semaine
-            setShouldScrollToToday(true);
         }
     };
 
@@ -726,7 +741,7 @@ export default function Home() {
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker 
                 ref={updateCheckerRef}
-                currentVersion="2.0.29" 
+                currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
                 isNative={isNative} 
             />
 
@@ -738,8 +753,6 @@ export default function Home() {
                 onWeekChange={handleWeekChange}
                 onRefresh={handleRefresh}
                 onToday={handleToday}
-                autoScrollToday={autoScrollToday}
-                onToggleAutoScroll={handleToggleAutoScroll}
                 showRefreshButton={!(isNative || isSmallScreen)}
                 isMobile={isNative || isSmallScreen}
                 onSettingsOpenChange={setSettingsOpen}
@@ -749,7 +762,7 @@ export default function Home() {
                 onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
-                currentVersion="2.0.29"
+                currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
                 onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
@@ -814,46 +827,60 @@ export default function Home() {
 
                 {loading && events.length === 0 && <LoadingSpinner/>}
 
-                {(!loading || events.length > 0) && viewMode === 'vertical' ? (
-                    <VerticalSchedule
-                        events={events}
-                        subjectColors={subjectColors}
-                        onOpenEventDetails={(ev) => setSelectedEvent(ev)}
-                        compactMode={compactMode}
-                        showTimeLabels={showTimeLabels}
-                        isNative={isNative}
-                    />
-                ) : (
-                    Object.entries(groupByDay).map(([day, evs], index) => {
-                        const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
-                        const isToday = dayDate.toDateString() === new Date().toDateString();
-                        
-                        return (
-                            <div key={day}>
-                                <DayBlock
-                                    ref={isToday ? todayRef : null}
-                                    day={day}
-                                    events={evs}
-                                    subjectColors={subjectColors}
-                                    isCollapsed={collapsedDays[day] || false}
-                                    onToggle={() => handleToggleDay(day)}
-                                    onOpenEventDetails={(ev) => setSelectedEvent(ev)}
-                                    compactMode={compactMode}
-                                    showTimeLabels={showTimeLabels}
-                                />
-                                {isToday && todaySpacing > 0 && (
-                                    <div 
-                                        style={{
-                                            height: `${todaySpacing}px`,
-                                            width: '100%',
-                                            background: 'transparent'
-                                        }}
-                                        aria-hidden="true"
-                                    />
-                                )}
-                            </div>
-                        );
-                    })
+                {(!loading || events.length > 0) && (
+                    <div
+                        key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
+                        className={
+                            `${styles.weekContent} ` +
+                            (weekTransitionDirection === 'next'
+                                ? styles.slideLeft
+                                : weekTransitionDirection === 'prev'
+                                ? styles.slideRight
+                                : '')
+                        }
+                    >
+                        {viewMode === 'vertical' ? (
+                            <VerticalSchedule
+                                events={events}
+                                subjectColors={subjectColors}
+                                onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                compactMode={compactMode}
+                                showTimeLabels={showTimeLabels}
+                                isNative={isNative}
+                            />
+                        ) : (
+                            Object.entries(groupByDay).map(([day, evs], index) => {
+                                const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
+                                const isToday = dayDate.toDateString() === new Date().toDateString();
+                                
+                                return (
+                                    <div key={day}>
+                                        <DayBlock
+                                            ref={isToday ? todayRef : null}
+                                            day={day}
+                                            events={evs}
+                                            subjectColors={subjectColors}
+                                            isCollapsed={collapsedDays[day] || false}
+                                            onToggle={() => handleToggleDay(day)}
+                                            onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                            compactMode={compactMode}
+                                            showTimeLabels={showTimeLabels}
+                                        />
+                                        {isToday && (
+                                            <div 
+                                                style={{
+                                                    height: '0px',
+                                                    width: '100%',
+                                                    background: 'transparent'
+                                                }}
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 )}
             </main>
 
@@ -863,7 +890,7 @@ export default function Home() {
 
             <OfflineNotification forceShow={hasNetworkError} />
 
-            <TestModeIndicator currentVersion="2.0.29" isNative={isNative} />
+            <TestModeIndicator currentVersion={process.env.NEXT_PUBLIC_APP_VERSION} isNative={isNative} />
 
             {selectedEvent && (
                 <div className="event-modal-layer" aria-modal="true" role="dialog">

@@ -103,6 +103,7 @@ if exist android\app\build rmdir /s /q android\app\build 2>NUL
 
 echo [3/8] Configuration mobile...
 set BUILD_MODE=mobile
+set APP_CHANNEL=prod
 if exist next.config.js copy /Y next.config.js next.config.web.backup >nul
 copy /Y mobile-config\next.config.mobile.js next.config.js >nul
 

@@ -1,10 +1,36 @@
 .container {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
     max-width: 1400px;
     width: 100%;
     margin: 0 auto;
     padding: 0 1rem 1rem 1rem;
     overflow-x: visible;
     box-sizing: border-box;
+}
+
+/* Contenu des semaines avec petite animation à la navigation */
+.weekContent {
+    will-change: transform, opacity;
+}
+
+.slideLeft {
+    animation: weekSlideLeft 180ms ease-out;
+}
+
+.slideRight {
+    animation: weekSlideRight 180ms ease-out;
+}
+
+@keyframes weekSlideLeft {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes weekSlideRight {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
 }
 
 /* Permettre le scroll horizontal pour la vue verticale du planning */

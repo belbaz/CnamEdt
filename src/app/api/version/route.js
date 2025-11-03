@@ -128,7 +128,8 @@ async function getLatestVersionFromStorage(isTest) {
 export async function GET(request) {
   // Vérifier si on demande les versions test
   const searchParams = new URL(request.url).searchParams;
-  const isTest = searchParams.get('test') === 'true';
+  const rawTest = searchParams.get('test');
+  const isTest = rawTest ? (rawTest.toLowerCase() === 'true' || rawTest === '1') : false;
   
   // Récupérer la dernière version depuis Supabase Storage
   const latestVersion = await getLatestVersionFromStorage(isTest);
@@ -142,15 +143,19 @@ export async function GET(request) {
                   (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'https://edt-eicnam.vercel.app');
   
   // Utiliser la route API de l'application comme proxy pour le téléchargement
-  // Cela permet de passer par le serveur pour accéder au bucket privé
-  const apkUrl = `${siteUrl}/api/download/apk?version=${currentVersion}&test=${isTest}`;
+  // Ne pas afficher test=false; n'ajouter le paramètre que si test=true
+  const apkUrl = `${siteUrl}/api/download/apk${isTest ? '?test=true' : ''}`;
   
-  return Response.json({
+  const body = {
     version: currentVersion,
     url: apkUrl,
-    changelog: isTest ? "Version de test - Préprod/Dev" : "Version de production",
-    isTest: isTest
-  }, {
+    changelog: isTest ? "Version de test - Préprod/Dev" : "Version de production"
+  };
+  if (isTest) {
+    body.isTest = true;
+  }
+
+  return Response.json(body, {
     headers: {
       // Cache
       'Cache-Control': 'no-cache, no-store, must-revalidate',

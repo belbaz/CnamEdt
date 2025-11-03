@@ -12,8 +12,6 @@ export default function Navbar({
     onWeekChange,
     onRefresh,
     onToday,
-    autoScrollToday,
-    onToggleAutoScroll,
     showRefreshButton = true,
     isMobile = false,
     onSettingsOpenChange,
@@ -64,8 +62,6 @@ export default function Navbar({
                     darkMode={darkMode}
                     onToggleDarkMode={onToggleDarkMode}
                     isMobile={isMobile}
-                    autoScrollToday={autoScrollToday}
-                    onToggleAutoScroll={onToggleAutoScroll}
                     onSettingsOpenChange={onSettingsOpenChange}
                     compactMode={compactMode}
                     testMode={testMode}
@@ -95,16 +91,6 @@ export default function Navbar({
 
                     {isMobile ? null : (
                         <>
-                            <div className="auto-scroll-toggle">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={autoScrollToday}
-                                        onChange={(e) => onToggleAutoScroll(e.target.checked)}
-                                    />
-                                    <span>Défilement auto</span>
-                                </label>
-                            </div>
                             <button
                                 className="expand-all-btn"
                                 onClick={onToggleAllDays}

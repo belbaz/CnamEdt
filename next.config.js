@@ -5,6 +5,8 @@
 const isDev = process.env.NODE_ENV === 'development';
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV !== undefined;
 const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+const pkg = require('./package.json');
+const appChannel = process.env.APP_CHANNEL || 'prod'; // 'test' | 'prod'
 
 // Si on est sur Vercel ou en dev, on ne peut pas utiliser output: 'export' (nécessite les routes API)
 const shouldUseExport = !isDev && !isVercel && isMobileBuild;
@@ -23,7 +25,9 @@ const nextConfig = (isDev || isVercel) ? {
   
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: 'web'
+    NEXT_PUBLIC_APP_MODE: 'web',
+    NEXT_PUBLIC_APP_CHANNEL: appChannel,
+    NEXT_PUBLIC_APP_VERSION: pkg.version
   }
 } : {
   // Configuration pour build statique mobile (nécessaire pour Capacitor)
@@ -49,7 +53,9 @@ const nextConfig = (isDev || isVercel) ? {
   
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: 'mobile'
+    NEXT_PUBLIC_APP_MODE: 'mobile',
+    NEXT_PUBLIC_APP_CHANNEL: appChannel,
+    NEXT_PUBLIC_APP_VERSION: pkg.version
   }
 }
 

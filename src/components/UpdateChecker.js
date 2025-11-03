@@ -56,8 +56,10 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         setIsChecking(true);
         
         try {
-            // Vérifier si le mode test est activé
-            const testMode = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            // Déterminer le canal (test/prod) et le basculement local
+            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
+            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
+            const testMode = isTestChannel || toggleTest;
             
             // Appeler l'API du site web pour obtenir la dernière version
             const apiUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
@@ -102,10 +104,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             setDownloadUrl(data.url);
             setChangelog(data.changelog);
             
-            // Si c'est une version test, enregistrer dans localStorage
-            if (data.isTest && typeof window !== 'undefined') {
-                localStorage.setItem('isTestVersion', 'true');
-            }
+            // Ne pas persister de flag global de version test côté mobile
 
             // Comparer les versions
             const needsUpdate = compareVersions(currentVersion, data.version);
