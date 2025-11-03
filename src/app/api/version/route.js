@@ -8,8 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const BUCKET_NAME = 'Apk Edt Eicnam';
 
-// Force dynamic rendering pour cette route API
-export const dynamic = 'force-dynamic';
+// Note: dynamic rendering disabled to be compatible with static export
 
 // Fonction pour comparer deux versions (gère X.X et X.X.X)
 function compareVersions(v1, v2) {
