@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+// Attention: ce fichier est copié à la racine en tant que next.config.js avant le build.
+// Il doit donc référencer package.json comme s'il était à la racine.
+const pkg = require('./package.json');
+const appChannel = process.env.APP_CHANNEL || 'prod';
+
 const nextConfig = {
   // Configuration pour build statique (nécessaire pour Capacitor)
   output: 'export',
@@ -22,7 +27,9 @@ const nextConfig = {
   
   // Variables d'environnement accessibles côté client
   env: {
-    NEXT_PUBLIC_APP_MODE: 'mobile'
+    NEXT_PUBLIC_APP_MODE: 'mobile',
+    NEXT_PUBLIC_APP_CHANNEL: appChannel,
+    NEXT_PUBLIC_APP_VERSION: pkg.version
   }
 }
 

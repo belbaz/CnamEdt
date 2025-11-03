@@ -1,21 +1,21 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import {useState, useEffect, useRef} from "react";
 import "./SettingsMenu.css";
-import EasterEgg from "./EasterEgg";    
+import EasterEgg from "./EasterEgg";
 import Toast from "./Toast";
 
-export default function SettingsMenu({ 
-    onOpenChange,
-    compactMode,
-    testMode,
-    onToggleTestMode,
-    isMobile = false,
-    isNative = false,
-    currentVersion = null,
-    onCheckUpdates = null,
-    showTimeLabels = true,
-    onToggleTimeLabels = null
-}) {
+export default function SettingsMenu({
+                                         onOpenChange,
+                                         compactMode,
+                                         testMode,
+                                         onToggleTestMode,
+                                         isMobile = false,
+                                         isNative = false,
+                                         currentVersion = null,
+                                         onCheckUpdates = null,
+                                         showTimeLabels = true,
+                                         onToggleTimeLabels = null
+                                     }) {
     const [isOpen, setIsOpen] = useState(false);
     const [showEasterEgg, setShowEasterEgg] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
@@ -37,7 +37,7 @@ export default function SettingsMenu({
             const toggleTest = localStorage.getItem('updateTestMode') === 'true';
             const testMode = isTestChannel || toggleTest;
             const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
-            
+
             fetch(apiUrl)
                 .then(res => res.json())
                 .then(data => {
@@ -74,7 +74,7 @@ export default function SettingsMenu({
         };
 
         window.addEventListener('storage', handleStorageChange);
-        
+
         // Vérifier aussi périodiquement (car localStorage peut changer dans le même onglet)
         const interval = setInterval(checkTestMode, 500);
 
@@ -93,13 +93,13 @@ export default function SettingsMenu({
     // Fermer avec la touche Escape
     useEffect(() => {
         if (!isOpen) return;
-        
+
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 setIsOpen(false);
             }
         };
-        
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
@@ -119,12 +119,12 @@ export default function SettingsMenu({
         // Si 5 clics, déclencher l'easter egg et basculer le mode test
         if (copyrightClickCount.current >= 5) {
             copyrightClickCount.current = 0;
-            
+
             // Activer/désactiver le mode test
             const currentTestMode = localStorage.getItem('updateTestMode') === 'true';
             const newTestMode = !currentTestMode;
             localStorage.setItem('updateTestMode', newTestMode.toString());
-            
+
             // Afficher les confettis
             setShowEasterEgg(true);
 
@@ -158,8 +158,8 @@ export default function SettingsMenu({
                         const dynamicImport = new Function('moduleName', 'return import(moduleName)');
                         const moduleName = '@' + 'capacitor/' + 'local-notifications';
                         const module = await dynamicImport(moduleName);
-                        const { LocalNotifications } = module;
-                        
+                        const {LocalNotifications} = module;
+
                         // Vérifier les permissions
                         const permResult = await LocalNotifications.checkPermissions();
                         if (permResult.display === 'granted') {
@@ -203,23 +203,23 @@ export default function SettingsMenu({
 
     return (
         <>
-            <button 
+            <button
                 className="settings-button"
                 onClick={() => setIsOpen(!isOpen)}
                 title="Paramètres"
             >
-                <img src="/settings.svg" alt="Paramètres" width="22" height="22" aria-hidden="true" />
+                <img src="/settings.svg" alt="Paramètres" width="22" height="22" aria-hidden="true"/>
             </button>
 
             {isOpen && (
                 <>
-                    <div className="settings-overlay" onClick={() => setIsOpen(false)} />
+                    <div className="settings-overlay" onClick={() => setIsOpen(false)}/>
                     <div className="settings-menu">
                         <div className="settings-header">
                             <h3>Paramètres</h3>
                             <button className="settings-close" onClick={() => setIsOpen(false)}>✕</button>
                         </div>
-                        
+
                         <div className="settings-content">
                             <div className="setting-item">
                                 <label>
@@ -245,10 +245,10 @@ export default function SettingsMenu({
                                 </div>
                             )}
 
-                            {isNative && currentVersion && (
+                            {isNative && (
                                 <div className="setting-item setting-button-item">
-                                    <button 
-                                        className="check-updates-button"
+                                    <button
+                                        className="settings-action check-updates-button"
                                         onClick={() => {
                                             if (onCheckUpdates) {
                                                 onCheckUpdates();
@@ -258,8 +258,7 @@ export default function SettingsMenu({
                                     >
                                         <span className="button-icon">🔄</span>
                                         <div className="button-content">
-                                            <span className="button-label">Vérifier les mises à jour</span>
-                                            <span className="button-version">Version actuelle : {currentVersion}</span>
+                                            <span className="button-label">Update</span>
                                         </div>
                                     </button>
                                 </div>
@@ -270,7 +269,7 @@ export default function SettingsMenu({
                                     href={"https://belbaz.vercel.app/contact"}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="contact-button"
+                                    className="settings-action contact-button"
                                 >
                                     <span className="button-icon">✉️</span>
                                     <span className="button-label">Contact</span>
@@ -289,7 +288,7 @@ export default function SettingsMenu({
                                     </div>
                                 )}
                                 <div className="copyright-line">
-                                    <span 
+                                    <span
                                         className="copyright-text"
                                         onClick={handleCopyrightClick}
                                     >
@@ -302,11 +301,11 @@ export default function SettingsMenu({
                 </>
             )}
 
-            <EasterEgg isActive={showEasterEgg} onClose={handleCloseEasterEgg} />
-            <Toast 
-                message={toastMessage} 
-                isVisible={showToast} 
-                onClose={() => setShowToast(false)} 
+            <EasterEgg isActive={showEasterEgg} onClose={handleCloseEasterEgg}/>
+            <Toast
+                message={toastMessage}
+                isVisible={showToast}
+                onClose={() => setShowToast(false)}
             />
         </>
     );

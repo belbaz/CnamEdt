@@ -193,31 +193,46 @@
     padding: 0.5rem 0;
 }
 
-.check-updates-button {
+/* Shared action button style for consistency */
+.settings-action {
     width: 100%;
+    max-width: 80%;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
+    padding: 0.75rem 0.875rem;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-decoration: none;
+    color: var(--text-primary);
+    box-sizing: border-box;
 }
 
-.check-updates-button:hover {
+.check-updates-button {
+    width: 100%;
+}
+
+.settings-action:hover {
     background: var(--bg-primary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(66, 153, 225, 0.1);
 }
 
-.check-updates-button .button-icon {
-    font-size: 1.5rem;
+.settings-action .button-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
     flex-shrink: 0;
 }
 
-.check-updates-button .button-content {
+.settings-action .button-content {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -225,13 +240,13 @@
     flex: 1;
 }
 
-.check-updates-button .button-label {
+.settings-action .button-label {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.check-updates-button .button-version {
+.settings-action .button-version {
     font-size: 0.75rem;
     color: var(--text-secondary);
 }
@@ -259,36 +274,21 @@
         font-size: 0.85rem;
     }
 
-    .check-updates-button {
-        padding: 0.875rem;
+    .settings-action {
+        padding: 0.75rem 0.875rem;
     }
 
-    .check-updates-button .button-label {
+    .settings-action .button-label {
         font-size: 0.85rem;
     }
 
-    .check-updates-button .button-version {
+    .settings-action .button-version {
         font-size: 0.7rem;
     }
 }
 
 /* Contact button */
 .contact-button {
-    width: 100%;
-    display: flex;
-    justify-items: center;
-    align-items: center;
-    gap: 0.75rem;
-    padding: .5rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    color: var(--text-primary);
-    box-sizing: border-box;
-    max-width: 80%;
 }
 
 .contact-button:hover {
