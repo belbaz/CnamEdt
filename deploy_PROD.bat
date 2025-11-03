@@ -165,24 +165,9 @@ if errorlevel 1 (
 )
 cd ..
 
-REM Convertir la version en format X.XX (2 chiffres après le point) pour la production
-for /f "tokens=1,2,3 delims=." %%a in ("!VERSION!") do (
-    set MAJOR=%%a
-    set MINOR=%%b
-    set PATCH=%%c
-)
-REM Enlever les espaces éventuels
-set MAJOR=!MAJOR: =!
-set MINOR=!MINOR: =!
-set PATCH=!PATCH: =!
-
-REM S'assurer que MINOR a toujours 2 chiffres (ex: 0 devient 00, 5 devient 05)
-if !MINOR! LSS 10 (
-    set MINOR=0!MINOR!
-)
-
-REM Construire la version au format X.XX (ex: 2.05)
-set PROD_VERSION=!MAJOR!.!MINOR!
+REM Utiliser la version complète X.Y.Z pour le nommage et l'upload en production
+REM (ex: 2.0.30). Cela permet au mobile de comparer précisément les versions.
+set PROD_VERSION=!VERSION!
 
 set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
 set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!PROD_VERSION!.apk
@@ -190,7 +175,7 @@ move /Y "%APK_SOURCE%" "%APK_DEST%" >nul
 echo APK signe: edt_cnam_v!PROD_VERSION!.apk
 
 echo [7/8] Upload Supabase...
-REM Utiliser la version en format X.X pour l'upload
+REM Uploader en utilisant la version complète
 node mobile-config\upload-to-supabase.js !PROD_VERSION!
 if errorlevel 1 (
     echo ATTENTION: Upload Supabase echoue (continue quand meme^)

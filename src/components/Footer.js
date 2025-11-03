@@ -5,7 +5,11 @@ import {useState, useEffect} from 'react';
 
 export default function Footer() {
     const {isNative} = useCapacitor();
-    const [version, setVersion] = useState("Loading ...");
+    const [version, setVersion] = useState(
+        typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_VERSION
+            ? process.env.NEXT_PUBLIC_APP_VERSION
+            : "Loading ..."
+    );
 
     // Récupérer la version depuis l'API (seulement si pas native)
     useEffect(() => {
@@ -47,11 +51,6 @@ export default function Footer() {
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [isNative]);
-
-    // Ne pas afficher dans l'app native
-    if (isNative) {
-        return null;
-    }
 
     return (
         <footer className="app-footer">

@@ -59,7 +59,8 @@ export async function GET(request) {
           const m = filename.match(/edt_cnam_v_test_(\d+\.\d+\.\d+)\.apk$/);
           return m ? m[1] : null;
         }
-        const m = filename.match(/edt_cnam_v(\d+\.\d+)\.apk$/);
+        // Supporter X.Y et X.Y.Z côté prod
+        const m = filename.match(/edt_cnam_v(\d+\.\d+(?:\.\d+)?)\.apk$/);
         return m ? m[1] : null;
       };
 
@@ -83,15 +84,14 @@ export async function GET(request) {
   }
 
   // Construire le nom du fichier :
-  // - Test: edt_cnam_v_test_X.X.X.apk (format complet avec 3 numéros)
-  // - Prod: edt_cnam_vX.XX.apk (format avec 2 numéros, ex: 2.05)
+  // - Test: edt_cnam_v_test_X.Y.Z.apk
+  // - Prod: edt_cnam_vX.Y.Z.apk (nouveau) — compatibilité maintenue pour X.Y
   let fileName;
   if (isTest) {
     // Pour les versions test, on garde le format X.X.X complet
     fileName = `edt_cnam_v_test_${version}.apk`;
   } else {
-    // Pour la production, on utilise directement la version (format X.XX ou X.X)
-    // Le format X.XX est généré par deploy_PROD.bat
+    // Pour la production, on utilise directement la version fournie (X.Y.Z recommandé)
     fileName = `edt_cnam_v${version}.apk`;
   }
   const FILE_PATH = `apk/${fileName}`;

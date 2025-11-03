@@ -34,8 +34,10 @@ function extractVersion(filename, isTest) {
     const match = filename.match(/edt_cnam_v_test_(\d+\.\d+\.\d+)\.apk$/);
     return match ? match[1] : null;
   } else {
-    // Format: edt_cnam_vX.XX.apk (supporte aussi X.X pour compatibilité)
-    const match = filename.match(/edt_cnam_v(\d+\.\d+)\.apk$/);
+    // Formats supportés en prod:
+    // - edt_cnam_vX.Y.apk (ancien)
+    // - edt_cnam_vX.Y.Z.apk (nouveau, recommandé)
+    const match = filename.match(/edt_cnam_v(\d+\.\d+(?:\.\d+)?)\.apk$/);
     return match ? match[1] : null;
   }
 }
@@ -135,8 +137,10 @@ export async function GET(request) {
   const latestVersion = await getLatestVersionFromStorage(isTest);
   
   // Si aucune version trouvée dans Supabase, utiliser une version par défaut
-  // Format prod: X.XX (ex: 2.00), Format test: X.X.X (ex: 2.0.20)
-  const currentVersion = latestVersion || (isTest ? "2.0.20" : "2.00");
+  // Prod: utiliser la version de l'appli (package.json) si disponible; sinon 2.0.0
+  // Test: format X.Y.Z
+  const fallbackProd = process.env.NEXT_PUBLIC_APP_VERSION || '2.0.0';
+  const currentVersion = latestVersion || (isTest ? "2.0.20" : fallbackProd);
   
   // Récupérer l'URL de base du site pour construire l'URL de l'API
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
