@@ -6,6 +6,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Note: This API route is only available when running in server mode (not with output: 'export')
+
 export async function GET(request) {
   // Configuration Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://aeftxgwfokzlspojzisx.supabase.co';

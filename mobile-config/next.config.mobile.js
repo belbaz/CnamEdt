@@ -2,7 +2,9 @@
 // Attention: ce fichier est copié à la racine en tant que next.config.js avant le build.
 // Il doit donc référencer package.json comme s'il était à la racine.
 const pkg = require('./package.json');
-const appChannel = process.env.APP_CHANNEL || 'prod';
+// Lire le canal depuis les variables d'environnement, avec fallback sur 'prod'
+const appChannel = process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
+console.log('[next.config.mobile] APP_CHANNEL:', appChannel);
 
 const nextConfig = {
   // Configuration pour build statique (nécessaire pour Capacitor)
@@ -29,7 +31,9 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_MODE: 'mobile',
     NEXT_PUBLIC_APP_CHANNEL: appChannel,
-    NEXT_PUBLIC_APP_VERSION: pkg.version
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    // Propager aussi APP_CHANNEL pour compatibilite
+    APP_CHANNEL: appChannel
   }
 }
 

@@ -87,6 +87,17 @@ echo [2/7] Preparation pour mobile...
 REM Definir la variable d'environnement pour le build mobile
 set BUILD_MODE=mobile
 
+REM Definir le canal en fonction du parametre
+if %IS_TEST%==1 (
+    set NEXT_PUBLIC_APP_CHANNEL=test
+    set APP_CHANNEL=test
+    echo Canal: TEST
+) else (
+    set NEXT_PUBLIC_APP_CHANNEL=prod
+    set APP_CHANNEL=prod
+    echo Canal: PRODUCTION
+)
+
 REM Sauvegarder la configuration web actuelle
 if exist next.config.js (
     copy /Y next.config.js next.config.web.backup
@@ -113,6 +124,10 @@ if exist src\app\api (
 )
 
 echo [3/7] Build Next.js (export statique avec BUILD_MODE=mobile)...
+echo Variables d'environnement:
+echo   - BUILD_MODE=%BUILD_MODE%
+echo   - APP_CHANNEL=%APP_CHANNEL%
+echo   - NEXT_PUBLIC_APP_CHANNEL=%NEXT_PUBLIC_APP_CHANNEL%
 call npm run build
 if errorlevel 1 (
     echo ERREUR: Build Next.js a echoue
