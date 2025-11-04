@@ -30,19 +30,31 @@ echo [1/3] Configuration pour Vercel...
 echo.
 
 REM Activer la configuration web (sans output: export)
-if not exist next.config.web.js (
-    echo ERREUR: next.config.web.js introuvable
-    echo Verifiez que le fichier existe dans le repertoire courant
+if not exist scripts\switch-next-config.js (
+    echo ERREUR: scripts\switch-next-config.js introuvable
     pause
     exit /b 1
 )
 
-copy /Y next.config.web.js next.config.js
+node scripts\switch-next-config.js web
 if errorlevel 1 (
-    echo ERREUR: Impossible de copier next.config.web.js vers next.config.js
+    echo ERREUR: Impossible d'activer la configuration web
     pause
     exit /b 1
 )
+
+REM Verifier que next.config.js n'a pas output: export
+REM check-export-mode.js retourne 1 si export trouve, 0 sinon
+if exist scripts\check-export-mode.js (
+    node scripts\check-export-mode.js >nul 2>&1
+    if errorlevel 1 (
+        echo ERREUR: next.config.js est toujours en mode export
+        echo Les API routes ne fonctionneront pas
+        pause
+        exit /b 1
+    )
+)
+
 echo Configuration web activee (API routes actives)
 
 REM S'assurer que les API routes sont presentes
