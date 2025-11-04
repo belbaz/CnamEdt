@@ -17,8 +17,6 @@ export default function Navbar({
     onSettingsOpenChange,
     onToggleAllDays,
     allDaysCollapsed = false,
-    testMode = false,
-    onToggleTestMode,
     compactMode,
     isNative = false,
     currentVersion = null,
@@ -64,8 +62,6 @@ export default function Navbar({
                     isMobile={isMobile}
                     onSettingsOpenChange={onSettingsOpenChange}
                     compactMode={compactMode}
-                    testMode={testMode}
-                    onToggleTestMode={onToggleTestMode}
                     isNative={isNative}
                     currentVersion={currentVersion}
                     onCheckUpdates={onCheckUpdates}

@@ -13,10 +13,10 @@ if defined APP_CHANNEL (
     echo APP_CHANNEL=non defini (par defaut: prod)
 )
 
-if defined NEXT_PUBLIC_APP_CHANNEL (
-    echo NEXT_PUBLIC_APP_CHANNEL=%NEXT_PUBLIC_APP_CHANNEL%
+if defined NEXT_PUBLIC_ENV (
+    echo NEXT_PUBLIC_ENV=%NEXT_PUBLIC_ENV%
 ) else (
-    echo NEXT_PUBLIC_APP_CHANNEL=non defini (par defaut: prod)
+    echo NEXT_PUBLIC_ENV=non defini (par defaut: prod)
 )
 
 echo.
@@ -48,12 +48,12 @@ if errorlevel 2 (
 
 REM Exporter les variables pour la session courante
 set APP_CHANNEL=%NEW_CHANNEL%
-set NEXT_PUBLIC_APP_CHANNEL=%NEW_CHANNEL%
+set NEXT_PUBLIC_ENV=%NEW_CHANNEL%
 
 echo.
 echo Variables d'environnement mises a jour pour cette session:
 echo APP_CHANNEL=%APP_CHANNEL%
-echo NEXT_PUBLIC_APP_CHANNEL=%NEXT_PUBLIC_APP_CHANNEL%
+echo NEXT_PUBLIC_ENV=%NEXT_PUBLIC_ENV%
 echo.
 echo IMPORTANT: Ces variables ne sont valides que pour cette session CMD.
 echo Pour les scripts de build, elles sont definies automatiquement.

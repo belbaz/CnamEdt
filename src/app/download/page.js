@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 import './page.css';
 
 /**
@@ -16,26 +16,18 @@ export default function DownloadPage() {
         const downloadAPK = async () => {
             try {
                 // Récupérer l'URL de l'APK depuis l'API version
-                // Déterminer le canal désiré: bascule locale prime si définie, sinon canal build
-                const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-                let testMode = isTestChannel;
-                if (typeof window !== 'undefined') {
-                    const toggleValue = localStorage.getItem('updateTestMode');
-                    if (toggleValue === 'true') testMode = true;
-                    if (toggleValue === 'false') testMode = false;
-                }
-                const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+                const apiUrl = `/api/version`;
                 const response = await fetch(apiUrl);
-                
+
                 if (!response.ok) {
                     throw new Error('Impossible de récupérer les informations de version');
                 }
 
                 const data = await response.json();
                 const url = data.url;
-                
+
                 setApkUrl(url);
-                
+
                 console.log('[Download Page] Téléchargement de:', url);
 
                 // Créer un élément <a> pour déclencher le téléchargement
@@ -44,14 +36,14 @@ export default function DownloadPage() {
                 link.download = `edt_cnam_v${data.version}.apk`;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
-                
+
                 // Déclencher le téléchargement
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
+
                 console.log('[Download Page] Téléchargement déclenché');
-                
+
                 setDownloading(false);
             } catch (err) {
                 console.error('[Download Page] Erreur:', err);
@@ -101,7 +93,7 @@ export default function DownloadPage() {
                         </p>
                         <div className="download-info">
                             <p>💡 Si le téléchargement n'a pas démarré :</p>
-                            <button 
+                            <button
                                 className="download-button download-button-primary"
                                 onClick={handleManualDownload}
                             >
@@ -116,7 +108,7 @@ export default function DownloadPage() {
                                 <li>Suivez les instructions à l'écran</li>
                             </ol>
                         </div>
-                        <button 
+                        <button
                             className="download-button download-button-secondary"
                             onClick={handleBackHome}
                         >
@@ -133,14 +125,14 @@ export default function DownloadPage() {
                             {error}
                         </p>
                         {apkUrl && (
-                            <button 
+                            <button
                                 className="download-button download-button-primary"
                                 onClick={handleManualDownload}
                             >
                                 Réessayer le téléchargement
                             </button>
                         )}
-                        <button 
+                        <button
                             className="download-button download-button-secondary"
                             onClick={handleBackHome}
                         >

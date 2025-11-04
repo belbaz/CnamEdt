@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import '../download/page.css';
+import './page.css';
 
 /**
  * Page de téléchargement manuel de l'APK
@@ -16,14 +16,7 @@ export default function ApkManualDownloadPage() {
         setError(null);
         setIsDownloading(true);
         try {
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            let testMode = isTestChannel;
-            if (typeof window !== 'undefined') {
-                const toggleValue = localStorage.getItem('updateTestMode');
-                if (toggleValue === 'true') testMode = true;
-                if (toggleValue === 'false') testMode = false;
-            }
-            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
+            const apiUrl = `/api/version`;
             const response = await fetch(apiUrl);
             if (!response.ok) {
                 throw new Error("Impossible de récupérer l'URL de l'APK");
@@ -52,43 +45,63 @@ export default function ApkManualDownloadPage() {
     };
 
     return (
-        <div className="download-page">
-            <div className="download-container">
-                <div className="download-icon">📱</div>
-                <h1 className="download-title">Télécharger l'application Android (APK)</h1>
-                <p className="download-description">
-                    Appuyez sur le bouton ci-dessous pour lancer le téléchargement de l'APK.
+        <div className="apk-page">
+            <div className="apk-container">
+                <div className="apk-header">
+                    <div className="apk-icon-wrapper">
+                        📱
+                    </div>
+                    <h1 className="apk-title">Application Android</h1>
+                    <p className="apk-subtitle">Téléchargez l'APK pour installer l'application</p>
+                </div>
+
+                <p className="apk-description">
+                    Cliquez sur le bouton ci-dessous pour télécharger l'application sur votre appareil Android.
                 </p>
 
                 {error && (
-                    <p className="download-description download-error">{error}</p>
-                )}
-
-                <button
-                    className="download-button download-button-primary"
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                >
-                    {isDownloading ? 'Téléchargement…' : "Télécharger l'APK"}
-                </button>
-
-                {apkUrl && !error && !isDownloading && (
-                    <div className="download-info">
-                        <p>Si le téléchargement ne démarre pas :</p>
-                        <button
-                            className="download-button download-button-secondary"
-                            onClick={() => window.open(apkUrl, '_blank')}
-                        >
-                            Télécharger manuellement
-                        </button>
+                    <div className="apk-error">
+                        {error}
                     </div>
                 )}
 
+                <div className="apk-button-group">
+                    <button
+                        className="apk-button apk-button-primary"
+                        onClick={handleDownload}
+                        disabled={isDownloading}
+                    >
+                        {isDownloading ? (
+                            <>
+                                <span className="apk-loading-spinner"></span>
+                                <span>Téléchargement en cours...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>⬇️</span>
+                                <span>Télécharger l'APK</span>
+                            </>
+                        )}
+                    </button>
+
+                    {apkUrl && !error && !isDownloading && (
+                        <div className="apk-info-card">
+                            <p>Le téléchargement ne démarre pas ?</p>
+                            <button
+                                className="apk-button apk-button-secondary"
+                                onClick={() => window.open(apkUrl, '_blank')}
+                            >
+                                Ouvrir dans un nouvel onglet
+                            </button>
+                        </div>
+                    )}
+                </div>
+
                 <button
-                    className="download-button download-button-secondary"
+                    className="apk-button apk-button-secondary apk-back-button"
                     onClick={handleBackHome}
                 >
-                    Retour à l'accueil
+                    ← Retour à l'accueil
                 </button>
             </div>
         </div>

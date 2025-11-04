@@ -3,18 +3,6 @@ import packageJson from '../../../../package.json';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request) {
-	const { searchParams } = new URL(request.url);
-
-	// Déterminer le canal (test/prod) avec override via query string
-	const testParam = searchParams.get('test');
-	const envChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
-	let isTest = envChannel === 'test';
-	if (typeof testParam === 'string') {
-		const v = testParam.toLowerCase();
-		if (v === 'true' || v === '1') isTest = true;
-		if (v === 'false' || v === '0') isTest = false;
-	}
-
 	// Construire l'origine pour générer des URLs absolues (éviter le mixed-content)
 	// Utiliser l'URL de la requête, qui contient déjà le bon protocole (https en prod)
 	const origin = (() => {
@@ -27,7 +15,7 @@ export async function GET(request) {
 
 	// Valeurs par défaut
 	let latestVersion = packageJson.version;
-	let resolvedUrl = `${origin}/api/download/apk?test=${isTest ? 'true' : 'false'}`;
+	let resolvedUrl = `${origin}/api/download/apk`;
 
 	// Optionnel: essayer de déterminer la dernière version disponible depuis Supabase
 	try {
@@ -45,17 +33,10 @@ export async function GET(request) {
 			if (!files || files.length === 0) throw new Error('Aucun fichier APK trouvé');
 
 			const relevantFiles = files.filter(file => {
-				if (isTest) {
-					return file.name.startsWith('edt_cnam_v_test_') && file.name.endsWith('.apk');
-				}
 				return file.name.startsWith('edt_cnam_v') && !file.name.includes('_test_') && file.name.endsWith('.apk');
 			});
 
 			const extractVersion = (filename) => {
-				if (isTest) {
-					const m = filename.match(/edt_cnam_v_test_(\d+\.\d+\.\d+)\.apk$/);
-					return m ? m[1] : null;
-				}
 				const m = filename.match(/edt_cnam_v(\d+\.\d+(?:\.\d+)?)\.apk$/);
 				return m ? m[1] : null;
 			};
@@ -81,7 +62,7 @@ export async function GET(request) {
 
 			if (latest) {
 				latestVersion = latest;
-				resolvedUrl = `${origin}/api/download/apk?test=${isTest ? 'true' : 'false'}&version=${encodeURIComponent(latestVersion)}`;
+				resolvedUrl = `${origin}/api/download/apk?version=${encodeURIComponent(latestVersion)}`;
 			}
 		}
 	} catch (e) {
@@ -91,11 +72,10 @@ export async function GET(request) {
 	const responseBody = {
 		version: latestVersion,
 		url: resolvedUrl,
-		isTest,
 		changelog: null
 	};
 
-	console.log(`📦 Version API - test=${isTest} → ${latestVersion}`);
+	console.log(`📦 Version API → ${latestVersion}`);
 
 	return NextResponse.json(responseBody, {
 		headers: {

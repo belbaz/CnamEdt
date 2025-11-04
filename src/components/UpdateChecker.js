@@ -25,7 +25,6 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
     const [appUpdaterReady, setAppUpdaterReady] = useState(false);
     const [isErrorVisible, setIsErrorVisible] = useState(false);
     const [isErrorClosing, setIsErrorClosing] = useState(false);
-    const [isRemoteTest, setIsRemoteTest] = useState(false);
     const [errorTitle, setErrorTitle] = useState('Connexion impossible');
     const [errorMessage, setErrorMessage] = useState("Vérifiez votre connexion internet et réessayez.");
     const [isCheckingPermission, setIsCheckingPermission] = useState(false);
@@ -70,19 +69,19 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 downloadUrl,
                 latestVersion
             );
-            
+
             // Mettre à jour l'état de progression manuellement
-            setInstallProgress({ 
-                status: 'downloading', 
-                message: 'Téléchargement en cours...' 
+            setInstallProgress({
+                status: 'downloading',
+                message: 'Téléchargement en cours...'
             });
 
             // Succès - l'installation va démarrer
-            setInstallProgress({ 
-                status: 'success', 
-                message: 'Installation démarrée. Suivez les instructions à l\'écran.' 
+            setInstallProgress({
+                status: 'success',
+                message: 'Installation démarrée. Suivez les instructions à l\'écran.'
             });
-            
+
             // Fermer la popup après un court délai
             setTimeout(() => {
                 handleClose();
@@ -92,11 +91,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
 
         } catch (error) {
             console.error('[UpdateChecker] Erreur lors de l\'installation:', error);
-            setInstallProgress({ 
-                status: 'error', 
-                message: error.message || 'Erreur lors de l\'installation' 
+            setInstallProgress({
+                status: 'error',
+                message: error.message || 'Erreur lors de l\'installation'
             });
-            
+
             // Afficher un message d'erreur à l'utilisateur
             setTimeout(() => {
                 alert(`Erreur lors de l'installation automatique:\n${error.message}\n\nVoulez-vous télécharger manuellement l'APK ?`);
@@ -108,7 +107,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
+
                 setIsInstalling(false);
                 setInstallProgress(null);
             }, 1000);
@@ -139,7 +138,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             if (typeof window.AndroidAppUpdater.openInstallSettings === 'function') {
                 setIsCheckingPermission(true);
                 window.AndroidAppUpdater.openInstallSettings();
-                
+
                 // Afficher un message à l'utilisateur
                 alert('Veuillez activer l\'autorisation d\'installer des apps inconnues dans les paramètres Android, puis revenez à l\'application.');
             } else {
@@ -235,43 +234,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         checkForUpdates(false);
     }, [isNative, currentVersion]);
 
-    // Re-vérifier lorsqu'on change de canal via le toggle
-    useEffect(() => {
-        if (!isNative) return;
-        const handler = () => {
-            checkForUpdates(true);
-        };
-        if (typeof window !== 'undefined') {
-            window.addEventListener('updateTestModeChanged', handler);
-        }
-        return () => {
-            if (typeof window !== 'undefined') {
-                window.removeEventListener('updateTestModeChanged', handler);
-            }
-        };
-    }, [isNative]);
 
     const checkForUpdates = async (isManual = false) => {
         setIsChecking(true);
-        
+
         try {
-            // Déterminer le canal désiré (test/prod)
-            // Web: la bascule locale (updateTestMode) PRIME si définie; sinon, utiliser le canal du build.
-            // Natif: NE JAMAIS proposer l'APK de test si l'app build est PROD.
-            const builtChannel = (typeof window !== 'undefined' && window.__APP_CHANNEL) || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
-            const builtIsTest = builtChannel === 'test';
-            let desiredIsTest = builtIsTest;
-            if (!isNative) {
-                if (typeof window !== 'undefined') {
-                    const toggleValue = localStorage.getItem('updateTestMode');
-                    if (toggleValue === 'true') desiredIsTest = true;
-                    if (toggleValue === 'false') desiredIsTest = false;
-                }
-            } else {
-                // En natif, rester strictement sur le canal du build
-                desiredIsTest = builtIsTest;
-            }
-            
             // Déterminer la bonne base URL pour l'API version
             // - En app native (Capacitor) ou protocole file:, l'origine locale n'a pas d'API → utiliser le site distant
             // - En web, utiliser l'origine courante
@@ -283,13 +250,12 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             } else {
                 baseUrl = defaultRemote;
             }
-            // Demander explicitement le canal désiré au serveur
-            const versionUrl = `${baseUrl}/api/version?test=${desiredIsTest ? 'true' : 'false'}`;
-            
+            const versionUrl = `${baseUrl}/api/version`;
+
             console.log('[UpdateChecker] Vérification des mises à jour...');
             console.log('[UpdateChecker] URL API:', versionUrl);
             console.log('[UpdateChecker] Version actuelle:', currentVersion);
-            
+
             const response = await fetch(versionUrl, {
                 method: 'GET',
                 cache: 'no-store',
@@ -307,7 +273,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 console.warn('[UpdateChecker] Réponse non JSON ou erreur, tentative fallback. type=', contentType);
                 // Fallback une seule fois si on n'est pas déjà sur le site distant
                 if (!baseUrl.startsWith('http') || baseUrl.includes('localhost')) {
-                    const fallbackUrl = `${defaultRemote}/api/version?test=${desiredIsTest ? 'true' : 'false'}`;
+                    const fallbackUrl = `${defaultRemote}/api/version`;
                     console.log('[UpdateChecker] Fallback vers:', fallbackUrl);
                     const resp2 = await fetch(fallbackUrl, { method: 'GET', cache: 'no-store' });
                     if (!resp2.ok) {
@@ -320,7 +286,6 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     setLatestVersion(data2.version);
                     setDownloadUrl(data2.url);
                     setChangelog(data2.changelog);
-                    setIsRemoteTest(!!data2.isTest);
                     const needsUpdate2 = compareVersions(currentVersion, data2.version);
                     setUpdateAvailable(needsUpdate2);
                     setIsVisible(needsUpdate2);
@@ -346,9 +311,6 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             setLatestVersion(data.version);
             setDownloadUrl(data.url);
             setChangelog(data.changelog);
-            setIsRemoteTest(!!data.isTest);
-            
-            // Ne pas persister de flag global de version test côté mobile
 
             // Comparer uniquement les versions (ne pas forcer sur changement de canal si versions identiques)
             const needsUpdate = compareVersions(currentVersion, data.version);
@@ -396,7 +358,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
 
         const localParts = localSafe.split('.').map(Number);
         const remoteParts = remoteSafe.split('.').map(Number);
-        
+
         // Normaliser à 3 parties (ajouter 0 si manquant)
         while (localParts.length < 3) localParts.push(0);
         while (remoteParts.length < 3) remoteParts.push(0);
@@ -418,10 +380,8 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
 
         if (!isNative) {
             // Fallback pour le web : téléchargement classique
-            // Vérifier si c'est une version test
-            const isTestVersion = downloadUrl.includes('test');
-            const fileName = isTestVersion ? `edt_cnam_v_test_${latestVersion}.apk` : `edt_cnam_v${latestVersion}.apk`;
-            
+            const fileName = `edt_cnam_v${latestVersion}.apk`;
+
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = fileName;
@@ -465,11 +425,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     <div className="update-popup-icon up-to-date-icon">
                         {/* Icône discrète */}
                     </div>
-                    
+
                     <h2 className="update-popup-title up-to-date-title">
                         Vous êtes à jour
                     </h2>
-                    
+
                     <div className="up-to-date-version-info">
                         <div className="up-to-date-version-badge">
                             <span className="up-to-date-version-label">Version actuelle</span>
@@ -480,9 +440,9 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     <p className="up-to-date-message">
                         Vous utilisez déjà la dernière version de l'application.
                     </p>
-                    
+
                     <div className="update-popup-buttons">
-                        <button 
+                        <button
                             className="update-popup-button update-popup-button-primary"
                             onClick={handleCloseUpToDate}
                         >
@@ -540,11 +500,11 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 <div className="update-popup-icon">
                     🎉
                 </div>
-                
+
                 <h2 className="update-popup-title">
                     Mise à jour disponible
                 </h2>
-                
+
                 <div className="update-popup-versions">
                     <div className="update-version update-version-current">
                         <span className="update-version-label">Version actuelle</span>
@@ -559,26 +519,21 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     </div>
                 </div>
 
-                {isRemoteTest && (
-                    <p className="update-popup-changelog" style={{ marginTop: 8 }}>
-                        🧪 Version de test
-                    </p>
-                )}
-                
+
                 {/*{changelog && (*/}
                 {/*    <p className="update-popup-changelog">*/}
                 {/*        📝 {changelog}*/}
                 {/*    </p>*/}
                 {/*)}*/}
-                
+
                 {/* Affichage de la progression si installation en cours */}
                 {isInstalling && installProgress && (
                     <div className="update-install-progress">
                         <div className="update-progress-message">
                             {installProgress.status === 'downloading' && installProgress.progress !== undefined ? (
-                                <>
+                                <div>
                                     <div className="update-progress-bar-container">
-                                        <div 
+                                        <div
                                             className="update-progress-bar"
                                             style={{ width: `${installProgress.progress}%` }}
                                         />
@@ -586,7 +541,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                                     <p className="update-progress-text">
                                         {installProgress.message || `Téléchargement: ${installProgress.progress}%`}
                                     </p>
-                                </>
+                                </div>
                             ) : (
                                 <p className="update-progress-text">
                                     {installProgress.message || 'En cours...'}
@@ -597,16 +552,16 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                 )}
 
                 <div className="update-popup-buttons">
-                    <button 
+                    <button
                         className="update-popup-button update-popup-button-primary"
                         onClick={handleUpdate}
                         disabled={isInstalling}
                     >
                         {isInstalling ? 'Installation...' : 'Mettre à jour'}
                     </button>
-                    
+
                     {!isInstalling && (
-                        <button 
+                        <button
                             className="update-popup-button update-popup-button-secondary"
                             onClick={handleLater}
                         >

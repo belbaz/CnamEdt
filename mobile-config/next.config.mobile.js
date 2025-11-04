@@ -3,7 +3,7 @@
 // Il doit donc référencer package.json comme s'il était à la racine.
 const pkg = require('./package.json');
 // Lire le canal depuis les variables d'environnement, avec fallback sur 'prod'
-const appChannel = process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
+const appChannel = process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_ENV || 'prod';
 console.log('[next.config.mobile] APP_CHANNEL:', appChannel);
 
 const nextConfig = {
@@ -30,7 +30,7 @@ const nextConfig = {
   // Variables d'environnement accessibles côté client
   env: {
     NEXT_PUBLIC_APP_MODE: 'mobile',
-    NEXT_PUBLIC_APP_CHANNEL: appChannel,
+    NEXT_PUBLIC_ENV: appChannel,
     NEXT_PUBLIC_APP_VERSION: pkg.version,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app',
     // Propager aussi APP_CHANNEL pour compatibilite

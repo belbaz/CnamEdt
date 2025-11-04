@@ -92,7 +92,7 @@ REM Definir la variable d'environnement pour le build mobile
 set BUILD_MODE=mobile
 
 REM Un seul canal pour l'APK mobile
-set NEXT_PUBLIC_APP_CHANNEL=prod
+set NEXT_PUBLIC_ENV=prod
 set APP_CHANNEL=prod
 echo Canal unique: PRODUCTION (web conserve ses envs)
 
@@ -125,7 +125,7 @@ echo [3/7] Build Next.js (export statique avec BUILD_MODE=mobile)...
 echo Variables d'environnement:
 echo   - BUILD_MODE=%BUILD_MODE%
 echo   - APP_CHANNEL=%APP_CHANNEL%
-echo   - NEXT_PUBLIC_APP_CHANNEL=%NEXT_PUBLIC_APP_CHANNEL%
+echo   - NEXT_PUBLIC_ENV=%NEXT_PUBLIC_ENV%
 REM IMPORTANT: ne pas ré-incrémenter ici, utiliser le script sans increment
 call npm run build:mobile:noinc
 if errorlevel 1 (

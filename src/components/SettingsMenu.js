@@ -6,8 +6,6 @@ import Toast from "./Toast";
 export default function SettingsMenu({
                                          onOpenChange,
                                          compactMode,
-                                         testMode,
-                                         onToggleTestMode,
                                          isMobile = false,
                                          isNative = false,
                                          currentVersion = null,
@@ -19,7 +17,6 @@ export default function SettingsMenu({
     const [toastMessage, setToastMessage] = useState("");
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
-    const [isTestMode, setIsTestMode] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     // Le bouton update reste visible sur mobile/native; le toggle test est désormais visible pour tous
@@ -44,11 +41,6 @@ export default function SettingsMenu({
                     // En cas d'erreur, garder null
                 });
         }
-    }, [isNative, currentVersion]);
-
-    // Canal unique: forcer testMode à false et ne plus écouter de bascule
-    useEffect(() => {
-        setIsTestMode(false);
     }, [isNative, currentVersion]);
 
     useEffect(() => {

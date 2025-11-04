@@ -15,17 +15,8 @@ export async function GET(request) {
   
   const BUCKET_NAME = 'Apk Edt Eicnam';
   
-  // Déterminer le canal via l'environnement serveur, avec override via query string
   const { searchParams } = new URL(request.url);
   let version = searchParams.get('version');
-  const testParam = searchParams.get('test');
-  const envChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
-  let isTest = envChannel === 'test';
-  if (typeof testParam === 'string') {
-    const v = testParam.toLowerCase();
-    if (v === 'true' || v === '1') isTest = true;
-    if (v === 'false' || v === '0') isTest = false;
-  }
   
   // Si aucune version fournie, déterminer automatiquement la dernière version dans le bucket
   if (!version) {
@@ -39,13 +30,9 @@ export async function GET(request) {
         throw new Error(error?.message || 'Fichiers introuvables');
       }
 
-      // Filtrer selon le type (test ou prod)
+      // Filtrer uniquement les fichiers de production (pas de test)
       const relevantFiles = files.filter(file => {
-        if (isTest) {
-          return file.name.startsWith('edt_cnam_v_test_') && file.name.endsWith('.apk');
-        } else {
-          return file.name.startsWith('edt_cnam_v') && !file.name.includes('_test_') && file.name.endsWith('.apk');
-        }
+        return file.name.startsWith('edt_cnam_v') && !file.name.includes('_test_') && file.name.endsWith('.apk');
       });
 
       // Fonction utilitaire de comparaison de versions
@@ -63,11 +50,7 @@ export async function GET(request) {
 
       // Extraire la version depuis le nom de fichier
       const extractVersion = (filename) => {
-        if (isTest) {
-          const m = filename.match(/edt_cnam_v_test_(\d+\.\d+\.\d+)\.apk$/);
-          return m ? m[1] : null;
-        }
-        // Supporter X.Y et X.Y.Z côté prod
+        // Supporter X.Y et X.Y.Z
         const m = filename.match(/edt_cnam_v(\d+\.\d+(?:\.\d+)?)\.apk$/);
         return m ? m[1] : null;
       };
@@ -86,22 +69,13 @@ export async function GET(request) {
       version = latest;
     } catch (autoErr) {
       console.error('[API Download] Impossible de déterminer la dernière version:', autoErr);
-      // Fallback sur des valeurs par défaut connues
-      version = isTest ? '2.0.20' : '2.0.0';
+      // Fallback sur une valeur par défaut
+      version = '2.0.0';
     }
   }
 
-  // Construire le nom du fichier :
-  // - Test: edt_cnam_v_test_X.Y.Z.apk
-  // - Prod: edt_cnam_vX.Y.Z.apk (nouveau) — compatibilité maintenue pour X.Y
-  let fileName;
-  if (isTest) {
-    // Pour les versions test, on garde le format X.X.X complet
-    fileName = `edt_cnam_v_test_${version}.apk`;
-  } else {
-    // Pour la production, on utilise directement la version fournie (X.Y.Z recommandé)
-    fileName = `edt_cnam_v${version}.apk`;
-  }
+  // Construire le nom du fichier : edt_cnam_vX.Y.Z.apk
+  const fileName = `edt_cnam_v${version}.apk`;
   const FILE_PATH = `apk/${fileName}`;
   
   if (!supabaseServiceRole) {

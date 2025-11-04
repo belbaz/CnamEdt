@@ -9,8 +9,6 @@ export default function PageHeader({
                                        isMobile = false,
                                        onSettingsOpenChange,
                                        compactMode,
-                                       testMode,
-                                       onToggleTestMode,
                                        isNative = false,
                                        currentVersion = null,
                                        onCheckUpdates = null,
@@ -60,8 +58,6 @@ export default function PageHeader({
                     <SettingsMenu
                         onOpenChange={onSettingsOpenChange}
                         compactMode={compactMode}
-                        testMode={testMode}
-                        onToggleTestMode={onToggleTestMode}
                         isMobile={isMobile}
                         isNative={isNative}
                         currentVersion={currentVersion}

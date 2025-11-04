@@ -21,7 +21,7 @@ export default function RootLayout({children}) {
                     (function() {
                         try {
                             // Exposer le canal et la version au runtime (renforcé pour Capacitor/file:)
-                            window.__APP_CHANNEL = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod')};
+                            window.__APP_CHANNEL = ${JSON.stringify(process.env.NEXT_PUBLIC_ENV || 'prod')};
                             window.__APP_VERSION = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_VERSION || '')};
                         } catch (e) {}
                     })();

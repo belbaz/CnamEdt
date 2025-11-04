@@ -761,8 +761,6 @@ export default function Home() {
                 onSettingsOpenChange={setSettingsOpen}
                 onToggleAllDays={handleToggleAllDays}
                 allDaysCollapsed={Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => collapsedDays[d])}
-                testMode={testMode}
-                onToggleTestMode={handleToggleTestMode}
                 compactMode={compactMode}
                 isNative={isNative}
                 currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}

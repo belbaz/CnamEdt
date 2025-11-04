@@ -10,9 +10,9 @@
     "export": "next export",
     "start": "next start",
     "build:web": "node scripts/switch-next-config.js web && next build",
-    "build:mobile": "node mobile-config/increment-version.js && node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_APP_CHANNEL=prod APP_CHANNEL=prod node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
-    "build:mobile:noinc": "node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_APP_CHANNEL=prod APP_CHANNEL=prod node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
-    "build:mobile:test": "node mobile-config/increment-version.js && node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_APP_CHANNEL=test APP_CHANNEL=test node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
+    "build:mobile": "node mobile-config/increment-version.js && node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_ENV=prod APP_CHANNEL=prod node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
+    "build:mobile:noinc": "node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_ENV=prod APP_CHANNEL=prod node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
+    "build:mobile:test": "node mobile-config/increment-version.js && node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_ENV=test APP_CHANNEL=test node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
     "mobile:android": "npx cap open android",
     "mobile:sync": "npx cap sync android",
     "icons:android": "node scripts/generate-android-icons.js"

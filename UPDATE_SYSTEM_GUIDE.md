@@ -27,7 +27,7 @@ Le système supporte la mise à jour automatique OTA (Over-The-Air) pour l'appli
 #### `/api/version`
 - Détecte automatiquement la dernière version disponible dans Supabase
 - Retourne la version, l'URL de téléchargement et le changelog
-- Détecte le canal (test/prod) via `APP_CHANNEL` ou `NEXT_PUBLIC_APP_CHANNEL`
+- Détecte le canal (test/prod) via `APP_CHANNEL` ou `NEXT_PUBLIC_ENV`
 
 #### `/api/download/apk`
 - Proxy pour télécharger l'APK depuis Supabase avec URL signée
@@ -54,7 +54,7 @@ Les APKs sont stockés dans Supabase Storage :
 **Problème** : Le système actuel utilise `APP_CHANNEL` qui n'est pas toujours propagé correctement entre les environnements.
 
 **Solution** :
-1. Utiliser `NEXT_PUBLIC_APP_CHANNEL` pour la configuration côté client
+1. Utiliser `NEXT_PUBLIC_ENV` pour la configuration côté client
 2. Définir explicitement le canal dans les scripts de build
 3. Séparer clairement les configurations web et mobile
 
@@ -73,7 +73,7 @@ Les APKs sont stockés dans Supabase Storage :
 ```batch
 @echo off
 setlocal enabledelayedexpansion
-set NEXT_PUBLIC_APP_CHANNEL=test
+set NEXT_PUBLIC_ENV=test
 set APP_CHANNEL=test
 
 REM Version optionnelle en paramètre
@@ -109,7 +109,7 @@ echo Deploy du site web lance sur Vercel
 ```batch
 @echo off
 setlocal enabledelayedexpansion
-set NEXT_PUBLIC_APP_CHANNEL=prod
+set NEXT_PUBLIC_ENV=prod
 set APP_CHANNEL=prod
 
 REM Version optionnelle ou auto-increment
@@ -149,7 +149,7 @@ const nextConfig = {
   // Pas de output: 'export' pour permettre les API routes
   env: {
     NEXT_PUBLIC_APP_MODE: 'web',
-    NEXT_PUBLIC_APP_CHANNEL: process.env.APP_CHANNEL || 'prod'
+    NEXT_PUBLIC_ENV: process.env.APP_CHANNEL || 'prod'
   }
 }
 ```
@@ -160,7 +160,7 @@ const nextConfig = {
   output: 'export', // Requis pour Capacitor
   env: {
     NEXT_PUBLIC_APP_MODE: 'mobile',
-    NEXT_PUBLIC_APP_CHANNEL: process.env.APP_CHANNEL || 'prod'
+    NEXT_PUBLIC_ENV: process.env.APP_CHANNEL || 'prod'
   }
 }
 ```
@@ -201,7 +201,7 @@ Le système garantit la compatibilité :
 ### Problèmes Courants
 1. **"Erreur de mise à jour"** : Vérifier la connexion internet et l'accès à Supabase
 2. **Version non détectée** : Vérifier que l'APK est bien uploadé dans Supabase
-3. **Canal incorrect** : Vérifier `NEXT_PUBLIC_APP_CHANNEL` dans l'environnement
+3. **Canal incorrect** : Vérifier `NEXT_PUBLIC_ENV` dans l'environnement
 
 ## Maintenance
 
