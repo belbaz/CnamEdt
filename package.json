@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/switch-next-config.js web && next dev --turbopack",
     "prebuild": "node scripts/pre-build.js",
-    "build": "node scripts/switch-next-config.js web && node scripts/pre-build.js && next build",
+    "build": "node scripts/switch-next-config.js web && next build",
     "postbuild": "node scripts/post-build.js",
     "export": "next export",
     "start": "next start",
