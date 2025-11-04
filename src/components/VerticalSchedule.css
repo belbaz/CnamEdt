@@ -306,6 +306,9 @@
 
 /* Conteneur des événements */
 .vertical-events-container {
+    top: .1rem;
+    height: 99.2%;
+    max-height: 99.2%;
     z-index: 10;
     position: relative;
     width: 97%;

@@ -10,6 +10,7 @@ export default function RootLayout({children}) {
         <html lang="fr" suppressHydrationWarning>
         <head>
             <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+            <link rel="manifest" href="/manifest.webmanifest" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
             <link rel="preconnect" href="https://fonts.googleapis.com"/>
             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
@@ -29,6 +30,21 @@ export default function RootLayout({children}) {
                                 document.documentElement.classList.remove('dark-mode');
                             }
                         } catch (e) {}
+                    })();
+                `}}
+            />
+            <script
+                dangerouslySetInnerHTML={{__html: `
+                    (function() {
+                        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                            // Ne pas enregistrer dans Capacitor natif
+                            var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+                            if (!isNative) {
+                                window.addEventListener('load', function() {
+                                    navigator.serviceWorker.register('/sw.js').catch(function(){});
+                                });
+                            }
+                        }
                     })();
                 `}}
             />

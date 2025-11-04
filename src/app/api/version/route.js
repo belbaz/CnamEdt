@@ -127,49 +127,63 @@ async function getLatestVersionFromStorage(isTest) {
 }
 
 export async function GET(request) {
-  // Déterminer le canal via l'environnement serveur (pas de query string)
-  const appChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
-  const isTest = appChannel === 'test';
-  
-  // Récupérer la dernière version depuis Supabase Storage
-  const latestVersion = await getLatestVersionFromStorage(isTest);
-  
-  // Si aucune version trouvée dans Supabase, utiliser une version par défaut
-  // Prod: utiliser la version de l'appli (package.json) si disponible; sinon 2.0.0
-  // Test: format X.Y.Z
-  const fallbackProd = process.env.NEXT_PUBLIC_APP_VERSION || '2.0.0';
-  const currentVersion = latestVersion || (isTest ? "2.0.20" : fallbackProd);
-  
-  // Récupérer l'URL de base du site pour construire l'URL de l'API (toujours l'origine courante)
-  const host = request.headers.get('host');
-  const protocol = host && host.startsWith('localhost') ? 'http' : 'https';
-  const siteUrl = host ? `${protocol}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app');
-  
-  // Utiliser la route API de l'application comme proxy pour le téléchargement
-  // Ne pas afficher test=false; n'ajouter le paramètre que si test=true
-  const apkUrl = `${siteUrl}/api/download/apk`;
-  
-  const body = {
-    version: currentVersion,
-    url: apkUrl,
-    changelog: isTest ? "Version de test - Préprod/Dev" : "Version de production"
-  };
-  if (isTest) {
-    body.isTest = true;
-  }
-
-  return Response.json(body, {
-    headers: {
-      // Cache
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-      // CORS - Permettre les requêtes depuis l'app mobile
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
+  try {
+    // Déterminer le canal
+    const url = new URL(request.url);
+    const testParam = url.searchParams.get('test');
+    const envChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
+    let isTest = envChannel === 'test';
+    if (typeof testParam === 'string') {
+      const v = testParam.toLowerCase();
+      if (v === 'true' || v === '1') isTest = true;
+      if (v === 'false' || v === '0') isTest = false;
     }
-  });
+
+    // Récupérer la dernière version depuis Supabase Storage
+    const latestVersion = await getLatestVersionFromStorage(isTest);
+
+    // Si aucune version trouvée dans Supabase, utiliser une version par défaut
+    // Prod: utiliser la version de l'appli (package.json) si disponible; sinon 2.0.0
+    // Test: format X.Y.Z
+    const fallbackProd = process.env.NEXT_PUBLIC_APP_VERSION || '2.0.0';
+    const currentVersion = latestVersion || (isTest ? '2.0.20' : fallbackProd);
+
+    // Récupérer l'URL de base du site pour construire l'URL de l'API (toujours l'origine courante)
+    const host = request?.headers?.get('host');
+    const protocol = host && host.startsWith('localhost') ? 'http' : 'https';
+    const siteUrl = host ? `${protocol}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app');
+
+    // Utiliser la route API de l'application comme proxy pour le téléchargement
+    const apkUrl = `${siteUrl}/api/download/apk?test=${isTest ? 'true' : 'false'}`;
+
+    const body = {
+      version: currentVersion,
+      url: apkUrl,
+      changelog: isTest ? 'Version de test - Préprod/Dev' : 'Version de production',
+      isTest
+    };
+
+    return Response.json(body, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS, HEAD',
+        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
+      }
+    });
+  } catch (err) {
+    console.error('[API Version] Erreur GET /api/version:', err?.message || err);
+    return new Response('Internal Server Error', {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS, HEAD',
+        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
+      }
+    });
+  }
 }
 
 // Support des requêtes OPTIONS pour CORS
@@ -177,7 +191,22 @@ export async function OPTIONS() {
   return new Response(null, {
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS, HEAD',
+      'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
+    }
+  });
+}
+
+// Support des requêtes HEAD pour les vérifications de connectivité
+export async function HEAD() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS, HEAD',
       'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
     }
   });

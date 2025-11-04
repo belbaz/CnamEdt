@@ -5,6 +5,7 @@ import {createSubjectColorMapping, groupEventsByDay} from "@/utils/eventUtils";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
+import {useNetworkStatus} from "@/hooks/useNetworkStatus";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -15,6 +16,7 @@ import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
+import PermissionRequest from "@/components/PermissionRequest";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -46,6 +48,7 @@ export default function Home() {
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
+    const { isOnline } = useNetworkStatus();
 
     // Gérer le splash screen (cacher quand chargé)
     useSplashScreen(SplashScreen, !loading);
@@ -69,7 +72,6 @@ export default function Home() {
             setDebugInfo(null);
 
             // Vérifier si on est en ligne avant d'essayer de fetch
-            const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
             if (!isOnline) {
                 // En mode hors ligne, utiliser le cache si disponible
                 const cached = loadEventsFromCache();
@@ -258,8 +260,7 @@ export default function Home() {
         // Initialiser le mode test
         setTestModeState(isTestModeEnabled());
 
-        // Vérifier si on est en ligne
-        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        // L'état réseau vient du hook cross-plateforme
 
         // Charger immédiatement depuis le cache si disponible
         const cached = loadEventsFromCache();
@@ -734,6 +735,9 @@ export default function Home() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+            {/* Demande de permissions au démarrage (app native uniquement) */}
+            <PermissionRequest isNative={isNative} />
+            
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
             <ApkDownloadPopup />
             

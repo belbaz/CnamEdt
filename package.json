@@ -1,14 +1,15 @@
 {
   "name": "edt",
-  "version": "2.0.41",
+  "version": "2.0.47",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node scripts/switch-next-config.js web && next dev --turbopack",
     "prebuild": "node scripts/pre-build.js",
-    "build": "next build",
+    "build": "node scripts/switch-next-config.js web && next build",
     "postbuild": "node scripts/post-build.js",
     "start": "next start",
-    "build:mobile": "next build && npx cap sync",
+    "build:web": "node scripts/switch-next-config.js web && next build",
+    "build:mobile": "cross-env BUILD_MODE=mobile node scripts/switch-next-config.js mobile && next build && npx cap sync",
     "mobile:android": "npx cap open android",
     "mobile:sync": "npx cap sync android",
     "icons:android": "node scripts/generate-android-icons.js"
@@ -17,6 +18,8 @@
     "@capacitor/android": "^6.0.0",
     "@capacitor/app": "^6.0.0",
     "@capacitor/core": "^6.0.0",
+    "@capacitor/local-notifications": "^6.1.2",
+    "@capacitor/network": "^6.0.3",
     "@capacitor/preferences": "^6.0.0",
     "@capacitor/push-notifications": "^6.0.0",
     "@capacitor/splash-screen": "^6.0.0",
@@ -30,6 +33,7 @@
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",
     "@types/react": "^19.2.2",
+    "cross-env": "^7.0.3",
     "sharp": "^0.34.4",
     "typescript": "^5.9.3"
   }

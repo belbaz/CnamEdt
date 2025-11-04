@@ -22,12 +22,23 @@ export async function GET() {
 
         console.log('[API fetch-ics] Fetching from:', icsUrl);
         
+        // Gérer le timeout de manière compatible (AbortSignal.timeout peut ne pas exister)
+        let controller;
+        let signal;
+        try {
+            // @ts-ignore
+            signal = AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined;
+        } catch {
+            controller = new AbortController();
+            signal = controller.signal;
+            setTimeout(() => controller.abort(), 10000);
+        }
+
         const res = await fetch(icsUrl, {
             headers: {
                 'Accept': 'text/calendar,text/plain,*/*',
             },
-            // Ajouter un timeout pour éviter les requêtes qui traînent
-            signal: AbortSignal.timeout(10000) // 10 secondes max
+            signal
         });
         
         if (!res.ok) {
@@ -64,4 +75,9 @@ export async function GET() {
             details: err.cause?.message || 'Vérifier la connexion réseau et l\'URL ICS'
         }, {status: 500});
     }
+}
+
+// Répondre aux requêtes HEAD pour les checks de connectivité
+export async function HEAD() {
+    return new NextResponse(null, { status: 200 });
 }

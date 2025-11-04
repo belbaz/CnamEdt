@@ -36,11 +36,19 @@ if not errorlevel 1 (
     echo ATTENTION: next.config.js est en mode 'export'
     echo Cela desactivera les API routes !
     echo.
-    choice /C ON /M "Continuer quand meme"
-    if errorlevel 2 (
-        echo Annule par l'utilisateur
-        pause
-        exit /b 1
+    if exist next.config.web.js (
+        echo Correction automatique: activation de la configuration web...
+        copy /Y next.config.web.js next.config.js >nul
+        echo Configuration web activee (output: 'export' supprime)
+    ) else (
+        echo Impossible de corriger automatiquement (next.config.web.js introuvable)
+        echo.
+        choice /C ON /M "Continuer quand meme"
+        if errorlevel 2 (
+            echo Annule par l'utilisateur
+            pause
+            exit /b 1
+        )
     )
 )
 

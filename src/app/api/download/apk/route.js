@@ -15,11 +15,17 @@ export async function GET(request) {
   
   const BUCKET_NAME = 'Apk Edt Eicnam';
   
-  // Déterminer le canal via l'environnement serveur (pas de query string)
+  // Déterminer le canal via l'environnement serveur, avec override via query string
   const { searchParams } = new URL(request.url);
   let version = searchParams.get('version');
-  const appChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
-  const isTest = appChannel === 'test';
+  const testParam = searchParams.get('test');
+  const envChannel = (process.env.APP_CHANNEL || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod').toLowerCase();
+  let isTest = envChannel === 'test';
+  if (typeof testParam === 'string') {
+    const v = testParam.toLowerCase();
+    if (v === 'true' || v === '1') isTest = true;
+    if (v === 'false' || v === '0') isTest = false;
+  }
   
   // Si aucune version fournie, déterminer automatiquement la dernière version dans le bucket
   if (!version) {

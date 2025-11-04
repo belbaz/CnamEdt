@@ -24,6 +24,7 @@ export default function SettingsMenu({
     const [isTestMode, setIsTestMode] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
+    // Afficher le mode test uniquement si NEXT_PUBLIC_ENV=DEV est défini explicitement
     const isDev = (process.env.NEXT_PUBLIC_ENV || '').toUpperCase() === 'DEV';
     const showUpdateButton = isDev ? true : (isMobile || isNative);
 
