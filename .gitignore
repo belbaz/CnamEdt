@@ -53,7 +53,6 @@ local.properties
 
 # Logs
 *.log
-.vercel
  
 # Cle de signature (NE PAS COMMITER) 
 *.keystore 

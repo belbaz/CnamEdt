@@ -6,6 +6,14 @@ echo   DEPLOY WEBSITE - EDT EICNAM
 echo ========================================
 echo.
 
+REM Verifier qu'on est dans le bon repertoire
+if not exist package.json (
+    echo ERREUR: package.json introuvable
+    echo Assurez-vous d'executer ce script depuis la racine du projet
+    pause
+    exit /b 1
+)
+
 REM Message de commit optionnel
 set COMMIT_MSG=%~1
 if not defined COMMIT_MSG set COMMIT_MSG=Update website
@@ -18,54 +26,30 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM S'assurer qu'on est en configuration web
-echo [1/6] Verification de la configuration...
-if exist scripts\switch-next-config.js (
-    echo Utilisation du script de configuration standard...
-    node scripts\switch-next-config.js web
-    if errorlevel 1 (
-        echo ERREUR: Impossible de changer la configuration
-        pause
-        exit /b 1
-    )
-) else if exist next.config.web.js (
-    echo Configuration web trouvee
-    copy /Y next.config.web.js next.config.js >nul
-    echo Configuration web activee
-) else if exist mobile-config\next.config.mobile.js (
-    echo ATTENTION: Seule la config mobile trouvee
-    echo Assurez-vous que next.config.js est configure pour le web
+echo [1/3] Configuration pour Vercel...
+echo.
+
+REM Activer la configuration web (sans output: export)
+if not exist next.config.web.js (
+    echo ERREUR: next.config.web.js introuvable
+    echo Verifiez que le fichier existe dans le repertoire courant
+    pause
+    exit /b 1
 )
 
-REM Verifier qu'on n'est pas en mode export
-echo [2/6] Verification du mode de build...
-findstr /C:"output: 'export'" next.config.js >nul
-if not errorlevel 1 (
-    echo ATTENTION: next.config.js est en mode 'export'
-    echo Cela desactivera les API routes !
-    echo.
-    if exist next.config.web.js (
-        echo Correction automatique: activation de la configuration web...
-        copy /Y next.config.web.js next.config.js >nul
-        echo Configuration web activee (output: 'export' supprime)
-    ) else (
-        echo Impossible de corriger automatiquement (next.config.web.js introuvable)
-        echo.
-        choice /C ON /M "Continuer quand meme"
-        if errorlevel 2 (
-            echo Annule par l'utilisateur
-            pause
-            exit /b 1
-        )
-    )
+copy /Y next.config.web.js next.config.js
+if errorlevel 1 (
+    echo ERREUR: Impossible de copier next.config.web.js vers next.config.js
+    pause
+    exit /b 1
 )
+echo Configuration web activee (API routes actives)
 
-REM S'assurer que les API sont presentes
-echo [3/6] Verification des API routes...
+REM S'assurer que les API routes sont presentes
 if not exist src\app\api (
     echo ERREUR: Dossier API introuvable !
     if exist src\app\_api_backup (
-        echo Restauration du dossier API depuis backup...
+        echo Restauration du dossier API...
         cd src\app
         rename _api_backup api >nul 2>&1
         cd ..\..
@@ -77,37 +61,21 @@ if not exist src\app\api (
             exit /b 1
         )
     ) else (
-        echo Le dossier src\app\api est requis pour le site web
+        echo ERREUR: Le dossier src\app\api est requis pour Vercel
+        echo Le dossier _api_backup n'existe pas non plus
         pause
         exit /b 1
     )
 ) else (
-    echo API routes presentes
+    echo Routes API presentes
 )
 
-REM Verifier que vercel.json est present et configure
-echo [4/6] Verification de la configuration Vercel...
-if exist vercel.json (
-    echo Configuration Vercel presente
-    findstr /C:"buildCommand" vercel.json >nul
-    if errorlevel 1 (
-        echo ATTENTION: vercel.json ne contient pas de buildCommand
-        echo Le build peut ne pas utiliser le script correct
-    ) else (
-        echo Configuration Vercel correcte
-    )
-) else (
-    echo ATTENTION: vercel.json introuvable
-    echo Le deploiement peut echouer
-)
-
-REM Afficher le statut Git
-echo [5/6] Statut Git actuel:
+echo.
+echo [2/3] Statut Git:
 git status --short
 echo.
 
-REM Commit et push
-echo [6/6] Commit et push des changements...
+echo [3/3] Commit et push...
 git add .
 git commit -m "%COMMIT_MSG%"
 if errorlevel 1 (
@@ -141,23 +109,13 @@ if errorlevel 1 (
 
 echo.
 echo ========================================
-echo   DEPLOIEMENT WEBSITE LANCE
+echo   DEPLOIEMENT TERMINE
 echo ========================================
 echo.
 echo Le code a ete pousse sur GitHub
-echo Vercel va automatiquement detecter les changements
-echo et deployer le site en 1-2 minutes
+echo Vercel va automatiquement deployer dans 1-2 minutes
 echo.
-echo Surveillez le deploiement sur:
-echo https://vercel.com/dashboard
-echo.
-echo Site en production:
-echo https://edt-eicnam.vercel.app
-echo.
-echo API routes a verifier apres deploiement:
-echo https://edt-eicnam.vercel.app/api/version
-echo https://edt-eicnam.vercel.app/api/fetch-ics
+echo Site: https://edt-eicnam.vercel.app
 echo.
 pause
 exit /b 0
-

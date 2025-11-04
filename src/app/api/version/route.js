@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import packageJson from '../../../../package.json';
 import { createClient } from '@supabase/supabase-js';
 
+// Force dynamic rendering pour Vercel
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request) {
 	// Construire l'origine pour générer des URLs absolues (éviter le mixed-content)
 	// Utiliser l'URL de la requête, qui contient déjà le bon protocole (https en prod)

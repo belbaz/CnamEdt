@@ -12,9 +12,16 @@ try {
     const content = fs.readFileSync(nextConfigPath, 'utf8');
     if (/output\s*:\s*['"]export['"]/i.test(content)) {
       isMobileBuild = true;
+      console.log('[pre-build] Mode mobile détecté (output: export trouvé)');
+    } else {
+      console.log('[pre-build] Mode web détecté (pas de output: export)');
     }
+  } else {
+    console.log('[pre-build] next.config.js introuvable, utilisation de BUILD_MODE:', process.env.BUILD_MODE || 'non défini');
   }
-} catch (_) {}
+} catch (e) {
+  console.log('[pre-build] Erreur lors de la lecture de next.config.js:', e.message);
+}
 
 const apiDir = path.join(__dirname, '../src/app/api');
 const backupDir = path.join(__dirname, '../src/app/_api_backup');

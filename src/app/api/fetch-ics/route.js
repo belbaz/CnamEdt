@@ -7,6 +7,7 @@ import ical from "node-ical";
 
 // Force dynamic rendering pour cette route API
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // URL par défaut (fallback si .env.local n'existe pas)
 const DEFAULT_ICS_URL = 'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
