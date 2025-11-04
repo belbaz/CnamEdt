@@ -37,10 +37,25 @@ if (!isMobileBuild) {
     console.log('[pre-build] ✓ Configuration web activée via copie directe');
   }
   
-  // Vérifier que la config est correcte
+  // Vérifier que la config est correcte (en ignorant les commentaires)
   try {
     const content = fs.readFileSync(nextConfigPath, 'utf8');
-    if (/output\s*:\s*['"]export['"]/i.test(content)) {
+    const lines = content.split('\n');
+    let hasExport = false;
+    
+    // Vérifier ligne par ligne en ignorant les commentaires
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Ignorer les commentaires (// et lignes vides)
+      if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed === '') continue;
+      // Chercher output: 'export' ou output: "export" dans le code actif
+      if (/output\s*:\s*['"]export['"]/i.test(trimmed)) {
+        hasExport = true;
+        break;
+      }
+    }
+    
+    if (hasExport) {
       console.error('[pre-build] ❌ ERREUR: next.config.js contient encore output: export après activation!');
       console.error('[pre-build] Contenu suspect trouvé dans next.config.js');
       // Ne pas faire échouer le build, mais avertir

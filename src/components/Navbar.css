@@ -31,6 +31,22 @@
     flex-wrap: wrap;
 }
 
+.week-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.expand-all-btn-desktop {
+    margin-left: auto;
+    display: flex;
+}
+
+.expand-all-btn-mobile {
+    display: none !important;
+}
+
 .auto-scroll-toggle {
     background: var(--bg-secondary);
     padding: 0.625rem 1rem;
@@ -115,6 +131,33 @@
     background: var(--bg-primary);
 }
 
+/* Bouton DEV - Clear cache */
+.dev-clear-cache-btn {
+    background: var(--bg-secondary);
+    padding: 0.625rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #f97316;
+    box-shadow: var(--shadow-sm);
+    color: #f97316;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dev-clear-cache-btn:hover {
+    background: #f97316;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
     .navbar-container {
@@ -130,11 +173,37 @@
         align-items: stretch;
     }
 
+    .week-picker-container {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .expand-all-btn-desktop {
+        display: none !important;
+    }
+
+    .expand-all-btn-mobile {
+        display: flex !important;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        border-radius: 10px;
+        flex-shrink: 0;
+        margin-left: 0;
+    }
+
     .auto-scroll-toggle {
         padding: 0.5rem 0.875rem;
     }
 
     .auto-scroll-toggle label {
+        font-size: 0.8rem;
+    }
+
+    .dev-clear-cache-btn {
+        padding: 0.5rem 0.875rem;
         font-size: 0.8rem;
     }
 }
@@ -152,6 +221,16 @@
         gap: 0.5rem;
     }
 
+    .week-picker-container {
+        gap: 0.5rem;
+    }
+
+    .expand-all-btn-mobile {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+    }
+
     .auto-scroll-toggle {
         padding: 0.5rem 0.75rem;
         border-radius: 10px;
@@ -167,5 +246,11 @@
     .auto-scroll-toggle input[type="checkbox"] {
         width: 16px;
         height: 16px;
+    }
+
+    .dev-clear-cache-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 10px;
     }
 }

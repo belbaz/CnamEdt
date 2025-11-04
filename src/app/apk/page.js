@@ -1,44 +1,41 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './page.css';
 
 /**
  * Page de téléchargement manuel de l'APK
  * Accessible via /apk
- * Affiche un bouton pour lancer explicitement le téléchargement
+ * Affiche un lien direct pour télécharger l'APK
  */
 export default function ApkManualDownloadPage() {
-    const [isDownloading, setIsDownloading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [apkUrl, setApkUrl] = useState(null);
+    const [apkVersion, setApkVersion] = useState(null);
 
-    const handleDownload = async () => {
-        setError(null);
-        setIsDownloading(true);
-        try {
-            const apiUrl = `/api/version`;
-            const response = await fetch(apiUrl);
-            if (!response.ok) {
-                throw new Error("Impossible de récupérer l'URL de l'APK");
+    useEffect(() => {
+        const fetchApkInfo = async () => {
+            try {
+                // Récupérer la version pour l'affichage uniquement
+                const apiUrl = `/api/version`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error("Impossible de récupérer les informations de version");
+                }
+                const data = await response.json();
+                // Utiliser directement /api/download/apk sans paramètre version
+                // Le backend prendra automatiquement la dernière version
+                setApkUrl('/api/download/apk');
+                setApkVersion(data.version);
+            } catch (e) {
+                setError(e.message || 'Erreur inconnue');
+            } finally {
+                setLoading(false);
             }
-            const data = await response.json();
-            const url = data.url;
-            setApkUrl(url);
+        };
 
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `edt_cnam_v${data.version}.apk`;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (e) {
-            setError(e.message || 'Erreur inconnue');
-        } finally {
-            setIsDownloading(false);
-        }
-    };
+        fetchApkInfo();
+    }, []);
 
     const handleBackHome = () => {
         window.location.href = '/';
@@ -56,7 +53,7 @@ export default function ApkManualDownloadPage() {
                 </div>
 
                 <p className="apk-description">
-                    Cliquez sur le bouton ci-dessous pour télécharger l'application sur votre appareil Android.
+                    Cliquez sur le lien ci-dessous pour télécharger l'application sur votre appareil Android.
                 </p>
 
                 {error && (
@@ -65,37 +62,30 @@ export default function ApkManualDownloadPage() {
                     </div>
                 )}
 
-                <div className="apk-button-group">
-                    <button
-                        className="apk-button apk-button-primary"
-                        onClick={handleDownload}
-                        disabled={isDownloading}
-                    >
-                        {isDownloading ? (
-                            <>
-                                <span className="apk-loading-spinner"></span>
-                                <span>Téléchargement en cours...</span>
-                            </>
-                        ) : (
-                            <>
-                                <span>⬇️</span>
-                                <span>Télécharger l'APK</span>
-                            </>
-                        )}
-                    </button>
+                {loading && (
+                    <div className="apk-loading">
+                        <span className="apk-loading-spinner"></span>
+                        <span>Chargement...</span>
+                    </div>
+                )}
 
-                    {apkUrl && !error && !isDownloading && (
-                        <div className="apk-info-card">
-                            <p>Le téléchargement ne démarre pas ?</p>
-                            <button
-                                className="apk-button apk-button-secondary"
-                                onClick={() => window.open(apkUrl, '_blank')}
-                            >
-                                Ouvrir dans un nouvel onglet
-                            </button>
-                        </div>
-                    )}
-                </div>
+                {!loading && !error && apkUrl && (
+                    <div className="apk-button-group">
+                        <a
+                            href={apkUrl}
+                            download={`edt_cnam_v${apkVersion || 'latest'}.apk`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="apk-button apk-button-primary apk-download-link"
+                        >
+                            <span>⬇️</span>
+                            <span>Télécharger l'APK</span>
+                            {apkVersion && (
+                                <span className="apk-version-badge">v{apkVersion}</span>
+                            )}
+                        </a>
+                    </div>
+                )}
 
                 <button
                     className="apk-button apk-button-secondary apk-back-button"
