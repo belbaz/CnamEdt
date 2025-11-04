@@ -7,8 +7,6 @@ const path = require('path');
 // On détecte donc aussi le mode mobile en lisant la config Next.js active et en vérifiant output: 'export'.
 let isMobileBuild = process.env.BUILD_MODE === 'mobile';
 try {
-  const fs = require('fs');
-  const path = require('path');
   const nextConfigPath = path.join(__dirname, '..', 'next.config.js');
   if (fs.existsSync(nextConfigPath)) {
     const content = fs.readFileSync(nextConfigPath, 'utf8');
@@ -18,19 +16,32 @@ try {
   }
 } catch (_) {}
 
-if (!isMobileBuild) {
-  console.log('Build web détecté - Routes API conservées pour Vercel');
-  process.stdout.write('');
-  process.exit(0);
-}
-
 const apiDir = path.join(__dirname, '../src/app/api');
 const backupDir = path.join(__dirname, '../src/app/_api_backup');
 
+// Si on est en mode web, s'assurer que le dossier API existe (restaurer si nécessaire)
+if (!isMobileBuild) {
+  console.log('Build web détecté - Vérification des routes API...');
+  
+  // Si le dossier API n'existe pas mais qu'il y a un backup, le restaurer
+  if (!fs.existsSync(apiDir) && fs.existsSync(backupDir)) {
+    console.log('⚠️  Dossier API manquant détecté, restauration depuis backup...');
+    fs.renameSync(backupDir, apiDir);
+    console.log('✓ Dossier API restauré pour Vercel');
+  } else if (fs.existsSync(apiDir)) {
+    console.log('✓ Routes API présentes pour Vercel');
+  } else {
+    console.log('⚠️  Dossier API introuvable - les routes API ne fonctionneront pas !');
+  }
+  
+  process.exit(0);
+}
+
+// Mode mobile : renommer le dossier API pour le build statique
+console.log('Renommage du dossier API pour le build statique...');
+
 // Vérifier si le dossier API existe
 if (fs.existsSync(apiDir)) {
-  console.log('Renommage du dossier API pour le build statique...');
-  
   // Supprimer l'ancien backup s'il existe
   if (fs.existsSync(backupDir)) {
     fs.rmSync(backupDir, { recursive: true, force: true });

@@ -19,8 +19,16 @@ if errorlevel 1 (
 )
 
 REM S'assurer qu'on est en configuration web
-echo [1/5] Verification de la configuration...
-if exist next.config.web.js (
+echo [1/6] Verification de la configuration...
+if exist scripts\switch-next-config.js (
+    echo Utilisation du script de configuration standard...
+    node scripts\switch-next-config.js web
+    if errorlevel 1 (
+        echo ERREUR: Impossible de changer la configuration
+        pause
+        exit /b 1
+    )
+) else if exist next.config.web.js (
     echo Configuration web trouvee
     copy /Y next.config.web.js next.config.js >nul
     echo Configuration web activee
@@ -30,7 +38,7 @@ if exist next.config.web.js (
 )
 
 REM Verifier qu'on n'est pas en mode export
-echo [2/5] Verification du mode de build...
+echo [2/6] Verification du mode de build...
 findstr /C:"output: 'export'" next.config.js >nul
 if not errorlevel 1 (
     echo ATTENTION: next.config.js est en mode 'export'
@@ -53,12 +61,14 @@ if not errorlevel 1 (
 )
 
 REM S'assurer que les API sont presentes
-echo [3/5] Verification des API routes...
+echo [3/6] Verification des API routes...
 if not exist src\app\api (
     echo ERREUR: Dossier API introuvable !
     if exist src\app\_api_backup (
         echo Restauration du dossier API depuis backup...
-        rename src\app\_api_backup api
+        cd src\app
+        rename _api_backup api >nul 2>&1
+        cd ..\..
         if exist src\app\api (
             echo API restaurees avec succes
         ) else (
@@ -75,13 +85,29 @@ if not exist src\app\api (
     echo API routes presentes
 )
 
+REM Verifier que vercel.json est present et configure
+echo [4/6] Verification de la configuration Vercel...
+if exist vercel.json (
+    echo Configuration Vercel presente
+    findstr /C:"buildCommand" vercel.json >nul
+    if errorlevel 1 (
+        echo ATTENTION: vercel.json ne contient pas de buildCommand
+        echo Le build peut ne pas utiliser le script correct
+    ) else (
+        echo Configuration Vercel correcte
+    )
+) else (
+    echo ATTENTION: vercel.json introuvable
+    echo Le deploiement peut echouer
+)
+
 REM Afficher le statut Git
-echo [4/5] Statut Git actuel:
+echo [5/6] Statut Git actuel:
 git status --short
 echo.
 
 REM Commit et push
-echo [5/5] Commit et push des changements...
+echo [6/6] Commit et push des changements...
 git add .
 git commit -m "%COMMIT_MSG%"
 if errorlevel 1 (
@@ -127,6 +153,10 @@ echo https://vercel.com/dashboard
 echo.
 echo Site en production:
 echo https://edt-eicnam.vercel.app
+echo.
+echo API routes a verifier apres deploiement:
+echo https://edt-eicnam.vercel.app/api/version
+echo https://edt-eicnam.vercel.app/api/fetch-ics
 echo.
 pause
 exit /b 0
