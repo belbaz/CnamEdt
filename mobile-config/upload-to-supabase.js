@@ -10,7 +10,6 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Récupérer la version depuis les arguments
 const version = process.argv[2];
-const isTest = process.argv[3] === 'test';
 
 if (!version) {
   console.error('❌ Version manquante !');
@@ -28,8 +27,8 @@ if (!/^\d+\.\d+(\.\d+)?$/.test(version)) {
 }
 
 // Configuration
-// Format: edt_cnam_v_test_X.X.X.apk pour test, edt_cnam_vX.X.apk pour prod
-const APK_NAME = isTest ? `edt_cnam_v_test_${version}.apk` : `edt_cnam_v${version}.apk`;
+// Format unique: edt_cnam_vX.X.X.apk
+const APK_NAME = `edt_cnam_v${version}.apk`;
 // Le deploy.bat génère l'APK en mode release
 const APK_PATH_RELEASE = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'release', APK_NAME);
 const APK_PATH_DEBUG = path.join(__dirname, '..', 'android', 'app', 'build', 'outputs', 'apk', 'debug', APK_NAME);
@@ -142,41 +141,31 @@ async function uploadAPK() {
     }
 
     // Lister et supprimer tous les anciens APKs
-    console.log(`\n🗑️  Vérification des anciens APKs...`);
-    const { data: existingFiles } = await supabase.storage
+  // Suppression de tous les APKs potentiels avant upload (nettoyage complet du dossier apk/)
+  console.log(`\n🗑️  Nettoyage du dossier apk/ (suppression de tous les APKs existants)...`);
+  try {
+    const { data: existingFiles, error: listError } = await supabase.storage
       .from(BUCKET_NAME)
-      .list('apk', { limit: 100 });
+      .list('apk', { limit: 1000 });
 
-    if (existingFiles && existingFiles.length > 0) {
-      // Filtrer selon le type : test ou production
-      const apkFiles = existingFiles.filter(f => {
-        if (isTest) {
-          return f.name.startsWith('edt_cnam_v_test_') && f.name.endsWith('.apk');
-        } else {
-          return f.name.startsWith('edt_cnam_v') && !f.name.includes('_test_') && f.name.endsWith('.apk');
-        }
-      });
-      
-      if (apkFiles.length > 0) {
-        console.log(`🗑️  Suppression de ${apkFiles.length} ancien(s) APK(s)...`);
-        const filesToDelete = apkFiles.map(f => `apk/${f.name}`);
-        
-        const { error: deleteError } = await supabase.storage
-          .from(BUCKET_NAME)
-          .remove(filesToDelete);
-
-        if (deleteError) {
-          console.error('⚠️  Erreur lors de la suppression :', deleteError.message);
-          console.log('   Tentative d\'upload malgré tout...');
-        } else {
-          console.log(`✅ ${apkFiles.length} ancien(s) APK(s) supprimé(s) !`);
-        }
+    if (listError) {
+      console.warn('⚠️  Impossible de lister les fichiers existants:', listError.message);
+    } else if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles.map(f => `apk/${f.name}`);
+      const { error: deleteAllError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove(filesToDelete);
+      if (deleteAllError) {
+        console.warn('⚠️  Erreur lors de la suppression des anciens APKs:', deleteAllError.message);
       } else {
-        console.log('ℹ️  Aucun ancien APK à supprimer');
+        console.log(`✅ ${filesToDelete.length} fichier(s) supprimé(s) du dossier apk/`);
       }
     } else {
-      console.log('ℹ️  Aucun fichier dans le dossier apk/');
+      console.log('ℹ️  Aucun fichier à supprimer dans apk/');
     }
+  } catch (e) {
+    console.warn('⚠️  Nettoyage du dossier apk/ ignoré (erreur inattendue):', e?.message || e);
+  }
 
     // Uploader le nouveau APK
     console.log(`\n📤 Upload de l'APK en cours...`);

@@ -1,68 +1,137 @@
 # 🚀 Guide de déploiement - EDT EICNAM
 
-## 📦 Script `deploy.bat` - Déploiement complet automatisé
+## 📋 Scripts de déploiement
 
-### Qu'est-ce que ce script fait ?
+Le projet utilise **2 scripts simplifiés** pour le déploiement :
 
-Le script `deploy.bat` automatise **TOUT** le processus de déploiement :
+### 1. **deploy_website.bat** - Déployer le site web
 
-1. ✅ **Incrémentation de version** (automatique ou manuelle)
-2. ✅ **Mise à jour des fichiers** avec la nouvelle version
-3. ✅ **Build de l'APK** Android
-4. ✅ **Upload sur Supabase** 
-5. ✅ **Git add, commit et push** vers GitHub
-6. ✅ **Déploiement automatique** sur Vercel (via le push)
-
-### 🎯 Utilisation
-
-#### Option 1 : Auto-incrémentation (+0.0.1)
+Déploie uniquement le site web sur Vercel.
 
 ```bash
-.\deploy.bat
+.\deploy_website.bat
 ```
 
-Exemple : `1.1.3` → `1.1.4`
-
-#### Option 2 : Version spécifique
-
+Ou avec un message de commit personnalisé :
 ```bash
-.\deploy.bat 2.0.0
+.\deploy_website.bat "Fix bug navbar"
 ```
 
-Utilise directement la version `2.0.0`
+**Ce que fait le script :**
+1. ✅ Vérifie la configuration web (s'assure que `next.config.js` est en mode web)
+2. ✅ Vérifie que les API routes sont présentes
+3. ✅ Git add + commit + push vers GitHub
+4. ✅ Vercel déploie automatiquement via webhook (~1-2 minutes)
+
+**Résultat :**
+- Site web mis à jour sur Vercel
+- Accessible sur https://edt-eicnam.vercel.app
 
 ---
 
-## 📋 Processus détaillé
+### 2. **deploy_apk.bat** - Déployer l'APK mobile
 
-### Étapes du script
-
-```
-[0/9] Vérification des processus Node.js
-[1/9] Nettoyage des dossiers build
-[2/9] Préparation configuration mobile
-[3/9] Build Next.js (export statique)
-[4/9] Restauration configuration web
-[5/9] Sync Capacitor Android
-[6/9] Build APK avec Gradle
-[7/9] Renommage APK avec version
-[8/9] Upload APK vers Supabase
-[9/9] Git add + commit + push
-```
-
-### Fichiers mis à jour automatiquement
-
-- `package.json` → version
-- `src/app/api/version/route.js` → version + URL APK
-- `src/app/page.js` → version affichée
-
-### Commandes Git exécutées
+Crée l'APK Android et l'uploade sur Supabase.
 
 ```bash
-git add .
-git commit -m "Update version to X.X.X"
-git push
+.\deploy_apk.bat
 ```
+
+Ou avec une version spécifique :
+```bash
+.\deploy_apk.bat 2.0.60
+```
+
+**Ce que fait le script :**
+1. ✅ Appelle `mobile-config/build-apk.bat`
+2. ✅ Demande si vous voulez incrémenter la version (+0.0.1)
+3. ✅ Met à jour tous les fichiers avec la version
+4. ✅ Build l'APK release signé
+5. ✅ Renomme en `edt_cnam_vX.Y.Z.apk`
+6. ✅ Uploade sur Supabase (remplace l'ancien APK de même version)
+
+**Résultat :**
+- APK créé localement : `android\app\build\outputs\apk\release\edt_cnam_vX.Y.Z.apk`
+- APK uploadé sur Supabase
+- Accessible via l'API `/api/version`
+
+---
+
+## 🎯 Workflow typique
+
+### Développement web uniquement
+
+```bash
+# 1. Modifier le code
+# 2. Tester localement
+npm run dev
+
+# 3. Déployer
+.\deploy_website.bat "Ajout fonctionnalité X"
+```
+
+### Développement mobile (APK)
+
+```bash
+# 1. Modifier le code
+# 2. Tester localement (si possible)
+
+# 3. Déployer l'APK
+.\deploy_apk.bat
+
+# 4. Tester sur téléphone
+adb install android\app\build\outputs\apk\release\edt_cnam_v*.apk
+```
+
+### Déploiement complet (web + mobile)
+
+```bash
+# 1. Déployer l'APK
+.\deploy_apk.bat
+
+# 2. Déployer le site web
+.\deploy_website.bat "Mise à jour version X.Y.Z"
+```
+
+---
+
+## 📱 Format APK
+
+**Format unique :** `edt_cnam_vX.Y.Z.apk`
+
+Exemples :
+- `edt_cnam_v2.0.60.apk`
+- `edt_cnam_v2.0.61.apk`
+
+**Remplacement Supabase :**
+- Si vous uploadez `edt_cnam_v2.0.60.apk` alors qu'il existe déjà, l'ancien est supprimé et remplacé
+- Utile pour corriger un APK sans changer la version
+
+---
+
+## 🔄 Gestion des versions
+
+### Version actuelle
+
+Le script `deploy_apk.bat` demande si vous voulez incrémenter :
+
+```
+Version actuelle: 2.0.60
+Voulez-vous incrementer la version (+0.0.1) ? (O/N):
+```
+
+- **O** : Incrémente → `2.0.61`
+- **N** : Garde la version actuelle → `2.0.60`
+
+### Version spécifique
+
+Passer la version en paramètre pour forcer une version :
+
+```bash
+.\deploy_apk.bat 2.1.0
+```
+
+→ Utilise directement `2.1.0` sans demander
 
 ---
 
@@ -93,37 +162,6 @@ NEXT_PUBLIC_ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407
 
 ---
 
-## 🔄 Workflow complet
-
-### 1. Modifications locales
-
-Faites vos modifications dans le code source.
-
-### 2. Déploiement
-
-```bash
-.\deploy.bat
-```
-
-Le script va :
-- Incrémenter la version
-- Créer l'APK
-- Uploader sur Supabase
-- Commit et push sur GitHub
-
-### 3. Déploiement Vercel
-
-Vercel détecte automatiquement le push et déploie le site.
-
-### 4. Vérification
-
-- ✅ APK disponible sur Supabase
-- ✅ Site déployé sur Vercel
-- ✅ API `/api/version` mise à jour
-- ✅ Route `/download` fonctionnelle
-
----
-
 ## 🛠️ Dépannage
 
 ### Erreur : "Git n'est pas installé"
@@ -138,8 +176,6 @@ NEXT_PUBLIC_SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE=...
 ```
 
-Le script continue automatiquement avec le Git push même si l'upload échoue.
-
 ### Erreur : "Git push a échoué"
 
 Vérifiez :
@@ -147,38 +183,44 @@ Vérifiez :
 - Droits sur le repository
 - Pas de conflits Git
 
+Solution :
+```bash
+git pull --rebase
+git push
+```
+
 ### Processus Node.js verrouillent les fichiers
 
-Le script arrête automatiquement les processus Node.js.
+Le script `build-apk.bat` arrête automatiquement les processus Node.js.
 Si l'erreur persiste, fermez manuellement votre IDE.
+
+### Build APK échoue
+
+1. Fermer Android Studio et l'émulateur
+2. Supprimer `android/app/build`
+3. Relancer le script
 
 ---
 
-## 📝 Comparaison avec l'ancien script
+## 📝 Vérification des déploiements
 
-### Ancien : `mobile-config\build-apk.bat`
+### Site web
 
-```bash
-cd mobile-config
-.\build-apk.bat
-```
+- URL : https://edt-eicnam.vercel.app
+- Dashboard Vercel : https://vercel.com/dashboard
+- API version : https://edt-eicnam.vercel.app/api/version
 
-**Faisait :**
-- ✅ Build APK
-- ✅ Upload Supabase
-- ❌ Pas de Git commit/push
+### APK mobile
 
-### Nouveau : `deploy.bat` (racine)
+- Supabase Storage : https://app.supabase.com/project/.../storage/buckets
+- API version : https://edt-eicnam.vercel.app/api/version
 
-```bash
-.\deploy.bat
-```
+### Tester la mise à jour
 
-**Fait :**
-- ✅ Build APK
-- ✅ Upload Supabase
-- ✅ Git add + commit + push
-- ✅ Déploiement Vercel automatique
+1. Installer l'APK sur un téléphone
+2. Lancer l'app
+3. L'app vérifie automatiquement s'il y a une mise à jour
+4. Si nouvelle version disponible, popup de téléchargement
 
 ---
 
@@ -193,14 +235,16 @@ node mobile-config\get-version.js
 ### Déployer sans incrémenter
 
 ```bash
-.\deploy.bat 1.1.3
+.\deploy_apk.bat 2.0.60
 ```
+
 (Utilise la même version, utile après des corrections)
 
-### Skip le push Git
+### Installer l'APK sur téléphone
 
-Si vous voulez juste builder l'APK sans pusher :
-➡️ Utilisez l'ancien script : `mobile-config\build-apk.bat`
+```bash
+adb install android\app\build\outputs\apk\release\edt_cnam_v*.apk
+```
 
 ### Vérifier le déploiement Vercel
 
@@ -210,66 +254,14 @@ Si vous voulez juste builder l'APK sans pusher :
 
 ---
 
-## 🎯 Cas d'usage
-
-### Nouvelle fonctionnalité
-
-```bash
-# 1. Développement
-# ... codez votre feature ...
-
-# 2. Deploy complet
-.\deploy.bat
-
-# 3. Attendre le déploiement Vercel (~2 min)
-# 4. Tester sur le site + app mobile
-```
-
-### Correction de bug (hotfix)
-
-```bash
-# 1. Correction
-# ... corrigez le bug ...
-
-# 2. Deploy
-.\deploy.bat
-
-# Version incrémentée automatiquement
-```
-
-### Release majeure
-
-```bash
-# Version 2.0.0
-.\deploy.bat 2.0.0
-```
-
----
-
-## 📱 Après le déploiement
-
-### Sur le site web
-
-- URL : https://edt-eicnam.vercel.app
-- API version : https://edt-eicnam.vercel.app/api/version
-- Télécharger APK : https://edt-eicnam.vercel.app/download
-
-### Sur l'app mobile
-
-Les utilisateurs recevront une notification de mise à jour au prochain lancement de l'app.
-
----
-
 ## ✨ Avantages
 
-✅ **Un seul script** pour tout déployer  
-✅ **Automatisation complète** du workflow  
-✅ **Moins d'erreurs humaines**  
-✅ **Gain de temps** considérable  
-✅ **Traçabilité** avec Git commits  
-✅ **Déploiement Vercel** automatique  
+✅ **Scripts simplifiés** : 2 scripts au lieu de 6+  
+✅ **Workflow clair** : Un script par usage (web / mobile)  
+✅ **Moins d'erreurs** : Automatisation complète  
+✅ **Gain de temps** : Plus besoin de gérer prod/dev séparément  
+✅ **Format unique** : Un seul format APK (`edt_cnam_vX.Y.Z.apk`)  
 
 ---
 
-**🎉 Plus besoin de faire 5 commandes manuellement, tout est automatisé !**
-
+**🎉 Déploiement simplifié et automatisé !**

@@ -7,10 +7,6 @@ echo.
 
 REM Verifier si une version est passee en parametre
 set PARAM_VERSION=%~1
-REM Optionnel: canal test en 2eme parametre ("test")
-set PARAM_CHANNEL=%~2
-set IS_TEST=0
-if /I "%PARAM_CHANNEL%"=="test" set IS_TEST=1
 if defined PARAM_VERSION (
     set VERSION=%PARAM_VERSION%
     echo Version specifiee en parametre : !VERSION!
@@ -33,21 +29,29 @@ if defined PARAM_VERSION (
     REM Recuperer la version actuelle depuis package.json
     echo Lecture de la version actuelle...
     for /f "delims=" %%i in ('node get-version.js') do set CURRENT_VERSION=%%i
-    
+
     echo Version actuelle : !CURRENT_VERSION!
-    echo Incrementation automatique de la version ^(+0.0.1^)...
-    
-    REM Incrementer automatiquement
-    for /f "tokens=*" %%a in ('node increment-version.js ^| findstr /C:"NEW_VERSION="') do set %%a
+    set /p INCREMENT_CHOICE=Voulez-vous incrementer la version ^(+0.0.1^) ^? ^(O/N^) : 
+    if /I "!INCREMENT_CHOICE!"=="O" (
+        for /f "tokens=*" %%a in ('node increment-version.js ^| findstr /C:"NEW_VERSION="') do set %%a
+        if errorlevel 1 (
+            echo ERREUR: Incrementation echouee
+            pause
+            exit /b 1
+        )
+        set VERSION=!NEW_VERSION!
+    ) else (
+        set VERSION=!CURRENT_VERSION!
+    )
+    echo Version utilisee : !VERSION!
+    echo.
+    echo Mise a jour des fichiers avec la version...
+    call node set-version.js !VERSION!
     if errorlevel 1 (
-        echo ERREUR: Incrementation echouee
+        echo ERREUR: Mise a jour de package.json echouee
         pause
         exit /b 1
     )
-    set VERSION=!NEW_VERSION!
-    echo Nouvelle version : !VERSION!
-    echo.
-    echo Mise a jour des fichiers avec la nouvelle version...
     call node update-version-in-files.js
     if errorlevel 1 (
         echo ERREUR: Mise a jour des fichiers echouee
@@ -87,16 +91,10 @@ echo [2/7] Preparation pour mobile...
 REM Definir la variable d'environnement pour le build mobile
 set BUILD_MODE=mobile
 
-REM Definir le canal en fonction du parametre
-if %IS_TEST%==1 (
-    set NEXT_PUBLIC_APP_CHANNEL=test
-    set APP_CHANNEL=test
-    echo Canal: TEST
-) else (
-    set NEXT_PUBLIC_APP_CHANNEL=prod
-    set APP_CHANNEL=prod
-    echo Canal: PRODUCTION
-)
+REM Un seul canal pour l'APK mobile
+set NEXT_PUBLIC_APP_CHANNEL=prod
+set APP_CHANNEL=prod
+echo Canal unique: PRODUCTION (web conserve ses envs)
 
 REM Sauvegarder la configuration web actuelle
 if exist next.config.js (
@@ -128,7 +126,8 @@ echo Variables d'environnement:
 echo   - BUILD_MODE=%BUILD_MODE%
 echo   - APP_CHANNEL=%APP_CHANNEL%
 echo   - NEXT_PUBLIC_APP_CHANNEL=%NEXT_PUBLIC_APP_CHANNEL%
-call npm run build
+REM IMPORTANT: ne pas ré-incrémenter ici, utiliser le script sans increment
+call npm run build:mobile:noinc
 if errorlevel 1 (
     echo ERREUR: Build Next.js a echoue
     REM Restaurer le dossier API renomme
@@ -183,48 +182,24 @@ if errorlevel 1 (
 
 echo [6/7] Build de l'APK...
 cd android
-if %IS_TEST%==1 (
-    echo Build RELEASE signe pour canal TEST ^(meme application que PROD^)...
-    call .\gradlew.bat clean assembleRelease --parallel
-    if errorlevel 1 (
-        echo ERREUR: Build release a echoue
-        cd ..
-        pause
-        exit /b 1
-    )
-) else (
-    echo Build DEBUG incremental pour usage local...
-    call .\gradlew.bat assembleDebug --parallel
-    if errorlevel 1 (
-        echo ATTENTION: Build incremental echoue, essai avec clean...
-        call .\gradlew.bat clean assembleDebug --parallel
-        if errorlevel 1 (
-            echo ERREUR: Build APK a echoue
-            cd ..
-            pause
-            exit /b 1
-        )
-    )
+echo Build RELEASE signe...
+call .\gradlew.bat clean assembleRelease --parallel
+if errorlevel 1 (
+    echo ERREUR: Build release a echoue
+    cd ..
+    pause
+    exit /b 1
 )
 cd ..
 
 echo [6.5/7] Renommage de l'APK avec la version...
-if %IS_TEST%==1 (
-    set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
-    set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
-) else (
-    set APK_SOURCE=android\app\build\outputs\apk\debug\app-debug.apk
-    set APK_DEST=android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
-)
+set APK_SOURCE=android\app\build\outputs\apk\release\app-release.apk
+set APK_DEST=android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
 
 if exist "%APK_SOURCE%" (
     move /Y "%APK_SOURCE%" "%APK_DEST%"
     if exist "%APK_DEST%" (
-    if %IS_TEST%==1 (
-        echo APK renomme: edt_cnam_v_test_!VERSION!.apk
-    ) else (
         echo APK renomme: edt_cnam_v!VERSION!.apk
-    )
     ) else (
         echo ERREUR: Impossible de renommer l'APK
         pause
@@ -242,20 +217,12 @@ echo   BUILD APK TERMINE !
 echo ========================================
 echo.
 echo APK genere dans:
-if %IS_TEST%==1 (
-    echo android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
-) else (
-    echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
-)
+echo android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
 echo.
 
 echo [7/7] Upload vers Supabase...
 cd mobile-config
-if %IS_TEST%==1 (
-    node upload-to-supabase.js !VERSION! test
-) else (
-    node upload-to-supabase.js !VERSION!
-)
+node upload-to-supabase.js !VERSION!
 if errorlevel 1 (
     echo.
     echo ========================================
@@ -266,11 +233,7 @@ if errorlevel 1 (
     echo Verifiez votre configuration .env.local
     echo.
     echo Pour installer sur ton telephone:
-    if %IS_TEST%==1 (
-        echo adb install ..\android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
-    ) else (
-        echo adb install ..\android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
-    )
+    echo adb install ..\android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
     echo.
     pause
     exit /b 0
@@ -282,11 +245,7 @@ echo   BUILD ET UPLOAD TERMINES !
 echo ========================================
 echo.
 echo APK genere localement:
-if %IS_TEST%==1 (
-    echo android\app\build\outputs\apk\release\edt_cnam_v_test_!VERSION!.apk
-) else (
-    echo android\app\build\outputs\apk\debug\edt_cnam_v!VERSION!.apk
-)
+echo android\app\build\outputs\apk\release\edt_cnam_v!VERSION!.apk
 echo.
 echo ========================================
 echo   VERSIONS MISES A JOUR AUTOMATIQUEMENT:

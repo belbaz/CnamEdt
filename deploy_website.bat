@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 cls
 echo ========================================
-echo   DEPLOY WEBSITE ONLY - EDT EICNAM
+echo   DEPLOY WEBSITE - EDT EICNAM
 echo ========================================
 echo.
 
@@ -130,3 +130,4 @@ echo https://edt-eicnam.vercel.app
 echo.
 pause
 exit /b 0
+

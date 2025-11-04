@@ -3,11 +3,23 @@ const path = require('path');
 
 // Ne renommer le dossier API que si on est en mode mobile (export statique)
 // Sur Vercel (build web), on doit garder les routes API actives
-const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+// Note: sous Windows, les envs de cross-env ne se propagent pas toujours aux sous-commandes npm.
+// On détecte donc aussi le mode mobile en lisant la config Next.js active et en vérifiant output: 'export'.
+let isMobileBuild = process.env.BUILD_MODE === 'mobile';
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const nextConfigPath = path.join(__dirname, '..', 'next.config.js');
+  if (fs.existsSync(nextConfigPath)) {
+    const content = fs.readFileSync(nextConfigPath, 'utf8');
+    if (/output\s*:\s*['"]export['"]/i.test(content)) {
+      isMobileBuild = true;
+    }
+  }
+} catch (_) {}
 
 if (!isMobileBuild) {
   console.log('Build web détecté - Routes API conservées pour Vercel');
-  // Flush stdout pour s'assurer que le message est visible
   process.stdout.write('');
   process.exit(0);
 }

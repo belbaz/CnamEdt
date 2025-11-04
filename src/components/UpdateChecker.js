@@ -25,6 +25,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
     const [appUpdaterReady, setAppUpdaterReady] = useState(false);
     const [isErrorVisible, setIsErrorVisible] = useState(false);
     const [isErrorClosing, setIsErrorClosing] = useState(false);
+    const [isRemoteTest, setIsRemoteTest] = useState(false);
     const [errorTitle, setErrorTitle] = useState('Connexion impossible');
     const [errorMessage, setErrorMessage] = useState("Vérifiez votre connexion internet et réessayez.");
     const [isCheckingPermission, setIsCheckingPermission] = useState(false);
@@ -234,14 +235,42 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
         checkForUpdates(false);
     }, [isNative, currentVersion]);
 
+    // Re-vérifier lorsqu'on change de canal via le toggle
+    useEffect(() => {
+        if (!isNative) return;
+        const handler = () => {
+            checkForUpdates(true);
+        };
+        if (typeof window !== 'undefined') {
+            window.addEventListener('updateTestModeChanged', handler);
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('updateTestModeChanged', handler);
+            }
+        };
+    }, [isNative]);
+
     const checkForUpdates = async (isManual = false) => {
         setIsChecking(true);
         
         try {
-            // Déterminer le canal désiré (test/prod) : bascule locale a priorité sur le canal build
-            const builtIsTest = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-            const desiredIsTest = toggleTest || builtIsTest;
+            // Déterminer le canal désiré (test/prod)
+            // Web: la bascule locale (updateTestMode) PRIME si définie; sinon, utiliser le canal du build.
+            // Natif: NE JAMAIS proposer l'APK de test si l'app build est PROD.
+            const builtChannel = (typeof window !== 'undefined' && window.__APP_CHANNEL) || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
+            const builtIsTest = builtChannel === 'test';
+            let desiredIsTest = builtIsTest;
+            if (!isNative) {
+                if (typeof window !== 'undefined') {
+                    const toggleValue = localStorage.getItem('updateTestMode');
+                    if (toggleValue === 'true') desiredIsTest = true;
+                    if (toggleValue === 'false') desiredIsTest = false;
+                }
+            } else {
+                // En natif, rester strictement sur le canal du build
+                desiredIsTest = builtIsTest;
+            }
             
             // Déterminer la bonne base URL pour l'API version
             // - En app native (Capacitor) ou protocole file:, l'origine locale n'a pas d'API → utiliser le site distant
@@ -291,6 +320,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     setLatestVersion(data2.version);
                     setDownloadUrl(data2.url);
                     setChangelog(data2.changelog);
+                    setIsRemoteTest(!!data2.isTest);
                     const needsUpdate2 = compareVersions(currentVersion, data2.version);
                     setUpdateAvailable(needsUpdate2);
                     setIsVisible(needsUpdate2);
@@ -316,6 +346,7 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
             setLatestVersion(data.version);
             setDownloadUrl(data.url);
             setChangelog(data.changelog);
+            setIsRemoteTest(!!data.isTest);
             
             // Ne pas persister de flag global de version test côté mobile
 
@@ -528,6 +559,12 @@ const UpdateChecker = forwardRef(({ currentVersion, isNative }, ref) => {
                     </div>
                 </div>
 
+                {isRemoteTest && (
+                    <p className="update-popup-changelog" style={{ marginTop: 8 }}>
+                        🧪 Version de test
+                    </p>
+                )}
+                
                 {/*{changelog && (*/}
                 {/*    <p className="update-popup-changelog">*/}
                 {/*        📝 {changelog}*/}

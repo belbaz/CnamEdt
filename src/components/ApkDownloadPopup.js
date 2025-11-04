@@ -85,44 +85,9 @@ export default function ApkDownloadPopup() {
 
     const handleDownload = async () => {
         try {
-            // Récupérer l'URL signée depuis l'API
-            // Vérifier si le mode test est activé (canal ou bascule)
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-            const testMode = isTestChannel || toggleTest;
-            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-                throw new Error('Impossible de récupérer l\'URL de l\'APK');
-            }
-            
-            const data = await response.json();
-            const apkUrl = data.url;
-            
-            console.log('[APK Popup] Téléchargement APK:', apkUrl);
-            
-            // Créer un élément <a> temporaire pour forcer le téléchargement
-            const link = document.createElement('a');
-            link.href = apkUrl;
-            link.download = `edt_cnam_v${data.version}.apk`; // Nom du fichier téléchargé
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            
-            // Déclencher le téléchargement
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            console.log('[APK Popup] Téléchargement déclenché');
-            
-            // Fermer la popup après un court délai
-            setTimeout(() => {
-                handleClose();
-            }, 500);
+            window.location.href = '/apk';
         } catch (error) {
-            console.error('[APK Popup] Erreur lors du téléchargement:', error);
-            alert('Erreur lors du téléchargement de l\'APK. Veuillez réessayer.');
+            console.error('[APK Popup] Erreur navigation /apk:', error);
         }
     };
 

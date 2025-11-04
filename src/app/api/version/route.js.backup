@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+import packageJson from '../../../../package.json';
+
+export async function GET(request) {
+    // Récupérer l'environnement depuis les headers ou query params
+    const { searchParams } = new URL(request.url);
+    const env = searchParams.get('env') || 'production';
+
+    // Version de base
+    const baseVersion = packageJson.version;
+
+    // Définir des versions différentes selon l'environnement
+    const versions = {
+        production: {
+            version: baseVersion,
+            environment: 'production',
+            apkUrl: process.env.NEXT_PUBLIC_APK_URL,
+            updateMessage: 'Nouvelle version disponible !',
+            releaseDate: "2025-11-04T15:11:47"
+        },
+        development: {
+            version: `${baseVersion}-dev`,
+            environment: 'development',
+            apkUrl: process.env.NEXT_PUBLIC_DEV_APK_URL || process.env.NEXT_PUBLIC_APK_URL,
+            updateMessage: '🧪 Version de développement',
+            releaseDate: "2025-11-04T15:11:47",
+            isDev: true
+        }
+    };
+
+    const versionInfo = versions[env] || versions.production;
+
+    console.log(`📦 Version API appelée - Env: ${env}, Version: ${versionInfo.version}`);
+
+    return NextResponse.json(versionInfo, {
+        headers: {
+            'Cache-Control': 'no-store, max-age=0',
+        },
+    });
+}

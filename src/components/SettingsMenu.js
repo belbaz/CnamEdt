@@ -1,7 +1,6 @@
 "use client";
 import {useState, useEffect, useRef} from "react";
 import "./SettingsMenu.css";
-import EasterEgg from "./EasterEgg";
 import Toast from "./Toast";
 
 export default function SettingsMenu({
@@ -17,14 +16,13 @@ export default function SettingsMenu({
                                          onToggleTimeLabels = null
                                      }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [showEasterEgg, setShowEasterEgg] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
     const [isTestMode, setIsTestMode] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
-    // Afficher le mode test uniquement si NEXT_PUBLIC_ENV=DEV est défini explicitement
+    // Le bouton update reste visible sur mobile/native; le toggle test est désormais visible pour tous
     const isDev = (process.env.NEXT_PUBLIC_ENV || '').toUpperCase() === 'DEV';
     const showUpdateButton = isDev ? true : (isMobile || isNative);
 
@@ -33,13 +31,8 @@ export default function SettingsMenu({
         if (currentVersion) {
             setVersion(currentVersion);
         } else if (!isNative && typeof window !== 'undefined') {
-            // Pour le web, récupérer depuis l'API
-            // Vérifier si le mode test est activé
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = localStorage.getItem('updateTestMode') === 'true';
-            const testMode = isTestChannel || toggleTest;
-            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
-
+            // Pour le web, récupérer depuis l'API (canal unique)
+            const apiUrl = `/api/version`;
             fetch(apiUrl)
                 .then(res => res.json())
                 .then(data => {
@@ -53,37 +46,9 @@ export default function SettingsMenu({
         }
     }, [isNative, currentVersion]);
 
-    // Vérifier si le mode test est activé
+    // Canal unique: forcer testMode à false et ne plus écouter de bascule
     useEffect(() => {
-        if (typeof window === 'undefined') {
-            setIsTestMode(false);
-            return;
-        }
-
-        const checkTestMode = () => {
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const updateTestMode = localStorage.getItem('updateTestMode') === 'true';
-            setIsTestMode(isTestChannel || updateTestMode);
-        };
-
-        checkTestMode();
-
-        // Écouter les changements de localStorage (pour détecter l'activation/désactivation)
-        const handleStorageChange = (e) => {
-            if (e.key === 'updateTestMode') {
-                checkTestMode();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-
-        // Vérifier aussi périodiquement (car localStorage peut changer dans le même onglet)
-        const interval = setInterval(checkTestMode, 500);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            clearInterval(interval);
-        };
+        setIsTestMode(false);
     }, [isNative, currentVersion]);
 
     useEffect(() => {
@@ -106,102 +71,8 @@ export default function SettingsMenu({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
-    // Gérer les clics sur le bouton Copyright
-    const handleCopyrightClick = async () => {
-        copyrightClickCount.current += 1;
-
-        // Réinitialiser le compteur après 3 secondes d'inactivité
-        if (copyrightClickTimeout.current) {
-            clearTimeout(copyrightClickTimeout.current);
-        }
-        copyrightClickTimeout.current = setTimeout(() => {
-            copyrightClickCount.current = 0;
-        }, 3000);
-
-        // Si 5 clics, déclencher l'easter egg et basculer le mode test
-        if (copyrightClickCount.current >= 5) {
-            copyrightClickCount.current = 0;
-
-            // Activer/désactiver le mode test
-            const currentTestMode = localStorage.getItem('updateTestMode') === 'true';
-            const newTestMode = !currentTestMode;
-            localStorage.setItem('updateTestMode', newTestMode.toString());
-
-            // Afficher les confettis
-            setShowEasterEgg(true);
-
-            // Afficher un toast avec le message
-            setToastMessage(newTestMode ? 'Mode test activé' : 'Mode test désactivé');
-            setShowToast(true);
-
-            // Recharger la version si on est sur web (pour afficher la bonne version test/prod)
-            if (!isNative && typeof window !== 'undefined') {
-                const apiUrl = `/api/version${newTestMode ? '?test=true' : ''}`;
-                fetch(apiUrl)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.version) {
-                            setVersion(data.version);
-                        }
-                    })
-                    .catch(() => {
-                        // En cas d'erreur, ignorer
-                    });
-            }
-
-            // Afficher une notification Android si on est sur l'app native (optionnel)
-            // Utiliser une fonction asynchrone séparée pour éviter l'import au build time
-            if (isNative && typeof window !== 'undefined') {
-                // Délai pour éviter les problèmes de build
-                setTimeout(async () => {
-                    try {
-                        // Essayer d'utiliser LocalNotifications (nécessite @capacitor/local-notifications)
-                        // Utiliser Function() pour éviter l'analyse statique de Next.js
-                        const dynamicImport = new Function('moduleName', 'return import(moduleName)');
-                        const moduleName = '@' + 'capacitor/' + 'local-notifications';
-                        const module = await dynamicImport(moduleName);
-                        const {LocalNotifications} = module;
-
-                        // Vérifier les permissions
-                        const permResult = await LocalNotifications.checkPermissions();
-                        if (permResult.display === 'granted') {
-                            await LocalNotifications.schedule({
-                                notifications: [
-                                    {
-                                        title: '🎉 Easter Egg !',
-                                        body: 'Merci d\'avoir découvert ce secret ! 🎊',
-                                        id: Date.now()
-                                    }
-                                ]
-                            });
-                        } else {
-                            // Demander les permissions si elles ne sont pas accordées
-                            await LocalNotifications.requestPermissions();
-                            const newPermResult = await LocalNotifications.checkPermissions();
-                            if (newPermResult.display === 'granted') {
-                                await LocalNotifications.schedule({
-                                    notifications: [
-                                        {
-                                            title: '🎉 Easter Egg !',
-                                            body: 'Merci d\'avoir découvert ce secret ! 🎊',
-                                            id: Date.now()
-                                        }
-                                    ]
-                                });
-                            }
-                        }
-                    } catch (localNotifError) {
-                        // Si LocalNotifications n'est pas disponible, on continue (le toast est déjà affiché)
-                        // Erreur silencieuse car le package est optionnel
-                    }
-                }, 100);
-            }
-        }
-    };
-
-    const handleCloseEasterEgg = () => {
-        setShowEasterEgg(false);
-    };
+    // Désactiver l'easter egg: aucun basculement via copyright désormais
+    const handleCopyrightClick = () => {};
 
     return (
         <>
@@ -234,18 +105,7 @@ export default function SettingsMenu({
                                 </label>
                             </div>
 
-                            {isDev && (
-                                <div className="setting-item">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={testMode}
-                                            onChange={(e) => onToggleTestMode(e.target.checked)}
-                                        />
-                                        <span>Mode Test (Cours de test)</span>
-                                    </label>
-                                </div>
-                            )}
+                            {/* Canal supprimé: interface épurée */}
 
                             {showUpdateButton && (
                                 <div className="setting-item setting-button-item">
@@ -279,7 +139,7 @@ export default function SettingsMenu({
                             </div>
 
                             <div className="setting-item copyright-item">
-                                {isTestMode && (
+                                {false && (
                                     <div className="copyright-line">
                                         <span className="copyright-text test-mode-badge">Version test</span>
                                     </div>
@@ -298,7 +158,6 @@ export default function SettingsMenu({
                 </>
             )}
 
-            <EasterEgg isActive={showEasterEgg} onClose={handleCloseEasterEgg}/>
             <Toast
                 message={toastMessage}
                 isVisible={showToast}

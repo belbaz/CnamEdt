@@ -11,10 +11,11 @@ export default function TestModeIndicator({ currentVersion, isNative }) {
             return;
         }
 
-        // Canal de build (test/prod) + bascule locale
-        const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-        const updateTestMode = localStorage.getItem('updateTestMode') === 'true';
-        setIsTestMode(isTestChannel || updateTestMode);
+        // Afficher l'indicateur UNIQUEMENT pour l'APK de test (canal de build),
+        // peu importe la bascule locale destinée aux updates.
+        const channel = (typeof window !== 'undefined' && window.__APP_CHANNEL) || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
+        const isTestChannel = channel === 'test';
+        setIsTestMode(isTestChannel);
     }, [currentVersion, isNative]);
 
     if (!isTestMode) {

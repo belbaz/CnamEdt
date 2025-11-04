@@ -24,39 +24,7 @@ export default function PageHeader({
     const handleDownloadAPK = async () => {
         setIsDownloading(true);
         try {
-            // Récupérer l'URL de l'APK depuis l'API version
-            // Vérifier si le mode test est activé (canal ou bascule)
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-            const testMode = isTestChannel || toggleTest;
-            const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-                throw new Error('Impossible de récupérer l\'URL de l\'APK');
-            }
-            
-            const data = await response.json();
-            const apkUrl = data.url;
-            
-            console.log('[PageHeader] Téléchargement APK:', apkUrl);
-            
-            // Créer un élément <a> temporaire pour forcer le téléchargement
-            const link = document.createElement('a');
-            link.href = apkUrl;
-            link.download = `edt_cnam_v${data.version}.apk`;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            
-            // Déclencher le téléchargement
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            console.log('[PageHeader] Téléchargement déclenché');
-        } catch (error) {
-            console.error('[PageHeader] Erreur lors du téléchargement:', error);
-            alert('Erreur lors du téléchargement de l\'APK. Veuillez réessayer.');
+            window.location.href = '/apk';
         } finally {
             setIsDownloading(false);
         }

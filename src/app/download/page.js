@@ -16,10 +16,14 @@ export default function DownloadPage() {
         const downloadAPK = async () => {
             try {
                 // Récupérer l'URL de l'APK depuis l'API version
-                // Vérifier si le mode test est activé (canal ou bascule)
+                // Déterminer le canal désiré: bascule locale prime si définie, sinon canal build
                 const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-                const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-                const testMode = isTestChannel || toggleTest;
+                let testMode = isTestChannel;
+                if (typeof window !== 'undefined') {
+                    const toggleValue = localStorage.getItem('updateTestMode');
+                    if (toggleValue === 'true') testMode = true;
+                    if (toggleValue === 'false') testMode = false;
+                }
                 const apiUrl = `/api/version${testMode ? '?test=true' : ''}`;
                 const response = await fetch(apiUrl);
                 

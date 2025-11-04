@@ -22,50 +22,64 @@ npm run dev
 ```
 Accessible sur http://localhost:3000
 
-### Déploiement
-Push sur GitHub → Vercel déploie automatiquement
+### Déployer le site web
+
+**Script de déploiement simplifié :**
+```bash
+.\deploy_website.bat
+```
+
+Ou avec un message de commit personnalisé :
+```bash
+.\deploy_website.bat "Fix bug navbar"
+```
+
+Le script fera automatiquement :
+1. Vérification de la configuration web
+2. Vérification des API routes
+3. Git add + commit + push vers GitHub
+4. Déploiement automatique sur Vercel (via webhook)
+
+**Note :** Vercel déploie automatiquement après chaque push sur GitHub (~1-2 minutes)
 
 ---
 
 ## 📱 Version Mobile (APK Android)
 
-### Créer l'APK et l'uploader sur Supabase
+### Déployer l'APK
 
-**Option 1 : Auto-incrémentation (par défaut)**
+**Script de déploiement simplifié :**
 ```bash
-cd mobile-config
-.\build-apk.bat
+.\deploy_apk.bat
 ```
-→ Incrémente automatiquement la version (+0.0.1) : `1.1.1` → `1.1.2`
 
-**Option 2 : Version spécifique**
+Ou avec une version spécifique :
 ```bash
-cd mobile-config
-.\build-apk.bat 2.0.0
+.\deploy_apk.bat 2.0.60
 ```
-→ Utilise directement la version spécifiée : `2.0.0`
 
 Le script fera automatiquement :
-1. **Incrémentation automatique** (+0.0.1) ou version paramètre
-2. **Mise à jour automatique** de tous les fichiers avec la nouvelle version :
+1. **Demande si vous voulez incrémenter** la version (+0.0.1) ou utiliser la version actuelle
+2. **Mise à jour automatique** de tous les fichiers avec la version :
    - `package.json`
    - `src/app/api/version/route.js`
    - `src/app/page.js`
-4. Build de l'APK avec versioning
-5. Renommage : `edt_cnam_v1.1.1.apk`
-6. Upload vers Supabase Storage
-7. Suppression des anciens APK (pour économiser l'espace)
+   - `android/app/build.gradle`
+3. Build de l'APK release signé
+4. Renommage : `edt_cnam_v2.0.60.apk`
+5. Upload vers Supabase Storage (supprime l'ancien APK de même version si existe)
+6. Remplacement systématique dans Supabase (même version = remplacée)
 
-**APK généré dans :** `android\app\build\outputs\apk\debug\edt_cnam_vX.X.X.apk`
+**APK généré dans :** `android\app\build\outputs\apk\release\edt_cnam_vX.X.X.apk`
 **APK en ligne :** `https://supabase.../apk/edt_cnam_vX.X.X.apk`
 
-### 🎯 Gestion automatique des versions
+### 🎯 Gestion des versions
 
-La version est gérée centralement dans `package.json` et **incrémentée automatiquement à chaque build** :
-- **Par défaut** : +0.0.1 automatique (ex: `1.1.1` → `1.1.2`)
-- **Avec paramètre** : version spécifique (ex: `.\build-apk.bat 2.0.0`)
-- **Synchronisation** : tous les fichiers mis à jour automatiquement
-- **Zéro interaction** : plus de question posée !
+- **Format unique** : `edt_cnam_vX.Y.Z.apk` (ex: `edt_cnam_v2.0.60.apk`)
+- **Incrémentation optionnelle** : Le script demande si vous voulez incrémenter (+0.0.1)
+- **Version spécifique** : Passer la version en paramètre pour forcer une version
+- **Synchronisation** : Tous les fichiers mis à jour automatiquement
+- **Remplacement Supabase** : L'APK de même version est toujours remplacé
 
 ### Système de mise à jour automatique
 
@@ -260,11 +274,14 @@ npm run dev              # Lancer le serveur dev
 npm run build            # Build production
 ```
 
-### Build APK mobile
+### Déployer l'APK
 ```bash
-cd mobile-config
-.\build-apk.bat          # Crée l'APK
-# Installer sur téléphone
+.\deploy_apk.bat          # Crée l'APK et l'uploade sur Supabase
+```
+
+### Déployer le site web
+```bash
+.\deploy_website.bat      # Push Git et déploiement Vercel
 ```
 
 ### Modifier l'URL ICS (mobile)
@@ -350,8 +367,9 @@ npm run build:mobile         # Build + sync (sans APK)
 npm run mobile:android       # Ouvrir Android Studio
 npm run mobile:sync          # Sync vers Android
 
-# APK
-cd mobile-config && .\build-apk.bat   # Build complet APK
+# Déploiement
+.\deploy_apk.bat          # Build et upload APK
+.\deploy_website.bat      # Déploiement site web
 ```
 
 ---

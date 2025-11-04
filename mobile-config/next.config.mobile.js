@@ -32,6 +32,7 @@ const nextConfig = {
     NEXT_PUBLIC_APP_MODE: 'mobile',
     NEXT_PUBLIC_APP_CHANNEL: appChannel,
     NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app',
     // Propager aussi APP_CHANNEL pour compatibilite
     APP_CHANNEL: appChannel
   }

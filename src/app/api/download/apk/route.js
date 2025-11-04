@@ -87,7 +87,7 @@ export async function GET(request) {
     } catch (autoErr) {
       console.error('[API Download] Impossible de déterminer la dernière version:', autoErr);
       // Fallback sur des valeurs par défaut connues
-      version = isTest ? '2.0.20' : '2.00';
+      version = isTest ? '2.0.20' : '2.0.0';
     }
   }
 

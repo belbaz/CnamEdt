@@ -346,3 +346,17 @@
 .dark-mode .copyright-text.test-mode-badge {
     color: #fbbf24;
 }
+
+/* Petit badge Prod/Dev à côté du toggle */
+.channel-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 600;
+    background: #eef2ff; /* light indigo */
+    color: #3730a3;      /* indigo-800 */
+    border: 1px solid #c7d2fe;
+    vertical-align: middle;
+}

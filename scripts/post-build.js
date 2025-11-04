@@ -2,8 +2,17 @@ const fs = require('fs');
 const path = require('path');
 
 // Ne restaurer le dossier API que si on était en mode mobile (export statique)
-// Sur Vercel (build web), il n'y a rien à restaurer
-const isMobileBuild = process.env.BUILD_MODE === 'mobile';
+// Sous Windows, l'env peut ne pas être propagé; on détecte également via output: 'export'.
+let isMobileBuild = process.env.BUILD_MODE === 'mobile';
+try {
+  const nextConfigPath = path.join(__dirname, '..', 'next.config.js');
+  if (fs.existsSync(nextConfigPath)) {
+    const content = fs.readFileSync(nextConfigPath, 'utf8');
+    if (/output\s*:\s*['"]export['"]/i.test(content)) {
+      isMobileBuild = true;
+    }
+  }
+} catch (_) {}
 
 if (!isMobileBuild) {
   console.log('Build web détecté - Aucune restauration nécessaire');

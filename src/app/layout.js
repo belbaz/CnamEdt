@@ -20,6 +20,17 @@ export default function RootLayout({children}) {
                 dangerouslySetInnerHTML={{__html: `
                     (function() {
                         try {
+                            // Exposer le canal et la version au runtime (renforcé pour Capacitor/file:)
+                            window.__APP_CHANNEL = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod')};
+                            window.__APP_VERSION = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_VERSION || '')};
+                        } catch (e) {}
+                    })();
+                `}}
+            />
+            <script
+                dangerouslySetInnerHTML={{__html: `
+                    (function() {
+                        try {
                             var cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
                             var fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
                             var fromStorage = localStorage.getItem('darkMode');

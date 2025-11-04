@@ -10,20 +10,40 @@ export default function Footer() {
             ? process.env.NEXT_PUBLIC_APP_VERSION
             : "Loading ..."
     );
+    const [hasNativeVersion, setHasNativeVersion] = useState(false);
     const [isTest, setIsTest] = useState(false);
 
-    // Récupérer la version depuis l'API (seulement si pas native)
+    // Récupérer la version installée (natif) ou distante (web)
     useEffect(() => {
         // Déterminer test mode (canal + bascule)
         const computeIsTest = () => {
-            const isTestChannel = (process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod') === 'test';
-            const toggleTest = typeof window !== 'undefined' && localStorage.getItem('updateTestMode') === 'true';
-            setIsTest(isTestChannel || toggleTest);
+            const channel = (typeof window !== 'undefined' && window.__APP_CHANNEL) || process.env.NEXT_PUBLIC_APP_CHANNEL || 'prod';
+            const isTestChannel = channel === 'test';
+            if (typeof window !== 'undefined') {
+                const toggleValue = localStorage.getItem('updateTestMode');
+                if (toggleValue === 'true') return setIsTest(true);
+                if (toggleValue === 'false') return setIsTest(false);
+            }
+            setIsTest(isTestChannel);
         };
         computeIsTest();
 
+        // Essayer de récupérer la version native si disponible (même si la détection isNative est tardive)
+        (async () => {
+            try {
+                const dynamicImport = new Function('m', 'return import(m)');
+                const { App } = await dynamicImport('@capacitor/app');
+                const info = await App.getInfo();
+                if (info && info.version) {
+                    setVersion(info.version);
+                    setHasNativeVersion(true);
+                }
+            } catch (_) {
+                // Pas de Capacitor: on reste sur la logique web plus bas
+            }
+        })();
         if (isNative) {
-            return; // Ne pas faire le fetch si native
+            return;
         }
 
         const fetchVersion = () => {
@@ -32,7 +52,7 @@ export default function Footer() {
             fetch(apiUrl)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.version) {
+                    if (data.version && !hasNativeVersion) {
                         setVersion(data.version);
                     }
                 })
@@ -43,20 +63,26 @@ export default function Footer() {
 
         fetchVersion();
 
-        // Écouter les changements du mode test pour recharger la version
+        // Rafraîchir quand le toggle change, même dans le même onglet
         const handleStorageChange = (e) => {
             if (e.key === 'updateTestMode') {
                 computeIsTest();
                 fetchVersion();
             }
         };
+        const handleCustomToggle = () => {
+            computeIsTest();
+            fetchVersion();
+        };
 
         window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('updateTestModeChanged', handleCustomToggle);
 
         return () => {
             window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('updateTestModeChanged', handleCustomToggle);
         };
-    }, [isNative, isTest]);
+    }, [isNative, isTest, hasNativeVersion]);
 
     return (
         <footer className="app-footer">
