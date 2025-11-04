@@ -15,10 +15,15 @@ export async function GET(request) {
 		if (v === 'false' || v === '0') isTest = false;
 	}
 
-	// Construire l'origine pour générer des URLs absolues
-	const host = request.headers.get('host');
-	const proto = request.headers.get('x-forwarded-proto') || 'http';
-	const origin = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app');
+	// Construire l'origine pour générer des URLs absolues (éviter le mixed-content)
+	// Utiliser l'URL de la requête, qui contient déjà le bon protocole (https en prod)
+	const origin = (() => {
+		try {
+			return new URL(request.url).origin;
+		} catch {
+			return process.env.NEXT_PUBLIC_SITE_URL || 'https://edt-eicnam.vercel.app';
+		}
+	})();
 
 	// Valeurs par défaut
 	let latestVersion = packageJson.version;
