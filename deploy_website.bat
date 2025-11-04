@@ -87,6 +87,14 @@ echo [2/3] Statut Git:
 git status --short
 echo.
 
+REM S'assurer que next.config.js est bien ajoute
+echo Ajout de next.config.js au commit...
+git add next.config.js
+if exist src\app\api (
+    git add src\app\api\*
+)
+
+echo.
 echo [3/3] Commit et push...
 git add .
 git commit -m "%COMMIT_MSG%"

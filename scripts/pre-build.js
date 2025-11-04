@@ -3,30 +3,55 @@ const path = require('path');
 
 console.log('[pre-build] Démarrage du script pre-build...');
 
-// Ne renommer le dossier API que si on est en mode mobile (export statique)
-// Sur Vercel (build web), on doit garder les routes API actives
-// Note: sous Windows, les envs de cross-env ne se propagent pas toujours aux sous-commandes npm.
-// On détecte donc aussi le mode mobile en lisant la config Next.js active et en vérifiant output: 'export'.
+// IMPORTANT: Toujours activer la config web AVANT de vérifier
+// Cela garantit que sur Vercel, on a toujours la bonne config
+const switchConfigPath = path.join(__dirname, 'switch-next-config.js');
+const webConfigPath = path.join(__dirname, '..', 'next.config.web.js');
+const nextConfigPath = path.join(__dirname, '..', 'next.config.js');
+
+// Si on n'est pas en mode mobile explicite, forcer la config web
 let isMobileBuild = process.env.BUILD_MODE === 'mobile';
 console.log('[pre-build] BUILD_MODE:', process.env.BUILD_MODE || 'non défini');
 
-try {
-  const nextConfigPath = path.join(__dirname, '..', 'next.config.js');
-  if (fs.existsSync(nextConfigPath)) {
+// Si BUILD_MODE n'est pas 'mobile', activer la config web
+if (!isMobileBuild) {
+  console.log('[pre-build] Mode web détecté - Activation de la configuration web...');
+  
+  // Méthode 1: Utiliser le script switch-next-config.js s'il existe
+  if (fs.existsSync(switchConfigPath)) {
+    try {
+      const { execSync } = require('child_process');
+      execSync(`node "${switchConfigPath}" web`, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+      console.log('[pre-build] ✓ Configuration web activée via switch-next-config.js');
+    } catch (e) {
+      console.error('[pre-build] Erreur lors de l\'activation via switch-next-config.js:', e.message);
+      // Fallback: copier directement le fichier
+      if (fs.existsSync(webConfigPath)) {
+        fs.copyFileSync(webConfigPath, nextConfigPath);
+        console.log('[pre-build] ✓ Configuration web activée via copie directe');
+      }
+    }
+  } else if (fs.existsSync(webConfigPath)) {
+    // Méthode 2: Copier directement le fichier
+    fs.copyFileSync(webConfigPath, nextConfigPath);
+    console.log('[pre-build] ✓ Configuration web activée via copie directe');
+  }
+  
+  // Vérifier que la config est correcte
+  try {
     const content = fs.readFileSync(nextConfigPath, 'utf8');
     if (/output\s*:\s*['"]export['"]/i.test(content)) {
-      isMobileBuild = true;
-      console.log('[pre-build] Mode mobile détecté (output: export trouvé)');
+      console.error('[pre-build] ❌ ERREUR: next.config.js contient encore output: export après activation!');
+      console.error('[pre-build] Contenu suspect trouvé dans next.config.js');
+      // Ne pas faire échouer le build, mais avertir
     } else {
-      console.log('[pre-build] Mode web détecté (pas de output: export)');
+      console.log('[pre-build] ✓ Vérification: next.config.js est correct (pas de output: export)');
     }
-  } else {
-    console.log('[pre-build] next.config.js introuvable, utilisation de BUILD_MODE:', process.env.BUILD_MODE || 'non défini');
+  } catch (e) {
+    console.error('[pre-build] Erreur lors de la vérification de next.config.js:', e.message);
   }
-} catch (e) {
-  console.error('[pre-build] Erreur lors de la lecture de next.config.js:', e.message);
-  // En cas d'erreur, supposer mode web pour Vercel
-  isMobileBuild = false;
+} else {
+  console.log('[pre-build] Mode mobile détecté - Pas d\'activation de la config web');
 }
 
 const apiDir = path.join(__dirname, '../src/app/api');
