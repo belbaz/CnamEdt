@@ -50,7 +50,10 @@ export default function RootLayout({children}) {
                         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                             // Ne pas enregistrer dans Capacitor natif
                             var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-                            if (!isNative) {
+                            // Éviter l'enregistrement en développement local (localhost, 127.0.0.1, ::1)
+                            var host = (typeof location !== 'undefined') ? location.hostname : '';
+                            var isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+                            if (!isNative && !isLocalhost) {
                                 window.addEventListener('load', function() {
                                     navigator.serviceWorker.register('/sw.js').catch(function(){});
                                 });

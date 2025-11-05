@@ -80,7 +80,7 @@ export async function GET(request) {
 
 			if (latest) {
 				latestVersion = latest;
-				resolvedUrl = `${origin}/api/download/apk?version=${encodeURIComponent(latestVersion)}`;
+				resolvedUrl = `${origin}/api/download/apk`;
 			}
 		}
 	} catch (e) {

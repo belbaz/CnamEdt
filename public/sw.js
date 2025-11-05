@@ -45,14 +45,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For same-origin GET requests, try cache first then network
+  // For same-origin GET requests, use network-first with offline fallback to cache
   if (req.method === 'GET' && url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-        return res;
-      }))
+      fetch(req)
+        .then((res) => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+          return res;
+        })
+        .catch(() => caches.match(req))
     );
   }
 });
