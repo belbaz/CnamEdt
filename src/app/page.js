@@ -21,7 +21,7 @@ import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
-import { saveSnapshotIfChanged } from "@/utils/historyService";
+import {saveSnapshotIfChanged} from "@/utils/historyService";
 
 // Fonction pour générer l'event_key (identique à celle dans fetch-ics/route.js)
 function generateEventKey(ev) {
@@ -31,7 +31,7 @@ function generateEventKey(ev) {
     return `${s}|${sum}|${loc}`;
 }
 
-function HomeContent({ searchParams }) {
+function HomeContent({searchParams}) {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -61,7 +61,7 @@ function HomeContent({ searchParams }) {
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
-    const { isOnline } = useNetworkStatus();
+    const {isOnline} = useNetworkStatus();
 
     // Gérer le splash screen (cacher quand chargé)
     useSplashScreen(SplashScreen, !loading);
@@ -71,7 +71,7 @@ function HomeContent({ searchParams }) {
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
-    
+
     // Ref pour le UpdateChecker
     const updateCheckerRef = useRef(null);
 
@@ -119,12 +119,12 @@ function HomeContent({ searchParams }) {
                 data = await fetchICSEvents(isNative, Http);
             } catch (fetchError) {
                 // Si l'erreur est due à la connexion, essayer le cache
-                const isNetworkError = !isOnline || 
-                    fetchError.message.includes('Failed to fetch') || 
+                const isNetworkError = !isOnline ||
+                    fetchError.message.includes('Failed to fetch') ||
                     fetchError.message.includes('réseau') ||
                     fetchError.message.includes('network') ||
                     fetchError.message.includes('fetch failed');
-                
+
                 if (isNetworkError) {
                     setHasNetworkError(true); // Déclencher la notification hors ligne
                     const cached = loadEventsFromCache();
@@ -145,7 +145,7 @@ function HomeContent({ searchParams }) {
                         return; // Sortir sans erreur
                     }
                 }
-                
+
                 // Si on arrive ici, on n'a pas de cache ou ce n'est pas une erreur réseau
                 debug.fetchError = fetchError.message;
                 debug.fetchStack = fetchError.stack;
@@ -173,18 +173,18 @@ function HomeContent({ searchParams }) {
             saveEventsToCache(data, colorMapping);
 
             // Historiser les matières détectées si elles ont changé
-            await saveSnapshotIfChanged(data, { skip: false });
+            await saveSnapshotIfChanged(data, {skip: false});
             // Mettre à jour le timestamp dans l'état
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger
             setHasNetworkError(false);
         } catch (err) {
             // Vérifier si c'est une erreur réseau et si on a du cache
-            const isNetworkError = err.message.includes('Failed to fetch') || 
+            const isNetworkError = err.message.includes('Failed to fetch') ||
                 err.message.includes('réseau') ||
                 err.message.includes('network') ||
                 err.message.includes('fetch failed');
-            
+
             const saved = loadEventsFromCache();
             if (isNetworkError && saved) {
                 setHasNetworkError(true); // Déclencher la notification hors ligne
@@ -213,14 +213,14 @@ function HomeContent({ searchParams }) {
                         href: window.location.href
                     });
                 }
-                
+
                 // Essayer quand même le cache comme dernier recours
                 if (saved) {
                     const data = saved.events;
                     setAllEvents(data);
                     const weeks = extractAvailableWeeks(data);
                     setAvailableWeeks(weeks);
-                    
+
                     if (weeks.length > 0) {
                         const weekToSelect = selectBestWeek(weeks);
                         setSelectedWeek(weekToSelect?.monday);
@@ -318,11 +318,11 @@ function HomeContent({ searchParams }) {
             // Trouver le lundi de la semaine contenant cet événement
             const eventDate = new Date(matchingEvent.start);
             const monday = getMonday(eventDate);
-            
+
             // Vérifier si cette semaine est disponible
             const weeks = extractAvailableWeeks(allEvents);
             const weekExists = weeks.some(w => w.monday.getTime() === monday.getTime());
-            
+
             if (weekExists && (!selectedWeek || selectedWeek.getTime() !== monday.getTime())) {
                 setSelectedWeek(monday);
             }
@@ -400,15 +400,15 @@ function HomeContent({ searchParams }) {
             // Vérifier si Ctrl est pressé et si c'est une flèche gauche ou droite
             if (e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
                 e.preventDefault();
-                
+
                 if (availableWeeks.length === 0 || !selectedWeek) return;
-                
+
                 const currentWeekIndex = availableWeeks.findIndex(
                     w => selectedWeek && w.monday.getTime() === selectedWeek.getTime()
                 );
-                
+
                 if (currentWeekIndex === -1) return;
-                
+
                 if (e.key === 'ArrowLeft' && currentWeekIndex > 0) {
                     // Semaine précédente
                     setSelectedWeek(availableWeeks[currentWeekIndex - 1].monday);
@@ -418,7 +418,7 @@ function HomeContent({ searchParams }) {
                 }
             }
         };
-        
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [availableWeeks, selectedWeek]);
@@ -438,7 +438,7 @@ function HomeContent({ searchParams }) {
         const handleTouchStart = (e) => {
             const touch = e.touches[0];
             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-            
+
             // Vérifier que le touch ne part pas de la zone VerticalSchedule (EDT)
             const verticalScheduleContainer = document.querySelector('.vertical-schedule-container');
             if (verticalScheduleContainer && verticalScheduleContainer.contains(targetElement)) {
@@ -497,8 +497,8 @@ function HomeContent({ searchParams }) {
         };
 
         // Ajouter les listeners sur le document
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchstart', handleTouchStart, {passive: true});
+        document.addEventListener('touchend', handleTouchEnd, {passive: true});
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
@@ -587,7 +587,8 @@ function HomeContent({ searchParams }) {
         localStorage.setItem("darkMode", darkMode.toString());
         try {
             document.cookie = `darkMode=${darkMode ? 'true' : 'false'}; path=/; SameSite=Lax`;
-        } catch (e) {}
+        } catch (e) {
+        }
     }, [darkMode]);
 
     // Auto-scroll désactivé
@@ -608,7 +609,7 @@ function HomeContent({ searchParams }) {
         setTimeout(() => {
             const today = new Date();
             const todayDateString = today.toDateString();
-            const newCollapsedDays = { ...collapsedDays };
+            const newCollapsedDays = {...collapsedDays};
             let todayDayKey = null;
 
             // Fermer tous les jours de la semaine actuelle
@@ -659,19 +660,19 @@ function HomeContent({ searchParams }) {
             // Position de l'élément
             const element = todayRef.current;
             const elementPosition = element.getBoundingClientRect().top;
-            
+
             // Calculer l'espacement nécessaire pour positionner le jour juste sous la navbar
             const viewportHeight = window.innerHeight;
             const dayHeight = element.offsetHeight;
             const spacingNeeded = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20); // 20px de marge réduite
-            
+
             // Définir l'espacement uniquement sur desktop et en vue horizontale
             if (!(isNative || isSmallScreen) && viewMode === 'horizontal') {
                 setTodaySpacing(spacingNeeded);
             } else {
                 setTodaySpacing(0);
             }
-            
+
             // Position finale : juste sous la navbar (ou en haut si navbar cachée)
             const offsetPosition = elementPosition + window.pageYOffset - (isNavbarVisible ? navbarHeight + 10 : 10);
 
@@ -739,7 +740,7 @@ function HomeContent({ searchParams }) {
     const handleToggleTestMode = () => {
         if (!testMode) {
             // Activer le mode test : ajouter des cours pour aujourd'hui si nécessaire
-            
+
             // Vérifier si aujourd'hui a déjà des cours (version simplifiée)
             const today = new Date();
             const todayString = today.toDateString();
@@ -748,31 +749,31 @@ function HomeContent({ searchParams }) {
                 const eventDate = new Date(event.start);
                 return eventDate.toDateString() === todayString;
             });
-            
+
             if (hasCoursesToday) {
                 alert('Aujourd\'hui a déjà des cours ! Le bouton n\'ajoute des cours de test que si la journée est vide.');
                 return;
             }
-            
+
             // Créer des cours de test pour aujourd'hui
             const testEvents = [];
             const courses = [
-                { subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: 'Salle A101' },
-                { subject: 'Informatique', prof: 'Mme Martin', location: 'Labo Informatique' },
-                { subject: 'Économie', prof: 'M. Bernard', location: 'Salle B205' },
-                { subject: 'Gestion de Projet', prof: 'Mme Dubois', location: 'Salle C301' }
+                {subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: 'Salle A101'},
+                {subject: 'Informatique', prof: 'Mme Martin', location: 'Labo Informatique'},
+                {subject: 'Économie', prof: 'M. Bernard', location: 'Salle B205'},
+                {subject: 'Gestion de Projet', prof: 'Mme Dubois', location: 'Salle C301'}
             ];
-            
+
             for (let i = 0; i < 4; i++) {
                 const startHour = 9 + i * 2; // 9h, 11h, 13h, 15h
                 const course = courses[i];
-                
+
                 const startTime = new Date(today);
                 startTime.setHours(startHour, 0, 0, 0);
-                
+
                 const endTime = new Date(today);
                 endTime.setHours(startHour + 2, 0, 0, 0);
-                
+
                 testEvents.push({
                     summary: course.subject,
                     start: startTime,
@@ -781,30 +782,30 @@ function HomeContent({ searchParams }) {
                     description: `Professeur : ${course.prof}\nMatière : ${course.subject}\n\n[Cours de test généré automatiquement]`
                 });
             }
-            
+
             const eventsWithTest = [...allEvents, ...testEvents];
-            
+
             setAllEvents(eventsWithTest);
-            
+
             // Mettre à jour les couleurs et semaines
             const colorMapping = createSubjectColorMapping(eventsWithTest);
             setSubjectColors(colorMapping);
-            
+
             const weeks = extractAvailableWeeks(eventsWithTest);
             setAvailableWeeks(weeks);
-            
+
             // S'assurer que la semaine actuelle est sélectionnée
             const currentWeek = getCurrentWeek();
             const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime());
             if (weekToSelect) {
                 setSelectedWeek(weekToSelect.monday);
             }
-            
+
             // Sauvegarder dans le cache
             saveEventsToCache(eventsWithTest, colorMapping);
 
             // Ne pas enregistrer d'historique en mode test
-            
+
             setTestModeState(true);
             setTestMode(true);
         } else {
@@ -842,18 +843,18 @@ function HomeContent({ searchParams }) {
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+        <div style={{display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%'}}>
             {/* Demande de permissions au démarrage (app native uniquement) */}
-            <PermissionRequest isNative={isNative} />
-            
+            <PermissionRequest isNative={isNative}/>
+
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
-            <ApkDownloadPopup />
-            
+            <ApkDownloadPopup/>
+
             {/* Vérification des mises à jour (app native uniquement) */}
-            <UpdateChecker 
+            <UpdateChecker
                 ref={updateCheckerRef}
                 currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
-                isNative={isNative} 
+                isNative={isNative}
             />
 
             <Navbar
@@ -959,8 +960,8 @@ function HomeContent({ searchParams }) {
                             (weekTransitionDirection === 'next'
                                 ? styles.slideLeft
                                 : weekTransitionDirection === 'prev'
-                                ? styles.slideRight
-                                : '')
+                                    ? styles.slideRight
+                                    : '')
                         }
                     >
                         {viewMode === 'vertical' ? (
@@ -977,7 +978,7 @@ function HomeContent({ searchParams }) {
                             Object.entries(groupByDay).map(([day, evs], index) => {
                                 const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
                                 const isToday = dayDate.toDateString() === new Date().toDateString();
-                                
+
                                 return (
                                     <div key={day}>
                                         <DayBlock
@@ -992,7 +993,7 @@ function HomeContent({ searchParams }) {
                                             showTimeLabels={showTimeLabels}
                                         />
                                         {isToday && (
-                                            <div 
+                                            <div
                                                 style={{
                                                     height: '0px',
                                                     width: '100%',
@@ -1006,21 +1007,19 @@ function HomeContent({ searchParams }) {
                             })
                         )}
                         {/* Affichage de la date et heure de dernière sauvegarde */}
-                        {viewMode === 'horizontal' && (
-                            <div className="last-update-info">
-                                <SubjectHoursInfo allEvents={allEvents} />
-                                <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
-                            </div>
-                        )}
+                        <div className="last-update-info">
+                            <SubjectHoursInfo allEvents={allEvents}/>
+                            <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                        </div>
                     </div>
                 )}
             </main>
 
-            <Footer />
+            <Footer/>
 
             <ScrollToTop/>
 
-            <OfflineNotification forceShow={hasNetworkError} />
+            <OfflineNotification forceShow={hasNetworkError}/>
 
             {/* Test mode indicator removed; show badge in footer instead */}
 
@@ -1059,13 +1058,13 @@ function HomeContent({ searchParams }) {
 
 export default function Home() {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
-            <HomeContentWrapper />
+        <Suspense fallback={<LoadingSpinner/>}>
+            <HomeContentWrapper/>
         </Suspense>
     );
 }
 
 function HomeContentWrapper() {
     const searchParams = useSearchParams();
-    return <HomeContent searchParams={searchParams} />;
+    return <HomeContent searchParams={searchParams}/>;
 }

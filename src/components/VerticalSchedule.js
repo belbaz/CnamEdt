@@ -208,7 +208,7 @@ export default function VerticalSchedule({
     };
 
     return (
-        <>
+        <div>
             <div
                 ref={containerRef}
                 className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
@@ -339,11 +339,6 @@ export default function VerticalSchedule({
                     </div>
                 </div>
             </div>
-
-            {/* Affichage de la date et heure de dernière sauvegarde */}
-            <div className="last-update-info">
-                <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
-            </div>
-        </>
+        </div>
     );
 }

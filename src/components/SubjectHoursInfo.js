@@ -103,7 +103,7 @@ export default function SubjectHoursInfo({allEvents = []}) {
     }
 
     return (
-        <>
+        <div>
             <button
                 className="subject-hours-info-button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -173,7 +173,7 @@ export default function SubjectHoursInfo({allEvents = []}) {
                 </>,
                 document.body
             )}
-        </>
+        </div>
     );
 }
 
