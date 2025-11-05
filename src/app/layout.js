@@ -53,6 +53,19 @@ export default function RootLayout({children}) {
                             // Éviter l'enregistrement en développement local (localhost, 127.0.0.1, ::1)
                             var host = (typeof location !== 'undefined') ? location.hostname : '';
                             var isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+                            if (isLocalhost) {
+                                // Sur localhost: nettoyer tout cache + SW existants pour éviter le cache
+                                window.addEventListener('load', function() {
+                                    try {
+                                        if (window.caches && caches.keys) {
+                                            caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
+                                        }
+                                    } catch(e) {}
+                                    try {
+                                        navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); });
+                                    } catch(e) {}
+                                });
+                            }
                             if (!isNative && !isLocalhost) {
                                 window.addEventListener('load', function() {
                                     navigator.serviceWorker.register('/sw.js').catch(function(){});

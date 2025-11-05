@@ -20,7 +20,7 @@
     position: absolute;
     display: flex;
     margin: 1 auto;
-    top: -1px;
+    top: .5px;
     left: -1px;
     right: -1px;
     width: calc(97%);
