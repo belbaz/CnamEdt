@@ -24,7 +24,11 @@ export default function Navbar({
                                    viewMode = 'horizontal',
                                    onViewModeChange = null,
                                    showTimeLabels = true,
-                                   onToggleTimeLabels = null
+                                   onToggleTimeLabels = null,
+                                   subjects = [],
+                                   selectedSubjects = [],
+                                   onSubjectsChange = null,
+                                   showFilter = false
                                }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
@@ -100,6 +104,10 @@ export default function Navbar({
                     onViewModeChange={onViewModeChange}
                     showTimeLabels={showTimeLabels}
                     onToggleTimeLabels={onToggleTimeLabels}
+                    subjects={subjects}
+                    selectedSubjects={selectedSubjects}
+                    onSubjectsChange={onSubjectsChange}
+                    showFilter={showFilter}
                 />
 
                 <div className="navbar-controls">

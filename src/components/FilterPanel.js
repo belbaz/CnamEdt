@@ -1,0 +1,186 @@
+"use client";
+import {useState, useEffect, useRef} from "react";
+import "./FilterPanel.css";
+
+export default function FilterPanel({
+    subjects = [],
+    selectedSubjects = [],
+    onSubjectsChange,
+    isVisible = false
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const panelRef = useRef(null);
+
+    // Fermer avec la touche Escape
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
+
+    // Fermer le panneau si on clique à l'extérieur
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleClickOutside = (e) => {
+            if (panelRef.current && !panelRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    // Bloquer le scroll de la page quand la modale est ouverte
+    useEffect(() => {
+        if (isOpen) {
+            // Sauvegarder la position du scroll actuelle
+            const scrollY = window.scrollY;
+            
+            // Ajouter la classe pour forcer le background gradient
+            document.body.classList.add('modal-open');
+            
+            // Bloquer le scroll
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            
+            return () => {
+                // Retirer la classe
+                document.body.classList.remove('modal-open');
+                
+                // Restaurer le scroll quand la modale est fermée
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                
+                // Restaurer la position du scroll
+                window.scrollTo(0, scrollY);
+            };
+        }
+    }, [isOpen]);
+
+    const handleToggleSubject = (subject) => {
+        const newSelected = selectedSubjects.includes(subject)
+            ? selectedSubjects.filter(s => s !== subject)
+            : [...selectedSubjects, subject];
+        
+        onSubjectsChange(newSelected);
+    };
+
+    const handleSelectAll = () => {
+        if (selectedSubjects.length === subjects.length) {
+            onSubjectsChange([]);
+        } else {
+            onSubjectsChange([...subjects]);
+        }
+    };
+
+    const activeFiltersCount = selectedSubjects.length;
+    const hasActiveFilters = activeFiltersCount > 0 && activeFiltersCount < subjects.length;
+
+    if (!isVisible) {
+        return null;
+    }
+
+    return (
+        <>
+            <button
+                className={`filter-button ${hasActiveFilters ? 'has-filters' : ''}`}
+                onClick={() => setIsOpen(!isOpen)}
+                title="Filtrer par matières"
+                aria-label="Filtrer par matières"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M3 4h18M7 8h10M11 12h2M9 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                {hasActiveFilters && (
+                    <span className="filter-badge" aria-label={`${activeFiltersCount} filtre${activeFiltersCount > 1 ? 's' : ''} actif${activeFiltersCount > 1 ? 's' : ''}`}>
+                        {activeFiltersCount}
+                    </span>
+                )}
+            </button>
+
+            {isOpen && (
+                <>
+                    <div className="filter-overlay" onClick={() => setIsOpen(false)}/>
+                    <div className="filter-panel" ref={panelRef}>
+                        <div className="filter-header">
+                            <h3>Filtrer par matières</h3>
+                            <button 
+                                className="filter-close" 
+                                onClick={() => setIsOpen(false)}
+                                aria-label="Fermer"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="filter-content">
+                            {subjects.length === 0 ? (
+                                <div className="filter-empty">
+                                    <p>Aucune matière disponible</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="filter-actions">
+                                        <button
+                                            className="filter-select-all"
+                                            onClick={handleSelectAll}
+                                        >
+                                            {selectedSubjects.length === subjects.length ? 'Tout désélectionner' : 'Tout sélectionner'}
+                                        </button>
+                                        {hasActiveFilters && (
+                                            <button
+                                                className="filter-clear"
+                                                onClick={() => onSubjectsChange([])}
+                                            >
+                                                Réinitialiser
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="filter-list">
+                                        {subjects.map((subject) => {
+                                            const isSelected = selectedSubjects.includes(subject);
+                                            return (
+                                                <label
+                                                    key={subject}
+                                                    className={`filter-item ${isSelected ? 'selected' : ''}`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleToggleSubject(subject)}
+                                                    />
+                                                    <span className="filter-item-label">{subject}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {hasActiveFilters && (
+                                        <div className="filter-info">
+                                            {activeFiltersCount} matière{activeFiltersCount > 1 ? 's' : ''} sélectionnée{activeFiltersCount > 1 ? 's' : ''}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+        </>
+    );
+}
+

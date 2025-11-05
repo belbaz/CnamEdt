@@ -63,6 +63,37 @@ export default function SettingsMenu({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
+    // Bloquer le scroll de la page quand la modale est ouverte
+    useEffect(() => {
+        if (isOpen) {
+            // Sauvegarder la position du scroll actuelle
+            const scrollY = window.scrollY;
+            
+            // Ajouter la classe pour forcer le background gradient
+            document.body.classList.add('modal-open');
+            
+            // Bloquer le scroll
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+            
+            return () => {
+                // Retirer la classe
+                document.body.classList.remove('modal-open');
+                
+                // Restaurer le scroll quand la modale est fermée
+                document.body.style.overflow = '';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                
+                // Restaurer la position du scroll
+                window.scrollTo(0, scrollY);
+            };
+        }
+    }, [isOpen]);
+
     // Désactiver l'easter egg: aucun basculement via copyright désormais
     const handleCopyrightClick = () => {};
 

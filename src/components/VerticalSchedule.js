@@ -76,10 +76,21 @@ export default function VerticalSchedule({
     // Charger le timestamp de dernière mise à jour au montage et quand les événements changent
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const timestamp = localStorage.getItem('lastUpdateTimestamp');
-            if (timestamp) {
-                setLastUpdateTimestamp(timestamp);
-            }
+            const loadTimestamp = () => {
+                const timestamp = localStorage.getItem('lastUpdateTimestamp');
+                if (timestamp) {
+                    setLastUpdateTimestamp(timestamp);
+                }
+            };
+            loadTimestamp();
+            // Écouter les changements dans localStorage
+            window.addEventListener('storage', loadTimestamp);
+            // Vérifier périodiquement (au cas où le storage change dans le même onglet)
+            const interval = setInterval(loadTimestamp, 2000);
+            return () => {
+                window.removeEventListener('storage', loadTimestamp);
+                clearInterval(interval);
+            };
         }
     }, []); // Charger au montage
 
@@ -180,9 +191,10 @@ export default function VerticalSchedule({
 
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
-        if (!timestamp) return null;
+        if (!timestamp) return 'Non disponible';
         try {
             const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return 'Non disponible';
             return date.toLocaleString('fr-FR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -191,7 +203,7 @@ export default function VerticalSchedule({
                 minute: '2-digit'
             });
         } catch (e) {
-            return null;
+            return 'Non disponible';
         }
     };
 
@@ -329,11 +341,9 @@ export default function VerticalSchedule({
             </div>
 
             {/* Affichage de la date et heure de dernière sauvegarde */}
-            {lastUpdateTimestamp && (
-                <div className="last-update-info">
-                    <span>Dernière sauvegarde : {formatLastUpdate(lastUpdateTimestamp)}</span>
-                </div>
-            )}
+            <div className="last-update-info">
+                <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+            </div>
         </>
     );
 }

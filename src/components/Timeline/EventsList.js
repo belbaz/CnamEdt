@@ -29,6 +29,12 @@ export default function EventsList({
         }
 
         const calculateMaxCardHeight = () => {
+            // Vérifier que containerRef.current existe toujours
+            if (!containerRef.current) {
+                setIsCalculating(false);
+                return;
+            }
+            
             const cards = containerRef.current.querySelectorAll('.event-card');
             if (cards.length === 0) {
                 setIsCalculating(false);
@@ -50,15 +56,22 @@ export default function EventsList({
         };
 
         // Utiliser requestAnimationFrame pour calculer immédiatement après le rendu
-        const rafId = requestAnimationFrame(() => {
-            calculateMaxCardHeight();
-        });
+        let rafId = null;
+        const rafCallback = () => {
+            // Vérifier à nouveau que containerRef existe avant de calculer
+            if (containerRef.current) {
+                calculateMaxCardHeight();
+            }
+        };
+        rafId = requestAnimationFrame(rafCallback);
 
         // Recalculer si la fenêtre est redimensionnée
         window.addEventListener('resize', calculateMaxCardHeight);
 
         return () => {
-            cancelAnimationFrame(rafId);
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+            }
             window.removeEventListener('resize', calculateMaxCardHeight);
         };
     }, [events, isTabletOrDesktop, dayHeightFactor, cardTopPadding, eventsContainerPadding]);

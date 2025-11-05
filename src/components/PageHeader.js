@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import SettingsMenu from "./SettingsMenu";
+import FilterPanel from "./FilterPanel";
 import "./PageHeader.css";
 
 export default function PageHeader({
@@ -15,7 +16,11 @@ export default function PageHeader({
                                        viewMode = 'horizontal',
                                        onViewModeChange = null,
                                        showTimeLabels = true,
-                                       onToggleTimeLabels = null
+                                       onToggleTimeLabels = null,
+                                       subjects = [],
+                                       selectedSubjects = [],
+                                       onSubjectsChange = null,
+                                       showFilter = false
                                    }) {
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -55,6 +60,12 @@ export default function PageHeader({
                             {isDownloading ? '⏳' : '📱'}
                         </button>
                     )}
+                    <FilterPanel
+                        subjects={subjects}
+                        selectedSubjects={selectedSubjects}
+                        onSubjectsChange={onSubjectsChange || (() => {})}
+                        isVisible={showFilter}
+                    />
                     <SettingsMenu
                         onOpenChange={onSettingsOpenChange}
                         compactMode={compactMode}

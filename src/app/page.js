@@ -1,7 +1,8 @@
 "use client";
-import {useState, useEffect, useRef} from "react";
+import {useState, useEffect, useRef, useMemo} from "react";
+import {useSearchParams} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
-import {createSubjectColorMapping, groupEventsByDay} from "@/utils/eventUtils";
+import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
@@ -17,9 +18,21 @@ import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import PermissionRequest from "@/components/PermissionRequest";
+import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import styles from "./page.module.css";
+import "@/components/VerticalSchedule.css";
+import { saveSnapshotIfChanged } from "@/utils/historyService";
+
+// Fonction pour générer l'event_key (identique à celle dans fetch-ics/route.js)
+function generateEventKey(ev) {
+    const s = new Date(ev.start).toISOString();
+    const sum = (ev.summary || '').trim();
+    const loc = (ev.location || '').trim();
+    return `${s}|${sum}|${loc}`;
+}
 
 export default function Home() {
+    const searchParams = useSearchParams();
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -45,6 +58,7 @@ export default function Home() {
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
+    const [selectedSubjects, setSelectedSubjects] = useState([]);
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -158,6 +172,9 @@ export default function Home() {
 
             // Sauvegarder dans le cache
             saveEventsToCache(data, colorMapping);
+
+            // Historiser les matières détectées si elles ont changé
+            await saveSnapshotIfChanged(data, { skip: false });
             // Mettre à jour le timestamp dans l'état
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger
@@ -222,6 +239,33 @@ export default function Home() {
         }
     };
 
+    // Extraire la liste des matières depuis allEvents
+    const subjects = useMemo(() => {
+        return Array.from(new Set(
+            allEvents
+                .map(event => {
+                    const {matiere} = getEventTitle(event);
+                    return matiere && matiere !== ":" ? matiere : null;
+                })
+                .filter(Boolean)
+        )).sort();
+    }, [allEvents]);
+
+    // Nettoyer les matières sélectionnées qui ne sont plus disponibles
+    useEffect(() => {
+        setSelectedSubjects(prev => {
+            if (subjects.length > 0 && prev.length > 0) {
+                const validSubjects = prev.filter(subject => subjects.includes(subject));
+                if (validSubjects.length !== prev.length) {
+                    return validSubjects;
+                }
+            } else if (subjects.length === 0 && prev.length > 0) {
+                return [];
+            }
+            return prev;
+        });
+    }, [subjects]);
+
     useEffect(() => {
         if (!selectedWeek || allEvents.length === 0) return;
 
@@ -233,13 +277,58 @@ export default function Home() {
         endDate.setDate(selectedWeek.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
 
-        const filtered = allEvents.filter((e) => {
+        let filtered = allEvents.filter((e) => {
             const start = new Date(e.start);
             return start >= startDate && start <= endDate;
         });
 
+        // Filtrer par matières sélectionnées si des filtres sont actifs
+        if (selectedSubjects.length > 0) {
+            filtered = filtered.filter((e) => {
+                const {matiere} = getEventTitle(e);
+                return matiere && selectedSubjects.includes(matiere);
+            });
+        }
+
+        // Si un eventKey est présent dans l'URL, filtrer pour n'afficher que ce cours
+        const eventKeyParam = searchParams?.get('eventKey');
+        if (eventKeyParam) {
+            const decodedKey = decodeURIComponent(eventKeyParam);
+            filtered = filtered.filter((e) => {
+                const key = generateEventKey(e);
+                return key === decodedKey;
+            });
+        }
+
         setEvents(filtered);
-    }, [selectedWeek, allEvents]);
+    }, [selectedWeek, allEvents, searchParams, selectedSubjects]);
+
+    // Si un eventKey est présent dans l'URL, naviguer vers la semaine du cours
+    useEffect(() => {
+        const eventKeyParam = searchParams?.get('eventKey');
+        if (!eventKeyParam || allEvents.length === 0) return;
+
+        const decodedKey = decodeURIComponent(eventKeyParam);
+        // Trouver l'événement correspondant
+        const matchingEvent = allEvents.find((e) => {
+            const key = generateEventKey(e);
+            return key === decodedKey;
+        });
+
+        if (matchingEvent) {
+            // Trouver le lundi de la semaine contenant cet événement
+            const eventDate = new Date(matchingEvent.start);
+            const monday = getMonday(eventDate);
+            
+            // Vérifier si cette semaine est disponible
+            const weeks = extractAvailableWeeks(allEvents);
+            const weekExists = weeks.some(w => w.monday.getTime() === monday.getTime());
+            
+            if (weekExists && (!selectedWeek || selectedWeek.getTime() !== monday.getTime())) {
+                setSelectedWeek(monday);
+            }
+        }
+    }, [searchParams, allEvents, selectedWeek]);
 
     // Déterminer la direction de transition lorsque la semaine change
     useEffect(() => {
@@ -714,6 +803,8 @@ export default function Home() {
             
             // Sauvegarder dans le cache
             saveEventsToCache(eventsWithTest, colorMapping);
+
+            // Ne pas enregistrer d'historique en mode test
             
             setTestModeState(true);
             setTestMode(true);
@@ -732,6 +823,24 @@ export default function Home() {
     };
 
     const groupByDay = groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short');
+
+    // Formater le timestamp pour l'affichage
+    const formatLastUpdate = (timestamp) => {
+        if (!timestamp) return 'Non disponible';
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return 'Non disponible';
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return 'Non disponible';
+        }
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
@@ -769,6 +878,10 @@ export default function Home() {
                 onViewModeChange={handleViewModeChange}
                 showTimeLabels={showTimeLabels}
                 onToggleTimeLabels={handleToggleTimeLabels}
+                subjects={subjects}
+                selectedSubjects={selectedSubjects}
+                onSubjectsChange={setSelectedSubjects}
+                showFilter={!loading && allEvents.length > 0}
             />
 
             <main className={styles.container}>
@@ -828,7 +941,18 @@ export default function Home() {
 
                 {loading && events.length === 0 && <LoadingSpinner/>}
 
-                {(!loading || events.length > 0) && (
+                {!loading && events.length === 0 && allEvents.length > 0 && (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem 1rem',
+                        color: 'var(--text-secondary)',
+                        fontSize: '1rem'
+                    }}>
+                        Pas de cours trouvé pour cette semaine
+                    </div>
+                )}
+
+                {(!loading || events.length > 0) && events.length > 0 && (
                     <div
                         key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
                         className={
@@ -881,6 +1005,13 @@ export default function Home() {
                                     </div>
                                 );
                             })
+                        )}
+                        {/* Affichage de la date et heure de dernière sauvegarde */}
+                        {viewMode === 'horizontal' && (
+                            <div className="last-update-info">
+                                <SubjectHoursInfo allEvents={allEvents} />
+                                <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                            </div>
                         )}
                     </div>
                 )}

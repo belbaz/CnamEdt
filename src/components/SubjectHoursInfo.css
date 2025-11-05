@@ -1,0 +1,341 @@
+/* Subject Hours Info Button */
+.subject-hours-info-button {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    color: var(--text-primary);
+}
+
+.subject-hours-info-button:hover {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+    transform: scale(1.05);
+}
+
+/* Subject Hours Overlay */
+.subject-hours-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Subject Hours Panel */
+.subject-hours-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    width: 90vw;
+    max-width: 500px;
+    height: fit-content;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: scale(0.95);
+    animation: slideUp 0.2s ease forwards;
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.subject-hours-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.subject-hours-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.subject-hours-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.subject-hours-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.subject-hours-content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+    min-height: 0;
+    /* Scrollbar Firefox - Mode clair */
+    scrollbar-width: thin;
+    scrollbar-color: #718096 rgba(0, 0, 0, 0.05);
+}
+
+/* Scrollbar Webkit (Chrome, Safari, Edge) - Mode clair */
+.subject-hours-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.subject-hours-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.subject-hours-content::-webkit-scrollbar-thumb {
+    background: #718096;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.subject-hours-content::-webkit-scrollbar-thumb:hover {
+    background: #4a5568;
+}
+
+/* Mode dark : scrollbar */
+.dark-mode .subject-hours-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.dark-mode .subject-hours-content::-webkit-scrollbar-thumb {
+    background: #a0aec0;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .subject-hours-content::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e0;
+}
+
+.dark-mode .subject-hours-content {
+    scrollbar-width: thin;
+    scrollbar-color: #a0aec0 rgba(255, 255, 255, 0.05);
+}
+
+.subject-hours-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.subject-hours-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.subject-hours-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.subject-hours-item-name {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    flex: 1;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.subject-hours-item-values {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.subject-hours-item-value {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.subject-hours-item-percentage {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.subject-hours-item-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.subject-hours-item-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-primary);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.subject-hours-item-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4299e1 0%, #60a5fa 100%);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(66, 153, 225, 0.3);
+}
+
+.subject-hours-item-bar-label {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.subject-hours-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-color);
+    margin-top: 0.5rem;
+}
+
+.subject-hours-total-label {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.subject-hours-total-value {
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.subject-hours-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-secondary);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .subject-hours-info-button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .subject-hours-panel {
+        max-width: 95vw;
+        max-height: 85vh;
+        border-radius: 14px;
+    }
+
+    .subject-hours-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .subject-hours-header h3 {
+        font-size: 1.125rem;
+    }
+
+    .subject-hours-content {
+        padding: 1.25rem;
+    }
+}
+
+@media (max-width: 650px) {
+    .subject-hours-info-button {
+        width: 30px;
+        height: 30px;
+    }
+
+    .subject-hours-panel {
+        max-width: 98vw;
+        border-radius: 12px;
+    }
+
+    .subject-hours-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .subject-hours-header h3 {
+        font-size: 1rem;
+    }
+
+    .subject-hours-content {
+        padding: 1rem;
+    }
+
+    .subject-hours-item-name {
+        font-size: 0.875rem;
+    }
+
+    .subject-hours-item-value {
+        font-size: 0.875rem;
+    }
+}
+

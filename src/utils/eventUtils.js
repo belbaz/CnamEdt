@@ -17,7 +17,7 @@ export function createSubjectColorMapping(data) {
     const subjects = Array.from(subjectsSet).sort();
     const mapping = {};
     subjects.forEach((subject, index) => {
-        mapping[subject] = index % 5;
+        mapping[subject] = index % 20;
     });
     return mapping;
 }
