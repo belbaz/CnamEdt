@@ -731,7 +731,7 @@ export default function Home() {
         }
     };
 
-    const groupByDay = groupEventsByDay(events);
+    const groupByDay = groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short');
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
@@ -848,6 +848,7 @@ export default function Home() {
                                 compactMode={compactMode}
                                 showTimeLabels={showTimeLabels}
                                 isNative={isNative}
+                                monthFormat={'short'}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {

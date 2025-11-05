@@ -12,10 +12,11 @@ export default function VerticalSchedule({
                                              onOpenEventDetails,
                                              compactMode = 5,
                                              showTimeLabels = true,
-                                             isNative = false
+                                             isNative = false,
+                                             monthFormat = 'long'
                                          }) {
     // Grouper les événements par jour
-    const groupByDay = useMemo(() => groupEventsByDay(events), [events]);
+    const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat), [events, monthFormat]);
 
     // Obtenir tous les jours de la semaine
     const days = useMemo(() => {

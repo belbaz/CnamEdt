@@ -22,10 +22,10 @@ export function useNetworkStatus() {
         };
 
         const setupWeb = () => {
-            const checkRealConnection = async () => {
+            const checkRealConnectionOnce = async () => {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
                     await fetch('/api/version', { method: 'HEAD', cache: 'no-cache', signal: controller.signal });
                     clearTimeout(timeoutId);
                     setStatus(true);
@@ -36,16 +36,13 @@ export function useNetworkStatus() {
 
             const initialOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
             setStatus(initialOnline);
-            if (initialOnline) checkRealConnection();
+            // Vérifier une seule fois au chargement pour confirmer la connectivité réelle
+            checkRealConnectionOnce();
 
             const onOnline = () => setStatus(true);
             const onOffline = () => setStatus(false);
             window.addEventListener('online', onOnline);
             window.addEventListener('offline', onOffline);
-
-            if (!pollingIntervalRef.current) {
-                pollingIntervalRef.current = setInterval(checkRealConnection, 10000);
-            }
 
             removeNetworkListener = () => {
                 window.removeEventListener('online', onOnline);

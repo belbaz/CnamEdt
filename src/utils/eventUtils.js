@@ -49,12 +49,14 @@ export function getColorIndexForSubject(matiere, subjectColors) {
 /**
  * Groupe les événements par jour
  */
-export function groupEventsByDay(events) {
+export function groupEventsByDay(events, monthFormat = "short") {
     return events.reduce((acc, ev) => {
         const d = new Date(ev.start);
         const weekday = d.toLocaleDateString("fr-FR", {weekday: "long"});
         const date = d.toLocaleDateString("fr-FR", {day: "numeric", month: "long"});
-        const key = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${date}`;
+        const date_short = d.toLocaleDateString("fr-FR", {day: "numeric", month: "short"});
+        const monthLabel = monthFormat === "long" ? date : date_short;
+        const key = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${monthLabel}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(ev);
         return acc;
