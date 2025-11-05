@@ -1,5 +1,5 @@
 "use client";
-import {useState, useEffect, useRef, useMemo} from "react";
+import {useState, useEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
@@ -31,8 +31,7 @@ function generateEventKey(ev) {
     return `${s}|${sum}|${loc}`;
 }
 
-export default function Home() {
-    const searchParams = useSearchParams();
+function HomeContent({ searchParams }) {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -1056,4 +1055,17 @@ export default function Home() {
             )}
         </div>
     );
+}
+
+export default function Home() {
+    return (
+        <Suspense fallback={<LoadingSpinner />}>
+            <HomeContentWrapper />
+        </Suspense>
+    );
+}
+
+function HomeContentWrapper() {
+    const searchParams = useSearchParams();
+    return <HomeContent searchParams={searchParams} />;
 }
