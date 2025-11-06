@@ -2,12 +2,13 @@
 import {useEffect, useRef, useState} from "react";
 import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./EventCard.css";
-import {isDevMode} from "../../utils/env";
+import {useDevMode} from "../../utils/env";
 
 export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
     const {matiere, prof, description} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
+    const devMode = useDevMode();
 
     const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
     const formatDurationHours = (start, end) => {
@@ -49,7 +50,7 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                 {(
                     <div className="location">
                         {location && <span className="location-text">{location}</span>}
-                        {isDevMode() && hoursLabel && (
+                        {devMode && hoursLabel && (
                             <span className="event-hours" aria-label="Durée du cours">{hoursLabel}</span>
                         )}
                     </div>

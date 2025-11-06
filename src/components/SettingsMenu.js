@@ -2,7 +2,7 @@
 import {useState, useEffect, useRef} from "react";
 import "./SettingsMenu.css";
 import Toast from "./Toast";
-import {isDevMode} from "../utils/env";
+import {useDevMode} from "../utils/env";
 
 export default function SettingsMenu({
                                          onOpenChange,
@@ -20,8 +20,9 @@ export default function SettingsMenu({
     const [version, setVersion] = useState(currentVersion || null);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
+    const devMode = useDevMode();
     // Le bouton update reste visible sur mobile/native
-    const showUpdateButton = isDevMode ? true : (isMobile || isNative);
+    const showUpdateButton = devMode ? true : (isMobile || isNative);
 
     // Récupérer la version depuis l'API ou utiliser currentVersion
     useEffect(() => {
@@ -131,7 +132,7 @@ export default function SettingsMenu({
 
                             {/* Canal supprimé: interface épurée */}
 
-                            {(isDevMode() || isNative || isMobile) && (
+                            {(devMode || isNative || isMobile) && (
                                 <div className="setting-item setting-button-item">
                                     <button
                                         className="settings-action check-updates-button"

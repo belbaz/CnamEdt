@@ -3,7 +3,7 @@ import {useState, useEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
-import {isDevMode} from "@/utils/env";
+import {useDevMode} from "@/utils/env";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
@@ -41,6 +41,7 @@ function HomeContent({searchParams}) {
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [selectedWeek, setSelectedWeek] = useState(null);
     const [darkMode, setDarkMode] = useState(false);
+    const [oledMode, setOledMode] = useState(false);
     const [subjectColors, setSubjectColors] = useState({});
     const [currentTime, setCurrentTime] = useState(new Date());
     const [autoScrollToday, setAutoScrollToday] = useState(true);
@@ -115,6 +116,7 @@ function HomeContent({searchParams}) {
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
     const {isOnline} = useNetworkStatus();
+    const devMode = useDevMode();
 
     // Gérer le splash screen (cacher quand chargé)
     useSplashScreen(SplashScreen, !loading);
@@ -615,6 +617,9 @@ function HomeContent({searchParams}) {
         const savedMode = localStorage.getItem("darkMode");
         if (savedMode) setDarkMode(savedMode === "true");
 
+        const savedOledMode = localStorage.getItem("oledMode");
+        if (savedOledMode) setOledMode(savedOledMode === "true");
+
         const savedAutoScroll = localStorage.getItem("autoScrollToday");
         if (savedAutoScroll !== null) setAutoScrollToday(savedAutoScroll === "true");
 
@@ -638,13 +643,30 @@ function HomeContent({searchParams}) {
 
     useEffect(() => {
         if (darkMode) document.documentElement.classList.add("dark-mode");
-        else document.documentElement.classList.remove("dark-mode");
+        else {
+            document.documentElement.classList.remove("dark-mode");
+            // Désactiver OLED si on sort du dark mode
+            setOledMode(false);
+        }
         localStorage.setItem("darkMode", darkMode.toString());
         try {
             document.cookie = `darkMode=${darkMode ? 'true' : 'false'}; path=/; SameSite=Lax`;
         } catch (e) {
         }
     }, [darkMode]);
+
+    useEffect(() => {
+        if (oledMode && darkMode) {
+            document.documentElement.classList.add("oled-mode");
+        } else {
+            document.documentElement.classList.remove("oled-mode");
+        }
+        if (oledMode) {
+            localStorage.setItem("oledMode", "true");
+        } else {
+            localStorage.removeItem("oledMode");
+        }
+    }, [oledMode, darkMode]);
 
     // Auto-scroll désactivé
     useEffect(() => {
@@ -914,7 +936,9 @@ function HomeContent({searchParams}) {
 
             <Navbar
                 darkMode={darkMode}
+                oledMode={oledMode}
                 onToggleDarkMode={() => setDarkMode(!darkMode)}
+                onToggleOledMode={() => setOledMode(!oledMode)}
                 availableWeeks={availableWeeks}
                 selectedWeek={selectedWeek}
                 onWeekChange={handleWeekChange}
@@ -1120,7 +1144,7 @@ function HomeContent({searchParams}) {
                             })()}
                             {selectedEvent.location &&
                                 <div className="pop-row"><span>📍</span>{selectedEvent.location}</div>}
-                            {isDevMode() && selectedEvent.description && (
+                            {devMode && selectedEvent.description && (
                                 <div className="pop-desc">{selectedEvent.description}</div>
                             )}
                             {(() => {

@@ -1,12 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import SettingsMenu from "./SettingsMenu";
 import FilterPanel from "./FilterPanel";
 import "./PageHeader.css";
 
 export default function PageHeader({
                                        darkMode,
+                                       oledMode,
                                        onToggleDarkMode,
+                                       onToggleOledMode,
                                        isMobile = false,
                                        onSettingsOpenChange,
                                        compactMode,
@@ -23,6 +25,10 @@ export default function PageHeader({
                                        showFilter = false
                                    }) {
     const [isDownloading, setIsDownloading] = useState(false);
+    const [showEasterEgg, setShowEasterEgg] = useState(false);
+    const clickCount = useRef(0);
+    const clickTimer = useRef(null);
+    const buttonRef = useRef(null);
 
     const handleDownloadAPK = async () => {
         setIsDownloading(true);
@@ -32,6 +38,65 @@ export default function PageHeader({
             setIsDownloading(false);
         }
     };
+
+    // Gérer les 5 clics rapides sur la lune (uniquement en dark mode)
+    const handleThemeToggleClick = (e) => {
+        // Si pas en dark mode, comportement normal
+        if (!darkMode) {
+            onToggleDarkMode();
+            return;
+        }
+
+        // En dark mode, on compte les clics
+        clickCount.current += 1;
+
+        // Si on atteint 5 clics, activer le mode OLED
+        if (clickCount.current >= 5) {
+            // Annuler le timer de toggle normal s'il existe
+            if (clickTimer.current) {
+                clearTimeout(clickTimer.current);
+                clickTimer.current = null;
+            }
+            onToggleOledMode();
+            setShowEasterEgg(true);
+            setTimeout(() => setShowEasterEgg(false), 4000);
+            clickCount.current = 0;
+            return;
+        }
+
+        // Si c'est le premier clic, on démarre un petit délai avant le toggle normal
+        if (clickCount.current === 1) {
+            // On attend 300ms pour voir si d'autres clics arrivent
+            clickTimer.current = setTimeout(() => {
+                // Si on n'a pas atteint 5 clics, faire le toggle normal
+                if (clickCount.current < 5) {
+                    onToggleDarkMode();
+                }
+                clickCount.current = 0;
+                clickTimer.current = null;
+            }, 300);
+        } else {
+            // Si on clique à nouveau rapidement, on annule le timer de toggle normal
+            // et on démarre un timer de 3 secondes pour reset le compteur
+            if (clickTimer.current) {
+                clearTimeout(clickTimer.current);
+            }
+            
+            // Timer de 3 secondes pour reset le compteur si on n'atteint pas 5 clics
+            clickTimer.current = setTimeout(() => {
+                clickCount.current = 0;
+                clickTimer.current = null;
+            }, 3000);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (clickTimer.current) {
+                clearTimeout(clickTimer.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="page-header">
@@ -94,20 +159,38 @@ export default function PageHeader({
                             </svg>
                         )}
                     </button>
-                    <button
-                        className="theme-toggle"
-                        onClick={onToggleDarkMode}
-                        title={darkMode ? "Mode clair" : "Mode sombre"}
-                    >
-                        {darkMode ? (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <circle cx="12" cy="12" r="4.5" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1"/>
-                                <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05l-2.12-2.12" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                        ) : (
-                            "🌙"
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            ref={buttonRef}
+                            className={`theme-toggle ${oledMode ? 'oled-active' : ''}`}
+                            onClick={handleThemeToggleClick}
+                            title={darkMode ? (oledMode ? "Mode OLED actif" : "Mode sombre") : "Mode sombre"}
+                        >
+                            {darkMode ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="4.5" fill={oledMode ? "#000000" : "#fbbf24"} stroke={oledMode ? "#ffffff" : "#f59e0b"} strokeWidth="1"/>
+                                    <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05l-2.12-2.12" stroke={oledMode ? "#ffffff" : "#f59e0b"} strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            ) : (
+                                "🌙"
+                            )}
+                        </button>
+                        {showEasterEgg && (
+                            <div className="easter-egg-notification">
+                                <div className="easter-egg-content">
+                                    <div className="easter-egg-particles">
+                                        <div className="easter-egg-particle"></div>
+                                        <div className="easter-egg-particle"></div>
+                                        <div className="easter-egg-particle"></div>
+                                        <div className="easter-egg-particle"></div>
+                                        <div className="easter-egg-particle"></div>
+                                    </div>
+                                    <span className="easter-egg-icon">✨</span>
+                                    <span className="easter-egg-text">Mode OLED activé !</span>
+                                </div>
+                            </div>
                         )}
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>

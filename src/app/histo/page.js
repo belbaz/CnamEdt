@@ -55,7 +55,7 @@ export default function HistoPage() {
 
     return (
         <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "0.75rem" }}>
+            <div style={{ marginBottom: "0.75rem" }}>
                 <button
                     onClick={() => router.push('/')}
                     style={{
@@ -65,7 +65,7 @@ export default function HistoPage() {
                         borderRadius: 8,
                         padding: '.5rem .75rem',
                         cursor: 'pointer',
-                        marginRight: '.75rem'
+                        marginBottom: '0.75rem'
                     }}
                     title="Retour au menu"
                 >

@@ -32,6 +32,62 @@
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
+/* Mode OLED - Vrais noirs pour économiser la batterie sur écrans OLED */
+/* Note: --bg-secondary et --bg-tertiary gardent les valeurs du dark mode pour que les jours et cartes restent visibles */
+.oled-mode {
+    --primary-color: #60a5fa;
+    --bg-primary: #000000;
+    --bg-secondary: #2d3748; /* Garde la valeur du dark mode pour les jours */
+    --bg-tertiary: #374151; /* Garde la valeur du dark mode pour les cartes */
+    --bg-gradient: #000000;
+    --text-primary: #ffffff;
+    --text-secondary: #e2e8f0;
+    --text-dev: #f59e0b;
+    --text-muted: #a0aec0;
+    --border-color: #1a1a1a;
+    --border-light: #0a0a0a;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.8);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 1);
+}
+
+.oled-mode body,
+.oled-mode html {
+    background: #000000 !important;
+}
+
+.oled-mode .container,
+.oled-mode .page-header,
+.oled-mode .navbar-container,
+.oled-mode .vertical-schedule-container,
+.oled-mode .vertical-time-column {
+    background: #000000 !important;
+}
+
+/* Les jours et cartes utilisent maintenant automatiquement --bg-secondary et --bg-tertiary 
+   qui gardent leurs valeurs du dark mode grâce à la définition ci-dessus */
+
+.oled-mode .vertical-day-column {
+    background: transparent !important; /* Transparent pour voir le fond noir */
+}
+
+.oled-mode .vertical-schedule-header {
+    background: #000000 !important; /* Header reste noir */
+}
+
+.oled-mode .vertical-day-header {
+    background: var(--bg-secondary) !important; /* Les headers de jours gardent leur couleur */
+}
+
+/* S'assurer que les gradients deviennent des noirs purs en OLED */
+.oled-mode {
+    background: #000000 !important;
+}
+
+.oled-mode * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
 
 body {
     margin: 0;
