@@ -10,6 +10,13 @@ export default function RootLayout({children}) {
         <html lang="fr" suppressHydrationWarning>
         <head>
             <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+            <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+            <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+            <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48x48.png" />
+            <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+            <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+            <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+            <link rel="shortcut icon" href="/favicon/favicon.ico" />
             <link rel="manifest" href="/manifest.webmanifest" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
             <link rel="preconnect" href="https://fonts.googleapis.com"/>

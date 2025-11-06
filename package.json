@@ -15,7 +15,8 @@
     "build:mobile:test": "node mobile-config/increment-version.js && node mobile-config/update-version-in-files.js && cross-env BUILD_MODE=mobile NEXT_PUBLIC_ENV=test APP_CHANNEL=test node scripts/switch-next-config.js mobile && npm run prebuild && next build && npm run postbuild && npx cap copy android && npx cap sync android",
     "mobile:android": "npx cap open android",
     "mobile:sync": "npx cap sync android",
-    "icons:android": "node scripts/generate-android-icons.js"
+    "icons:android": "node scripts/generate-android-icons.js",
+    "icons:web": "node scripts/generate-favicons.js"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
@@ -38,6 +39,7 @@
     "@types/react": "^19.2.2",
     "cross-env": "^7.0.3",
     "sharp": "^0.34.4",
+    "png-to-ico": "^2.1.8",
     "typescript": "^5.9.3"
   }
 }
