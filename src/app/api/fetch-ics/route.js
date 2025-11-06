@@ -62,6 +62,7 @@ export async function GET() {
         const events = Object.values(parsed)
             .filter((e) => e.type === "VEVENT")
             .map((e) => ({
+                uid: e.uid, // ICS UID used for stable version tracking
                 summary: e.summary,
                 start: e.start,
                 description: e.description,
@@ -136,79 +137,106 @@ export async function GET() {
                     }
                 }
 
-                // Insert first-seen events (each course individually)
-                const eventKey = (ev) => {
-                    const s = new Date(ev.start).toISOString();
-                    const sum = (ev.summary || '').trim();
-                    const loc = (ev.location || '').trim();
-                    return `${s}|${sum}|${loc}`;
-                };
-                const eventKeys = events.map(eventKey);
-                console.log('[API fetch-ics] events total:', events.length);
-                console.log('[API fetch-ics] eventKeys sample:', eventKeys.slice(0, 2));
-                if (eventKeys.length > 0) {
-                    console.log('[API fetch-ics] Querying Supabase for existing events...');
-                    // Split into batches (Supabase has limits on .in() size)
-                    const BATCH_SIZE = 100;
-                    const existingSet = new Set();
-                    for (let i = 0; i < eventKeys.length; i += BATCH_SIZE) {
-                        const batch = eventKeys.slice(i, i + BATCH_SIZE);
-                        const { data: batchRows, error: batchErr } = await supabase
-                            .from('events_first_seen')
-                            .select('event_key')
-                            .in('event_key', batch);
-                        if (batchErr) {
-                            console.error('[API fetch-ics] Supabase select batch error:', batchErr.message, batchErr.code, batchErr.details, batchErr.hint);
-                            // If table doesn't exist, skip this entirely
-                            if (batchErr.code === '42P01') {
-                                console.error('[API fetch-ics] Table events_first_seen does not exist! Please create it in Supabase.');
-                                break;
+                // Removed: legacy first-seen insertion into events_first_seen (table deprecated)
+
+                // 2) Per-UID event version tracking (insert new version when fields change)
+                try {
+                    const uids = Array.from(new Set(events.map(ev => (ev.uid || '').trim()).filter(Boolean)));
+                    if (uids.length > 0) {
+                        const BATCH_SIZE_UID = 100;
+                        // Helper to compute a stable content hash
+                        const computeHash = (ev) => {
+                            const startISO = new Date(ev.start).toISOString();
+                            const endISO = new Date(ev.end).toISOString();
+                            const payload = [
+                                (ev.summary || '').trim(),
+                                startISO,
+                                endISO,
+                                (ev.location || '').trim(),
+                                (ev.description || '').trim()
+                            ].join('\u241F'); // unit separator to avoid collisions
+                            return createHash('sha256').update(payload).digest('hex');
+                        };
+
+                        // Build a map from uid -> current event snapshot
+                        const uidToEvent = new Map();
+                        for (const ev of events) {
+                            const uid = (ev.uid || '').trim();
+                            if (!uid) continue;
+                            // If duplicates of same UID exist, prefer the latest start
+                            const prev = uidToEvent.get(uid);
+                            if (!prev || new Date(ev.start) > new Date(prev.start)) {
+                                uidToEvent.set(uid, ev);
                             }
-                            continue;
                         }
-                        (batchRows || []).forEach(r => existingSet.add(r.event_key));
-                    }
-                    console.log('[API fetch-ics] events existing in DB:', existingSet.size);
-                    const toInsert = events
-                        .filter(ev => !existingSet.has(eventKey(ev)))
-                        .map(ev => ({
-                            event_key: eventKey(ev),
-                            summary: (ev.summary || '').trim(),
-                            start: new Date(ev.start).toISOString(),
-                            end_time: new Date(ev.end).toISOString(),
-                            location: (ev.location || '').trim(),
-                            description: (ev.description || '').trim(),
-                            first_seen: new Date().toISOString()
-                        }));
-                    console.log('[API fetch-ics] events to insert:', toInsert.length);
-                    if (toInsert.length > 0) {
-                        // Insert in batches too
-                        for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
-                            const batch = toInsert.slice(i, i + BATCH_SIZE);
-                            const { data: insData, error: insFirstErr } = await supabase.from('events_first_seen').insert(batch);
-                            if (insFirstErr) {
-                                console.error('[API fetch-ics] Supabase insert batch error:', {
-                                    message: insFirstErr.message,
-                                    code: insFirstErr.code,
-                                    details: insFirstErr.details,
-                                    hint: insFirstErr.hint,
-                                    fullError: insFirstErr
-                                });
-                                console.error('[API fetch-ics] Batch sample:', JSON.stringify(batch[0], null, 2));
-                                if (insFirstErr.code === '42P01') {
-                                    console.error('[API fetch-ics] Table events_first_seen does not exist! Please create it in Supabase.');
+
+                        // For each UID, compare with latest stored version
+                        for (let i = 0; i < uids.length; i += BATCH_SIZE_UID) {
+                            const batchUids = uids.slice(i, i + BATCH_SIZE_UID);
+                            const { data: lastVersions, error: lastVerErr } = await supabase
+                                .from('events_versions')
+                                .select('uid, version_no, content_hash')
+                                .in('uid', batchUids)
+                                .order('uid', { ascending: true })
+                                .order('version_no', { ascending: false });
+                            if (lastVerErr) {
+                                console.warn('[API fetch-ics] Select events_versions error:', lastVerErr.message);
+                                if (lastVerErr.code === '42P01') {
+                                    console.warn('[API fetch-ics] Table events_versions not found; skipping version tracking');
                                     break;
                                 }
-                            } else {
-                                console.log(`[API fetch-ics] ${batch.length} event(s) inserted (batch ${Math.floor(i/BATCH_SIZE)+1})`);
+                            }
+
+                            // Reduce to latest version per UID
+                            const latestByUid = new Map();
+                            for (const row of (lastVersions || [])) {
+                                if (!latestByUid.has(row.uid)) latestByUid.set(row.uid, row);
+                            }
+
+                            // Prepare inserts for changed events
+                            const inserts = [];
+                            for (const uid of batchUids) {
+                                const ev = uidToEvent.get(uid);
+                                if (!ev) continue;
+                                const hash = computeHash(ev);
+                                const last = latestByUid.get(uid);
+                                if (!last || last.content_hash !== hash) {
+                                    const summary = (ev.summary || '').trim();
+                                    const startISO = new Date(ev.start).toISOString();
+                                    const endISO = new Date(ev.end).toISOString();
+                                    const location = (ev.location || '').trim();
+                                    const description = (ev.description || '').trim();
+
+                                    const version_no = (last ? (last.version_no + 1) : 1);
+                                    inserts.push({
+                                        uid,
+                                        version_no,
+                                        changed_at: new Date().toISOString(),
+                                        summary,
+                                        start: startISO,
+                                        end_time: endISO,
+                                        location,
+                                        description,
+                                        content_hash: hash
+                                    });
+                                }
+                            }
+
+                            if (inserts.length > 0) {
+                                const { error: insVerErr } = await supabase.from('events_versions').insert(inserts);
+                                if (insVerErr) {
+                                    console.warn('[API fetch-ics] Insert events_versions error:', insVerErr.message, insVerErr.code);
+                                } else {
+                                    console.log(`[API fetch-ics] ${inserts.length} event version(s) recorded`);
+                                }
                             }
                         }
-                    } else {
-                        console.log('[API fetch-ics] no new events to insert');
                     }
+                } catch (verErr) {
+                    console.warn('[API fetch-ics] Version tracking skipped:', verErr.message);
                 }
 
-                // 2) Weekly event-level snapshot (disabled)
+                // 3) Weekly event-level snapshot (disabled)
                 /*
                 const toMonday = (d) => {
                     const date = new Date(d);

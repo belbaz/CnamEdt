@@ -39,15 +39,33 @@ export async function GET() {
     try {
         const supabase = getSupabaseServerClient();
         if (supabase) {
+            // Read initial versions from events_versions (version_no = 1)
             const { data, error } = await supabase
-                .from('events_first_seen')
-                .select('event_key, summary, start, end_time, location, description, first_seen')
-                .order('first_seen', { ascending: false });
+                .from('events_versions')
+                .select('uid, version_no, changed_at, summary, start, end_time, location, description')
+                .eq('version_no', 1)
+                .order('changed_at', { ascending: false });
             if (error) {
                 console.error('[history][GET] Supabase error:', error.message);
                 return NextResponse.json({ items: [], error: error.message, backend: 'supabase' }, { status: 500 });
             }
-            return NextResponse.json({ items: data || [], backend: 'supabase' });
+            // Compute event_key and first_seen from version rows to keep the same contract
+            const items = (data || []).map(r => {
+                const startISO = r.start ? new Date(r.start).toISOString() : '';
+                const summary = (r.summary || '').trim();
+                const location = (r.location || '').trim();
+                const event_key = `${startISO}|${summary}|${location}`;
+                return {
+                    event_key,
+                    summary: r.summary,
+                    start: r.start,
+                    end_time: r.end_time,
+                    location: r.location,
+                    description: r.description,
+                    first_seen: r.changed_at
+                };
+            });
+            return NextResponse.json({ items, backend: 'supabase' });
         }
         // Fallback file storage
         return NextResponse.json({ items: [], backend: 'none' });
