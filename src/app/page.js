@@ -59,6 +59,21 @@ function HomeContent({searchParams}) {
     const previousWeekIndexRef = useRef(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
 
+    const formatDurationHM = (start, end) => {
+        if (!start || !end) return null;
+        const s = new Date(start);
+        const e = new Date(end);
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+        const ms = e.getTime() - s.getTime();
+        if (ms <= 0) return null;
+        const totalMinutes = Math.round(ms / (1000 * 60));
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        if (h > 0 && m === 0) return `${h}h`;
+        if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+        return `${m}min`;
+    };
+
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
     const {isOnline} = useNetworkStatus();
@@ -1008,7 +1023,7 @@ function HomeContent({searchParams}) {
                         )}
                         {/* Affichage de la date et heure de dernière sauvegarde */}
                         <div className="last-update-info">
-                            <SubjectHoursInfo allEvents={allEvents}/>
+                            <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
                             <span>EDT à jour depuis le : {formatLastUpdate(lastUpdateTimestamp)}</span>
                         </div>
                     </div>
@@ -1044,6 +1059,9 @@ function HomeContent({searchParams}) {
                                 hour: '2-digit',
                                 minute: '2-digit'
                             })}</div>
+                            {formatDurationHM(selectedEvent.start, selectedEvent.end) && (
+                                <div className="pop-row"><span>⏳</span>Durée : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</div>
+                            )}
                             {selectedEvent.prof && <div className="pop-row"><span>👤</span>{selectedEvent.prof}</div>}
                             {selectedEvent.location &&
                                 <div className="pop-row"><span>📍</span>{selectedEvent.location}</div>}

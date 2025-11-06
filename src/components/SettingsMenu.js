@@ -20,8 +20,8 @@ export default function SettingsMenu({
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     // Le bouton update reste visible sur mobile/native; le toggle test est désormais visible pour tous
-    const isDev = (process.env.NEXT_PUBLIC_ENV || '').toUpperCase() === 'DEV';
-    const showUpdateButton = isDev ? true : (isMobile || isNative);
+    const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
+    const showUpdateButton = isDevMode ? true : (isMobile || isNative);
 
     // Récupérer la version depuis l'API ou utiliser currentVersion
     useEffect(() => {
@@ -162,11 +162,6 @@ export default function SettingsMenu({
                             </div>
 
                             <div className="setting-item copyright-item">
-                                {false && (
-                                    <div className="copyright-line">
-                                        <span className="copyright-text test-mode-badge">Version test</span>
-                                    </div>
-                                )}
                                 <div className="copyright-line">
                                     <span
                                         className="copyright-text"

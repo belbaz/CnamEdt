@@ -1,12 +1,23 @@
 "use client";
 import {useState, useEffect, useRef, useMemo} from "react";
 import {createPortal} from "react-dom";
-import {getEventTitle} from "@/utils/eventUtils";
+import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./SubjectHoursInfo.css";
 
-export default function SubjectHoursInfo({allEvents = []}) {
+export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
     const [isOpen, setIsOpen] = useState(false);
     const panelRef = useRef(null);
+
+    // Formater des heures décimales en format lisible (ex: 1h30, 45min)
+    const formatHoursHM = (decimalHours) => {
+        if (decimalHours == null || isNaN(decimalHours)) return "";
+        const totalMinutes = Math.round(decimalHours * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        if (h > 0 && m === 0) return `${h}h`;
+        if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+        return `${m}min`;
+    };
 
     // Calculer les heures par matière (total et déjà effectuées)
     const subjectHours = useMemo(() => {
@@ -51,14 +62,14 @@ export default function SubjectHoursInfo({allEvents = []}) {
         // Convertir en tableau avec pourcentage de complétion
         return Object.entries(hoursBySubject)
             .map(([subject, {total, completed}]) => {
-                const totalRounded = Math.round(total * 10) / 10;
-                const completedRounded = Math.round(completed * 10) / 10;
-                const percentage = totalRounded > 0 ? Math.round((completedRounded / totalRounded) * 100 * 10) / 10 : 0;
+                // Garder le calcul du pourcentage sur les valeurs exactes (pas arrondies)
+                const percentage = total > 0 ? Math.round(((completed / total) * 100) * 10) / 10 : 0;
                 
                 return {
                     subject,
-                    hours: totalRounded,
-                    completed: completedRounded,
+                    // Conserver aussi les valeurs brutes pour d'autres calculs si besoin
+                    hours: total,
+                    completed: completed,
                     percentage
                 };
             })
@@ -140,22 +151,24 @@ export default function SubjectHoursInfo({allEvents = []}) {
                                 <>
                                     <div className="subject-hours-list">
                                         {subjectHours.map(({subject, hours, completed, percentage}) => {
+                                            const colorIndex = getColorIndexForSubject(subject, subjectColors);
                                             return (
                                                 <div key={subject} className="subject-hours-item">
                                                     <div className="subject-hours-item-header">
                                                         <span className="subject-hours-item-name">{subject}</span>
                                                         <div className="subject-hours-item-values">
-                                                            <span className="subject-hours-item-value">{completed}h / {hours}h</span>
-                                                            <span className="subject-hours-item-percentage">{percentage}%</span>
+                                                            <span className="subject-hours-item-value">{formatHoursHM(completed)} / {formatHoursHM(hours)}</span>
                                                         </div>
                                                     </div>
                                                     <div className="subject-hours-item-bar-container">
                                                         <div className="subject-hours-item-bar">
                                                             <div 
                                                                 className="subject-hours-item-bar-fill"
+                                                                data-index={colorIndex}
                                                                 style={{width: `${percentage}%`}}
                                                             />
                                                         </div>
+                                                        <div className="subject-hours-item-bar-percent-below">{percentage}%</div>
                                                     </div>
                                                 </div>
                                             );
@@ -164,7 +177,7 @@ export default function SubjectHoursInfo({allEvents = []}) {
 
                                     <div className="subject-hours-total">
                                         <span className="subject-hours-total-label">Total</span>
-                                        <span className="subject-hours-total-value">{Math.round(totalCompleted * 10) / 10}h / {Math.round(totalHours * 10) / 10}h</span>
+                                        <span className="subject-hours-total-value">{formatHoursHM(totalCompleted)} / {formatHoursHM(totalHours)}</span>
                                     </div>
                                 </>
                             )}

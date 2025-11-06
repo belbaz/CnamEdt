@@ -15,6 +15,20 @@
     cursor: pointer;
 }
 
+/* Durée du cours, tout petit en rouge, aligné à gauche */
+.event-hours {
+    font-size: 0.68rem;
+    line-height: 1;
+    color: #ffffff;
+    font-weight: 700;
+    margin-left: auto;
+    background: #dc2626; /* red-600 */
+    padding: 0.16rem 0.5rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+
 .event-card::before {
     content: '';
     position: absolute;
@@ -184,15 +198,19 @@
     font-style: normal;
     font-size: 0.7rem;
     margin-top: 0.25rem;
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: flex !important;
+    align-items: center;
 }
 
 .location::before {
     content: "📍 ";
     opacity: 0.7;
+}
+
+.location-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Accent de couleur avec personnalité - 20 teintes bien distinctes */
@@ -285,6 +303,12 @@
         min-width: 110px;
     }
 
+    .event-hours {
+        font-size: 0.64rem;
+        margin-left: auto;
+        padding: 0.14rem 0.46rem;
+    }
+
     .event-card::before {
         height: 3px;
         border-radius: 10px 10px 0 0;
@@ -327,6 +351,12 @@
         display: flex;
         flex-direction: column;
         gap: 0;
+    }
+
+    .event-hours {
+        font-size: 0.62rem;
+        margin-left: auto;
+        padding: 0.12rem 0.44rem;
     }
 
     .event-card::before {

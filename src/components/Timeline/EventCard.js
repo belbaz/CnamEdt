@@ -9,6 +9,22 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
     const cardRef = useRef(null);
 
     const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
+    const formatDurationHours = (start, end) => {
+        if (!start || !end) return null;
+        const s = new Date(start);
+        const e = new Date(end);
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+        const ms = e.getTime() - s.getTime();
+        if (ms <= 0) return null;
+        const totalMinutes = Math.round(ms / (1000 * 60));
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        if (h > 0 && m === 0) return `${h}h`;
+        if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+        return `${m}min`;
+    };
+    const hoursLabel = formatDurationHours(event.start, event.end_time || event.end);
+    const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
 
     return (
         <li
@@ -16,7 +32,9 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
             style={stylePos}
             data-index={getColorIndexForSubject(matiere || description, subjectColors)}
             ref={cardRef}
-            onClick={() => { onOpenEventDetails && onOpenEventDetails(event); }}
+            onClick={() => {
+                onOpenEventDetails && onOpenEventDetails(event);
+            }}
         >
             <div className="event-time">
                 {formatTime(event.start)}{" - "}{formatTime(event.end)}
@@ -28,7 +46,14 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                     description && <strong>{description}</strong>
                 )}
                 {prof && <span className="prof">{prof}</span>}
-                {location && <div className="location">{location}</div>}
+                {(
+                    <div className="location">
+                        {location && <span className="location-text">{location}</span>}
+                        {isDevMode && hoursLabel && (
+                            <span className="event-hours" aria-label="Durée du cours">{hoursLabel}</span>
+                        )}
+                    </div>
+                )}
             </div>
         </li>
     );
