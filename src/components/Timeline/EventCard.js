@@ -1,8 +1,8 @@
 "use client";
 import {useEffect, useRef, useState} from "react";
 import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
-import {isDevMode} from "@/utils/env";
 import "./EventCard.css";
+import {isDevMode} from "../../utils/env";
 
 export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
     const {matiere, prof, description} = getEventTitle(event);
@@ -49,7 +49,7 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                 {(
                     <div className="location">
                         {location && <span className="location-text">{location}</span>}
-                        {hoursLabel && (
+                        {isDevMode() && hoursLabel && (
                             <span className="event-hours" aria-label="Durée du cours">{hoursLabel}</span>
                         )}
                     </div>
