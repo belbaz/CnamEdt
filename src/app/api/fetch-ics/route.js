@@ -14,6 +14,74 @@ export const runtime = 'nodejs';
 // URL par défaut (fallback si .env.local n'existe pas)
 const DEFAULT_ICS_URL = 'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
 
+// Helper function to fetch events from database (latest version of each UID)
+async function fetchEventsFromDB(supabase) {
+    try {
+        // Récupérer tous les UIDs uniques
+        const { data: allUids, error: uidsError } = await supabase
+            .from('events_versions')
+            .select('uid')
+            .not('uid', 'is', null);
+        
+        if (uidsError) {
+            console.warn('[API fetch-ics] Error fetching UIDs from DB:', uidsError.message);
+            return null;
+        }
+
+        const uniqueUids = Array.from(new Set((allUids || []).map(r => r.uid).filter(Boolean)));
+        
+        if (uniqueUids.length === 0) {
+            return [];
+        }
+
+        // Pour chaque UID, récupérer la dernière version (version_no max)
+        const BATCH_SIZE = 100;
+        const events = [];
+
+        for (let i = 0; i < uniqueUids.length; i += BATCH_SIZE) {
+            const batchUids = uniqueUids.slice(i, i + BATCH_SIZE);
+            
+            // Récupérer la dernière version de chaque UID dans ce batch
+            const { data: latestVersions, error: versionsError } = await supabase
+                .from('events_versions')
+                .select('uid, version_no, summary, start, end_time, location, description')
+                .in('uid', batchUids)
+                .order('uid', { ascending: true })
+                .order('version_no', { ascending: false });
+
+            if (versionsError) {
+                console.warn('[API fetch-ics] Error fetching latest versions:', versionsError.message);
+                continue;
+            }
+
+            // Group by UID and keep only the latest version (first one after sorting)
+            const latestByUid = new Map();
+            for (const row of (latestVersions || [])) {
+                if (!latestByUid.has(row.uid)) {
+                    latestByUid.set(row.uid, row);
+                }
+            }
+
+            // Convert to events format
+            for (const row of latestByUid.values()) {
+                events.push({
+                    uid: row.uid,
+                    summary: row.summary,
+                    start: row.start,
+                    description: row.description,
+                    end: row.end_time,
+                    location: row.location,
+                });
+            }
+        }
+
+        return events;
+    } catch (e) {
+        console.warn('[API fetch-ics] Error in fetchEventsFromDB:', e.message);
+        return null;
+    }
+}
+
 export async function GET() {
     try {
         
@@ -56,6 +124,43 @@ export async function GET() {
         }
         
         console.log('[API fetch-ics] ICS downloaded, length:', text.length);
+
+        // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible)
+        let supabase = getSupabaseServerClient();
+        let shouldParse = true;
+        let cachedEvents = null;
+
+        if (supabase) {
+            try {
+                const ics_hash = createHash('sha256').update(text).digest('hex');
+                
+                const { data: lastRows, error: lastErr } = await supabase
+                    .from('ics_history')
+                    .select('ics_hash')
+                    .order('timestamp', { ascending: false })
+                    .limit(1);
+                
+                if (!lastErr && lastRows && lastRows.length > 0) {
+                    const lastHash = lastRows[0].ics_hash;
+                    
+                    if (ics_hash === lastHash) {
+                        console.log('[API fetch-ics] ICS hash unchanged, returning cached events from DB');
+                        // Hash identique : récupérer depuis la base de données au lieu de parser
+                        cachedEvents = await fetchEventsFromDB(supabase);
+                        if (cachedEvents && cachedEvents.length > 0) {
+                            shouldParse = false;
+                        }
+                    }
+                }
+            } catch (checkErr) {
+                console.warn('[API fetch-ics] Error checking hash, will parse:', checkErr.message);
+            }
+        }
+
+        // Si les événements sont en cache et identiques, les retourner sans parser
+        if (!shouldParse && cachedEvents) {
+            return NextResponse.json(cachedEvents);
+        }
         
         const parsed = ical.sync.parseICS(text);
 
@@ -73,8 +178,11 @@ export async function GET() {
         console.log('[API fetch-ics] Events parsed:', events.length);
 
         // Server-side history snapshot (Supabase only)
+        // Note: supabase est déjà défini plus haut si disponible
         try {
-            const supabase = getSupabaseServerClient();
+            if (!supabase) {
+                supabase = getSupabaseServerClient();
+            }
             if (!supabase) {
                 console.warn('[API fetch-ics] Supabase client not available (missing env vars)');
             } else {
