@@ -46,10 +46,10 @@ export default function HistoPage() {
         router.push(`/?eventKey=${encodedKey}`);
     };
 
-    // Trier tous les événements par date de début (plus récent en premier)
+    // Trier tous les événements par date d'ajout (plus récent en premier)
     const sortedEvents = [...events].sort((a, b) => {
-        const dateA = new Date(a.start);
-        const dateB = new Date(b.start);
+        const dateA = new Date(a.first_seen);
+        const dateB = new Date(b.first_seen);
         return dateB - dateA;
     });
 
