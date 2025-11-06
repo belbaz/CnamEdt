@@ -59,6 +59,9 @@ function HomeContent({searchParams}) {
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
+    
+    // Présence d'un deep-link vers un cours précis
+    const eventKeyParam = searchParams?.get('eventKey');
 
     const formatDurationHM = (start, end) => {
         if (!start || !end) return null;
@@ -140,14 +143,14 @@ function HomeContent({searchParams}) {
                 const cached = loadEventsFromCache();
                 if (cached) {
                     console.log('[Page] Mode hors ligne - Utilisation du cache');
-                    setAllEvents(cached.events);
+            setAllEvents(cached.events);
                     setSubjectColors(cached.colors);
                     const weeks = extractAvailableWeeks(cached.events);
                     setAvailableWeeks(weeks);
-                    if (weeks.length > 0) {
-                        const weekToSelect = selectBestWeek(weeks);
-                        setSelectedWeek(weekToSelect?.monday);
-                    }
+            if (!eventKeyParam && weeks.length > 0) {
+                const weekToSelect = selectBestWeek(weeks);
+                setSelectedWeek(weekToSelect?.monday);
+            }
                     setLoading(false);
                     return; // Sortir sans erreur
                 } else {
@@ -184,7 +187,7 @@ function HomeContent({searchParams}) {
                         setSubjectColors(cached.colors);
                         const weeks = extractAvailableWeeks(cached.events);
                         setAvailableWeeks(weeks);
-                        if (weeks.length > 0) {
+                        if (!eventKeyParam && weeks.length > 0) {
                             const weekToSelect = selectBestWeek(weeks);
                             setSelectedWeek(weekToSelect?.monday);
                         }
@@ -215,9 +218,10 @@ function HomeContent({searchParams}) {
 
             const weeks = extractAvailableWeeks(data);
             setAvailableWeeks(weeks);
-
-            const weekToSelect = selectBestWeek(weeks);
-            setSelectedWeek(weekToSelect?.monday);
+            if (!eventKeyParam) {
+                const weekToSelect = selectBestWeek(weeks);
+                setSelectedWeek(weekToSelect?.monday);
+            }
 
             // Sauvegarder dans le cache
             saveEventsToCache(data, colorMapping);
@@ -244,7 +248,7 @@ function HomeContent({searchParams}) {
                 setSubjectColors(saved.colors);
                 const weeks = extractAvailableWeeks(saved.events);
                 setAvailableWeeks(weeks);
-                if (weeks.length > 0) {
+                if (!eventKeyParam && weeks.length > 0) {
                     const weekToSelect = selectBestWeek(weeks);
                     setSelectedWeek(weekToSelect?.monday);
                 }
@@ -271,7 +275,7 @@ function HomeContent({searchParams}) {
                     const weeks = extractAvailableWeeks(data);
                     setAvailableWeeks(weeks);
 
-                    if (weeks.length > 0) {
+                    if (!eventKeyParam && weeks.length > 0) {
                         const weekToSelect = selectBestWeek(weeks);
                         setSelectedWeek(weekToSelect?.monday);
                     }
@@ -409,9 +413,10 @@ function HomeContent({searchParams}) {
 
             const weeks = extractAvailableWeeks(cached.events);
             setAvailableWeeks(weeks);
-
-            const weekToSelect = selectBestWeek(weeks);
-            setSelectedWeek(weekToSelect?.monday);
+            if (!eventKeyParam) {
+                const weekToSelect = selectBestWeek(weeks);
+                setSelectedWeek(weekToSelect?.monday);
+            }
 
             setLoading(false);
         }

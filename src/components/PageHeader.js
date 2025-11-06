@@ -39,9 +39,9 @@ export default function PageHeader({
                 <div className="title-container">
                     <h1 
                         className="page-title" 
-                        onClick={() => window.location.reload()}
+                        onClick={() => { try { window.location.href = '/'; } catch { window.location.reload(); } }}
                         style={{ cursor: 'pointer' }}
-                        title="Actualiser la page"
+                        title="Revenir à l'EDT (réinitialiser l'URL)"
                     >
                         Edt
                         <img src="/cnam.svg" alt="Logo CNAM" className="cnam-logo"
