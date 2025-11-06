@@ -3,11 +3,11 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 4;
     pointer-events: none;
 }
 
 .current-time-line {
+    z-index: 100;
     position: absolute;
     top: 0;
     bottom: 0;

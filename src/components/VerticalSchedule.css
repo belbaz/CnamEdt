@@ -277,8 +277,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: #4299e1;
-    box-shadow: 0 0 4px rgba(66, 153, 225, 0.6);
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0.4) 100%);
 }
 
 .vertical-current-time-dot {
