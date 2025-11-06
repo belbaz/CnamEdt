@@ -3,6 +3,7 @@ import {useState, useEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
+import {isDevMode} from "@/utils/env";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {addTestCoursesForToday, isTestModeEnabled, setTestMode} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
@@ -72,6 +73,40 @@ function HomeContent({searchParams}) {
         if (h > 0 && m === 0) return `${h}h`;
         if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
         return `${m}min`;
+    };
+
+    // Extraire l'identifiant de la matière depuis le summary (ex: USSI0D)
+    const extractCourseIdFromSummary = (summary) => {
+        if (!summary || typeof summary !== 'string') return null;
+        // Tente: SUMMARY:USSI0D : ... ou USSI0D : ...
+        const m = summary.match(/^\s*(?:SUMMARY:)?\s*([A-Z]{3,}[A-Z0-9]*)\s*:/i);
+        return m ? m[1].toUpperCase() : null;
+    };
+
+    // Détecter le type de cours (Cours / TD / TP / ED) depuis summary/description
+    const extractCourseType = (ev) => {
+        const text = `${ev?.summary || ''} ${ev?.description || ''}`.toLowerCase();
+        if (!text.trim()) return null;
+        if (/(\bexercices?\s*dirigés?\b|\bed\b)/i.test(text)) return 'Exercices dirigés';
+        if (/\btd\b/i.test(text)) return 'Travaux dirigés';
+        if (/\btp\b/i.test(text)) return 'Travaux pratiques';
+        if (/\bcours\b/i.test(text)) return 'Cours';
+        return null;
+    };
+
+    // Retourne l'année scolaire sous forme [yyyyStart, yyyyEnd] en se basant sur la date du cours
+    // Règle: année scolaire commence en septembre (mois >= 8)
+    const getAcademicYearParts = (dateLike) => {
+        const d = new Date(dateLike || Date.now());
+        if (isNaN(d.getTime())) {
+            const now = new Date();
+            const y = now.getFullYear();
+            const start = now.getMonth() >= 8 ? y : y - 1;
+            return [start, start + 1];
+        }
+        const y = d.getFullYear();
+        const start = d.getMonth() >= 8 ? y : y - 1;
+        return [start, start + 1];
     };
 
     // Hook Capacitor pour mobile
@@ -1060,12 +1095,63 @@ function HomeContent({searchParams}) {
                                 minute: '2-digit'
                             })}</div>
                             {formatDurationHM(selectedEvent.start, selectedEvent.end) && (
-                                <div className="pop-row"><span>⏳</span>Durée : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</div>
+                                <div className="pop-row"><span>⏳</span>Durée
+                                    : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</div>
                             )}
-                            {selectedEvent.prof && <div className="pop-row"><span>👤</span>{selectedEvent.prof}</div>}
+                            {(() => {
+                                const courseType = extractCourseType(selectedEvent);
+                                const {prof: extractedProf} = getEventTitle(selectedEvent) || {};
+                                const profName = extractedProf || selectedEvent.prof;
+                                return (
+                                    <>
+                                        {courseType && (
+                                            <div className="pop-row"><span>📘</span>{courseType}</div>
+                                        )}
+                                        {profName && (
+                                            <div className="pop-row"><span>👤</span>Professeur : {profName}</div>
+                                        )}
+                                    </>
+                                );
+                            })()}
                             {selectedEvent.location &&
                                 <div className="pop-row"><span>📍</span>{selectedEvent.location}</div>}
-                            {selectedEvent.description && <div className="pop-desc">{selectedEvent.description}</div>}
+                            {isDevMode() && selectedEvent.description && (
+                                <div className="pop-desc">{selectedEvent.description}</div>
+                            )}
+                            {(() => {
+                                const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
+                                if (!courseId) return null;
+                                const [yearStart, yearEnd] = getAcademicYearParts(selectedEvent.start || Date.now());
+                                const query = `${courseId} ${yearStart} ${yearEnd}`;
+                                const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
+                                return (
+                                    <div className="pop-row" style={{marginTop: '0.5rem', justifyContent: 'center'}}>
+                                        <a
+                                            className="moodle-btn"
+                                            href={moodleUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={`Ouvrir Moodle pour ${courseId}`}
+                                        >
+                                            {/* Moodle SVG fourni avec fond blanc rond */}
+                                            <span className="moodle-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"
+                                                     aria-hidden="true">
+                                                    <path fill="#ffab40"
+                                                          d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z"/>
+                                                    <path d="M5.5 16.2H6.5V32H5.5z"/>
+                                                    <path fill="#424242"
+                                                          d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z"/>
+                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z"/>
+                                                    <path fill="#424242"
+                                                          d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z"/>
+                                                </svg>
+                                            </span>
+                                            Ouvrir dans moodle
+                                        </a>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

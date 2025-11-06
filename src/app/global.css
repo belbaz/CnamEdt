@@ -6,6 +6,7 @@
     --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
     --text-primary: #1a202c;
     --text-secondary: #2d3748;
+    --text-dev: #f59e0b;
     --text-muted: #718096;
     --border-color: #e2e8f0;
     --border-light: #edf2f7;
@@ -22,6 +23,7 @@
     --bg-gradient: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     --text-primary: #f7fafc;
     --text-secondary: #e2e8f0;
+    --text-dev: #f59e0b;
     --text-muted: #a0aec0;
     --border-color: #4a5568;
     --border-light: #374151;

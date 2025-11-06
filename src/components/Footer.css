@@ -31,7 +31,7 @@
 }
 
 .app-footer-dev {
-    color: #f59e0b;
+    color: var(--text-dev);
     font-weight: 600;
 }
 

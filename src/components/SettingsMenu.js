@@ -2,6 +2,7 @@
 import {useState, useEffect, useRef} from "react";
 import "./SettingsMenu.css";
 import Toast from "./Toast";
+import {isDevMode} from "../utils/env";
 
 export default function SettingsMenu({
                                          onOpenChange,
@@ -19,8 +20,7 @@ export default function SettingsMenu({
     const [version, setVersion] = useState(currentVersion || null);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
-    // Le bouton update reste visible sur mobile/native; le toggle test est désormais visible pour tous
-    const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
+    // Le bouton update reste visible sur mobile/native
     const showUpdateButton = isDevMode ? true : (isMobile || isNative);
 
     // Récupérer la version depuis l'API ou utiliser currentVersion
@@ -68,26 +68,26 @@ export default function SettingsMenu({
         if (isOpen) {
             // Sauvegarder la position du scroll actuelle
             const scrollY = window.scrollY;
-            
+
             // Ajouter la classe pour forcer le background gradient
             document.body.classList.add('modal-open');
-            
+
             // Bloquer le scroll
             document.body.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = '100%';
-            
+
             return () => {
                 // Retirer la classe
                 document.body.classList.remove('modal-open');
-                
+
                 // Restaurer le scroll quand la modale est fermée
                 document.body.style.overflow = '';
                 document.body.style.position = '';
                 document.body.style.top = '';
                 document.body.style.width = '';
-                
+
                 // Restaurer la position du scroll
                 window.scrollTo(0, scrollY);
             };
@@ -95,7 +95,8 @@ export default function SettingsMenu({
     }, [isOpen]);
 
     // Désactiver l'easter egg: aucun basculement via copyright désormais
-    const handleCopyrightClick = () => {};
+    const handleCopyrightClick = () => {
+    };
 
     return (
         <>
@@ -130,7 +131,7 @@ export default function SettingsMenu({
 
                             {/* Canal supprimé: interface épurée */}
 
-                            {showUpdateButton && (
+                            {(isDevMode() || isNative || isMobile) && (
                                 <div className="setting-item setting-button-item">
                                     <button
                                         className="settings-action check-updates-button"
@@ -150,7 +151,7 @@ export default function SettingsMenu({
                             )}
 
                             <div className="setting-item setting-button-item">
-                                <a 
+                                <a
                                     href={"https://belbaz.vercel.app/contact"}
                                     target="_blank"
                                     rel="noopener noreferrer"

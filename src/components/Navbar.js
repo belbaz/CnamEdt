@@ -3,6 +3,7 @@ import {useState, useEffect} from "react";
 import PageHeader from "./PageHeader";
 import WeekPicker from "./WeekPicker";
 import "./Navbar.css";
+import {isDevMode} from "../utils/env";
 
 export default function Navbar({
                                    darkMode,
@@ -31,7 +32,6 @@ export default function Navbar({
                                    showFilter = false
                                }) {
     const [isScrolled, setIsScrolled] = useState(false);
-    const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
 
     const handleClearCache = () => {
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -169,7 +169,7 @@ export default function Navbar({
                             )}
                         </button>
                     )}
-                    {isDevMode && (
+                    {isDevMode() && (
                         <button
                             className="dev-clear-cache-btn"
                             onClick={handleClearCache}

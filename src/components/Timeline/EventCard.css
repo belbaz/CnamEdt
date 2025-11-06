@@ -112,6 +112,43 @@
     padding: 0.85rem 0.9rem 1rem 0.9rem;
 }
 
+/* Bouton Moodle dans la modale */
+.moodle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #f97316; /* orange-500 */
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid #ea580c; /* orange-600 */
+    border-radius: 10px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.moodle-btn:hover {
+    background: #fb923c; /* orange-400 */
+    border-color: #f97316;
+}
+
+/* Icône Moodle avec fond blanc rond pour contraste */
+.moodle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08) inset;
+}
+
+.moodle-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -140,7 +177,7 @@
 .pop-desc {
     margin-top: 0.5rem;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--text-dev);
 }
 
 .event-card:hover::before {

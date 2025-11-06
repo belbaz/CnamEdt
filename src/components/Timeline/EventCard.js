@@ -1,6 +1,7 @@
 "use client";
 import {useEffect, useRef, useState} from "react";
 import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
+import {isDevMode} from "@/utils/env";
 import "./EventCard.css";
 
 export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
@@ -24,7 +25,6 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
         return `${m}min`;
     };
     const hoursLabel = formatDurationHours(event.start, event.end_time || event.end);
-    const isDevMode = process.env.NEXT_PUBLIC_ENV === "DEV";
 
     return (
         <li
@@ -49,7 +49,7 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                 {(
                     <div className="location">
                         {location && <span className="location-text">{location}</span>}
-                        {isDevMode && hoursLabel && (
+                        {hoursLabel && (
                             <span className="event-hours" aria-label="Durée du cours">{hoursLabel}</span>
                         )}
                     </div>

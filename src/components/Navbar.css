@@ -136,9 +136,9 @@
     background: var(--bg-secondary);
     padding: 0.625rem 1rem;
     border-radius: 12px;
-    border: 1px solid #f97316;
+    border: 1px solid var(--text-dev);
     box-shadow: var(--shadow-sm);
-    color: #f97316;
+    color: var(--text-dev);
     font-size: 0.875rem;
     font-weight: 700;
     cursor: pointer;
