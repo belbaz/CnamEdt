@@ -70,11 +70,24 @@ function buildEventPayload(rawEvent) {
 }
 
 function computeEventContentHash(event) {
+    // Normaliser les dates pour éviter les différences de format (millisecondes, etc.)
+    const normalizeDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            // Utiliser le timestamp en millisecondes pour éviter les problèmes de format
+            return date.getTime().toString();
+        } catch {
+            return '';
+        }
+    };
+    
     const normalized = [
         event.uid || '',
         (event.summary || '').toLowerCase(),
-        event.start || '',
-        event.end || '',
+        normalizeDate(event.start),
+        normalizeDate(event.end),
         (event.location || '').toLowerCase(),
         normalizeDescriptionForHash(event.description || '')
     ].join('\u241F');
@@ -82,37 +95,58 @@ function computeEventContentHash(event) {
 }
 
 async function loadLatestEventMap(supabase) {
-    const MAX_ROWS = 10000;
     try {
+        // Récupérer TOUS les événements avec pagination si nécessaire
+        // Supabase a une limite par défaut, donc on utilise une limite élevée
+        const LIMIT = 10000; // Limite suffisamment élevée pour tous les événements
+        
         const { data, error } = await supabase
             .from('events_versions')
             .select('uid, version_no, summary, start, end_time, location, description, content_hash')
             .order('uid', { ascending: true })
             .order('version_no', { ascending: false })
-            .limit(MAX_ROWS);
+            .limit(LIMIT);
 
         if (error) {
             console.warn('[API fetch-ics] Error loading latest events:', error.message);
             return new Map();
         }
 
-        const map = new Map();
-        for (const row of (data || [])) {
-            if (!row?.uid || map.has(row.uid)) continue;
-            const event = buildEventPayload({
-                uid: row.uid,
-                summary: row.summary,
-                description: row.description,
-                location: row.location,
-                start: row.start,
-                end: row.end_time
-            });
-            map.set(row.uid, {
-                event,
-                content_hash: row.content_hash,
-                version_no: row.version_no
-            });
+        if (!data || data.length === 0) {
+            console.log('[API fetch-ics] No existing events in DB (first sync)');
+            return new Map();
         }
+
+        // Filtrer pour ne garder que la dernière version de chaque UID
+        const map = new Map();
+        for (const row of data) {
+            if (!row?.uid) continue;
+            
+            // Si cet UID n'est pas encore dans la map, l'ajouter
+            // (comme les données sont triées par uid puis version_no DESC, la première occurrence est la plus récente)
+            if (!map.has(row.uid)) {
+                const event = buildEventPayload({
+                    uid: row.uid,
+                    summary: row.summary,
+                    description: row.description,
+                    location: row.location,
+                    start: row.start,
+                    end: row.end_time
+                });
+                map.set(row.uid, {
+                    event,
+                    content_hash: row.content_hash,
+                    version_no: row.version_no
+                });
+            }
+        }
+        
+        console.log('[API fetch-ics] Loaded', map.size, 'unique events (latest versions) from', data.length, 'total rows');
+        
+        if (data.length >= LIMIT) {
+            console.warn('[API fetch-ics] WARNING: Retrieved maximum rows (', LIMIT, '), some events may be missing!');
+        }
+        
         return map;
     } catch (err) {
         console.warn('[API fetch-ics] loadLatestEventMap error:', err.message);
@@ -347,6 +381,7 @@ export async function GET() {
                         seenUids.add(event.uid);
 
                         if (!latest) {
+                            // Nouvel événement jamais vu
                             console.log('[API fetch-ics] NEW event:', event.uid, '-', event.summary);
                             diff.added.push(event);
                             inserts.push({
@@ -363,7 +398,9 @@ export async function GET() {
                             continue;
                         }
 
+                        // Comparer les hashs de contenu
                         if (latest.content_hash !== contentHash) {
+                            // Le contenu a changé, créer une nouvelle version
                             console.log('[API fetch-ics] UPDATED event:', event.uid, '-', event.summary, '| old hash:', latest.content_hash.substring(0, 8), '| new hash:', contentHash.substring(0, 8));
                             diff.updated.push({
                                 uid: event.uid,
@@ -386,8 +423,8 @@ export async function GET() {
                                 content_hash: contentHash
                             });
                         } else {
-                            // Hash identique, aucun changement
-                            // Ne rien faire, ne pas insérer
+                            // Hash identique = aucun changement, ne rien insérer
+                            // console.log('[API fetch-ics] UNCHANGED event:', event.uid, '-', event.summary);
                         }
                     }
 

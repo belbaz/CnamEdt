@@ -20,6 +20,7 @@ import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
+import DevNotification from "@/components/DevNotification";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -60,6 +61,9 @@ function HomeContent({searchParams}) {
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
+    // Notification de debug pour le mode dev
+    const [devNotification, setDevNotification] = useState(null);
+    const [showDevNotification, setShowDevNotification] = useState(false);
     
     // Présence d'un deep-link vers un cours précis
     const eventKeyParam = searchParams?.get('eventKey');
@@ -215,6 +219,7 @@ function HomeContent({searchParams}) {
                     : [];
 
             const meta = response?.meta || {};
+            const diff = response?.diff || { added: [], updated: [], removed: [] };
             const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
 
             if (!eventsData || eventsData.length === 0) {
@@ -243,6 +248,14 @@ function HomeContent({searchParams}) {
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger
             setHasNetworkError(false);
+            
+            // Afficher une notification de debug en mode dev
+            if (devMode) {
+                const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
+                const notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges} (${diff.added.length} added, ${diff.updated.length} updated, ${diff.removed.length} removed)`;
+                setDevNotification(notificationMsg);
+                setShowDevNotification(true);
+            }
         } catch (err) {
             // Vérifier si c'est une erreur réseau et si on a du cache
             const isNetworkError = err.message.includes('Failed to fetch') ||
@@ -1108,6 +1121,12 @@ function HomeContent({searchParams}) {
             <ScrollToTop/>
 
             <OfflineNotification forceShow={hasNetworkError}/>
+            
+            <DevNotification 
+                message={devNotification} 
+                isVisible={showDevNotification} 
+                onClose={() => setShowDevNotification(false)} 
+            />
 
             {/* Test mode indicator removed; show badge in footer instead */}
 
