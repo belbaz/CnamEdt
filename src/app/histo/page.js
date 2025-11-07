@@ -99,12 +99,13 @@ export default function HistoPage() {
                 gap: "0.75rem"
             }}>
                 {sortedEvents.map((row) => {
+                    const listKey = row.uid ? `${row.uid}|${row.event_key}` : `${row.event_key}|${row.first_seen}`;
                     const startDate = new Date(row.start);
                     const endDate = new Date(row.end_time || row.end || row.start);
                     const matiere = formatEventSummary(row.summary);
                     return (
                         <li
-                            key={row.event_key}
+                            key={listKey}
                             onClick={() => handleCourseClick(row.event_key, startDate)}
                             style={{
                                 background: "var(--bg-secondary)",

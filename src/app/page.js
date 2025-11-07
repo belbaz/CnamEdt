@@ -168,10 +168,10 @@ function HomeContent({searchParams}) {
                 userAgent: window.navigator.userAgent.substring(0, 100)
             };
 
-            let data;
+            let response;
             try {
                 // Récupérer les données normales
-                data = await fetchICSEvents(isNative, Http);
+                response = await fetchICSEvents(isNative, Http);
             } catch (fetchError) {
                 // Si l'erreur est due à la connexion, essayer le cache
                 const isNetworkError = !isOnline ||
@@ -208,17 +208,26 @@ function HomeContent({searchParams}) {
                 throw fetchError;
             }
 
-            if (!data || data.length === 0) {
+            const eventsData = Array.isArray(response?.events)
+                ? response.events
+                : Array.isArray(response)
+                    ? response
+                    : [];
+
+            const meta = response?.meta || {};
+            const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
+
+            if (!eventsData || eventsData.length === 0) {
                 throw new Error("Aucun emploi du temps trouvé");
             }
 
-            data.sort((a, b) => new Date(a.start) - new Date(b.start));
-            setAllEvents(data);
+            eventsData.sort((a, b) => new Date(a.start) - new Date(b.start));
+            setAllEvents(eventsData);
 
-            const colorMapping = createSubjectColorMapping(data);
+            const colorMapping = createSubjectColorMapping(eventsData);
             setSubjectColors(colorMapping);
 
-            const weeks = extractAvailableWeeks(data);
+            const weeks = extractAvailableWeeks(eventsData);
             setAvailableWeeks(weeks);
             if (!eventKeyParam) {
                 const weekToSelect = selectBestWeek(weeks);
@@ -226,10 +235,10 @@ function HomeContent({searchParams}) {
             }
 
             // Sauvegarder dans le cache
-            saveEventsToCache(data, colorMapping);
+            saveEventsToCache(eventsData, colorMapping);
 
             // Historiser les matières détectées si elles ont changé
-            await saveSnapshotIfChanged(data, {skip: false});
+            await saveSnapshotIfChanged(eventsData, {skip: shouldSkipHistory});
             // Mettre à jour le timestamp dans l'état
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger

@@ -68,7 +68,19 @@ async function fetchEventsForMobile(CapacitorHttp) {
     const events = parseICSContent(icsContent);
     console.log('[ICS Service] Events parsed:', events.length);
     
-    return events;
+    return {
+        events,
+        diff: {
+            added: [],
+            updated: [],
+            removed: []
+        },
+        meta: {
+            source: 'mobile-direct',
+            fromCache: false,
+            changed: null
+        }
+    };
 }
 
 /**
@@ -93,19 +105,42 @@ async function fetchEventsForWeb() {
         
         const data = await res.json();
         
-        // Vérifier si c'est un objet d'erreur
-        if (data.error) {
+        if (data?.error) {
             throw new Error(data.error + (data.details ? ` - ${data.details}` : ''));
         }
-        
-        // Vérifier que c'est bien un tableau d'événements
-        if (!Array.isArray(data)) {
-            throw new Error('Format de réponse invalide (attendu: array)');
+
+        let events = [];
+        let diff = { added: [], updated: [], removed: [] };
+        let meta = { source: 'api', fromCache: false, changed: null };
+
+        if (Array.isArray(data)) {
+            events = data;
+            meta.source = 'legacy-array';
+        } else if (data && typeof data === 'object') {
+            if (Array.isArray(data.events)) {
+                events = data.events;
+            } else {
+                events = [];
+            }
+
+            if (data.diff && typeof data.diff === 'object') {
+                diff = {
+                    added: Array.isArray(data.diff.added) ? data.diff.added : [],
+                    updated: Array.isArray(data.diff.updated) ? data.diff.updated : [],
+                    removed: Array.isArray(data.diff.removed) ? data.diff.removed : []
+                };
+            }
+
+            if (data.meta && typeof data.meta === 'object') {
+                meta = { ...meta, ...data.meta };
+            }
+        } else {
+            throw new Error('Format de réponse invalide (attendu: object)');
         }
+
+        console.log('[ICS Service] Events fetched:', events.length, 'changes:', (diff.added.length + diff.updated.length + diff.removed.length));
         
-        console.log('[ICS Service] Events fetched:', data.length);
-        
-        return data;
+        return { events, diff, meta };
     } catch (err) {
         // Pour les erreurs réseau, ne pas logger comme une erreur critique
         // (sera géré en amont avec le cache)

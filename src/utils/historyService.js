@@ -60,6 +60,9 @@ export async function saveSnapshotIfChanged(events, options = {}) {
     const fp = fingerprintSubjects(subjects);
     const history = loadHistory();
     const last = history[history.length - 1];
+    if (last && last.fingerprint === fp) {
+        return null;
+    }
     const { added, removed } = diffSubjects(last?.subjects || [], subjects);
     const snapshot = {
         id: `${Date.now()}`,

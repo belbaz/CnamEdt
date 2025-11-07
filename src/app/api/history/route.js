@@ -56,6 +56,7 @@ export async function GET() {
                 const location = (r.location || '').trim();
                 const event_key = `${startISO}|${summary}|${location}`;
                 return {
+                    uid: r.uid,
                     event_key,
                     summary: r.summary,
                     start: r.start,
