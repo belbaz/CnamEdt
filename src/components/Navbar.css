@@ -131,6 +131,15 @@
     background: var(--bg-primary);
 }
 
+/* Conteneur des boutons DEV */
+.dev-buttons-container {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
 /* Bouton DEV - Clear cache */
 .dev-clear-cache-btn {
     background: var(--bg-secondary);
@@ -152,6 +161,31 @@
 }
 
 .dev-clear-cache-btn:hover {
+    background: #f97316;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Bouton DEV - Historique */
+.dev-history-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--text-dev);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-dev);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.dev-history-btn:hover {
     background: #f97316;
     color: white;
     transform: translateY(-1px);
@@ -202,9 +236,19 @@
         font-size: 0.8rem;
     }
 
+    .dev-buttons-container {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
     .dev-clear-cache-btn {
         padding: 0.5rem 0.875rem;
         font-size: 0.8rem;
+    }
+
+    .dev-history-btn {
+        width: 40px;
+        height: 40px;
     }
 }
 
@@ -252,5 +296,10 @@
         padding: 0.5rem 0.75rem;
         font-size: 0.75rem;
         border-radius: 10px;
+    }
+
+    .dev-history-btn {
+        width: 38px;
+        height: 38px;
     }
 }
