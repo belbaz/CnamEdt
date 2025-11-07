@@ -43,8 +43,16 @@ function toISOStringSafe(value) {
 }
 
 function computeStableUid(rawEvent) {
-    const explicitUid = (rawEvent.uid || '').trim();
-    if (explicitUid) return explicitUid;
+    // ⚠️ NE JAMAIS utiliser l'UID du fichier ICS car il peut changer à chaque génération
+    // (timestamps, UUIDs dynamiques générés par le serveur, etc.)
+    // 
+    // ✅ TOUJOURS calculer un UID stable basé sur le contenu immuable :
+    // - Date de début (identifie le créneau)
+    // - Titre du cours (identifie la matière)
+    // - Lieu (identifie la salle)
+    // 
+    // Ces 3 champs ensemble forment un identifiant unique et stable pour un cours
+    
     const startISO = toISOStringSafe(rawEvent.start) || '';
     const summary = sanitizeText(rawEvent.summary || '');
     const location = sanitizeText(rawEvent.location || '');
@@ -92,6 +100,60 @@ function computeEventContentHash(event) {
         normalizeDescriptionForHash(event.description || '')
     ].join('\u241F');
     return createHash('sha256').update(normalized).digest('hex');
+}
+
+// Fonction pour comparer deux événements et retourner les champs qui ont changé
+function compareEvents(oldEvent, newEvent) {
+    const changes = [];
+    
+    // Normaliser les dates pour la comparaison
+    const normalizeDate = (dateStr) => {
+        if (!dateStr) return '';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            return date.getTime().toString();
+        } catch {
+            return '';
+        }
+    };
+    
+    // Comparer UID
+    if ((oldEvent.uid || '') !== (newEvent.uid || '')) {
+        changes.push(`uid: "${oldEvent.uid}" → "${newEvent.uid}"`);
+    }
+    
+    // Comparer summary
+    if ((oldEvent.summary || '').toLowerCase() !== (newEvent.summary || '').toLowerCase()) {
+        changes.push(`summary: "${oldEvent.summary}" → "${newEvent.summary}"`);
+    }
+    
+    // Comparer dates
+    const oldStart = normalizeDate(oldEvent.start);
+    const newStart = normalizeDate(newEvent.start);
+    if (oldStart !== newStart) {
+        changes.push(`start: ${oldEvent.start} → ${newEvent.start}`);
+    }
+    
+    const oldEnd = normalizeDate(oldEvent.end);
+    const newEnd = normalizeDate(newEvent.end);
+    if (oldEnd !== newEnd) {
+        changes.push(`end: ${oldEvent.end} → ${newEvent.end}`);
+    }
+    
+    // Comparer location
+    if ((oldEvent.location || '').toLowerCase() !== (newEvent.location || '').toLowerCase()) {
+        changes.push(`location: "${oldEvent.location}" → "${newEvent.location}"`);
+    }
+    
+    // Comparer description
+    const oldDesc = normalizeDescriptionForHash(oldEvent.description || '');
+    const newDesc = normalizeDescriptionForHash(newEvent.description || '');
+    if (oldDesc !== newDesc) {
+        changes.push(`description: [${oldDesc.length} chars] → [${newDesc.length} chars]`);
+    }
+    
+    return changes;
 }
 
 async function loadLatestEventMap(supabase) {
@@ -401,7 +463,11 @@ export async function GET() {
                         // Comparer les hashs de contenu
                         if (latest.content_hash !== contentHash) {
                             // Le contenu a changé, créer une nouvelle version
-                            console.log('[API fetch-ics] UPDATED event:', event.uid, '-', event.summary, '| old hash:', latest.content_hash.substring(0, 8), '| new hash:', contentHash.substring(0, 8));
+                            const changedFields = compareEvents(latest.event, event);
+                            console.log('[API fetch-ics] UPDATED event:', event.uid, '-', event.summary);
+                            console.log('  → Hash: old:', latest.content_hash.substring(0, 8), '| new:', contentHash.substring(0, 8));
+                            console.log('  → Changed fields:', changedFields.length > 0 ? changedFields.join(', ') : 'NONE (hash mismatch without field changes - BUG!)');
+                            
                             diff.updated.push({
                                 uid: event.uid,
                                 before: {
@@ -409,7 +475,8 @@ export async function GET() {
                                     version_no: latest.version_no,
                                     content_hash: latest.content_hash
                                 },
-                                after: event
+                                after: event,
+                                changedFields // Ajouter les champs modifiés au diff
                             });
                             inserts.push({
                                 uid: event.uid,

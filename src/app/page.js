@@ -252,9 +252,42 @@ function HomeContent({searchParams}) {
             // Afficher une notification de debug en mode dev
             if (devMode) {
                 const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
-                const notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges} (${diff.added.length} added, ${diff.updated.length} updated, ${diff.removed.length} removed)`;
+                
+                // Compter les champs modifiés
+                const fieldChanges = {};
+                if (diff.updated && Array.isArray(diff.updated)) {
+                    diff.updated.forEach(update => {
+                        if (update.changedFields && Array.isArray(update.changedFields)) {
+                            update.changedFields.forEach(change => {
+                                const fieldName = change.split(':')[0].trim();
+                                fieldChanges[fieldName] = (fieldChanges[fieldName] || 0) + 1;
+                            });
+                        }
+                    });
+                }
+                
+                // Créer le message avec les champs modifiés
+                let notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}`;
+                if (diff.added.length > 0) notificationMsg += ` | +${diff.added.length} added`;
+                if (diff.updated.length > 0) {
+                    notificationMsg += ` | ~${diff.updated.length} updated`;
+                    const fieldsList = Object.entries(fieldChanges)
+                        .map(([field, count]) => `${field}(${count})`)
+                        .join(', ');
+                    if (fieldsList) {
+                        notificationMsg += ` [${fieldsList}]`;
+                    }
+                }
+                if (diff.removed.length > 0) notificationMsg += ` | -${diff.removed.length} removed`;
+                
                 setDevNotification(notificationMsg);
                 setShowDevNotification(true);
+                
+                // Logger aussi dans la console
+                console.log('[DEV] Sync summary:', notificationMsg);
+                if (Object.keys(fieldChanges).length > 0) {
+                    console.log('[DEV] Modified fields breakdown:', fieldChanges);
+                }
             }
         } catch (err) {
             // Vérifier si c'est une erreur réseau et si on a du cache
