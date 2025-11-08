@@ -16,7 +16,9 @@
     "mobile:android": "npx cap open android",
     "mobile:sync": "npx cap sync android",
     "icons:android": "node scripts/generate-android-icons.js",
-    "icons:web": "node scripts/generate-favicons.js"
+    "icons:web": "node scripts/generate-favicons.js",
+    "test:automation": "node scripts/test-automation.js",
+    "test:automation:prod": "node scripts/test-automation.js https://votre-domaine.vercel.app"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

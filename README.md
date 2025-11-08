@@ -10,7 +10,46 @@ Application web et mobile pour consulter l'emploi du temps EICNAM.
 - **Web** : Vercel (serverless functions)
 - **Mobile** : Capacitor 6.0 (APK Android)
 - **Styling** : CSS modules + CSS custom properties
-- **Storage** : Supabase (hébergement APK)
+- **Storage** : Supabase (hébergement APK + base de données)
+- **Automatisation** : Vercel Cron Jobs + GitHub Actions
+
+---
+
+## 🤖 Automatisation (Nouveau !)
+
+Le système d'EDT se met à jour **automatiquement toutes les heures** sans intervention manuelle.
+
+### 🚀 Démarrage rapide (5 min)
+
+1. **Créer la table de test dans Supabase :**
+   - Ouvrir Supabase → SQL Editor
+   - Copier-coller : `supabase-sql/create_test_edt_table.sql`
+   - Exécuter
+
+2. **Tester en local :**
+   ```bash
+   npm run test:automation
+   ```
+
+3. **Déployer :**
+   ```bash
+   git push
+   ```
+   
+   ✅ C'est tout ! L'automatisation est active.
+
+### 📚 Documentation complète
+
+- **[INDEX_AUTOMATION.md](INDEX_AUTOMATION.md)** - Index de toute la documentation
+- **[QUICK_START_AUTOMATION.md](QUICK_START_AUTOMATION.md)** ⭐ Guide rapide
+- **[AUTOMATION_SUMMARY.md](AUTOMATION_SUMMARY.md)** - Vue d'ensemble
+- **[TROUBLESHOOTING_AUTOMATION.md](TROUBLESHOOTING_AUTOMATION.md)** - Dépannage
+
+### 🔍 Vérification
+
+- **Page monitoring :** `/monitoring`
+- **Vérifier la DB :** `SELECT * FROM test_edt;`
+- **Logs Vercel :** Dashboard → Cron Jobs
 
 ---
 

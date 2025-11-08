@@ -1,0 +1,53 @@
+name: Update EDT Automatique
+
+on:
+  schedule:
+    # Toutes les heures à la minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permet de lancer manuellement depuis GitHub
+
+jobs:
+  update-edt:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📅 Mise à jour EDT via API
+        run: |
+          echo "🚀 Appel de l'API fetch-ics..."
+          response=$(curl -s -w "\n%{http_code}" https://${{ secrets.VERCEL_DOMAIN }}/api/fetch-ics || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ fetch-ics OK (HTTP $http_code)"
+            echo "$body" | jq '.' || echo "$body"
+          else
+            echo "❌ fetch-ics ERREUR (HTTP $http_code)"
+            echo "$body"
+            exit 1
+          fi
+
+      - name: 🧪 Mise à jour table de test
+        run: |
+          echo "🚀 Appel de l'API test-update..."
+          response=$(curl -s -w "\n%{http_code}" https://${{ secrets.VERCEL_DOMAIN }}/api/test-update || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ test-update OK (HTTP $http_code)"
+            echo "$body" | jq '.' || echo "$body"
+          else
+            echo "⚠️ test-update ERREUR (HTTP $http_code)"
+            echo "$body"
+            # Ne pas fail si seulement le test échoue
+          fi
+
+      - name: 📊 Résumé
+        if: always()
+        run: |
+          echo "================================================"
+          echo "  Mise à jour EDT terminée"
+          echo "  Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "================================================"
+
