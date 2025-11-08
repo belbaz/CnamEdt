@@ -46,50 +46,50 @@ Ce fichier centralise toute la documentation du système d'automatisation. Chois
 
 ### 🗄️ Base de données
 
-**[supabase-sql/README.md](supabase-sql/README.md)**
+**[supabase-sql/README.md](../supabase-sql/README.md)**
 - Scripts SQL
 - Structure des tables
 - Configuration RLS
 - Vérification
 
-**[supabase-sql/create_test_edt_table.sql](supabase-sql/create_test_edt_table.sql)**
+**[supabase-sql/create_test_edt_table.sql](../supabase-sql/create_test_edt_table.sql)**
 - Script de création de table
 - À exécuter dans Supabase
 
 ### 🔄 GitHub Actions
 
-**[.github/README.md](.github/README.md)**
+**[.github/README.md](../.github/README.md)**
 - Configuration des secrets
 - Utilisation du workflow
 - Exécution manuelle
 
-**[.github/workflows/update-edt.yml](.github/workflows/update-edt.yml)**
+**[.github/workflows/update-edt.yml](../.github/workflows/update-edt.yml)**
 - Code du workflow
 - Configuration cron
 
 ### 💻 Code source
 
-**[src/app/api/test-update/route.js](src/app/api/test-update/route.js)**
+**[src/app/api/test-update/route.js](../src/app/api/test-update/route.js)**
 - API de test
 - Mise à jour timestamp
 
-**[src/app/monitoring/page.jsx](src/app/monitoring/page.jsx)**
+**[src/app/monitoring/page.jsx](../src/app/monitoring/page.jsx)**
 - Interface de monitoring
 - Visualisation temps réel
 
 ### 🧪 Scripts de test
 
-**[scripts/test-automation.js](scripts/test-automation.js)**
+**[scripts/test-automation.js](../scripts/test-automation.js)**
 - Script Node.js
 - Test des APIs
 
-**[scripts/test-automation.ps1](scripts/test-automation.ps1)**
+**[scripts/test-automation.ps1](../scripts/test-automation.ps1)**
 - Script PowerShell (Windows)
 - Même fonctionnalité
 
 ### ⚙️ Configuration
 
-**[vercel.json](vercel.json)**
+**[vercel.json](../vercel.json)**
 - Configuration Vercel Cron Jobs
 - 2 cron jobs définis
 

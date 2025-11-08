@@ -1,55 +1,67 @@
 # 📱 EDT EICNAM - Emploi du temps
 
-Application web et mobile pour consulter l'emploi du temps EICNAM.
+Application web et mobile pour consulter l'emploi du temps EICNAM en temps réel.
+
+---
+
+## 🎯 Fonctionnalités
+
+### 📅 Emploi du temps
+- Affichage de l'emploi du temps par semaine
+- Vue timeline avec indicateur de temps actuel
+- Filtrage par matière et type de cours
+- Mode compact pour vue d'ensemble
+
+### 🤖 Automatisation
+- **Mise à jour automatique** toutes les heures via GitHub Actions
+- Détection des changements de cours
+- Historique des modifications
+- Page de monitoring en temps réel
+
+### 📱 Multi-plateforme
+- **Web :** Application responsive (Vercel)
+- **Mobile :** APK Android (Capacitor)
+- **Offline :** Fonctionne sans connexion
+- **PWA :** Installable sur mobile/desktop
+
+### ⚙️ Fonctionnalités avancées
+- Système de mise à jour APK automatique
+- Notifications push (mobile)
+- Mode sombre/clair
+- Export des cours
 
 ---
 
 ## 🛠️ Technologies
 
-- **Frontend** : React 19 + Next.js 16
-- **Web** : Vercel (serverless functions)
-- **Mobile** : Capacitor 6.0 (APK Android)
-- **Styling** : CSS modules + CSS custom properties
-- **Storage** : Supabase (hébergement APK + base de données)
-- **Automatisation** : Vercel Cron Jobs + GitHub Actions
+- **Frontend :** React 19 + Next.js 16 (App Router)
+- **Backend :** Next.js API Routes (serverless)
+- **Mobile :** Capacitor 6.0 (APK Android)
+- **Base de données :** Supabase (PostgreSQL)
+- **Automatisation :** GitHub Actions
+- **Déploiement :** Vercel + Supabase Storage
 
 ---
 
-## 🤖 Automatisation (Nouveau !)
+## 📚 Documentation
 
-Le système d'EDT se met à jour **automatiquement toutes les heures** sans intervention manuelle.
+**Toute la documentation se trouve dans le dossier [`documentation/`](documentation/)**
 
-### 🚀 Démarrage rapide (5 min)
+### 📖 Guides principaux
 
-1. **Créer la table de test dans Supabase :**
-   - Ouvrir Supabase → SQL Editor
-   - Copier-coller : `supabase-sql/create_test_edt_table.sql`
-   - Exécuter
+- **[documentation/QUICK_START_AUTOMATION.md](documentation/QUICK_START_AUTOMATION.md)** - Installation automatisation (5 min)
+- **[documentation/DEPLOY_GUIDE.md](documentation/DEPLOY_GUIDE.md)** - Déploiement web et mobile
+- **[documentation/INDEX_AUTOMATION.md](documentation/INDEX_AUTOMATION.md)** - Index complet de la documentation
+- **[documentation/README.md](documentation/README.md)** - Index du dossier documentation
 
-2. **Tester en local :**
-   ```bash
-   npm run test:automation
-   ```
+### 🔗 Accès rapide
 
-3. **Déployer :**
-   ```bash
-   git push
-   ```
-   
-   ✅ C'est tout ! L'automatisation est active.
-
-### 📚 Documentation complète
-
-- **[INDEX_AUTOMATION.md](INDEX_AUTOMATION.md)** - Index de toute la documentation
-- **[QUICK_START_AUTOMATION.md](QUICK_START_AUTOMATION.md)** ⭐ Guide rapide
-- **[AUTOMATION_SUMMARY.md](AUTOMATION_SUMMARY.md)** - Vue d'ensemble
-- **[TROUBLESHOOTING_AUTOMATION.md](TROUBLESHOOTING_AUTOMATION.md)** - Dépannage
-
-### 🔍 Vérification
-
-- **Page monitoring :** `/monitoring`
-- **Vérifier la DB :** `SELECT * FROM test_edt;`
-- **Logs Vercel :** Dashboard → Cron Jobs
+| Documentation | Lien |
+|---------------|------|
+| **Automatisation** | [QUICK_START_AUTOMATION.md](documentation/QUICK_START_AUTOMATION.md) |
+| **Dépannage** | [TROUBLESHOOTING_AUTOMATION.md](documentation/TROUBLESHOOTING_AUTOMATION.md) |
+| **Architecture** | [ARCHITECTURE_AUTOMATION.md](documentation/ARCHITECTURE_AUTOMATION.md) |
+| **Déploiement** | [DEPLOY_GUIDE.md](documentation/DEPLOY_GUIDE.md) |
 
 ---
 

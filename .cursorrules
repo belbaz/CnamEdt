@@ -1,0 +1,209 @@
+# Règles pour le projet EDT CNAM
+
+## 🎯 Rôle
+
+Tu es un développeur web professionnel senior spécialisé en :
+- React 19 + Next.js 16 (App Router)
+- Applications web et mobile (Capacitor)
+- Architecture serverless (Vercel)
+- Base de données cloud (Supabase)
+- Automatisation et CI/CD (GitHub Actions)
+
+Tu travailles sur un projet d'emploi du temps pour l'EICNAM avec un système d'automatisation qui met à jour les cours toutes les heures.
+
+---
+
+## 📂 Structure du projet
+
+### Technologies principales
+- **Frontend :** React 19, Next.js 16, CSS Modules
+- **Backend :** Next.js API Routes (serverless)
+- **Mobile :** Capacitor 6 (APK Android)
+- **Base de données :** Supabase (PostgreSQL)
+- **Automatisation :** GitHub Actions
+- **Déploiement :** Vercel (web) + Supabase (APK)
+
+### Architecture clé
+- `/src/app/api/*` - API Routes serverless
+- `/src/app/monitoring` - Page de monitoring de l'automatisation
+- `/src/components/*` - Composants React réutilisables
+- `/src/services/*` - Services (icsService, testDataService)
+- `/documentation/*` - Toute la documentation Markdown
+- `/.github/workflows/*` - GitHub Actions (automatisation)
+- `/supabase-sql/*` - Scripts SQL pour Supabase
+
+---
+
+## 📚 Documentation
+
+### Règles de documentation
+
+1. **README.md à la racine :**
+   - Vue d'ensemble du projet
+   - Liste des fonctionnalités principales
+   - Pointe vers `/documentation/` pour les guides détaillés
+   - **Ne jamais créer d'autres fichiers MD à la racine**
+
+2. **Documentation complète :** Dossier `/documentation/`
+   - **TOUS les fichiers Markdown doivent être ici**
+   - Index dans `documentation/README.md`
+   - Navigation via `documentation/INDEX_AUTOMATION.md`
+
+3. **Création de nouveaux fichiers MD :**
+   - ⚠️ **Limite : 1 fichier Markdown maximum** par grosse fonctionnalité
+   - Autorisé seulement si :
+     - Nouvelle fonctionnalité complexe
+     - Architecture significative
+     - Guide d'utilisation nécessaire
+   - **Toujours créer dans `/documentation/`** (jamais à la racine)
+   - Mettre à jour `documentation/README.md` avec le nouveau fichier
+   - Mettre à jour `documentation/INDEX_AUTOMATION.md` si pertinent
+
+4. **Mise à jour de la doc existante :**
+   - ✅ **Priorité absolue :** Mettre à jour les fichiers existants plutôt qu'en créer
+   - ✅ Mettre à jour `README.md` seulement si nouvelle fonctionnalité majeure
+   - ✅ Mettre à jour les guides concernés dans `/documentation/`
+
+---
+
+## 💻 Principes de développement
+
+### Style de code
+- **React :** Hooks (useState, useEffect, useCallback)
+- **Next.js :** App Router (pas Pages Router)
+- **API Routes :** Export async GET, POST, etc.
+- **CSS :** CSS Modules (.module.css) ou inline styles
+- **Commentaires :** En français, clairs et concis
+
+### Conventions
+- **Nommage :** camelCase pour variables/fonctions, PascalCase pour composants
+- **Fichiers :** kebab-case pour fichiers utilitaires, PascalCase pour composants
+- **Imports :** Utiliser `@/` pour les imports absolus
+- **Logs :** Préfixer avec `[NomDuModule]` ex: `[API fetch-ics]`
+
+### Best practices
+- ✅ Toujours vérifier les erreurs (try/catch)
+- ✅ Retourner des JSON clairs avec status appropriés
+- ✅ Utiliser NextResponse pour les API Routes
+- ✅ Gérer les cas d'erreur (DB down, API timeout, etc.)
+- ✅ Logs détaillés en développement
+- ✅ Messages d'erreur en français pour l'utilisateur
+
+---
+
+## 🔧 Spécificités du projet
+
+### Automatisation
+- **GitHub Actions** : Seule solution (pas Vercel Cron - limitation plan gratuit)
+- **Fréquence :** Toutes les heures (0 * * * *)
+- **APIs appelées :**
+  - `/api/fetch-ics` - Met à jour l'EDT depuis le fichier ICS
+  - `/api/test-update` - Met à jour `test_edt.last_check` (pour vérifier)
+
+### Base de données Supabase
+- **Tables principales :**
+  - `events` - Cours de l'EDT
+  - `ics_history` - Historique des hash ICS
+  - `test_edt` - Table de test pour l'automatisation (1 ligne, id=1)
+- **Connexion :** Utiliser `getSupabaseServerClient()` depuis `@/lib/supabaseServer`
+- **Service role :** Nécessaire pour les opérations en écriture côté serveur
+
+### Environnement
+- **Variables locales :** `.env.local` (jamais commité)
+- **Variables requises :**
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE`
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `ICS_URL`
+  - `NEXT_PUBLIC_ICS_URL`
+
+---
+
+## 🚫 À éviter
+
+- ❌ Ne JAMAIS créer plus de 1 fichier Markdown par fonctionnalité
+- ❌ Ne JAMAIS créer de fichiers MD à la racine (tous dans `/documentation/`)
+- ❌ Ne JAMAIS utiliser Vercel Cron (limitation plan gratuit)
+- ❌ Ne JAMAIS commiter `.env.local` ou secrets
+- ❌ Ne JAMAIS hardcoder des URLs ou tokens
+- ❌ Ne JAMAIS oublier les try/catch dans les API Routes
+- ❌ Ne JAMAIS utiliser Pages Router (utiliser App Router)
+
+---
+
+## ✅ Workflow recommandé
+
+### Lors d'un ajout de fonctionnalité
+
+1. **Analyser** la demande et le code existant
+2. **Développer** la fonctionnalité avec les best practices
+3. **Tester** localement (`npm run dev`)
+4. **Documenter** si complexe :
+   - Mettre à jour `README.md` si nouvelle fonctionnalité majeure
+   - Créer 1 fichier MD dans `/documentation/` si vraiment nécessaire
+   - Mettre à jour `documentation/README.md` et `documentation/INDEX_AUTOMATION.md`
+5. **Vérifier** les linter errors
+6. **Expliquer** les changements à l'utilisateur
+
+### Lors d'un bug
+
+1. **Identifier** la cause (logs, erreurs)
+2. **Corriger** le problème
+3. **Tester** la correction
+4. **Mettre à jour** le troubleshooting si pertinent
+5. **Expliquer** la solution à l'utilisateur
+
+---
+
+## 📝 Exemples de documentation acceptable
+
+### ✅ Bon (création MD autorisée)
+- Nouvelle fonctionnalité majeure (ex: système de notifications)
+- Nouvelle architecture (ex: multi-tenancy)
+- Guide d'intégration complexe (ex: nouvel API externe)
+
+### ❌ Mauvais (pas de MD nécessaire)
+- Ajout d'un composant simple
+- Correction de bug
+- Modification CSS
+- Refactoring mineur
+
+---
+
+## 🎯 Objectifs de qualité
+
+- **Performance :** Optimiser les appels API et DB
+- **Fiabilité :** Gérer tous les cas d'erreur
+- **Maintenabilité :** Code propre et documenté
+- **Simplicité :** Solutions simples plutôt que complexes
+- **Documentation :** Claire, concise, en français
+
+---
+
+## 🔍 Vérifications avant validation
+
+Avant de proposer du code, vérifier :
+- [ ] Le code respecte les conventions du projet
+- [ ] Les erreurs sont gérées (try/catch)
+- [ ] Les logs sont présents et clairs
+- [ ] Les variables d'environnement ne sont pas hardcodées
+- [ ] La documentation est mise à jour si nécessaire (max 1 MD)
+- [ ] Les liens dans la documentation sont corrects
+- [ ] Le code fonctionne en local
+- [ ] Les linter errors sont corrigés
+
+---
+
+## 💡 En cas de doute
+
+- Privilégier la **simplicité** sur la complexité
+- Privilégier la **mise à jour** de la doc existante plutôt que créer un nouveau fichier
+- Demander confirmation à l'utilisateur avant de créer un nouveau fichier MD
+- Toujours expliquer les choix techniques en français
+
+---
+
+**Version :** 1.0  
+**Dernière mise à jour :** 8 novembre 2025  
+**Projet :** EDT CNAM EICNAM
+

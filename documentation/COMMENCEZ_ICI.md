@@ -15,17 +15,23 @@ Vous êtes au bon endroit ! Ce système met à jour automatiquement votre emploi
 -- Cliquez sur "Run"
 ```
 
-### 2️⃣ Tester
+### 2️⃣ Configurer GitHub Actions
+```
+GitHub → Settings → Secrets and variables → Actions
+Créer secret : VERCEL_DOMAIN = votre-domaine.vercel.app
+```
+
+### 3️⃣ Tester
 ```bash
 npm run test:automation
 ```
 
-### 3️⃣ Déployer
+### 4️⃣ Déployer
 ```bash
 git push
 ```
 
-**✅ C'est tout ! Votre système est automatisé.**
+**✅ C'est tout ! GitHub Actions s'occupe de tout automatiquement.**
 
 ---
 
@@ -85,8 +91,7 @@ Choisissez selon votre besoin :
 ### ✅ Système complet
 - API de test simple (`/api/test-update`)
 - Table de test Supabase (`test_edt`)
-- Automatisation Vercel Cron (toutes les heures)
-- Automatisation GitHub Actions (backup)
+- Automatisation GitHub Actions (toutes les heures)
 - Page de monitoring (`/monitoring`)
 - Scripts de test (Node.js + PowerShell)
 
@@ -97,9 +102,9 @@ Choisissez selon votre besoin :
 - Exemples de code
 
 ### ✅ Gratuit à 100%
-- Vercel Cron Jobs : Gratuit
-- GitHub Actions : Gratuit
+- GitHub Actions : Gratuit (2000 min/mois)
 - Supabase : Gratuit
+- Vercel : Gratuit (hébergement)
 - Pas de frais cachés
 
 ---
@@ -108,14 +113,14 @@ Choisissez selon votre besoin :
 
 ### Option A : Ultra-rapide (5 min)
 1. Lire **[GUIDE_VISUEL.md](GUIDE_VISUEL.md)**
-2. Suivre les 3 étapes
+2. Suivre les 4 étapes
 3. Vérifier sur `/monitoring`
 
 ### Option B : Complet (15 min)
 1. Lire **[QUICK_START_AUTOMATION.md](QUICK_START_AUTOMATION.md)**
 2. Lire **[AUTOMATION_SUMMARY.md](AUTOMATION_SUMMARY.md)**
 3. Suivre la checklist
-4. Vérifier les logs Vercel
+4. Vérifier les logs GitHub Actions
 
 ### Option C : Expert (30 min+)
 1. Lire **[INDEX_AUTOMATION.md](INDEX_AUTOMATION.md)**
@@ -165,14 +170,15 @@ SELECT last_check FROM test_edt WHERE id = 1;
 ## 💡 Conseils
 
 ### ✅ À faire
+- ✅ Configurer le secret `VERCEL_DOMAIN` dans GitHub
 - ✅ Lire au moins **[GUIDE_VISUEL.md](GUIDE_VISUEL.md)** ou **[QUICK_START_AUTOMATION.md](QUICK_START_AUTOMATION.md)**
 - ✅ Tester en local avant de déployer
-- ✅ Vérifier les logs Vercel après déploiement
+- ✅ Vérifier les logs GitHub Actions après déploiement
 - ✅ Visiter `/monitoring` pour voir l'état
 
 ### ⚠️ À éviter
+- ❌ Ne pas oublier de configurer le secret GitHub
 - ❌ Ne pas sauter l'étape de création de table
-- ❌ Ne pas oublier de `git push` après modification
 - ❌ Ne pas paniquer si ça ne marche pas immédiatement (attendre 1h)
 - ❌ Ne pas commiter `.env.local` (contient des secrets)
 
@@ -209,7 +215,7 @@ Choisissez un guide ci-dessus et commencez ! 🚀
 
 - **Page monitoring :** `/monitoring`
 - **API test :** `/api/test-update`
-- **Vercel Dashboard :** https://vercel.com/dashboard
+- **GitHub Actions :** Repository → Actions
 - **Supabase Dashboard :** https://supabase.com/dashboard
 
 ---
