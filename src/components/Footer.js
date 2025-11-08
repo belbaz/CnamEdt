@@ -30,7 +30,7 @@ export default function Footer() {
                 <span className="app-footer-text">EDT EICNAM</span>
                 <span className="app-footer-separator">•</span>
                 {process.env.NEXT_PUBLIC_ENV === "DEV" ? (
-                    <span className="app-footer-dev">DEV</span>
+                    <span className="app-footer-dev">DEVops</span>
                 ) : (<></>)}
                 <span className="app-footer-version">Version {version}</span>
             </div>
