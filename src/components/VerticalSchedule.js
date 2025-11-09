@@ -29,10 +29,15 @@ export default function VerticalSchedule({
     }, [groupByDay]);
 
     // Calculer la plage horaire globale pour tous les jours
+    // Affiche toujours au minimum de 9h à 18h, mais s'étend si des cours sont en dehors de cette plage
     const globalTimeRange = useMemo(() => {
+        const MIN_START = 9 * 60; // 9h00
+        const MIN_END = 18 * 60; // 18h00
+        
         if (events.length === 0) {
-            return {startMinutes: 8 * 60 + 45, endMinutes: 18 * 60 + 45};
+            return {startMinutes: MIN_START, endMinutes: MIN_END};
         }
+        
         let minTime = Infinity, maxTime = -Infinity;
         events.forEach(ev => {
             const start = new Date(ev.start);
@@ -40,10 +45,16 @@ export default function VerticalSchedule({
             minTime = Math.min(minTime, start.getHours() * 60 + start.getMinutes());
             maxTime = Math.max(maxTime, end.getHours() * 60 + end.getMinutes());
         });
-        return {
-            startMinutes: Math.floor(minTime / 15) * 15,
-            endMinutes: Math.ceil(maxTime / 15) * 15
-        };
+        
+        // Arrondir aux 15 minutes
+        let startMinutes = Math.floor(minTime / 15) * 15;
+        let endMinutes = Math.ceil(maxTime / 15) * 15;
+        
+        // Garantir un minimum de 9h à 18h, mais s'étendre si nécessaire
+        startMinutes = Math.min(startMinutes, MIN_START);
+        endMinutes = Math.max(endMinutes, MIN_END);
+        
+        return {startMinutes, endMinutes};
     }, [events]);
 
     const {startMinutes, endMinutes} = globalTimeRange;

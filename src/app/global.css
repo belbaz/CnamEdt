@@ -33,22 +33,22 @@
 }
 
 /* Mode OLED - Vrais noirs pour économiser la batterie sur écrans OLED */
-/* Note: --bg-secondary et --bg-tertiary gardent les valeurs du dark mode pour que les jours et cartes restent visibles */
+/* Thème optimisé avec des contrastes plus doux et des backgrounds adaptés */
 .oled-mode {
     --primary-color: #60a5fa;
     --bg-primary: #000000;
-    --bg-secondary: #2d3748; /* Garde la valeur du dark mode pour les jours */
-    --bg-tertiary: #374151; /* Garde la valeur du dark mode pour les cartes */
+    --bg-secondary: #0a0a0a; /* Noir très sombre pour les conteneurs */
+    --bg-tertiary: #1a1a1a; /* Gris très foncé pour les cartes */
     --bg-gradient: #000000;
     --text-primary: #ffffff;
     --text-secondary: #e2e8f0;
     --text-dev: #f59e0b;
-    --text-muted: #a0aec0;
-    --border-color: #1a1a1a;
-    --border-light: #0a0a0a;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.8);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 1);
+    --text-muted: #9ca3af;
+    --border-color: #2a2a2a; /* Bordures grises foncées au lieu de noir */
+    --border-light: #1f1f1f; /* Bordures plus subtiles */
+    --shadow-sm: 0 2px 8px rgba(255, 255, 255, 0.02);
+    --shadow-md: 0 4px 12px rgba(255, 255, 255, 0.03);
+    --shadow-lg: 0 8px 16px rgba(255, 255, 255, 0.04);
 }
 
 .oled-mode body,
@@ -68,7 +68,14 @@
    qui gardent leurs valeurs du dark mode grâce à la définition ci-dessus */
 
 .oled-mode .vertical-day-column {
-    background: transparent !important; /* Transparent pour voir le fond noir */
+    background: #0f1419 !important; /* Fond noir légèrement teinté de bleu */
+    border-color: var(--border-color) !important;
+}
+
+.oled-mode .vertical-day-column.today {
+    background: #0f1923 !important; /* Légèrement plus bleuté pour aujourd'hui */
+    border-color: #60a5fa !important; /* Bordure bleue pour aujourd'hui */
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.3) !important;
 }
 
 .oled-mode .vertical-schedule-header {
@@ -76,12 +83,73 @@
 }
 
 .oled-mode .vertical-day-header {
-    background: var(--bg-secondary) !important; /* Les headers de jours gardent leur couleur */
+    background: #1e293b !important; /* Headers de jours avec une touche de bleu foncé */
+    border-color: var(--border-color) !important;
+}
+
+.oled-mode .vertical-day-header.today {
+    background: #1e3a5f !important; /* Bleu foncé pour aujourd'hui */
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.3) !important;
 }
 
 /* S'assurer que les gradients deviennent des noirs purs en OLED */
 .oled-mode {
     background: #000000 !important;
+}
+
+/* Amélioration des grilles et séparateurs en mode OLED */
+.oled-mode .vertical-time-marker {
+    border-top-color: var(--border-color) !important;
+    opacity: 0.3 !important;
+}
+
+.oled-mode .vertical-time-marker.hour {
+    border-top-color: var(--border-color) !important;
+    opacity: 0.5 !important;
+}
+
+.oled-mode .time-marker::before {
+    background: var(--border-color) !important;
+    opacity: 0.4 !important;
+}
+
+.oled-mode .time-marker.hour-marker::before {
+    background: var(--border-color) !important;
+    opacity: 0.6 !important;
+}
+
+.oled-mode .vertical-time-label {
+    color: var(--text-muted) !important;
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.oled-mode .time-label {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Amélioration des cartes d'événements en mode OLED */
+/* Les cartes gardent leurs couleurs vives du dark mode pour plus de couleur */
+.oled-mode .event-card {
+    /* Les cartes conservent leur background du dark mode (--bg-tertiary = #374151) */
+    /* pour garder de la couleur et du contraste */
+    background: #2d3748 !important; /* Couleur du dark mode classique */
+    border-color: var(--border-color) !important;
+}
+
+.oled-mode .event-card:hover {
+    background: #374151 !important; /* Un peu plus clair au survol */
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15) !important;
+}
+
+/* Les gradients de couleur des cours restent bien visibles et vifs */
+.oled-mode .event-card::before {
+    /* Les gradients colorés restent à pleine intensité pour garder de la couleur */
+    opacity: 1 !important;
+    filter: brightness(1.1); /* Légèrement plus lumineux pour contraster avec le noir */
 }
 
 .oled-mode * {

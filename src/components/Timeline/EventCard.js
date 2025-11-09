@@ -27,6 +27,33 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
     };
     const hoursLabel = formatDurationHours(event.start, event.end_time || event.end);
 
+    // Détecter le site CNAM (Conté ou Saint-Martin)
+    const getCnamSite = (location) => {
+        if (!location || typeof location !== 'string') return null;
+        
+        const cleaned = location.trim();
+        const match = cleaned.match(/^(\d+)(bis)?[\.\-\s]/i);
+        if (!match) return null;
+        
+        const streetNumber = match[1];
+        const isBis = !!match[2];
+        
+        const conteNumbers = ['30', '31', '33', '34', '35', '37', '39'];
+        const saintMartinNumbers = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '21', '23', '27'];
+        
+        if (conteNumbers.includes(streetNumber)) {
+            return { site: 'Conté', fullName: 'Conté', color: '#10b981' };
+        }
+        
+        if (saintMartinNumbers.includes(streetNumber) || (streetNumber === '9' && isBis)) {
+            return { site: 'St-Martin', fullName: 'Saint-Martin', color: '#f59e0b' };
+        }
+        
+        return null;
+    };
+
+    const siteInfo = location ? getCnamSite(location) : null;
+
     return (
         <li
             className={`event-card`}
@@ -37,6 +64,9 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                 onOpenEventDetails && onOpenEventDetails(event);
             }}
         >
+            {devMode && hoursLabel && (
+                <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
+            )}
             <div className="event-time">
                 {formatTime(event.start)}{" - "}{formatTime(event.end)}
             </div>
@@ -47,11 +77,17 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                     description && <strong>{description}</strong>
                 )}
                 {prof && <span className="prof">{prof}</span>}
-                {(
+                {location && (
                     <div className="location">
-                        {location && <span className="location-text">{location}</span>}
-                        {devMode && hoursLabel && (
-                            <span className="event-hours" aria-label="Durée du cours">{hoursLabel}</span>
+                        <span className="location-text">{location}</span>
+                        {siteInfo && (
+                            <span 
+                                className="site-badge-card" 
+                                style={{ backgroundColor: siteInfo.color }}
+                                title={siteInfo.fullName}
+                            >
+                                {siteInfo.site}
+                            </span>
                         )}
                     </div>
                 )}

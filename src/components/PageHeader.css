@@ -99,6 +99,36 @@
 .theme-toggle.oled-active {
     border-color: #ffffff;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    position: relative;
+}
+
+.theme-toggle.oled-active::after {
+    content: 'OLED';
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: #000000;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #ffffff;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    animation: oledBadgePulse 2s ease-in-out infinite;
+}
+
+@keyframes oledBadgePulse {
+    0%, 100% {
+        opacity: 0.8;
+        box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
 }
 
 /* Animation Easter Egg - Version améliorée */
@@ -198,6 +228,7 @@
     position: relative;
     z-index: 1;
     animation: textGlow 2s ease-in-out infinite;
+    text-align: center;
 }
 
 .easter-egg-subtitle {

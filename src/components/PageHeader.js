@@ -29,6 +29,7 @@ export default function PageHeader({
     const clickCount = useRef(0);
     const clickTimer = useRef(null);
     const buttonRef = useRef(null);
+    const isBlockedRef = useRef(false); // Protection contre les clics juste après activation/désactivation
 
     const handleDownloadAPK = async () => {
         setIsDownloading(true);
@@ -41,6 +42,11 @@ export default function PageHeader({
 
     // Gérer les 5 clics rapides sur la lune (uniquement en dark mode)
     const handleThemeToggleClick = (e) => {
+        // Si bloqué (juste après un toggle OLED), ignorer le clic
+        if (isBlockedRef.current) {
+            return;
+        }
+
         // Si pas en dark mode, comportement normal
         if (!darkMode) {
             onToggleDarkMode();
@@ -50,17 +56,30 @@ export default function PageHeader({
         // En dark mode, on compte les clics
         clickCount.current += 1;
 
-        // Si on atteint 5 clics, activer le mode OLED
+        // Si on atteint 5 clics, toggle le mode OLED (activation OU désactivation)
         if (clickCount.current >= 5) {
             // Annuler le timer de toggle normal s'il existe
             if (clickTimer.current) {
                 clearTimeout(clickTimer.current);
                 clickTimer.current = null;
             }
+            
+            // Toggle le mode OLED
             onToggleOledMode();
+            
+            // Afficher l'easter egg
             setShowEasterEgg(true);
             setTimeout(() => setShowEasterEgg(false), 4000);
+            
+            // Reset le compteur
             clickCount.current = 0;
+            
+            // Bloquer les clics pendant 1 seconde
+            isBlockedRef.current = true;
+            setTimeout(() => {
+                isBlockedRef.current = false;
+            }, 1000);
+            
             return;
         }
 
@@ -185,8 +204,13 @@ export default function PageHeader({
                                         <div className="easter-egg-particle"></div>
                                         <div className="easter-egg-particle"></div>
                                     </div>
-                                    <span className="easter-egg-icon">✨</span>
-                                    <span className="easter-egg-text">Mode OLED activé !</span>
+                                    <span className="easter-egg-icon">{oledMode ? '🌙' : '💡'}</span>
+                                    <span className="easter-egg-text">Mode OLED {oledMode ? 'activé' : 'désactivé'} !</span>
+                                    <span className="easter-egg-subtitle">
+                                        {oledMode 
+                                            ? 'Économie d\'énergie pour écran OLED 🔋' 
+                                            : 'Retour au mode sombre classique'}
+                                    </span>
                                 </div>
                             </div>
                         )}
