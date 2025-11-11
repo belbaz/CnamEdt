@@ -1440,7 +1440,7 @@ function HomeContent({searchParams}) {
 
                             {/* Section Actions */}
                             <div className="modal-section modal-actions">
-                                {selectedEvent.location && (
+                                {selectedEvent.location && selectedEvent.location.trim() && (
                                     <button
                                         className="action-btn map-btn"
                                         onClick={() => setShowMap(true)}

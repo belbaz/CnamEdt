@@ -43,51 +43,37 @@ function extractFullRoomNumber(location) {
  * Format: { "31": { x: 100, y: 200 } }
  * 
  * Ces coordonnées correspondent au centre visuel de la SALLE dans le SVG
- * Le viewBox du SVG est: 0 0 591.922 841.37
+ * Le viewBox du SVG est: 0 0 528.976 504.69
  * 
- * Pour trouver les coordonnées d'une nouvelle salle:
- * 1. Ouvrir plan.svg dans un éditeur de SVG (Inkscape, Illustrator, etc.)
- * 2. Localiser visuellement la salle sur le plan
- * 3. Noter les coordonnées approximatives du centre de la salle
- * 4. Ajouter l'entrée ici avec le numéro de bâtiment comme clé
+ * Coordonnées extraites avec le Room Mapper (/admin/room-mapper)
  */
 const BUILDING_COORDINATES = {
-    // Coordonnées EXACTES extraites du SVG plan.svg
-    // Basées sur les positions des éléments <use> dans le SVG
-    // Le viewBox du SVG est: 0 0 591.922 841.37
-    
-    // Salles identifiées avec leurs coordonnées précises
-    // Format: "numéro": { x: coordX, y: coordY } où coordX et coordY sont les positions dans le SVG
-    
-    // Zone gauche
-    "10": { x: 347, y: 606 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 345.517 606.119)"
-    "11": { x: 145, y: 525 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 143.126 525.273)"
-    "12": { x: 309, y: 595 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 307.571 595.119)"
-    "13": { x: 162, y: 493 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 160.717 493.367)"
-    "14": { x: 327, y: 576 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 325.717 576.419)"
-    "15": { x: 258, y: 457 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 256.237 457.067)"
-    "16": { x: 338, y: 523 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 336.171 523.073)"
-    "17": { x: 162, y: 451 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 160.537 450.836)"
-    "21": { x: 230, y: 448 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 227.848 447.536)"
-    "27": { x: 163, y: 413 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 160.757 413.067)"
-    
-    // Bâtiments principaux (numéros à 2 chiffres commençant par 3)
-    "30": { x: 100, y: 685 },   // Zone Bâtiment 30 (estimation basée sur le plan)
-    "31": { x: 147, y: 634 },   // Zone Scolarité 31 (basée sur "Scolarité 31" lignes 491-499)
-    "32": { x: 244, y: 249 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 242.14 249.234)"
-    "33": { x: 330, y: 268 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 327.685 268.215)"
-    "34": { x: 174, y: 268 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 172.62 267.793)"
-    "35": { x: 191, y: 324 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 189.102 323.567)"
-    "36": { x: 251, y: 293 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 249.532 293.392)"
-    "37": { x: 313, y: 324 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 308.255 324.412)"
-    "38": { x: 201, y: 294 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 199.02 293.99)"
-    "39": { x: 299, y: 294 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 297.122 293.99)"
-    "40": { x: 332, y: 281 },   // Extrait de: transform="matrix(8.8 0 0 -8.8 330.43 280.887)"
-    
-    // Note: Pour ajouter une nouvelle salle, chercher dans plan.svg:
-    // 1. Trouver la ligne avec le numéro (ex: use xlink:href="#k" pour "1")
-    // 2. Extraire les coordonnées x et y du transform="matrix(8.8 0 0 -8.8 X Y)"
-    // 3. Ajouter ici: "numéro": { x: X, y: Y }
+    "1": { x: 204, y: 411 },
+    "2": { x: 243, y: 395 },
+    "3": { x: 173, y: 308 },
+    "4": { x: 292, y: 402 },
+    "5": { x: 168, y: 345 },
+    "6": { x: 375, y: 397 },
+    "7": { x: 162, y: 410 },
+    "9": { x: 128, y: 390 },
+    "11": { x: 125, y: 308 },
+    "12": { x: 271, y: 373 },
+    "14": { x: 294, y: 344 },
+    "15": { x: 229, y: 247 },
+    "16": { x: 305, y: 306 },
+    "17": { x: 143, y: 242 },
+    "21": { x: 206, y: 240 },
+    "23": { x: 205, y: 199 },
+    "27": { x: 143, y: 207 },
+    "29": { x: 295, y: 87 },
+    "30": { x: 272, y: 97 },
+    "31": { x: 277, y: 127 },
+    "33": { x: 170, y: 126 },
+    "34": { x: 175, y: 96 },
+    "35": { x: 154, y: 76 },
+    "37": { x: 218, y: 58 },
+    "38": { x: 225, y: 98 },
+    "39": { x: 295, y: 75 }
 };
 
 /**
@@ -98,8 +84,11 @@ export default function MapViewer({ location, onClose }) {
     const [fullRoomNumber, setFullRoomNumber] = useState(null);
     const [buildingCoords, setBuildingCoords] = useState(null);
     const [debugMode, setDebugMode] = useState(false); // Mode debug pour afficher toutes les salles
+    const [zoomLevel, setZoomLevel] = useState(1);
     const svgRef = useRef(null);
     const containerRef = useRef(null);
+    const svgContainerRef = useRef(null);
+    const lastTouchDistance = useRef(null);
 
     useEffect(() => {
         if (location) {
@@ -118,6 +107,66 @@ export default function MapViewer({ location, onClose }) {
             }
         }
     }, [location]);
+
+    /**
+     * Contrôles de zoom - ULTRA SIMPLE
+     */
+    const zoomIn = () => {
+        setZoomLevel(prev => Math.min(prev + 0.5, 3));
+    };
+
+    const zoomOut = () => {
+        setZoomLevel(prev => Math.max(prev - 0.5, 0.5));
+    };
+
+    const resetZoom = () => {
+        setZoomLevel(1);
+    };
+
+    /**
+     * Gestion du pinch-to-zoom sur mobile
+     */
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 2) {
+            // Calculer la distance entre les deux doigts
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+            lastTouchDistance.current = distance;
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches.length === 2 && lastTouchDistance.current) {
+            e.preventDefault(); // Empêcher le zoom natif du navigateur
+            
+            // Calculer la nouvelle distance
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            // Calculer le ratio de zoom
+            const ratio = distance / lastTouchDistance.current;
+            
+            // Appliquer le zoom (sensibilité ajustée)
+            setZoomLevel(prev => {
+                const newZoom = prev * ratio;
+                return Math.min(Math.max(newZoom, 0.5), 3);
+            });
+
+            lastTouchDistance.current = distance;
+        }
+    };
+
+    const handleTouchEnd = () => {
+        lastTouchDistance.current = null;
+    };
 
     return (
         <div className="map-viewer-overlay" onClick={onClose}>
@@ -158,67 +207,84 @@ export default function MapViewer({ location, onClose }) {
                             </p>
                         </div>
                     )}
-                    <div className="map-viewer-svg-container">
-                        <img
-                            src="/plan.svg"
-                            alt="Plan du bâtiment"
-                            className="map-viewer-svg"
-                            ref={svgRef}
-                        />
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            xmlnsXlink="http://www.w3.org/1999/xlink"
-                            viewBox="0 0 591.922 841.37"
-                            className="map-viewer-overlay-svg"
-                            preserveAspectRatio="xMidYMid meet"
-                        >
-                            {debugMode ? (
-                                // Mode debug : afficher TOUTES les salles
-                                Object.entries(BUILDING_COORDINATES).map(([roomNumber, coords]) => (
-                                    <g key={roomNumber}>
-                                        {/* Numéro de la salle */}
-                                        <text
-                                            x={coords.x}
-                                            y={coords.y + 3}
-                                            className="map-room-label"
-                                            textAnchor="middle"
-                                        >
-                                            {roomNumber}
-                                        </text>
-                                        {/* Cercle rouge autour du numéro */}
-                                        <circle
-                                            cx={coords.x}
-                                            cy={coords.y}
-                                            r="12"
-                                            className="map-room-marker-debug"
-                                            strokeWidth="2"
-                                        />
-                                    </g>
-                                ))
-                            ) : (
-                                // Mode normal : afficher uniquement la salle sélectionnée
-                                buildingCoords && (
-                                    <circle
-                                        cx={buildingCoords.x}
-                                        cy={buildingCoords.y}
-                                        r="30"
-                                        className="map-room-marker"
-                                        strokeWidth="5"
-                                    />
-                                )
-                            )}
-                        </svg>
-                    </div>
-                    {buildingCoords && !debugMode && (
-                        <div className="map-viewer-info">
-                            <p className="map-viewer-info-text">
-                                📍 Bâtiment <strong>{buildingNumber}</strong>
-                                {fullRoomNumber && (
-                                    <span> (Salle {fullRoomNumber})</span>
-                                )}
-                            </p>
+                    <div 
+                        className="map-viewer-svg-container" 
+                        ref={svgContainerRef}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                    >
+                        {/* Contrôles de zoom */}
+                        <div className="map-zoom-controls">
+                            <button onClick={zoomOut} className="zoom-btn" title="Dézoomer">
+                                -
+                            </button>
+                            <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
+                            <button onClick={zoomIn} className="zoom-btn" title="Zoomer">
+                                +
+                            </button>
+                            <button onClick={resetZoom} className="zoom-reset" title="Réinitialiser">
+                                ↺
+                            </button>
                         </div>
-                    )}
+
+                        <div 
+                            className="map-svg-wrapper"
+                            style={{ transform: `scale(${zoomLevel})` }}
+                        >
+                            <div className="map-svg-wrapper-inner">
+                                <img
+                                    src="/plan.svg"
+                                    alt="Plan du bâtiment"
+                                    className="map-viewer-svg"
+                                    ref={svgRef}
+                                />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                                    viewBox="0 0 528.976 504.69"
+                                    className="map-viewer-overlay-svg"
+                                    preserveAspectRatio="xMidYMid meet"
+                                >
+                                    {debugMode ? (
+                                        // Mode debug : afficher TOUTES les salles
+                                        Object.entries(BUILDING_COORDINATES).map(([roomNumber, coords]) => (
+                                            <g key={roomNumber}>
+                                                {/* Numéro de la salle */}
+                                                <text
+                                                    x={coords.x}
+                                                    y={coords.y + 3}
+                                                    className="map-room-label"
+                                                    textAnchor="middle"
+                                                >
+                                                    {roomNumber}
+                                                </text>
+                                                {/* Cercle rouge autour du numéro */}
+                                                <circle
+                                                    cx={coords.x}
+                                                    cy={coords.y}
+                                                    r="12"
+                                                    className="map-room-marker-debug"
+                                                    strokeWidth="2"
+                                                />
+                                            </g>
+                                        ))
+                                    ) : (
+                                        // Mode normal : afficher uniquement la salle sélectionnée
+                                        buildingCoords && (
+                                            <circle
+                                                cx={buildingCoords.x}
+                                                cy={buildingCoords.y}
+                                                r="30"
+                                                className="map-room-marker"
+                                                strokeWidth="5"
+                                            />
+                                        )
+                                    )}
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

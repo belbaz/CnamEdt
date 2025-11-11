@@ -1,0 +1,598 @@
+/* Room Mapper - Page d'administration pour identifier les salles */
+
+.room-mapper-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 1rem;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.room-mapper-container {
+    height: 100vh;
+    background: var(--bg-primary, #f9fafb);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.room-mapper-header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.room-mapper-header h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1f2937;
+}
+
+.room-mapper-header p {
+    margin: 0.15rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+/* Layout principal */
+.room-mapper-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 65px); /* Hauteur écran - header réduit */
+}
+
+/* Panneau latéral */
+.room-mapper-sidebar {
+    width: 320px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.sidebar-left {
+    border-right: 1px solid #e5e7eb;
+}
+
+.sidebar-right {
+    border-left: 1px solid #e5e7eb;
+}
+
+.sidebar-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0; /* Ne pas réduire le header */
+}
+
+.sidebar-header h2 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.1rem;
+    color: #1f2937;
+}
+
+.toggle-overlay {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.toggle-overlay input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Indicateur de mode édition dans le header */
+.edit-mode-indicator {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #92400e;
+    text-align: center;
+}
+
+/* Liste des salles */
+.room-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem;
+    min-height: 0; /* Important pour permettre le scroll dans flexbox */
+}
+
+.room-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f9fafb;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.room-item:hover {
+    background: #f3f4f6;
+}
+
+.room-item.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.room-item.not-placed {
+    background: #fef3c7;
+    border-color: #fbbf24;
+}
+
+.room-item.not-placed:hover {
+    background: #fde68a;
+}
+
+.room-item.not-placed .room-number {
+    color: #92400e;
+}
+
+.room-item.not-placed .room-coords {
+    color: #b45309;
+    font-style: italic;
+}
+
+.room-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.room-number {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.95rem;
+}
+
+.room-coords {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-family: monospace;
+}
+
+/* Actions des salles */
+.room-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-edit,
+.btn-toggle {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit:hover {
+    background: #fbbf24;
+    border-color: #f59e0b;
+    transform: scale(1.1);
+}
+
+.room-item.validated .btn-toggle {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.room-item.disabled .btn-toggle {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+.btn-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Actions du sidebar */
+.sidebar-actions {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-shrink: 0; /* Ne pas réduire les boutons */
+}
+
+/* Prévisualisation du code (sidebar droite) */
+.code-preview-main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem;
+    background: #f9fafb;
+    min-height: 0; /* Important pour permettre le scroll dans flexbox */
+}
+
+.code-preview-main pre {
+    background: #1f2937;
+    color: #f3f4f6;
+    padding: 1rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    overflow-x: auto;
+    margin: 0;
+    line-height: 1.5;
+    font-family: 'Courier New', monospace;
+}
+
+/* Détails compacts de la salle dans sidebar droite */
+.room-details-compact {
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0; /* Ne pas réduire les détails */
+}
+
+.room-details-compact h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.details-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f9fafb;
+    border-radius: 6px;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.8rem;
+    color: #1f2937;
+    font-family: monospace;
+    font-weight: 600;
+}
+
+/* Zone principale avec le SVG */
+.room-mapper-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f9fafb;
+    height: 100%;
+    min-width: 0; /* Important pour le flex */
+}
+
+/* Bannière mode édition */
+.edit-mode-banner {
+    background: #fef3c7;
+    border-bottom: 2px solid #fbbf24;
+    padding: 0.75rem 1.5rem;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.edit-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.edit-banner-content span {
+    font-weight: 600;
+    color: #92400e;
+    font-size: 0.95rem;
+}
+
+.btn-cancel-edit {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d97706;
+    border-radius: 6px;
+    color: #92400e;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel-edit:hover {
+    background: #fef3c7;
+    transform: translateY(-1px);
+}
+
+/* Contrôles de zoom en bas à droite - Position fixe pour qu'ils ne bougent pas avec le scroll */
+.zoom-controls {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+}
+
+.zoom-btn,
+.zoom-reset {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #374151;
+}
+
+.zoom-btn:hover,
+.zoom-reset:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    transform: scale(1.05);
+}
+
+.zoom-level {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 50px;
+    text-align: center;
+}
+
+.svg-viewer {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    padding: 0;
+    min-height: 0;
+    background: #f9fafb;
+}
+
+.svg-viewer.edit-mode {
+    cursor: crosshair;
+}
+
+.svg-content {
+    position: relative;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    transform-origin: top left;
+    pointer-events: none; /* Laisser passer les clics */
+    min-width: min-content;
+    min-height: min-content;
+}
+
+.base-svg {
+    width: 800px;
+    height: auto;
+    display: block;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+    pointer-events: auto; /* Intercepter les clics sur l'image */
+}
+
+.overlay-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: all;  /* Intercepter TOUS les clics */
+    z-index: 10;
+}
+
+.room-marker {
+    pointer-events: none;  /* Les cercles ne bloquent pas */
+}
+
+.room-marker circle,
+.room-marker text {
+    pointer-events: none;
+}
+
+/* Marqueurs sur le SVG */
+.room-marker {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.room-marker:hover .marker-circle {
+    r: 18;
+    stroke-width: 3;
+}
+
+.room-marker.selected .marker-circle {
+    fill: rgba(59, 130, 246, 0.3);
+    stroke: #3b82f6;
+    stroke-width: 3;
+}
+
+.room-marker.editing .marker-circle {
+    fill: rgba(251, 191, 36, 0.4);
+    stroke: #fbbf24;
+    stroke-width: 3;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+.marker-circle {
+    fill: rgba(239, 68, 68, 0.2);
+    stroke: #ef4444;
+    stroke-width: 2;
+    transition: all 0.2s;
+}
+
+.marker-text {
+    fill: #ef4444;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    pointer-events: none;
+    text-shadow: 
+        -1px -1px 0 white,
+        1px -1px 0 white,
+        -1px 1px 0 white,
+        1px 1px 0 white,
+        0 0 4px white;
+}
+
+.room-marker.editing .marker-text {
+    fill: #d97706;
+}
+
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .room-mapper-content {
+        flex-direction: column;
+    }
+    
+    .room-mapper-sidebar {
+        width: 100%;
+        max-height: 35vh;
+        border-right: none;
+        border-left: none;
+    }
+    
+    .sidebar-left {
+        border-bottom: 1px solid #e5e7eb;
+        order: 1;
+    }
+    
+    .room-mapper-main {
+        order: 2;
+        min-height: 50vh;
+    }
+    
+    .sidebar-right {
+        border-top: 1px solid #e5e7eb;
+        order: 3;
+        max-height: 40vh;
+    }
+    
+    .code-preview-main pre {
+        font-size: 0.7rem;
+    }
+    
+    .room-details-compact {
+        display: none;
+    }
+}
+

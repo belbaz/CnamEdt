@@ -77,20 +77,18 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                     description && <strong>{description}</strong>
                 )}
                 {prof && <span className="prof">{prof}</span>}
-                {location && (
-                    <div className="location">
-                        <span className="location-text">{location}</span>
-                        {siteInfo && (
-                            <span 
-                                className="site-badge-card" 
-                                style={{ backgroundColor: siteInfo.color }}
-                                title={siteInfo.fullName}
-                            >
-                                {siteInfo.site}
-                            </span>
-                        )}
-                    </div>
-                )}
+                <div className="location">
+                    <span className="location-text">{location || "?"}</span>
+                    {siteInfo && (
+                        <span 
+                            className="site-badge-card" 
+                            style={{ backgroundColor: siteInfo.color }}
+                            title={siteInfo.fullName}
+                        >
+                            {siteInfo.site}
+                        </span>
+                    )}
+                </div>
             </div>
         </li>
     );

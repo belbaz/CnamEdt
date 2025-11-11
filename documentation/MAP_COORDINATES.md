@@ -33,13 +33,49 @@ Un **mode debug** est disponible pour visualiser toutes les salles configurées 
 
 ---
 
-## 🎯 Méthode recommandée : Utiliser `data-room`
+## 🎯 Méthode recommandée : Utiliser le Room Mapper
 
-### ✅ Meilleure pratique pour ajouter des salles
+### ✅ Outil automatique pour mapper les salles
 
-Au lieu d'extraire manuellement les coordonnées, utilisez l'attribut `data-room` dans le SVG :
+Un outil d'administration **Room Mapper** est disponible pour identifier et enregistrer automatiquement les positions des salles sur le plan SVG.
 
-#### Étape 1 : Modifier le SVG
+#### Accès au Room Mapper
+
+1. **En mode développement**, cliquez sur le bouton **🗺️** dans la navbar (à côté du bouton History)
+2. Ou accédez directement à `/admin/room-mapper`
+
+#### Fonctionnalités
+
+- **Détection automatique** : Parse le SVG et détecte tous les numéros de salles (balises `<text>` avec `<tspan>`)
+- **Affichage visuel** : Cercles rouges autour de chaque numéro détecté avec overlay interactif
+- **Validation** : Permet d'activer/désactiver chaque salle détectée
+- **Génération de code** : Génère automatiquement le code `BUILDING_COORDINATES` prêt à copier
+- **Export JSON** : Export des positions en JSON pour backup
+
+#### Comment l'utiliser
+
+1. **Ouvrir** `/admin/room-mapper` en mode dev
+2. L'outil **scanne automatiquement** le fichier `public/plan.svg`
+3. **Visualiser** les salles détectées avec des cercles rouges
+4. **Cliquer** sur une salle pour voir ses détails (position, ID, etc.)
+5. **Désactiver** les fausses détections avec le bouton ✗
+6. **Copier** le code généré avec le bouton "📋 Copier le code"
+7. **Coller** le code dans `src/components/MapViewer/MapViewer.js`
+
+**Avantages** :
+- ✅ Détection automatique des numéros de salles
+- ✅ Interface visuelle intuitive
+- ✅ Pas d'erreur de saisie manuelle
+- ✅ Génération de code instantanée
+- ✅ Export JSON pour backup
+
+---
+
+## 📝 Méthode alternative : Utiliser `data-room`
+
+Si le SVG contient déjà des attributs `data-room`, le Room Mapper peut les utiliser :
+
+### Structure recommandée dans le SVG
 
 Dans `public/plan.svg`, entourer les éléments qui forment un numéro de salle avec un groupe :
 
@@ -56,18 +92,6 @@ Dans `public/plan.svg`, entourer les éléments qui forment un numéro de salle 
 ```
 
 **L'attribut `data-room="10"` indique que ce groupe forme le numéro de salle "10".**
-
-#### Étape 2 : Créer un script d'extraction automatique
-
-Un script peut ensuite lire le SVG et extraire automatiquement :
-- Tous les `data-room`
-- Les coordonnées moyennes des éléments `<use>` à l'intérieur
-- Générer le fichier `BUILDING_COORDINATES`
-
-**Avantages** :
-- ✅ Pas d'erreur de saisie manuelle
-- ✅ Mise à jour automatique si le SVG change
-- ✅ Plus facile à maintenir
 
 ---
 
@@ -220,28 +244,33 @@ Le composant peut extraire le numéro de bâtiment depuis ces formats :
 ## 🚀 Fonctionnalités actuelles
 
 - ✅ **Mode Debug** : Visualisation de toutes les salles avec bouton 🔍
+- ✅ **Room Mapper** : Interface admin pour identifier et mapper automatiquement les salles
+- ✅ Détection automatique des numéros de salles dans le SVG
+- ✅ Génération automatique du code BUILDING_COORDINATES
+- ✅ Export JSON des positions
 - ✅ Cercles rouges avec numéros pour identifier les salles
-- ✅ 21 salles configurées (10-17, 21, 27, 30-40)
+- ✅ 21+ salles configurées (10-17, 21, 27, 30-40, etc.)
 - ✅ Support de l'attribut `data-room` dans le SVG
 
 ## 💡 Améliorations futures possibles
 
-- [ ] Script automatique de parsing du SVG avec `data-room`
-- [ ] Interface admin pour ajouter des salles
 - [ ] Support des salles avec lettres (ex: "31A")
 - [ ] Zoom automatique sur la salle
 - [ ] Itinéraire entre deux salles
 - [ ] Plan interactif (pan/zoom)
+- [ ] Édition manuelle des coordonnées dans le Room Mapper
 
 ---
 
 ## 📚 Voir aussi
 
-- **Code source** : `src/components/MapViewer/MapViewer.js`
+- **Code principal** : `src/components/MapViewer/MapViewer.js`
 - **Styles** : `src/components/MapViewer/MapViewer.css`
 - **Plan SVG** : `public/plan.svg`
+- **Room Mapper** : `src/app/admin/room-mapper/page.js`
+- **Styles Room Mapper** : `src/app/admin/room-mapper/room-mapper.css`
 
 ---
 
-**Dernière mise à jour** : 9 novembre 2025
+**Dernière mise à jour** : 11 novembre 2025
 

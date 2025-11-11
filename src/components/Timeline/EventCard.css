@@ -56,7 +56,7 @@
 }
 
 .event-modal {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -147,7 +147,7 @@
 
 /* Section du modal */
 .modal-section {
-    padding: 1rem 0;
+    padding: .5rem 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
@@ -169,8 +169,8 @@
 
 /* Style unifié pour tous les boutons d'action */
 .action-btn {
-    flex: 1;
-    min-width: 140px;
+    flex: 1 1 0;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -231,15 +231,27 @@
     height: 20px;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
+/* Responsive pour les boutons d'action */
+@media (max-width: 600px) {
     .modal-actions {
         flex-direction: column;
+        gap: 0.5rem;
     }
     
     .action-btn {
-        min-width: 100%;
+        width: 100%;
         flex: none;
+        padding: 0.7rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Ajustement pour tablettes et écrans moyens */
+@media (min-width: 601px) and (max-width: 768px) {
+    .action-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+        gap: 0.4rem;
     }
 }
 
@@ -251,7 +263,7 @@
 @keyframes modalAppear {
     0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.92);
+        transform: translate(-50%, -50%) scale(0.95);
     }
     100% {
         opacity: 1;
