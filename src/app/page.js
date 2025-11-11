@@ -1457,7 +1457,7 @@ function HomeContent({searchParams}) {
                                     const query = `${courseId} ${yearStart} ${yearEnd}`;
                                     const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
                                     return (
-                                        <a
+                                        <button
                                             className="action-btn moodle-btn"
                                             href={moodleUrl}
                                             target="_blank"
@@ -1474,7 +1474,7 @@ function HomeContent({searchParams}) {
                                                 </svg>
                                             </span>
                                             <span className="action-btn-text">Ouvrir Moodle</span>
-                                        </a>
+                                        </button>
                                     );
                                 })()}
                             </div>

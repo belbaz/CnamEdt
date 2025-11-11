@@ -19,7 +19,6 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: modalAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .map-viewer-header {
@@ -179,17 +178,24 @@
     z-index: 1;
 }
 
-/* Marqueur de bâtiment */
+/* Marqueur de bâtiment - cercle fixe */
 .map-room-marker {
-    fill: rgba(239, 68, 68, 0.2); /* Rouge avec transparence */
-    stroke: #ef4444; /* Rouge vif */
+    fill: transparent;
+    stroke: #ef4444;
     filter: drop-shadow(0 2px 8px rgba(239, 68, 68, 0.5));
-    /* Pas d'animation - le cercle reste fixe */
+}
+
+/* Marqueur avec animation de pulsation - cercle qui grandit */
+.map-room-marker-pulse {
+    fill: transparent;
+    stroke: #ef4444;
+    opacity: 0.6;
+    animation: simplePulse 2s ease-in-out infinite;
 }
 
 /* Marqueur en mode debug */
 .map-room-marker-debug {
-    fill: rgba(239, 68, 68, 0.15);
+    fill: transparent; /* Fond transparent */
     stroke: #ef4444;
     stroke-width: 2;
 }
@@ -260,7 +266,7 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
+    from { opacity: 0.5; }
     to { opacity: 1; }
 }
 
@@ -277,12 +283,38 @@
 
 @keyframes pulse {
     0%, 100% {
-        opacity: 0.7;
+        opacity: 0.9;
         transform: scale(1);
     }
     50% {
         opacity: 1;
         transform: scale(1.15);
+    }
+}
+
+@keyframes pulseOpacity {
+    0%, 100% {
+        opacity: 0.9;
+        stroke-width: 2.5;
+    }
+    50% {
+        opacity: 1;
+        stroke-width: 3.5;
+    }
+}
+
+@keyframes simplePulse {
+    0% {
+        stroke-width: 2.5;
+        opacity: 0.6;
+    }
+    50% {
+        stroke-width: 6;
+        opacity: 0.2;
+    }
+    100% {
+        stroke-width: 2.5;
+        opacity: 0.6;
     }
 }
 

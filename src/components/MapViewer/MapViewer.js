@@ -108,6 +108,80 @@ export default function MapViewer({ location, onClose }) {
         }
     }, [location]);
 
+    // Fermer avec la touche Escape (sans fermer la modale du cours)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Empêcher les autres listeners
+                onClose();
+            }
+        };
+
+        // Utiliser capture: true pour intercepter l'événement en premier
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [onClose]);
+
+    // Centrer la carte au milieu au chargement
+    useEffect(() => {
+        if (svgContainerRef.current && svgRef.current) {
+            const container = svgContainerRef.current;
+            const svg = svgRef.current;
+            
+            // Centrer la carte immédiatement (sans animation)
+            const centerX = (svg.scrollWidth - container.clientWidth) / 2;
+            const centerY = (svg.scrollHeight - container.clientHeight) / 2;
+            
+            container.scrollTo({
+                left: Math.max(0, centerX),
+                top: Math.max(0, centerY),
+                behavior: 'auto'
+            });
+        }
+    }, []);
+
+    // Puis centrer automatiquement sur la salle après un court délai
+    useEffect(() => {
+        if (buildingCoords && svgContainerRef.current && svgRef.current) {
+            // Attendre 600ms pour que l'utilisateur voie d'abord la carte centrée normalement
+            const timer = setTimeout(() => {
+                const container = svgContainerRef.current;
+                const svg = svgRef.current;
+                
+                if (!container || !svg) return;
+
+                // Dimensions du SVG (viewBox: 0 0 528.976 504.69)
+                const svgWidth = 528.976;
+                const svgHeight = 504.69;
+                
+                // Dimensions réelles du SVG affiché (700px de largeur + margins)
+                const displayedSvgWidth = 700;
+                const displayedSvgHeight = (svgHeight / svgWidth) * displayedSvgWidth;
+                
+                // Ratio entre les coordonnées SVG et les pixels affichés
+                const scaleX = displayedSvgWidth / svgWidth;
+                const scaleY = displayedSvgHeight / svgHeight;
+                
+                // Position du cercle en pixels affichés
+                const circlePxX = buildingCoords.x * scaleX;
+                const circlePxY = buildingCoords.y * scaleY;
+                
+                // Centrer le scroll sur le cercle
+                const scrollLeft = circlePxX - (container.clientWidth / 2);
+                const scrollTop = circlePxY - (container.clientHeight / 2);
+                
+                container.scrollTo({
+                    left: Math.max(0, scrollLeft),
+                    top: Math.max(0, scrollTop),
+                    behavior: 'smooth'
+                });
+            }, 600);
+
+            return () => clearTimeout(timer);
+        }
+    }, [buildingCoords]);
+
     /**
      * Contrôles de zoom - ULTRA SIMPLE
      */
@@ -272,13 +346,24 @@ export default function MapViewer({ location, onClose }) {
                                     ) : (
                                         // Mode normal : afficher uniquement la salle sélectionnée
                                         buildingCoords && (
-                                            <circle
-                                                cx={buildingCoords.x}
-                                                cy={buildingCoords.y}
-                                                r="30"
-                                                className="map-room-marker"
-                                                strokeWidth="5"
-                                            />
+                                            <>
+                                                {/* Cercle qui pulse (plus grand, transparent) */}
+                                                <circle
+                                                    cx={buildingCoords.x}
+                                                    cy={buildingCoords.y}
+                                                    r="15"
+                                                    className="map-room-marker-pulse"
+                                                    strokeWidth="2.5"
+                                                />
+                                                {/* Cercle fixe principal */}
+                                                <circle
+                                                    cx={buildingCoords.x}
+                                                    cy={buildingCoords.y}
+                                                    r="15"
+                                                    className="map-room-marker"
+                                                    strokeWidth="2.5"
+                                                />
+                                            </>
                                         )
                                     )}
                                 </svg>
