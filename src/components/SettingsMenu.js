@@ -102,7 +102,7 @@ export default function SettingsMenu({
     return (
         <>
             <button
-                className="settings-button"
+                className="settings-button filter-buttonm"
                 onClick={() => setIsOpen(!isOpen)}
                 title="Paramètres"
             >

@@ -32,7 +32,7 @@
     align-items: center;
     gap: 0.625rem;
     background: var(--bg-secondary);
-    padding: 0.55rem 0.75rem;
+    padding: 0.35rem 0.5rem;
     border-radius: 14px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
@@ -74,9 +74,10 @@
     align-items: center;
     position: relative;
     min-width: 160px;
-    padding: 0.375rem 0.75rem;
+    padding: 0.375rem 0.25rem;
     background: var(--bg-tertiary);
-    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     transition: all 0.3s ease;
 }
 

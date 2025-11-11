@@ -17,7 +17,7 @@
     box-sizing: border-box;
     border: 2px solid var(--border-color);
     border-radius: 12px;
-    padding: 0.75rem;
+    /*padding: .75rem;*/
     background: var(--bg-secondary);
     box-shadow: var(--shadow-sm);
 }
@@ -33,7 +33,7 @@
         max-width: 100vw;
         margin-left: 0;
         margin-right: 0;
-        padding: 0.5rem;
+        padding: 0.25rem .25rem .25rem 0;
     }
 
     .vertical-schedule-wrapper {
@@ -138,7 +138,6 @@
     background: var(--bg-secondary);
     padding: 0.5rem 0;
     border-bottom: 2px solid var(--border-color);
-    justify-items: center;
     user-select: none;
 }
 
@@ -146,18 +145,14 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-.vertical-time-column-header {
-    /* Colonne vide pour aligner avec les heures */
-}
-
 .vertical-day-header {
-    padding: 0.5rem;
+    padding: 0.5rem 0;
     background: rgba(228, 225, 225, 0.3);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     text-align: center;
     box-shadow: var(--shadow-sm);
-    width: 88%;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -451,14 +446,14 @@
     }
 
     .vertical-day-header {
-        padding: 0.5rem 1.5rem;
+        padding: 0.5rem 0;
         border-radius: 10px;
         width: auto;
         flex-shrink: 0;
     }
 
     .vertical-day-header.today{
-        padding: 0.5rem 0.5rem;
+        padding: 0.5rem 0;
     }
 
     .vertical-day-header h3 {
@@ -480,7 +475,7 @@
         width: 140px;
         max-width: 140px;
         flex-shrink: 0;
-        border-radius: 12px;
+        border-radius: 2px;
         min-height: 300px;
         box-sizing: border-box;
     }
@@ -543,6 +538,7 @@
         grid-template-columns: 35px repeat(var(--days-count, 7), 130px);
         gap: 0.25rem;
         width: max-content;
+        border-radius: 0px;
     }
 
     .vertical-schedule-header.no-time-column {
