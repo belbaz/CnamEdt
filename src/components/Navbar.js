@@ -31,6 +31,8 @@ export default function Navbar({
                                    subjects = [],
                                    selectedSubjects = [],
                                    onSubjectsChange = null,
+                                   showOnlyExams = false,
+                                   onShowOnlyExamsChange = null,
                                    showFilter = false
                                }) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -118,6 +120,8 @@ export default function Navbar({
                     subjects={subjects}
                     selectedSubjects={selectedSubjects}
                     onSubjectsChange={onSubjectsChange}
+                    showOnlyExams={showOnlyExams}
+                    onShowOnlyExamsChange={onShowOnlyExamsChange}
                     showFilter={showFilter}
                 />
 

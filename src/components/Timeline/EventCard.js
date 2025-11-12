@@ -54,6 +54,9 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
 
     const siteInfo = location ? getCnamSite(location) : null;
 
+    // Détecter si la description contient "EXAMEN"
+    const isExam = description && description.toUpperCase().includes("EXAMEN");
+
     return (
         <li
             className={`event-card`}
@@ -67,6 +70,11 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
             {devMode && hoursLabel && (
                 <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
             )}
+            {isExam && (
+                <div className="exam-badge-card" title="Examen">
+                    EXAMEN
+                </div>
+            )}
             <div className="event-time">
                 {formatTime(event.start)}{" - "}{formatTime(event.end)}
             </div>
@@ -76,7 +84,7 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                 ) : (
                     description && <strong>{description}</strong>
                 )}
-                {prof && <span className="prof">{prof}</span>}
+                <span className="prof">{prof || "?"}</span>
                 <div className="location">
                     <span className="location-text">{location || "?"}</span>
                     {siteInfo && (

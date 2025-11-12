@@ -9,22 +9,24 @@ export default function Footer({
     testWeekMode = false,
     onToggleTestWeek = null
 }) {
-    const [version, setVersion] = useState("Loading ...");
+    const [version, setVersion] = useState(null);
     const devMode = useDevMode();
 
     useEffect(() => {
         const fetchVersion = async () => {
             try {
                 const res = await fetch('/api/version');
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 const data = await res.json();
                 if (data.version) {
                     setVersion(data.version);
-                } else {
-                    setVersion("Unknown");
                 }
             } catch (err) {
                 console.error("Failed to fetch version:", err);
-                setVersion("Error");
+                // Ne pas afficher d'erreur, simplement ne pas afficher la version
+                setVersion(null);
             }
         };
 
@@ -35,11 +37,18 @@ export default function Footer({
         <footer className="app-footer">
             <div className="app-footer-content">
                 <span className="app-footer-text">EDT EICNAM</span>
-                <span className="app-footer-separator">•</span>
-                {process.env.NEXT_PUBLIC_ENV === "DEV" ? (
-                    <span className="app-footer-dev">MODE DEV</span>
-                ) : (<></>)}
-                <span className="app-footer-version">Version {version}</span>
+                {version && (
+                    <>
+                        <span className="app-footer-separator">•</span>
+                        <span className="app-footer-version">Version {version}</span>
+                    </>
+                )}
+                {process.env.NEXT_PUBLIC_ENV === "DEV" && (
+                    <>
+                        <span className="app-footer-separator">•</span>
+                        <span className="app-footer-dev">MODE DEV</span>
+                    </>
+                )}
             </div>
             
             {devMode && (

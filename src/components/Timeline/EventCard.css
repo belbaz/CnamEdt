@@ -84,6 +84,12 @@
 .event-modal-title {
     font-weight: 700;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .event-modal-close {
@@ -291,6 +297,54 @@
     flex-wrap: wrap;
 }
 
+/* Badge Examen dans la modal - affiché dans le header à droite du titre */
+.exam-badge-modal {
+    font-size: 0.65rem;
+    line-height: 1;
+    color: #ffffff;
+    font-weight: 800;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    padding: 0.4rem 0.6rem;
+    border-radius: 10px;
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    animation: examPulse 2s ease-in-out infinite;
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .exam-badge-modal {
+        font-size: 0.6rem;
+        padding: 0.35rem 0.5rem;
+        margin-left: 0.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .exam-badge-modal {
+        font-size: 0.55rem;
+        padding: 0.3rem 0.45rem;
+        margin-left: 0.3rem;
+    }
+    
+    .event-modal-header {
+        padding: 0.65rem 0.75rem;
+    }
+    
+    .event-modal-title {
+        font-size: 0.95rem;
+        gap: 0.4rem;
+    }
+}
+
 /* Badge de site CNAM dans la modal */
 .site-badge {
     font-size: 0.6rem;
@@ -444,19 +498,25 @@
     border-radius: 9999px;
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 0.25rem;
-    min-width: 20px;
 }
 
 .hours-stats-bar-percent {
+    position: absolute;
+    top: 54%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-size: 0.625rem;
     font-weight: 700;
+    color: var(--text-primary);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+    line-height: 1;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.dark-mode .hours-stats-bar-percent {
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    line-height: 1;
 }
 
 .hours-stats-details {
@@ -516,6 +576,69 @@
     border: 1px solid rgba(220, 38, 38, 0.2);
     cursor: pointer;
     z-index: 5;
+}
+
+/* Badge Examen - affiché en haut à droite, au-dessus du label de durée */
+.exam-badge-card {
+    position: absolute;
+    top: .55rem;
+    right: 0.2rem;
+    font-size: 0.55rem;
+    line-height: 1;
+    color: #ffffff;
+    font-weight: 800;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    padding: 0.25rem 0.4rem;
+    border-radius: 8px;
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    cursor: pointer;
+    z-index: 6;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    animation: examPulse 2s ease-in-out infinite;
+}
+
+/* Ajuster la position du badge debug quand le badge examen est présent */
+.event-card:has(.exam-badge-card) .event-hours-debug {
+    top: 1.7rem;
+}
+
+@keyframes examPulse {
+    0%, 100% {
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    }
+    50% {
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.6);
+    }
+}
+
+/* Responsive pour le badge examen */
+@media (max-width: 768px) {
+    .exam-badge-card {
+        font-size: 0.5rem;
+        padding: 0.22rem 0.35rem;
+        top: 0.35rem;
+        right: 0.15rem;
+    }
+    
+    .event-card:has(.exam-badge-card) .event-hours-debug {
+        top: 1.5rem;
+    }
+}
+
+@media (max-width: 650px) {
+    .exam-badge-card {
+        font-size: 0.48rem;
+        padding: 0.2rem 0.32rem;
+        top: 0.3rem;
+        right: 0.1rem;
+    }
+    
+    .event-card:has(.exam-badge-card) .event-hours-debug {
+        top: 1.4rem;
+    }
 }
 
 .event-time {

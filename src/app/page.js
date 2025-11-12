@@ -22,6 +22,7 @@ import OfflineNotification from "@/components/OfflineNotification";
 import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import DevNotification from "@/components/DevNotification";
+import DevToolsButton from "@/components/DevToolsButton";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -64,6 +65,7 @@ function HomeContent({searchParams}) {
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
+    const [showOnlyExams, setShowOnlyExams] = useState(false);
     // Notification de debug pour le mode dev
     const [devNotification, setDevNotification] = useState(null);
     const [showDevNotification, setShowDevNotification] = useState(false);
@@ -502,6 +504,14 @@ function HomeContent({searchParams}) {
             return start >= startDate && start <= endDate;
         });
 
+        // Filtrer par examens uniquement si activé
+        if (showOnlyExams) {
+            filtered = filtered.filter((e) => {
+                const description = e.description || '';
+                return description.toUpperCase().includes("EXAMEN");
+            });
+        }
+
         // Filtrer par matières sélectionnées si des filtres sont actifs
         if (selectedSubjects.length > 0) {
             filtered = filtered.filter((e) => {
@@ -521,7 +531,7 @@ function HomeContent({searchParams}) {
         }
 
         setEvents(filtered);
-    }, [selectedWeek, allEvents, searchParams, selectedSubjects]);
+    }, [selectedWeek, allEvents, searchParams, selectedSubjects, showOnlyExams]);
 
     // Si un eventKey est présent dans l'URL, naviguer vers la semaine du cours
     useEffect(() => {
@@ -1166,6 +1176,8 @@ function HomeContent({searchParams}) {
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
+                showOnlyExams={showOnlyExams}
+                onShowOnlyExamsChange={setShowOnlyExams}
                 showFilter={!loading && allEvents.length > 0}
             />
 
@@ -1332,6 +1344,12 @@ function HomeContent({searchParams}) {
                         <div className="event-modal-header">
                             <div className="event-modal-title">
                                 {selectedEvent.summary || selectedEvent.description || 'Cours'}
+                                {/* Badge Examen si présent dans la description */}
+                                {selectedEvent.description && selectedEvent.description.toUpperCase().includes("EXAMEN") && (
+                                    <span className="exam-badge-modal" title="Examen">
+                                        📝 EXAMEN
+                                    </span>
+                                )}
                             </div>
                             <button className="event-modal-close" aria-label="Fermer"
                                     onClick={() => setSelectedEvent(null)}>✕
@@ -1358,46 +1376,53 @@ function HomeContent({searchParams}) {
                                 )}
                                 {(() => {
                                     const courseType = extractCourseType(selectedEvent);
+                                    const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
                                     const {prof: extractedProf} = getEventTitle(selectedEvent) || {};
                                     const profName = extractedProf || selectedEvent.prof;
                                     return (
                                         <>
+                                            {courseId && (
+                                                <div className="pop-row">
+                                                    <span>🎓</span>
+                                                    <span>UE : {courseId}</span>
+                                                </div>
+                                            )}
                                             {courseType && (
                                                 <div className="pop-row">
                                                     <span>📘</span>
                                                     <span>{courseType}</span>
                                                 </div>
                                             )}
-                                            {profName && (
-                                                <div className="pop-row">
-                                                    <span>👤</span>
-                                                    <span>Professeur : {profName}</span>
-                                                </div>
-                                            )}
+                                            <div className="pop-row">
+                                                <span>👤</span>
+                                                <span>Professeur : {profName || "?"}</span>
+                                            </div>
                                         </>
                                     );
                                 })()}
-                                {selectedEvent.location && (
-                                    <div className="pop-row location-row">
-                                        <span>📍</span>
-                                        <span>{selectedEvent.location}</span>
-                                        {(() => {
-                                            const siteInfo = getCnamSite(selectedEvent.location);
-                                            if (!siteInfo) return null;
-                                            return (
-                                                <span 
-                                                    className="site-badge" 
-                                                    style={{ 
-                                                        backgroundColor: siteInfo.color,
-                                                        color: 'white'
-                                                    }}
-                                                >
-                                                    {siteInfo.site}
-                                                </span>
-                                            );
-                                        })()}
-                                    </div>
-                                )}
+                                <div className="pop-row location-row">
+                                    <span>🚪</span>
+                                    <span>Salle : {(() => {
+                                        if (!selectedEvent.location) return "?";
+                                        const cleaned = selectedEvent.location.replace(/^Salle\s*:\s*/i, '').trim();
+                                        return cleaned || "?";
+                                    })()}</span>
+                                    {(() => {
+                                        const siteInfo = selectedEvent.location ? getCnamSite(selectedEvent.location) : null;
+                                        if (!siteInfo) return null;
+                                        return (
+                                            <span 
+                                                className="site-badge" 
+                                                style={{ 
+                                                    backgroundColor: siteInfo.color,
+                                                    color: 'white'
+                                                }}
+                                            >
+                                                {siteInfo.site}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
                             </div>
 
                             {/* Section Progression */}
@@ -1419,10 +1444,9 @@ function HomeContent({searchParams}) {
                                                     <div 
                                                         className="hours-stats-bar-fill" 
                                                         style={{width: `${hoursStats.percentage}%`}}
-                                                    >
-                                                        <span className="hours-stats-bar-percent">{hoursStats.percentage}%</span>
-                                                    </div>
+                                                    />
                                                 </div>
+                                                <span className="hours-stats-bar-percent">{hoursStats.percentage}%</span>
                                             </div>
                                             <div className="hours-stats-details">
                                                 <span className="hours-stats-completed">{formatHoursDecimal(hoursStats.completed)} / {formatHoursDecimal(hoursStats.total)}</span>
@@ -1457,7 +1481,7 @@ function HomeContent({searchParams}) {
                                     const query = `${courseId} ${yearStart} ${yearEnd}`;
                                     const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
                                     return (
-                                        <button
+                                        <a
                                             className="action-btn moodle-btn"
                                             href={moodleUrl}
                                             target="_blank"
@@ -1474,7 +1498,7 @@ function HomeContent({searchParams}) {
                                                 </svg>
                                             </span>
                                             <span className="action-btn-text">Ouvrir Moodle</span>
-                                        </button>
+                                        </a>
                                     );
                                 })()}
                             </div>
@@ -1489,6 +1513,9 @@ function HomeContent({searchParams}) {
                     </div>
                 </div>
             )}
+
+            {/* Bouton des outils de développement (uniquement en mode dev) */}
+            <DevToolsButton />
         </div>
     );
 }

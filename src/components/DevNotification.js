@@ -20,6 +20,14 @@ export default function DevNotification({ message, isVisible, onClose }) {
             <div className="dev-notification-content">
                 <span className="dev-notification-icon">🔧</span>
                 <span className="dev-notification-message">{message}</span>
+                <button 
+                    className="dev-notification-close"
+                    onClick={onClose}
+                    aria-label="Fermer la notification"
+                    title="Fermer"
+                >
+                    ✕
+                </button>
             </div>
         </div>
     );

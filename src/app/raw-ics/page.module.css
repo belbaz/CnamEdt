@@ -1,0 +1,307 @@
+.container {
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.header h1 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 2.5em;
+}
+
+.source {
+    color: #666;
+    font-size: 0.9em;
+    margin: 10px 0 20px 0;
+    word-break: break-all;
+}
+
+.actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.downloadButton,
+.refreshButton,
+.retryButton {
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.downloadButton {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.downloadButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+.refreshButton {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.refreshButton:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.retryButton {
+    background: #4CAF50;
+    color: white;
+    margin-top: 15px;
+}
+
+.retryButton:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.statCard {
+    background: white;
+    padding: 20px 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.statNumber {
+    font-size: 2em;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.statLabel {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.eventsContainer {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.eventsContainer h2 {
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 1.8em;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.noEvents {
+    text-align: center;
+    color: #999;
+    font-size: 1.1em;
+    padding: 40px;
+}
+
+.eventsList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.eventCard {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+}
+
+.eventCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.eventHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.eventTitle {
+    margin: 0;
+    color: #333;
+    font-size: 1.3em;
+    flex: 1;
+}
+
+.eventIndex {
+    background: #667eea;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.eventDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.eventField {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.fieldLabel {
+    font-weight: 600;
+    color: #555;
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.fieldValue {
+    color: #333;
+    flex: 1;
+    word-break: break-word;
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    color: white;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading p {
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.error {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 600px;
+    margin: 50px auto;
+}
+
+.error h2 {
+    color: #d32f2f;
+    margin: 0 0 15px 0;
+}
+
+.error p {
+    color: #666;
+    margin: 0 0 20px 0;
+    font-size: 1.1em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .header {
+        padding: 20px;
+    }
+
+    .header h1 {
+        font-size: 1.8em;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .downloadButton,
+    .refreshButton {
+        width: 100%;
+    }
+
+    .stats {
+        flex-direction: column;
+    }
+
+    .statCard {
+        width: 100%;
+    }
+
+    .eventsContainer {
+        padding: 15px;
+    }
+
+    .eventHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .eventIndex {
+        align-self: flex-start;
+    }
+
+    .eventField {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .fieldLabel {
+        min-width: auto;
+    }
+}
+

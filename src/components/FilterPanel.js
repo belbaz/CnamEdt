@@ -6,6 +6,8 @@ export default function FilterPanel({
     subjects = [],
     selectedSubjects = [],
     onSubjectsChange,
+    showOnlyExams = false,
+    onShowOnlyExamsChange,
     isVisible = false
 }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -88,6 +90,7 @@ export default function FilterPanel({
 
     const activeFiltersCount = selectedSubjects.length;
     const hasActiveFilters = activeFiltersCount > 0 && activeFiltersCount < subjects.length;
+    const hasAnyFilter = hasActiveFilters || showOnlyExams;
 
     if (!isVisible) {
         return null;
@@ -96,17 +99,17 @@ export default function FilterPanel({
     return (
         <>
             <button
-                className={`filter-button ${hasActiveFilters ? 'has-filters' : ''}`}
+                className={`filter-button ${hasAnyFilter ? 'has-filters' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
-                title="Filtrer par matières"
-                aria-label="Filtrer par matières"
+                title="Filtrer les cours"
+                aria-label="Filtrer les cours"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <path d="M3 4h18M7 8h10M11 12h2M9 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                {hasActiveFilters && (
-                    <span className="filter-badge" aria-label={`${activeFiltersCount} filtre${activeFiltersCount > 1 ? 's' : ''} actif${activeFiltersCount > 1 ? 's' : ''}`}>
-                        {activeFiltersCount}
+                {hasAnyFilter && (
+                    <span className="filter-badge" aria-label={`Filtres actifs`}>
+                        {activeFiltersCount + (showOnlyExams ? 1 : 0)}
                     </span>
                 )}
             </button>
@@ -116,7 +119,7 @@ export default function FilterPanel({
                     <div className="filter-overlay" onClick={() => setIsOpen(false)}/>
                     <div className="filter-panel" ref={panelRef}>
                         <div className="filter-header">
-                            <h3>Filtrer par matières</h3>
+                            <h3>Filtrer les cours</h3>
                             <button 
                                 className="filter-close" 
                                 onClick={() => setIsOpen(false)}
@@ -127,12 +130,28 @@ export default function FilterPanel({
                         </div>
 
                         <div className="filter-content">
+                            {/* Toggle Examens uniquement */}
+                            <div className="filter-exam-toggle">
+                                <label className="exam-toggle-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={showOnlyExams}
+                                        onChange={(e) => onShowOnlyExamsChange && onShowOnlyExamsChange(e.target.checked)}
+                                        className="exam-toggle-checkbox"
+                                    />
+                                    <span className="exam-toggle-text">
+                                        📝 Afficher uniquement les examens
+                                    </span>
+                                </label>
+                            </div>
+
                             {subjects.length === 0 ? (
                                 <div className="filter-empty">
                                     <p>Aucune matière disponible</p>
                                 </div>
                             ) : (
                                 <>
+                                    <div className="filter-section-title">Filtrer par matières</div>
                                     <div className="filter-actions">
                                         <button
                                             className="filter-select-all"
@@ -140,12 +159,15 @@ export default function FilterPanel({
                                         >
                                             {selectedSubjects.length === subjects.length ? 'Tout désélectionner' : 'Tout sélectionner'}
                                         </button>
-                                        {hasActiveFilters && (
+                                        {(hasActiveFilters || showOnlyExams) && (
                                             <button
                                                 className="filter-clear"
-                                                onClick={() => onSubjectsChange([])}
+                                                onClick={() => {
+                                                    onSubjectsChange([]);
+                                                    onShowOnlyExamsChange && onShowOnlyExamsChange(false);
+                                                }}
                                             >
-                                                Réinitialiser
+                                                Tout réinitialiser
                                             </button>
                                         )}
                                     </div>

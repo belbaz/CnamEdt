@@ -22,6 +22,8 @@ export default function PageHeader({
                                        subjects = [],
                                        selectedSubjects = [],
                                        onSubjectsChange = null,
+                                       showOnlyExams = false,
+                                       onShowOnlyExamsChange = null,
                                        showFilter = false
                                    }) {
     const [isDownloading, setIsDownloading] = useState(false);
@@ -148,6 +150,8 @@ export default function PageHeader({
                         subjects={subjects}
                         selectedSubjects={selectedSubjects}
                         onSubjectsChange={onSubjectsChange || (() => {})}
+                        showOnlyExams={showOnlyExams}
+                        onShowOnlyExamsChange={onShowOnlyExamsChange}
                         isVisible={showFilter}
                     />
                     <SettingsMenu
