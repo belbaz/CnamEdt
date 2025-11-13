@@ -627,11 +627,32 @@ function HomeContent({searchParams}) {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [selectedEvent]);
 
+    // Fonction pour vérifier si une modale est ouverte
+    const isAnyModalOpen = () => {
+        return !!(
+            document.querySelector('.event-modal-layer') ||
+            document.querySelector('.settings-overlay') ||
+            document.querySelector('.map-viewer-overlay') ||
+            document.querySelector('.subject-hours-overlay') ||
+            document.querySelector('.filter-overlay') ||
+            document.querySelector('.apk-popup-overlay') ||
+            document.querySelector('.update-popup-overlay') ||
+            document.querySelector('.permission-request-overlay') ||
+            // DevToolsButton utilise CSS Modules, on vérifie la présence d'un élément avec aria-modal
+            document.querySelector('[aria-modal="true"]')
+        );
+    };
+
     // Navigation au clavier : Ctrl + Flèche droite/gauche pour changer de semaine
     useEffect(() => {
         const handleKeyDown = (e) => {
             // Vérifier si Ctrl est pressé et si c'est une flèche gauche ou droite
             if (e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                // Ne pas permettre le changement de semaine si une modale est ouverte
+                if (isAnyModalOpen()) {
+                    return;
+                }
+
                 e.preventDefault();
 
                 if (availableWeeks.length === 0 || !selectedWeek) return;
@@ -669,6 +690,11 @@ function HomeContent({searchParams}) {
         const maxVerticalDistance = 100; // Distance verticale maximale pour considérer un swipe horizontal
 
         const handleTouchStart = (e) => {
+            // Ne pas démarrer le swipe si une modale est ouverte
+            if (isAnyModalOpen()) {
+                return;
+            }
+
             const touch = e.touches[0];
             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
 
@@ -686,6 +712,14 @@ function HomeContent({searchParams}) {
 
         const handleTouchEnd = (e) => {
             if (touchStartX === null || touchStartY === null || touchStartTime === null) return;
+
+            // Ne pas permettre le changement de semaine si une modale est ouverte
+            if (isAnyModalOpen()) {
+                touchStartX = null;
+                touchStartY = null;
+                touchStartTime = null;
+                return;
+            }
 
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
@@ -1468,10 +1502,10 @@ function HomeContent({searchParams}) {
                                     <button
                                         className="action-btn map-btn"
                                         onClick={() => setShowMap(true)}
-                                        aria-label="Voir dans la map"
+                                        aria-label="Voir le plan"
                                     >
                                         <span className="action-btn-icon">🗺️</span>
-                                        <span className="action-btn-text">Voir la salle</span>
+                                        <span className="action-btn-text">Voir le plan</span>
                                     </button>
                                 )}
                                 {(() => {
@@ -1489,12 +1523,15 @@ function HomeContent({searchParams}) {
                                             aria-label={`Ouvrir Moodle pour ${courseId}`}
                                         >
                                             <span className="action-btn-icon">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
-                                                    <path fill="#ffab40" d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z"/>
-                                                    <path d="M5.5 16.2H6.5V32H5.5z"/>
-                                                    <path fill="#424242" d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z"/>
-                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z"/>
-                                                    <path fill="#424242" d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z"/>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20" height="20">
+                                                    <circle cx="28" cy="28" r="26" fill="white"/>
+                                                    <g transform="translate(4, 4)">
+                                                        <path fill="#ffab40" d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z"/>
+                                                        <path d="M5.5 16.2H6.5V32H5.5z"/>
+                                                        <path fill="#424242" d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z"/>
+                                                        <path fill="#616161" d="M18,17H4l11-7h14L18,17z"/>
+                                                        <path fill="#424242" d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z"/>
+                                                    </g>
                                                 </svg>
                                             </span>
                                             <span className="action-btn-text">Ouvrir Moodle</span>
