@@ -167,7 +167,32 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Bouton DEV - Historique */
+/* Bouton Historique (toujours visible) */
+.history-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.history-btn:hover {
+    background: var(--bg-primary);
+    border-color: var(--text-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Bouton DEV - Historique (déprécié, gardé pour compatibilité) */
 .dev-history-btn {
     width: 44px;
     height: 44px;
@@ -275,6 +300,11 @@
         width: 40px;
         height: 40px;
     }
+
+    .history-btn {
+        width: 40px;
+        height: 40px;
+    }
 }
 
 @media (max-width: 650px) {
@@ -324,6 +354,11 @@
     }
 
     .dev-history-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .history-btn {
         width: 38px;
         height: 38px;
     }

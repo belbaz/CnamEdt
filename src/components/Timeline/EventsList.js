@@ -12,7 +12,8 @@ export default function EventsList({
     totalMinutes, 
     subjectColors, 
     onOpenEventDetails,
-    compactMode = 5
+    compactMode = 5,
+    hide15MinSpacing = false
 }) {
     const {dayHeightFactor, cardTopPadding, eventsContainerPadding} = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
@@ -94,31 +95,41 @@ export default function EventsList({
             style={containerStyle}
         >
             <ul style={ulStyle}>
-                {events.map((ev, idx) => {
-                    let stylePos;
-                    if (isMobile) {
-                        const pos = getEventPositionVertical(ev.start, ev.end, startMinutes, endMinutes);
-                        stylePos = {
-                            top: pos.top,
-                            height: pos.height,
-                            left: "0",
-                            width: "100%",
-                            position: "absolute"
-                        };
-                    } else {
-                        const pos = getEventPosition(ev.start, ev.end, startMinutes, endMinutes);
-                        stylePos = {left: pos.left, width: pos.width};
-                    }
-                    return (
-                        <EventCard
-                            key={idx}
-                            event={ev}
-                            stylePos={stylePos}
-                            subjectColors={subjectColors}
-                            onOpenEventDetails={onOpenEventDetails}
-                        />
-                    );
-                })}
+                {(() => {
+                    // Trier les événements une seule fois par heure de début
+                    const sortedEvents = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
+                    return sortedEvents.map((ev, idx) => {
+                        // Trouver l'événement précédent et suivant (triés par heure de début)
+                        const previousEvent = idx > 0 ? sortedEvents[idx - 1] : null;
+                        const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
+                        const nextEvent = idx < sortedEvents.length - 1 ? sortedEvents[idx + 1] : null;
+                        const nextEventStart = nextEvent ? nextEvent.start : null;
+                        
+                        let stylePos;
+                        if (isMobile) {
+                            const pos = getEventPositionVertical(ev.start, ev.end_time || ev.end, startMinutes, endMinutes, previousEventEnd, nextEventStart, hide15MinSpacing);
+                            stylePos = {
+                                top: pos.top,
+                                height: pos.height,
+                                left: "0",
+                                width: "100%",
+                                position: "absolute"
+                            };
+                        } else {
+                            const pos = getEventPosition(ev.start, ev.end_time || ev.end, startMinutes, endMinutes, previousEventEnd, nextEventStart, hide15MinSpacing);
+                            stylePos = {left: pos.left, width: pos.width};
+                        }
+                        return (
+                            <EventCard
+                                key={idx}
+                                event={ev}
+                                stylePos={stylePos}
+                                subjectColors={subjectColors}
+                                onOpenEventDetails={onOpenEventDetails}
+                            />
+                        );
+                    });
+                })()}
             </ul>
         </div>
     );

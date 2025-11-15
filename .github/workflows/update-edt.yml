@@ -2,8 +2,11 @@ name: Update EDT Automatique
 
 on:
   schedule:
-    # Toutes les heures à la minute 0
-    - cron: '0 * * * *'
+    # 9h-19h : toutes les 20 minutes
+    - cron: '*/20 9-19 * * *'
+    # 0h, 7h-8h et 20h-23h : toutes les heures
+    - cron: '0 0,7-8,20-23 * * *'
+    # Note: Entre 1h et 7h du matin, aucun job n'est exécuté
   workflow_dispatch: # Permet de lancer manuellement depuis GitHub
 
 jobs:

@@ -19,6 +19,8 @@ export default function PageHeader({
                                        onViewModeChange = null,
                                        showTimeLabels = true,
                                        onToggleTimeLabels = null,
+                                       hide15MinSpacing = false,
+                                       onToggle15MinSpacing = null,
                                        subjects = [],
                                        selectedSubjects = [],
                                        onSubjectsChange = null,
@@ -163,6 +165,8 @@ export default function PageHeader({
                         onCheckUpdates={onCheckUpdates}
                         showTimeLabels={showTimeLabels}
                         onToggleTimeLabels={onToggleTimeLabels}
+                        hide15MinSpacing={hide15MinSpacing}
+                        onToggle15MinSpacing={onToggle15MinSpacing}
                     />
                     <button
                         className="view-toggle"

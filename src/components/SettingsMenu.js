@@ -12,7 +12,9 @@ export default function SettingsMenu({
                                          currentVersion = null,
                                          onCheckUpdates = null,
                                          showTimeLabels = true,
-                                         onToggleTimeLabels = null
+                                         onToggleTimeLabels = null,
+                                         hide15MinSpacing = false,
+                                         onToggle15MinSpacing = null
                                      }) {
     const [isOpen, setIsOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
@@ -127,6 +129,18 @@ export default function SettingsMenu({
                                         onChange={(e) => onToggleTimeLabels && onToggleTimeLabels(e.target.checked)}
                                     />
                                     <span>Afficher les heures</span>
+                                </label>
+                            </div>
+
+                            <div className="setting-item">
+                                <label htmlFor="hide15MinSpacing-checkbox">
+                                    <input
+                                        id="hide15MinSpacing-checkbox"
+                                        type="checkbox"
+                                        checked={hide15MinSpacing}
+                                        onChange={(e) => onToggle15MinSpacing && onToggle15MinSpacing(e.target.checked)}
+                                    />
+                                    <span>Masquer les pauses de 15 minutes</span>
                                 </label>
                             </div>
 

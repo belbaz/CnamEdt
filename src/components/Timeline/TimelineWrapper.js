@@ -15,7 +15,8 @@ export default function TimelineWrapper({
     subjectColors,
     onOpenEventDetails,
     compactMode = 5,
-    showTimeLabels = true
+    showTimeLabels = true,
+    hide15MinSpacing = false
 }) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
@@ -44,6 +45,7 @@ export default function TimelineWrapper({
                 subjectColors={subjectColors}
                 onOpenEventDetails={onOpenEventDetails}
                 compactMode={compactMode}
+                hide15MinSpacing={hide15MinSpacing}
             />
         </div>
     );

@@ -12,6 +12,7 @@ export default function VerticalSchedule({
                                              onOpenEventDetails,
                                              compactMode = 5,
                                              showTimeLabels = true,
+                                             hide15MinSpacing = false,
                                              isNative = false,
                                              monthFormat = 'long'
                                          }) {
@@ -171,16 +172,57 @@ export default function VerticalSchedule({
     }, [days.length, isMobile, showTimeLabels]);
 
     // Fonction pour obtenir la position verticale d'un événement
-    const getEventVerticalPosition = (startTime, endTime) => {
+    const getEventVerticalPosition = (startTime, endTime, previousEventEnd = null, nextEventStart = null) => {
         const s = new Date(startTime);
         const e = new Date(endTime);
         const sMin = s.getHours() * 60 + s.getMinutes();
         const eMin = e.getHours() * 60 + e.getMinutes();
         const total = endMinutes - startMinutes;
-        const startOffset = sMin - startMinutes;
-        const dur = eMin - sMin;
+        // Si hide15MinSpacing est activé et qu'il y a un événement précédent
+        let adjustedStartOffset = sMin - startMinutes;
+        let hasGapFromPrev = false;
+        if (hide15MinSpacing && previousEventEnd !== null) {
+            const prevEnd = new Date(previousEventEnd);
+            const prevEndMin = prevEnd.getHours() * 60 + prevEnd.getMinutes();
+            const gapMinutes = sMin - prevEndMin;
+            
+            // Si l'écart est exactement de 15 minutes, partager équitablement : chaque cours prend 7.5 minutes
+            if (gapMinutes === 15) {
+                // Le cours suivant commence 7.5 minutes après la fin réelle du cours précédent
+                adjustedStartOffset = prevEndMin - startMinutes + 7.5;
+                hasGapFromPrev = true;
+            }
+        }
+        // Calculer la durée de base
+        let dur = eMin - sMin;
+        
+        // Si le cours commence plus tôt (ajustement du début), augmenter la durée pour compenser
+        if (hasGapFromPrev) {
+            dur += 7.5; // Compenser le début plus tôt en augmentant la durée
+        }
+        
+        // Si hide15MinSpacing est activé et qu'il y a un événement suivant avec un écart de 15 minutes
+        // Le cours actuel s'étend de 7.5 minutes (la moitié des 15 minutes)
+        if (hide15MinSpacing && nextEventStart !== null) {
+            const nextStart = new Date(nextEventStart);
+            const nextStartMin = nextStart.getHours() * 60 + nextStart.getMinutes();
+            const gapToNext = nextStartMin - eMin;
+            
+            // Si l'écart avec le cours suivant est exactement de 15 minutes, augmenter la hauteur de 7.5 minutes
+            if (gapToNext === 15) {
+                dur += 7.5; // Ajouter 7.5 minutes (la moitié des 15 minutes)
+                // Réduire légèrement la durée pour laisser un petit espace entre les cours
+                // On utilise une valeur fixe de 0.125% (moitié de 0.25%) qui représente environ 0.75-1px sur une timeline typique
+                dur -= (total * 0.00125); // 0.125% de la durée totale en minutes
+            }
+        }
+        
+        // Si hide15MinSpacing est activé et qu'il n'y a PAS d'événement suivant mais qu'il y a un écart de 15 minutes avec le précédent
+        // Le dernier cours ne doit PAS ajouter de durée supplémentaire car on a déjà compensé le début plus tôt
+        // Le startOffset a déjà été ajusté dans le premier bloc, et la durée a déjà été augmentée pour compenser le début plus tôt
+        // Donc pas besoin d'ajouter encore de la durée, sinon le cours dépasserait son heure de fin réelle
         return {
-            top: `${(startOffset / total * 100).toFixed(3)}%`,
+            top: `${(adjustedStartOffset / total * 100).toFixed(3)}%`,
             height: `${Math.max(3, (dur / total * 100)).toFixed(3)}%`
         };
     };
@@ -325,24 +367,36 @@ export default function VerticalSchedule({
                                         className="vertical-events-container"
                                         style={{height: `${totalMinutes}px`}}
                                     >
-                                        {dayEvents.map((ev, evIdx) => {
-                                            const pos = getEventVerticalPosition(ev.start, ev.end);
-                                            return (
-                                                <EventCard
-                                                    key={evIdx}
-                                                    event={ev}
-                                                    stylePos={{
-                                                        ...pos,
-                                                        position: 'absolute',
-                                                        left: '0',
-                                                        right: '0',
-                                                        width: '100%'
-                                                    }}
-                                                    subjectColors={subjectColors}
-                                                    onOpenEventDetails={onOpenEventDetails}
-                                                />
-                                            );
-                                        })}
+                                        {(() => {
+                                            // Trier les événements une seule fois par heure de début
+                                            const sortedEvents = [...dayEvents].sort((a, b) => new Date(a.start) - new Date(b.start));
+                                            return sortedEvents.map((ev, evIdx) => {
+                                                // Trouver l'événement précédent (trié par heure de début)
+                                                const previousEvent = evIdx > 0 ? sortedEvents[evIdx - 1] : null;
+                                                const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
+                                                
+                                                // Trouver l'événement suivant (trié par heure de début)
+                                                const nextEvent = evIdx < sortedEvents.length - 1 ? sortedEvents[evIdx + 1] : null;
+                                                const nextEventStart = nextEvent ? nextEvent.start : null;
+                                                
+                                                const pos = getEventVerticalPosition(ev.start, ev.end_time || ev.end, previousEventEnd, nextEventStart);
+                                                return (
+                                                    <EventCard
+                                                        key={evIdx}
+                                                        event={ev}
+                                                        stylePos={{
+                                                            ...pos,
+                                                            position: 'absolute',
+                                                            left: '0',
+                                                            right: '0',
+                                                            width: '100%'
+                                                        }}
+                                                        subjectColors={subjectColors}
+                                                        onOpenEventDetails={onOpenEventDetails}
+                                                    />
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 </div>
                             );

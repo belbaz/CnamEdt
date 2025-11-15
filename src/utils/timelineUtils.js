@@ -70,15 +70,54 @@ export function getCurrentTimePosition(dayDate, startMinutes, endMinutes) {
 /**
  * Calcule la position horizontale d'un événement (desktop)
  */
-export function getEventPosition(startTime, endTime, dayStart, dayEnd) {
+export function getEventPosition(startTime, endTime, dayStart, dayEnd, previousEventEnd = null, nextEventStart = null, hide15MinSpacing = false) {
     const s = new Date(startTime), e = new Date(endTime);
     const sMin = s.getHours() * 60 + s.getMinutes();
     const eMin = e.getHours() * 60 + e.getMinutes();
     const total = dayEnd - dayStart;
-    const startOffset = sMin - dayStart;
-    const dur = eMin - sMin;
+    // Si hide15MinSpacing est activé et qu'il y a un événement précédent
+    let adjustedStartOffset = sMin - dayStart;
+    let hasGapFromPrev = false;
+    if (hide15MinSpacing && previousEventEnd !== null) {
+        const prevEnd = new Date(previousEventEnd);
+        const prevEndMin = prevEnd.getHours() * 60 + prevEnd.getMinutes();
+        const gapMinutes = sMin - prevEndMin;
+        
+        // Si l'écart est exactement de 15 minutes, partager équitablement : chaque cours prend 7.5 minutes
+        if (gapMinutes === 15) {
+            // Le cours suivant commence 7.5 minutes après la fin réelle du cours précédent
+            adjustedStartOffset = prevEndMin - dayStart + 7.5;
+            hasGapFromPrev = true;
+        }
+    }
+    
+    // Calculer la durée de base
+    let dur = eMin - sMin;
+    
+    // Si le cours commence plus tôt (ajustement du début), augmenter la durée pour compenser
+    if (hasGapFromPrev) {
+        dur += 7.5; // Compenser le début plus tôt en augmentant la durée
+    }
+    
+    // Si hide15MinSpacing est activé et qu'il y a un événement suivant avec un écart de 15 minutes
+    // Le cours actuel s'étend de 7.5 minutes (la moitié des 15 minutes)
+    if (hide15MinSpacing && nextEventStart !== null) {
+        const nextStart = new Date(nextEventStart);
+        const nextStartMin = nextStart.getHours() * 60 + nextStart.getMinutes();
+        const gapToNext = nextStartMin - eMin;
+        
+        // Si l'écart avec le cours suivant est exactement de 15 minutes, augmenter la largeur de 7.5 minutes
+        if (gapToNext === 15) {
+            dur += 7.5; // Ajouter 7.5 minutes (la moitié des 15 minutes)
+        }
+    }
+    
+    // Si hide15MinSpacing est activé et qu'il n'y a PAS d'événement suivant mais qu'il y a un écart de 15 minutes avec le précédent
+    // Le dernier cours ne doit PAS ajouter de durée supplémentaire car on a déjà compensé le début plus tôt
+    // Le startOffset a déjà été ajusté dans le premier bloc, et la durée a déjà été augmentée pour compenser le début plus tôt
+    // Donc pas besoin d'ajouter encore de la durée, sinon le cours dépasserait son heure de fin réelle
     return {
-        left: `${(startOffset / total * 100).toFixed(3)}%`,
+        left: `${(adjustedStartOffset / total * 100).toFixed(3)}%`,
         width: `${Math.max(3, (dur / total * 100)).toFixed(3)}%`
     };
 }
@@ -87,16 +126,56 @@ export function getEventPosition(startTime, endTime, dayStart, dayEnd) {
  * Calcule la position verticale d'un événement (mobile)
  * Note: Utilise calc() pour soustraire le padding du haut et du bas
  */
-export function getEventPositionVertical(startTime, endTime, dayStart, dayEnd) {
+export function getEventPositionVertical(startTime, endTime, dayStart, dayEnd, previousEventEnd = null, nextEventStart = null, hide15MinSpacing = false) {
     const s = new Date(startTime), e = new Date(endTime);
     const sMin = s.getHours() * 60 + s.getMinutes();
     const eMin = e.getHours() * 60 + e.getMinutes();
     const total = dayEnd - dayStart;
-    const startOffset = sMin - dayStart;
-    const dur = eMin - sMin;
+    
+    // Si hide15MinSpacing est activé et qu'il y a un événement précédent
+    let adjustedStartOffset = sMin - dayStart;
+    let hasGapFromPrev = false;
+    if (hide15MinSpacing && previousEventEnd !== null) {
+        const prevEnd = new Date(previousEventEnd);
+        const prevEndMin = prevEnd.getHours() * 60 + prevEnd.getMinutes();
+        const gapMinutes = sMin - prevEndMin;
+        
+        // Si l'écart est exactement de 15 minutes, partager équitablement : chaque cours prend 7.5 minutes
+        if (gapMinutes === 15) {
+            // Le cours suivant commence 7.5 minutes après la fin réelle du cours précédent
+            adjustedStartOffset = prevEndMin - dayStart + 7.5;
+            hasGapFromPrev = true;
+        }
+    }
+    
+    // Calculer la durée de base
+    let dur = eMin - sMin;
+    
+    // Si le cours commence plus tôt (ajustement du début), augmenter la durée pour compenser
+    if (hasGapFromPrev) {
+        dur += 7.5; // Compenser le début plus tôt en augmentant la durée
+    }
+    
+    // Si hide15MinSpacing est activé et qu'il y a un événement suivant avec un écart de 15 minutes
+    // Le cours actuel s'étend de 7.5 minutes (la moitié des 15 minutes)
+    if (hide15MinSpacing && nextEventStart !== null) {
+        const nextStart = new Date(nextEventStart);
+        const nextStartMin = nextStart.getHours() * 60 + nextStart.getMinutes();
+        const gapToNext = nextStartMin - eMin;
+        
+        // Si l'écart avec le cours suivant est exactement de 15 minutes, augmenter la hauteur de 7.5 minutes
+        if (gapToNext === 15) {
+            dur += 7.5; // Ajouter 7.5 minutes (la moitié des 15 minutes)
+        }
+    }
+    
+    // Si hide15MinSpacing est activé et qu'il n'y a PAS d'événement suivant mais qu'il y a un écart de 15 minutes avec le précédent
+    // Le dernier cours ne doit PAS ajouter de durée supplémentaire car on a déjà compensé le début plus tôt
+    // Le startOffset a déjà été ajusté dans le premier bloc, et la durée a déjà été augmentée pour compenser le début plus tôt
+    // Donc pas besoin d'ajouter encore de la durée, sinon le cours dépasserait son heure de fin réelle
     
     // Calcul de la position de base en pourcentage
-    const topPercent = (startOffset / total * 100);
+    const topPercent = (adjustedStartOffset / total * 100);
     const heightPercent = Math.max(5, (dur / total * 100));
     
     // Utiliser calc() pour soustraire le padding-top et padding-bottom réduit

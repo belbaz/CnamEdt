@@ -94,6 +94,9 @@
     cursor: pointer;
     font-size: 0.9rem;
     color: var(--text-secondary);
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
 }
 
 .setting-item input[type="checkbox"] {
@@ -101,6 +104,10 @@
     height: 20px;
     cursor: pointer;
     accent-color: #4299e1;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
 }
 
 .setting-item span {

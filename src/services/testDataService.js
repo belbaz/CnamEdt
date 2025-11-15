@@ -57,29 +57,52 @@ export function addTestCoursesForToday(existingEvents) {
         return existingEvents;
     }
     
-    console.log('[Test Mode] Aujourd\'hui n\'a pas de cours, ajout de cours de test 9h-17h');
+    console.log('[Test Mode] Aujourd\'hui n\'a pas de cours, ajout de cours de test 6h30-20h');
     
-    // Générer des cours de 9h à 17h
+    // Générer 7 cours d'affilée de 6h30 à 20h avec 15 minutes de pause entre chaque
     const testEvents = [];
     const courses = [
-        { subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: 'Salle A101' },
-        { subject: 'Informatique', prof: 'Mme Martin', location: 'Labo Informatique' },
-        { subject: 'Économie', prof: 'M. Bernard', location: 'Salle B205' },
-        { subject: 'Gestion de Projet', prof: 'Mme Dubois', location: 'Salle C301' }
+        { subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: '3.1.08' }, // Saint-Martin
+        { subject: 'Informatique Théorique', prof: 'Mme Martin', location: '35.1.15' }, // Conté
+        { subject: 'Base de Données', prof: 'M. Bernard', location: '2.2.18' }, // Saint-Martin
+        { subject: 'Développement Web', prof: 'Mme Dubois', location: '33.1.10' }, // Conté
+        { subject: 'Architecture Logicielle', prof: 'M. Lefebvre', location: '11.1.12' }, // Saint-Martin
+        { subject: 'Intelligence Artificielle', prof: 'Mme Garcia', location: '34.1.16' }, // Conté
+        { subject: 'Sécurité Informatique', prof: 'M. Moreau', location: '15.2.13' } // Saint-Martin
     ];
     
-    // Créer 4 cours de 2h chacun de 9h à 17h
-    for (let i = 0; i < 4; i++) {
-        const startHour = 9 + i * 2; // 9h, 11h, 13h, 15h
+    // Calcul de la durée optimale pour finir exactement à 20h
+    // De 6h30 à 20h = 13h30 = 810 minutes
+    // 6 pauses * 15 min = 90 minutes
+    // Temps disponible pour les cours = 810 - 90 = 720 minutes
+    // Durée par cours = 720 / 7 ≈ 102.86 minutes ≈ 1h43
+    const totalMinutes = 13 * 60 + 30; // 6h30 à 20h = 810 minutes
+    const pauseDurationMinutes = 15;
+    const totalPauseMinutes = 6 * pauseDurationMinutes; // 6 pauses entre 7 cours
+    const availableMinutes = totalMinutes - totalPauseMinutes;
+    const courseDurationMinutes = Math.floor(availableMinutes / 7); // ≈ 102 minutes (1h42)
+    
+    // Premier cours commence à 6h30
+    let currentStartHour = 6;
+    let currentStartMinute = 30;
+    
+    // Créer 7 cours d'affilée
+    for (let i = 0; i < 7; i++) {
         const course = courses[i];
         
         const startTime = new Date(today);
-        startTime.setHours(startHour, 0, 0, 0);
+        startTime.setHours(currentStartHour, currentStartMinute, 0, 0);
         
-        const endTime = new Date(today);
-        endTime.setHours(startHour + 2, 0, 0, 0);
+        const endTime = new Date(startTime);
         
-        console.log(`[Test Mode] Création cours ${i + 1}: ${course.subject} de ${startTime.toLocaleTimeString()} à ${endTime.toLocaleTimeString()}`);
+        // Pour le dernier cours (index 6), on force la fin à 20h
+        if (i === 6) {
+            endTime.setHours(20, 0, 0, 0);
+        } else {
+            endTime.setMinutes(startTime.getMinutes() + courseDurationMinutes);
+        }
+        
+        console.log(`[Test Mode] Création cours ${i + 1}: ${course.subject} de ${startTime.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} à ${endTime.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`);
         
         testEvents.push({
             summary: course.subject,
@@ -88,6 +111,15 @@ export function addTestCoursesForToday(existingEvents) {
             location: course.location,
             description: `Professeur : ${course.prof}\nMatière : ${course.subject}\n\n[Cours de test généré automatiquement]`
         });
+        
+        // Calculer l'heure de début du prochain cours (fin du cours actuel + pause)
+        // Sauf pour le dernier cours
+        if (i < 6) {
+            const nextStartTime = new Date(endTime);
+            nextStartTime.setMinutes(nextStartTime.getMinutes() + pauseDurationMinutes);
+            currentStartHour = nextStartTime.getHours();
+            currentStartMinute = nextStartTime.getMinutes();
+        }
     }
     
     // Ajouter les cours de test aux événements existants
