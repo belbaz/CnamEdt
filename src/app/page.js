@@ -43,28 +43,8 @@ function HomeContent({searchParams}) {
     const [loading, setLoading] = useState(true);
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [selectedWeek, setSelectedWeek] = useState(null);
-    // Initialiser darkMode depuis localStorage pour éviter le flash
-    const [darkMode, setDarkMode] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            return fromCookie === 'true' || fromStorage === 'true';
-        } catch {
-            return false;
-        }
-    });
-    // Initialiser oledMode depuis localStorage
-    const [oledMode, setOledMode] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        try {
-            const saved = localStorage.getItem('oledMode');
-            return saved === 'true';
-        } catch {
-            return false;
-        }
-    });
+    const [darkMode, setDarkMode] = useState(false);
+    const [oledMode, setOledMode] = useState(false);
     const [subjectColors, setSubjectColors] = useState({});
     const [currentTime, setCurrentTime] = useState(new Date());
     const [autoScrollToday, setAutoScrollToday] = useState(true);
