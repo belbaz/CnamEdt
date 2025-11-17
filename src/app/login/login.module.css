@@ -1,0 +1,320 @@
+.page {
+    min-height: 100vh;
+    background: var(--bg-gradient);
+    padding: clamp(1rem, 3vw, 2rem) 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wrapper {
+    width: min(480px, 100%);
+    max-width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notice {
+    background: linear-gradient(135deg, rgba(66, 153, 225, 0.08), rgba(14, 165, 233, 0.12));
+    border: 1px solid rgba(66, 153, 225, 0.25);
+    border-radius: 16px;
+    padding: clamp(0.65rem, 1.5vw, 0.9rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.noticeLabel {
+    align-self: flex-start;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.15);
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.notice h1 {
+    margin: 0;
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.notice p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    font-size: clamp(0.8rem, 1.3vw, 0.9rem);
+}
+
+.noticePoints {
+    margin: 0.25rem 0 0;
+    padding-left: 1.2rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.formsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.formCard {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    border: 1px solid var(--border-light);
+    padding: clamp(1rem, 2vw, 1.5rem);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.accentCard {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.15));
+    border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.cardHeader h2 {
+    margin: 0;
+    font-size: clamp(1.3rem, 2vw, 1.5rem);
+    color: var(--text-primary);
+}
+
+.cardHeader p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.cardSubhead {
+    margin: 0.1rem 0 0;
+    font-size: clamp(0.85rem, 1.5vw, 0.9rem);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.cardHint {
+    font-size: 0.85rem;
+    background: rgba(66, 153, 225, 0.08);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.inputGroup label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.inputGroup input {
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inputGroup input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.15);
+}
+
+.dualRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+}
+
+.inlineActions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.checkbox input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+}
+
+.ghostButton {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.ghostLink {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.ghostLink:hover {
+    text-decoration: underline;
+}
+
+.submitButton {
+    border: none;
+    border-radius: 16px;
+    padding: 0.9rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: white;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submitButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 30px rgba(37, 99, 235, 0.3);
+}
+
+.accentButton {
+    background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+}
+
+.formFooter {
+    background: rgba(15, 23, 42, 0.05);
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    font-size: clamp(0.8rem, 1.5vw, 0.85rem);
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-top: 0.25rem;
+}
+
+.termsCheckbox {
+    margin-top: 0.5rem;
+}
+
+.linksList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quickLink {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.quickLink:hover {
+    text-decoration: underline;
+}
+
+.footerLink {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.footerLink:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .page {
+        padding: 1rem 0.75rem;
+    }
+
+    .wrapper {
+        border-radius: 18px;
+        padding: 1rem;
+        gap: 0.85rem;
+    }
+
+    .notice {
+        padding: 0.6rem;
+        gap: 0.3rem;
+    }
+
+    .formCard {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .inlineActions {
+        justify-content: center;
+    }
+
+    .inputGroup input {
+        padding: 0.65rem 0.9rem;
+        font-size: 0.9rem;
+    }
+
+    .submitButton {
+        padding: 0.8rem 1.15rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .wrapper {
+        width: 100%;
+        border-radius: 16px;
+    }
+
+    .notice h1 {
+        font-size: 1.2rem;
+    }
+
+    .cardHeader h2 {
+        font-size: 1.25rem;
+    }
+}
+
