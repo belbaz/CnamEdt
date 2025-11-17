@@ -365,6 +365,11 @@
     text-overflow: ellipsis;
 }
 
+.site-badge.visio-badge {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+    color: #fff !important;
+}
+
 /* Responsive modal badge */
 @media (max-width: 768px) {
     .site-badge {
@@ -416,6 +421,11 @@
     max-width: 3.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.site-badge-card.visio-badge {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    color: #fff;
 }
 
 /* Responsive : texte raccourci sur petits écrans */
@@ -699,6 +709,11 @@
     content: "📍 ";
     opacity: 0.7;
     flex-shrink: 0;
+}
+
+.location.visio-location::before {
+    content: "🎥 ";
+    opacity: 0.9;
 }
 
 .location-text {

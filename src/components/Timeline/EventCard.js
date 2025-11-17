@@ -4,6 +4,11 @@ import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./EventCard.css";
 import {useDevMode} from "../../utils/env";
 
+const isVisioLocation = (location) => {
+    if (!location || typeof location !== 'string') return false;
+    return /visio/i.test(location);
+};
+
 export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
     const {matiere, prof, description} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -52,7 +57,9 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
         return null;
     };
 
-    const siteInfo = location ? getCnamSite(location) : null;
+    const visioLocation = isVisioLocation(location);
+    const locationLabel = visioLocation ? 'Cours en visio' : (location || "?");
+    const siteInfo = (!visioLocation && location) ? getCnamSite(location) : null;
 
     // Détecter si la description contient "EXAMEN"
     const isExam = description && description.toUpperCase().includes("EXAMEN");
@@ -85,9 +92,16 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                     description && <strong>{description}</strong>
                 )}
                 <span className="prof">{prof || "?"}</span>
-                <div className="location">
-                    <span className="location-text">{location || "?"}</span>
-                    {siteInfo && (
+                <div className={`location ${visioLocation ? 'visio-location' : ''}`}>
+                    <span className="location-text">{locationLabel}</span>
+                    {visioLocation ? (
+                        <span
+                            className="site-badge-card visio-badge"
+                            title="Cours en visio"
+                        >
+                            VISIO
+                        </span>
+                    ) : siteInfo && (
                         <span 
                             className="site-badge-card" 
                             style={{ backgroundColor: siteInfo.color }}

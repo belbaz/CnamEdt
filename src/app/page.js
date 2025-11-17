@@ -235,6 +235,27 @@ function HomeContent({searchParams}) {
         return null;
     };
 
+    const isVisioLocation = (location) => {
+        if (!location || typeof location !== 'string') return false;
+        return /visio/i.test(location);
+    };
+
+    const parseLocationMeta = (location) => {
+        const raw = location || '';
+        const cleaned = raw.replace(/^Salle\s*:\s*/i, '').trim();
+        const visio = isVisioLocation(raw);
+        const siteInfo = !visio && raw ? getCnamSite(raw) : null;
+        const hasPhysical = Boolean(!visio && cleaned);
+        return {
+            display: visio
+                ? 'Cours en visio'
+                : (cleaned || (raw ? raw.trim() : '?')),
+            isVisio: visio,
+            siteInfo,
+            hasPhysical
+        };
+    };
+
     // Retourne l'année scolaire sous forme [yyyyStart, yyyyEnd] en se basant sur la date du cours
     // Règle: année scolaire commence en septembre (mois >= 8)
     const getAcademicYearParts = (dateLike) => {
@@ -1256,6 +1277,8 @@ function HomeContent({searchParams}) {
         }
     };
 
+    const selectedEventLocationMeta = selectedEvent ? parseLocationMeta(selectedEvent.location) : null;
+
     return (
         <div style={{display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%'}}>
             {/* Demande de permissions au démarrage (app native uniquement) */}
@@ -1526,27 +1549,25 @@ function HomeContent({searchParams}) {
                                     );
                                 })()}
                                 <div className="pop-row location-row">
-                                    <span>🚪</span>
-                                    <span>Salle : {(() => {
-                                        if (!selectedEvent.location) return "?";
-                                        const cleaned = selectedEvent.location.replace(/^Salle\s*:\s*/i, '').trim();
-                                        return cleaned || "?";
-                                    })()}</span>
-                                    {(() => {
-                                        const siteInfo = selectedEvent.location ? getCnamSite(selectedEvent.location) : null;
-                                        if (!siteInfo) return null;
-                                        return (
-                                            <span 
-                                                className="site-badge" 
-                                                style={{ 
-                                                    backgroundColor: siteInfo.color,
-                                                    color: 'white'
-                                                }}
-                                            >
-                                                {siteInfo.site}
-                                            </span>
-                                        );
-                                    })()}
+                                    <span>{selectedEventLocationMeta?.isVisio ? '🎥' : '🚪'}</span>
+                                    <span>
+                                        {selectedEventLocationMeta?.isVisio
+                                            ? selectedEventLocationMeta.display
+                                            : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
+                                    </span>
+                                    {selectedEventLocationMeta?.isVisio ? (
+                                        <span className="site-badge visio-badge">VISIO</span>
+                                    ) : selectedEventLocationMeta?.siteInfo ? (
+                                        <span
+                                            className="site-badge"
+                                            style={{
+                                                backgroundColor: selectedEventLocationMeta.siteInfo.color,
+                                                color: 'white'
+                                            }}
+                                        >
+                                            {selectedEventLocationMeta.siteInfo.site}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -1589,7 +1610,7 @@ function HomeContent({searchParams}) {
 
                             {/* Section Actions */}
                             <div className="modal-section modal-actions">
-                                {selectedEvent.location && selectedEvent.location.trim() && (
+                                {selectedEventLocationMeta?.hasPhysical && (
                                     <button
                                         className="action-btn map-btn"
                                         onClick={() => setShowMap(true)}
