@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ActiveAccountClient from "./ActiveAccountClient";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function ActiveAccountPage() {
-    return <ActiveAccountClient />;
+    return (
+        <Suspense fallback={<div className="loading">Chargement...</div>}>
+            <ActiveAccountClient />
+        </Suspense>
+    );
 }
