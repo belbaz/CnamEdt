@@ -24,10 +24,10 @@ function extractNamesFromEmail(email) {
     if (!match) {
         return null;
     }
-    const [, rawFirstName, rawLastName] = match;
+    const [, rawFirstSegment, rawSecondSegment] = match;
     return {
-        firstName: capitalizeSegment(rawFirstName.toLowerCase()),
-        lastName: capitalizeSegment(rawLastName.toLowerCase()),
+        firstName: capitalizeSegment(rawSecondSegment.toLowerCase()),
+        lastName: capitalizeSegment(rawFirstSegment.toLowerCase()),
     };
 }
 
@@ -51,25 +51,27 @@ async function sendActivationEmail({ to, link }) {
         }
     });
 
+    const currentYear = new Date().getFullYear();
     const htmlContent = `
         <div style="font-family:Arial,sans-serif;color:#0f172a;padding:24px;background:#f8fafc;">
             <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:white;border-radius:18px;border:1px solid #e2e8f0;">
                 <tr>
                     <td style="padding:32px;text-align:center;">
-                        <h1 style="margin:0 0 12px;font-size:22px;color:#0f172a;">Activation de votre accès</h1>
+                        <h1 style="margin:0 0 12px;font-size:22px;color:#0f172a;">Création de compte</h1>
                         <p style="margin:0 0 16px;font-size:16px;color:#475569;">
                             Bonjour, nous avons bien reçu une demande de création de compte pour <strong>${to}</strong>.
                         </p>
                         <p style="margin:0 0 24px;font-size:15px;color:#475569;">
-                            Cliquez sur le bouton ci-dessous dans les 30 prochaines minutes pour activer votre accès à l'EDT CNAM.
+                            Cliquez sur le bouton ci-dessous pour activer votre compte.<br />
+                            Le lien est valide 30 minutes.
                         </p>
                         <p style="margin:0 0 28px;">
                             <a href="${link}" style="display:inline-block;padding:14px 30px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;">
                                 Activer mon compte
                             </a>
                         </p>
-                        <p style="margin:0;font-size:13px;color:#94a3b8;">
-                            Le bouton ne répond pas ? <a href="${link}" style="color:#2563eb;text-decoration:none;font-weight:600;">Cliquez ici</a>
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">
+                            © ${currentYear} EdtCnam <a href="https://myedt.vercel.app" style="color:#2563eb;text-decoration:none;">myedt.vercel.app</a>
                         </p>
                     </td>
                 </tr>
@@ -207,7 +209,7 @@ export async function POST(request) {
 
         return NextResponse.json(
             {
-                message: "Compte créé avec succès.",
+                message: "Compte créé avec succès. Vérifiez votre boîte mail pour l'activation.",
                 user: {
                     id: newUser.id,
                     email: newUser.email,
@@ -215,9 +217,8 @@ export async function POST(request) {
                     name: firstName,
                     lastName,
                 },
-                activationToken,
+                activationEmailSent: true,
                 expiresInMinutes: 30,
-                activationUrl,
             },
             { status: 201 },
         );

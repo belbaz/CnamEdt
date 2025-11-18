@@ -210,6 +210,40 @@
     text-decoration: underline;
 }
 
+.errorBanner {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #b91c1c;
+    border-radius: 14px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+.successBanner {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #047857;
+    border-radius: 14px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9rem;
+}
+
+.loadingState {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+}
+
+.loader {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #ffffff;
+    animation: spin 0.9s linear infinite;
+}
+
 .submitButton {
     border: none;
     border-radius: 16px;
@@ -230,6 +264,13 @@
 .submitButton:hover {
     transform: translateY(-1px);
     box-shadow: 0 18px 30px rgba(37, 99, 235, 0.3);
+}
+
+.submitButton:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .accentButton {
@@ -309,6 +350,12 @@
     .submitButton {
         padding: 0.8rem 1.15rem;
         font-size: 0.95rem;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 

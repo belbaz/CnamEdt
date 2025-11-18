@@ -16,6 +16,7 @@ export default function ActiveAccountClient() {
     const [isValidToken, setIsValidToken] = useState(false);
     const [isActivating, setIsActivating] = useState(false);
     const [activationSuccess, setActivationSuccess] = useState(false);
+    const [isCheckingToken, setIsCheckingToken] = useState(true);
 
     useEffect(() => {
         const urlToken = searchParams.get("token") || "";
@@ -23,15 +24,19 @@ export default function ActiveAccountClient() {
     }, [searchParams]);
 
     useEffect(() => {
+        let isMounted = true;
+
         if (!token) {
             setStatus({ type: "error", message: "Lien d'activation invalide." });
             setIsValidToken(false);
-            return;
+            setIsCheckingToken(false);
+            return () => {
+                isMounted = false;
+            };
         }
 
-        let isMounted = true;
-
         const validateToken = async () => {
+            setIsCheckingToken(true);
             try {
                 const response = await fetch("/api/activate-account", {
                     method: "POST",
@@ -61,6 +66,10 @@ export default function ActiveAccountClient() {
                     type: "error",
                     message: error.message || "Lien expiré ou invalide.",
                 });
+            } finally {
+                if (isMounted) {
+                    setIsCheckingToken(false);
+                }
             }
         };
 
@@ -107,7 +116,14 @@ export default function ActiveAccountClient() {
 
     const renderStatusBanner = () => (
         <div className={`${styles.statusBanner} ${styles[status.type]}`}>
-            {status.message}
+            {isCheckingToken ? (
+                <span className={styles.bannerLoader}>
+                    <span className={styles.loader} aria-hidden="true" />
+                    Vérification du lien en cours...
+                </span>
+            ) : (
+                status.message
+            )}
         </div>
     );
 
@@ -151,15 +167,6 @@ export default function ActiveAccountClient() {
                     >
                         {isActivating ? "Activation en cours..." : activationSuccess ? "Compte activé" : "Activer mon compte"}
                     </button>
-
-                    <div className={styles.footer}>
-                        <Link href="/signup" className={styles.ghostLink}>
-                            Recréer un compte
-                        </Link>
-                        <Link href="/login" className={styles.footerLink}>
-                            Aller à la connexion
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>
