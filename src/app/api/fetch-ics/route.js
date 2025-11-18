@@ -11,9 +11,6 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// URL par défaut (fallback si .env.local n'existe pas)
-const DEFAULT_ICS_URL = 'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
-
 function sanitizeText(value) {
     if (typeof value !== 'string') return '';
     return value.replace(/\s+/g, ' ').trim();
@@ -227,11 +224,54 @@ async function fetchEventsFromDB(supabase) {
     }
 }
 
-export async function GET() {
+function buildDatabasePayload(events, metaOverrides = {}) {
+    return {
+        events,
+        diff: {
+            added: [],
+            updated: [],
+            removed: []
+        },
+        meta: {
+            source: 'database',
+            fromCache: true,
+            changed: 0,
+            ...metaOverrides
+        }
+    };
+}
+
+/**
+ * Récupère les événements depuis Supabase avec un timeout
+ */
+async function fetchEventsFromDBWithTimeout(supabase, timeoutMs = 15000) {
+    return new Promise(async (resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            reject(new Error('Supabase timeout'));
+        }, timeoutMs);
+
+        try {
+            const events = await fetchEventsFromDB(supabase);
+            clearTimeout(timeoutId);
+            resolve(events);
+        } catch (err) {
+            clearTimeout(timeoutId);
+            reject(err);
+        }
+    });
+}
+
+export async function GET(request) {
+    let supabaseClient = null;
+    let icsError = null;
+    const TIMEOUT_MS = 15000; // 15 secondes
+    
     try {
+        supabaseClient = getSupabaseServerClient();
         
         // Utiliser .env.local ou fallback sur l'URL par défaut
-        const icsUrl = process.env.ICS_URL || DEFAULT_ICS_URL;
+        // Note: ICS_URL pour le serveur, NEXT_PUBLIC_ICS_URL pour le client
+        const icsUrl = process.env.ICS_URL || process.env.NEXT_PUBLIC_ICS_URL;
         
         if (!icsUrl) {
             throw new Error("URL ICS non configurée. Créer .env.local avec ICS_URL=...");
@@ -244,301 +284,297 @@ export async function GET() {
         let signal;
         try {
             // @ts-ignore
-            signal = AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined;
+            signal = AbortSignal.timeout ? AbortSignal.timeout(TIMEOUT_MS) : undefined;
         } catch {
             controller = new AbortController();
             signal = controller.signal;
-            setTimeout(() => controller.abort(), 10000);
+            setTimeout(() => controller.abort(), TIMEOUT_MS);
         }
 
-        const res = await fetch(icsUrl, {
-            headers: {
-                'Accept': 'text/calendar,text/plain,*/*',
-            },
-            signal
-        });
-        
-        if (!res.ok) {
-            throw new Error(`Erreur HTTP ${res.status}: ${res.statusText}`);
-        }
-
-        const text = await res.text();
-        
-        if (!text || text.length === 0) {
-            throw new Error("Fichier ICS vide");
-        }
-        
-        console.log('[API fetch-ics] ICS downloaded, length:', text.length);
-
-        // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible)
-        let supabase = getSupabaseServerClient();
-        let shouldParse = true;
-        let cachedEvents = null;
-
-        if (supabase) {
-            try {
-                const ics_hash = createHash('sha256').update(text).digest('hex');
-                
-                const { data: lastRows, error: lastErr } = await supabase
-                    .from('ics_history')
-                    .select('ics_hash')
-                    .order('timestamp', { ascending: false })
-                    .limit(1);
-                
-                if (!lastErr && lastRows && lastRows.length > 0) {
-                    const lastHash = lastRows[0].ics_hash;
-                    
-                    if (ics_hash === lastHash) {
-                        console.log('[API fetch-ics] ICS hash unchanged, returning cached events from DB');
-                        // Hash identique : récupérer depuis la base de données au lieu de parser
-                        cachedEvents = await fetchEventsFromDB(supabase);
-                        if (cachedEvents && cachedEvents.length > 0) {
-                            shouldParse = false;
-                        }
-                    }
-                }
-            } catch (checkErr) {
-                console.warn('[API fetch-ics] Error checking hash, will parse:', checkErr.message);
-            }
-        }
-
-        // Si les événements sont en cache et identiques, les retourner sans parser
-        if (!shouldParse && cachedEvents) {
-            return NextResponse.json({
-                events: cachedEvents,
-                diff: {
-                    added: [],
-                    updated: [],
-                    removed: []
-                },
-                meta: {
-                    source: 'cache',
-                    fromCache: true,
-                    changed: 0
-                }
-            });
-        }
-
-        const parsed = ical.sync.parseICS(text);
-
-        const eventMap = new Map();
-        for (const value of Object.values(parsed)) {
-            if (!value || value.type !== 'VEVENT') continue;
-            const payload = buildEventPayload(value);
-            if (!payload.uid) continue;
-
-            const existing = eventMap.get(payload.uid);
-            if (!existing) {
-                eventMap.set(payload.uid, payload);
-                continue;
-            }
-
-            const existingStart = existing.start ? new Date(existing.start).getTime() : -Infinity;
-            const newStart = payload.start ? new Date(payload.start).getTime() : -Infinity;
-            if (newStart >= existingStart) {
-                eventMap.set(payload.uid, payload);
-            }
-        }
-
-        const events = Array.from(eventMap.values()).sort((a, b) => {
-            const timeA = a.start ? new Date(a.start).getTime() : 0;
-            const timeB = b.start ? new Date(b.start).getTime() : 0;
-            return timeA - timeB;
-        });
-
-        console.log('[API fetch-ics] Events parsed:', events.length);
-
-        let diff = {
-            added: [],
-            updated: [],
-            removed: []
-        };
-
-        // Server-side history snapshot (Supabase only)
-        // Note: supabase est déjà défini plus haut si disponible
         try {
-            if (!supabase) {
-                supabase = getSupabaseServerClient();
+            const res = await fetch(icsUrl, {
+                headers: {
+                    'Accept': 'text/calendar,text/plain,*/*',
+                },
+                signal
+            });
+            
+            if (!res.ok) {
+                throw new Error(`Erreur HTTP ${res.status}: ${res.statusText}`);
             }
-            if (!supabase) {
-                console.warn('[API fetch-ics] Supabase client not available (missing env vars)');
-            } else {
-                console.log('[API fetch-ics] Supabase client initialized');
-                
-                // IMPORTANT: Load latest event map BEFORE computing subjects
-                // This map is needed for diff computation
-                const latestEventMap = await loadLatestEventMap(supabase);
-                console.log('[API fetch-ics] Loaded', latestEventMap.size, 'existing events from DB');
-                // 1) Global subjects snapshot (as before)
-                // Compute subjects list (sorted) and fingerprint
-                const subjectsSet = new Set();
-                for (const ev of events) {
-                    const s = (ev.summary || '').trim();
-                    const mat = s.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, '').trim();
-                    if (mat && mat !== ':') subjectsSet.add(mat);
-                }
-                const subjects = Array.from(subjectsSet).sort((a, b) => a.localeCompare(b));
-                const fingerprint = subjects.join('|#|');
 
-                // Hash of raw ICS content
-                const ics_hash = createHash('sha256').update(text).digest('hex');
+            const text = await res.text();
+            
+            if (!text || text.length === 0) {
+                throw new Error("Fichier ICS vide");
+            }
 
-                // Load last snapshot fingerprint
-                const { data: lastRows, error: lastErr } = await supabase
-                    .from('ics_history')
-                    .select('fingerprint, subjects')
-                    .order('timestamp', { ascending: false })
-                    .limit(1);
-                if (lastErr) {
-                    console.warn('[API fetch-ics] Supabase select last error:', lastErr.message);
-                } else {
-                    const last = lastRows && lastRows[0];
-                    let added = [];
-                    let removed = [];
-                    if (last && Array.isArray(last.subjects)) {
-                        const prev = new Set(last.subjects);
-                        const next = new Set(subjects);
-                        for (const s of next) if (!prev.has(s)) added.push(s);
-                        for (const s of prev) if (!next.has(s)) removed.push(s);
-                        added.sort((a, b) => a.localeCompare(b));
-                        removed.sort((a, b) => a.localeCompare(b));
-                    }
+            console.log('[API fetch-ics] ICS downloaded, length:', text.length);
 
-                    if (!last || last.fingerprint !== fingerprint) {
-                        const record = {
-                            id: String(Date.now()),
-                            timestamp: new Date().toISOString(),
-                            total: subjects.length,
-                            subjects,
-                            added,
-                            removed,
-                            fingerprint,
-                            ics_hash,
-                            ics_url: icsUrl
-                        };
-                        const { error: insErr } = await supabase.from('ics_history').insert(record);
-                        if (insErr) {
-                            console.warn('[API fetch-ics] Supabase insert error:', insErr.message);
-                        } else {
-                            console.log('[API fetch-ics] History snapshot inserted');
-                        }
-                    } else {
-                        console.log('[API fetch-ics] No history change (fingerprint unchanged)');
-                    }
-                }
+            // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible)
+            let shouldParse = true;
+            let cachedEvents = null;
 
-                // Removed: legacy first-seen insertion into events_first_seen (table deprecated)
-
-                // 2) Per-UID event version tracking (insert new version when fields change)
+            if (supabaseClient) {
                 try {
-                    const inserts = [];
-                    const nowISO = new Date().toISOString();
-                    const seenUids = new Set();
+                    const ics_hash = createHash('sha256').update(text).digest('hex');
+                    
+                    const { data: lastRows, error: lastErr } = await supabaseClient
+                        .from('ics_history')
+                        .select('ics_hash')
+                        .order('timestamp', { ascending: false })
+                        .limit(1);
+                    
+                    if (!lastErr && lastRows && lastRows.length > 0) {
+                        const lastHash = lastRows[0].ics_hash;
+                        
+                        if (ics_hash === lastHash) {
+                            console.log('[API fetch-ics] ICS hash unchanged, returning cached events from DB');
+                            // Hash identique : récupérer depuis la base de données au lieu de parser
+                            cachedEvents = await fetchEventsFromDB(supabaseClient);
+                            if (cachedEvents && cachedEvents.length > 0) {
+                                shouldParse = false;
+                            }
+                        }
+                    }
+                } catch (checkErr) {
+                    console.warn('[API fetch-ics] Error checking hash, will parse:', checkErr.message);
+                }
+            }
 
-                    console.log('[API fetch-ics] Computing diffs: comparing', events.length, 'fetched events vs', latestEventMap.size, 'DB events');
+            // Si les événements sont en cache et identiques, les retourner sans parser
+            if (!shouldParse && cachedEvents) {
+                return NextResponse.json(buildDatabasePayload(cachedEvents, {
+                    source: 'cache',
+                    fromCache: true
+                }));
+            }
 
-                    for (const event of events) {
-                        const contentHash = computeEventContentHash(event);
-                        const latest = latestEventMap.get(event.uid);
-                        seenUids.add(event.uid);
+            const parsed = ical.sync.parseICS(text);
 
-                        if (!latest) {
-                            // Nouvel événement jamais vu
-                            console.log('[API fetch-ics] NEW event:', event.uid, '-', event.summary);
-                            diff.added.push(event);
-                            inserts.push({
-                                uid: event.uid,
-                                version_no: 1,
-                                changed_at: nowISO,
-                                summary: event.summary,
-                                start: event.start,
-                                end_time: event.end,
-                                location: event.location,
-                                description: event.description,
-                                content_hash: contentHash
-                            });
-                            continue;
+            const eventMap = new Map();
+            for (const value of Object.values(parsed)) {
+                if (!value || value.type !== 'VEVENT') continue;
+                const payload = buildEventPayload(value);
+                if (!payload.uid) continue;
+
+                const existing = eventMap.get(payload.uid);
+                if (!existing) {
+                    eventMap.set(payload.uid, payload);
+                    continue;
+                }
+
+                const existingStart = existing.start ? new Date(existing.start).getTime() : -Infinity;
+                const newStart = payload.start ? new Date(payload.start).getTime() : -Infinity;
+                if (newStart >= existingStart) {
+                    eventMap.set(payload.uid, payload);
+                }
+            }
+
+            const events = Array.from(eventMap.values()).sort((a, b) => {
+                const timeA = a.start ? new Date(a.start).getTime() : 0;
+                const timeB = b.start ? new Date(b.start).getTime() : 0;
+                return timeA - timeB;
+            });
+
+            console.log('[API fetch-ics] Events parsed:', events.length);
+            
+            // Si aucun événement n'a été parsé, considérer comme une erreur et utiliser Supabase
+            if (events.length === 0) {
+                throw new Error("Fichier ICS valide mais aucun événement trouvé (fichier vide ou invalide)");
+            }
+
+            let diff = {
+                added: [],
+                updated: [],
+                removed: []
+            };
+
+            // Server-side history snapshot (Supabase only)
+            // Note: supabase est déjà défini plus haut si disponible
+            try {
+                if (!supabaseClient) {
+                    supabaseClient = getSupabaseServerClient();
+                }
+                if (!supabaseClient) {
+                    console.warn('[API fetch-ics] Supabase client not available (missing env vars)');
+                } else {
+                    console.log('[API fetch-ics] Supabase client initialized');
+                    
+                    // IMPORTANT: Load latest event map BEFORE computing subjects
+                    // This map is needed for diff computation
+                    const latestEventMap = await loadLatestEventMap(supabaseClient);
+                    console.log('[API fetch-ics] Loaded', latestEventMap.size, 'existing events from DB');
+                    // 1) Global subjects snapshot (as before)
+                    // Compute subjects list (sorted) and fingerprint
+                    const subjectsSet = new Set();
+                    for (const ev of events) {
+                        const s = (ev.summary || '').trim();
+                        const mat = s.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, '').trim();
+                        if (mat && mat !== ':') subjectsSet.add(mat);
+                    }
+                    const subjects = Array.from(subjectsSet).sort((a, b) => a.localeCompare(b));
+                    const fingerprint = subjects.join('|#|');
+
+                    // Hash of raw ICS content
+                    const ics_hash = createHash('sha256').update(text).digest('hex');
+
+                    // Load last snapshot fingerprint
+                    const { data: lastRows, error: lastErr } = await supabaseClient
+                        .from('ics_history')
+                        .select('fingerprint, subjects')
+                        .order('timestamp', { ascending: false })
+                        .limit(1);
+                    if (lastErr) {
+                        console.warn('[API fetch-ics] Supabase select last error:', lastErr.message);
+                    } else {
+                        const last = lastRows && lastRows[0];
+                        let added = [];
+                        let removed = [];
+                        if (last && Array.isArray(last.subjects)) {
+                            const prev = new Set(last.subjects);
+                            const next = new Set(subjects);
+                            for (const s of next) if (!prev.has(s)) added.push(s);
+                            for (const s of prev) if (!next.has(s)) removed.push(s);
+                            added.sort((a, b) => a.localeCompare(b));
+                            removed.sort((a, b) => a.localeCompare(b));
                         }
 
-                        // Comparer les hashs de contenu
-                        if (latest.content_hash !== contentHash) {
-                            // Le contenu a changé, créer une nouvelle version
-                            const changedFields = compareEvents(latest.event, event);
-                            console.log('[API fetch-ics] UPDATED event:', event.uid, '-', event.summary);
-                            console.log('  → Hash: old:', latest.content_hash.substring(0, 8), '| new:', contentHash.substring(0, 8));
-                            console.log('  → Changed fields:', changedFields.length > 0 ? changedFields.join(', ') : 'NONE (hash mismatch without field changes - BUG!)');
-                            
-                            diff.updated.push({
-                                uid: event.uid,
-                                before: {
+                        if (!last || last.fingerprint !== fingerprint) {
+                            const record = {
+                                id: String(Date.now()),
+                                timestamp: new Date().toISOString(),
+                                total: subjects.length,
+                                subjects,
+                                added,
+                                removed,
+                                fingerprint,
+                                ics_hash,
+                                ics_url: icsUrl
+                            };
+                            const { error: insErr } = await supabaseClient.from('ics_history').insert(record);
+                            if (insErr) {
+                                console.warn('[API fetch-ics] Supabase insert error:', insErr.message);
+                            } else {
+                                console.log('[API fetch-ics] History snapshot inserted');
+                            }
+                        } else {
+                            console.log('[API fetch-ics] No history change (fingerprint unchanged)');
+                        }
+                    }
+
+                    // Removed: legacy first-seen insertion into events_first_seen (table deprecated)
+
+                    // 2) Per-UID event version tracking (insert new version when fields change)
+                    try {
+                        const inserts = [];
+                        const nowISO = new Date().toISOString();
+                        const seenUids = new Set();
+
+                        console.log('[API fetch-ics] Computing diffs: comparing', events.length, 'fetched events vs', latestEventMap.size, 'DB events');
+
+                        for (const event of events) {
+                            const contentHash = computeEventContentHash(event);
+                            const latest = latestEventMap.get(event.uid);
+                            seenUids.add(event.uid);
+
+                            if (!latest) {
+                                // Nouvel événement jamais vu
+                                console.log('[API fetch-ics] NEW event:', event.uid, '-', event.summary);
+                                diff.added.push(event);
+                                inserts.push({
+                                    uid: event.uid,
+                                    version_no: 1,
+                                    changed_at: nowISO,
+                                    summary: event.summary,
+                                    start: event.start,
+                                    end_time: event.end,
+                                    location: event.location,
+                                    description: event.description,
+                                    content_hash: contentHash
+                                });
+                                continue;
+                            }
+
+                            // Comparer les hashs de contenu
+                            if (latest.content_hash !== contentHash) {
+                                // Le contenu a changé, créer une nouvelle version
+                                const changedFields = compareEvents(latest.event, event);
+                                console.log('[API fetch-ics] UPDATED event:', event.uid, '-', event.summary);
+                                console.log('  → Hash: old:', latest.content_hash.substring(0, 8), '| new:', contentHash.substring(0, 8));
+                                console.log('  → Changed fields:', changedFields.length > 0 ? changedFields.join(', ') : 'NONE (hash mismatch without field changes - BUG!)');
+                                
+                                diff.updated.push({
+                                    uid: event.uid,
+                                    before: {
+                                        ...latest.event,
+                                        version_no: latest.version_no,
+                                        content_hash: latest.content_hash
+                                    },
+                                    after: event,
+                                    changedFields // Ajouter les champs modifiés au diff
+                                });
+                                inserts.push({
+                                    uid: event.uid,
+                                    version_no: latest.version_no + 1,
+                                    changed_at: nowISO,
+                                    summary: event.summary,
+                                    start: event.start,
+                                    end_time: event.end,
+                                    location: event.location,
+                                    description: event.description,
+                                    content_hash: contentHash
+                                });
+                            } else {
+                                // Hash identique = aucun changement, ne rien insérer
+                                // console.log('[API fetch-ics] UNCHANGED event:', event.uid, '-', event.summary);
+                            }
+                        }
+
+                        for (const [uid, latest] of latestEventMap.entries()) {
+                            if (!seenUids.has(uid)) {
+                                console.log('[API fetch-ics] REMOVED event:', uid, '-', latest.event.summary);
+                                diff.removed.push({
+                                    uid,
                                     ...latest.event,
                                     version_no: latest.version_no,
                                     content_hash: latest.content_hash
-                                },
-                                after: event,
-                                changedFields // Ajouter les champs modifiés au diff
-                            });
-                            inserts.push({
-                                uid: event.uid,
-                                version_no: latest.version_no + 1,
-                                changed_at: nowISO,
-                                summary: event.summary,
-                                start: event.start,
-                                end_time: event.end,
-                                location: event.location,
-                                description: event.description,
-                                content_hash: contentHash
-                            });
-                        } else {
-                            // Hash identique = aucun changement, ne rien insérer
-                            // console.log('[API fetch-ics] UNCHANGED event:', event.uid, '-', event.summary);
-                        }
-                    }
-
-                    for (const [uid, latest] of latestEventMap.entries()) {
-                        if (!seenUids.has(uid)) {
-                            console.log('[API fetch-ics] REMOVED event:', uid, '-', latest.event.summary);
-                            diff.removed.push({
-                                uid,
-                                ...latest.event,
-                                version_no: latest.version_no,
-                                content_hash: latest.content_hash
-                            });
-                        }
-                    }
-
-                    console.log('[API fetch-ics] Diff computed:', diff.added.length, 'added,', diff.updated.length, 'updated,', diff.removed.length, 'removed');
-                    console.log('[API fetch-ics] Will insert', inserts.length, 'new version(s) in DB');
-
-                    if (inserts.length > 0) {
-                        const BATCH_SIZE = 100;
-                        for (let i = 0; i < inserts.length; i += BATCH_SIZE) {
-                            const batch = inserts.slice(i, i + BATCH_SIZE);
-                            const { error: insVerErr } = await supabase.from('events_versions').insert(batch);
-                            if (insVerErr) {
-                                console.warn('[API fetch-ics] Insert events_versions error:', insVerErr.message, insVerErr.code);
-                                break;
+                                });
                             }
-                            console.log(`[API fetch-ics] ${batch.length} event version(s) recorded`);
                         }
-                    } else {
-                        console.log('[API fetch-ics] No changes detected, no DB writes needed');
+
+                        console.log('[API fetch-ics] Diff computed:', diff.added.length, 'added,', diff.updated.length, 'updated,', diff.removed.length, 'removed');
+                        console.log('[API fetch-ics] Will insert', inserts.length, 'new version(s) in DB');
+
+                        if (inserts.length > 0) {
+                            const BATCH_SIZE = 100;
+                            for (let i = 0; i < inserts.length; i += BATCH_SIZE) {
+                                const batch = inserts.slice(i, i + BATCH_SIZE);
+                                const { error: insVerErr } = await supabaseClient.from('events_versions').insert(batch);
+                                if (insVerErr) {
+                                    console.warn('[API fetch-ics] Insert events_versions error:', insVerErr.message, insVerErr.code);
+                                    break;
+                                }
+                                console.log(`[API fetch-ics] ${batch.length} event version(s) recorded`);
+                            }
+                        } else {
+                            console.log('[API fetch-ics] No changes detected, no DB writes needed');
+                        }
+                        
+                        // Return immediately after computing diff
+                        return NextResponse.json({
+                            events,
+                            diff,
+                            meta: {
+                                source: 'parsed',
+                                fromCache: false,
+                                changed: diff.added.length + diff.updated.length + diff.removed.length
+                            }
+                        });
+                    } catch (verErr) {
+                        console.warn('[API fetch-ics] Version tracking skipped:', verErr.message);
+                        // If diff computation failed, return events without diff
                     }
-                    
-                    // Return immediately after computing diff
-                    return NextResponse.json({
-                        events,
-                        diff,
-                        meta: {
-                            source: 'parsed',
-                            fromCache: false,
-                            changed: diff.added.length + diff.updated.length + diff.removed.length
-                        }
-                    });
-                } catch (verErr) {
-                    console.warn('[API fetch-ics] Version tracking skipped:', verErr.message);
-                    // If diff computation failed, return events without diff
-                }
 
                 // 3) Weekly event-level snapshot (disabled)
                 /*
@@ -574,7 +610,7 @@ export async function GET() {
                     const keys = Array.from(data.keys).sort();
                     const weekFingerprint = keys.join('|@|');
 
-                    const { data: lastWeekRows, error: lastWeekErr } = await supabase
+                    const { data: lastWeekRows, error: lastWeekErr } = await supabaseClient
                         .from('ics_week_history')
                         .select('fingerprint, event_keys')
                         .eq('week_monday', mondayISO)
@@ -604,31 +640,70 @@ export async function GET() {
                         events: data.events,
                         created_at: new Date().toISOString()
                     };
-                    const { error: insWeekErr } = await supabase.from('ics_week_history').insert(record);
+                    const { error: insWeekErr } = await supabaseClient.from('ics_week_history').insert(record);
                     if (insWeekErr) {
                         console.warn('[API fetch-ics] Supabase insert week error:', mondayISO, insWeekErr.message);
                     }
                 }
                 */
+                }
+            } catch (e) {
+                console.warn('[API fetch-ics] History snapshot write skipped:', e.message);
             }
-        } catch (e) {
-            console.warn('[API fetch-ics] History snapshot write skipped:', e.message);
-        }
 
-        return NextResponse.json({
-            events,
-            diff,
-            meta: {
-                source: 'parsed',
-                fromCache: false,
-                changed: diff.added.length + diff.updated.length + diff.removed.length
+            return NextResponse.json({
+                events,
+                diff,
+                meta: {
+                    source: 'parsed',
+                    fromCache: false,
+                    changed: diff.added.length + diff.updated.length + diff.removed.length
+                }
+            });
+        } catch (icsErr) {
+            // Erreur lors du fetch/parse ICS - sauvegarder pour affichage
+            icsError = icsErr;
+            console.error('[API fetch-ics] ICS error:', icsErr.message);
+            
+            // Essayer Supabase en fallback
+            if (supabaseClient) {
+                try {
+                    console.log('[API fetch-ics] Attempting Supabase fallback...');
+                    const fallbackEvents = await fetchEventsFromDBWithTimeout(supabaseClient, TIMEOUT_MS);
+                    if (fallbackEvents && fallbackEvents.length > 0) {
+                        console.warn('[API fetch-ics] Fallback: serving events from Supabase cache');
+                        const payload = buildDatabasePayload(fallbackEvents, {
+                            source: 'database-fallback',
+                            reason: icsErr.message
+                        });
+                        console.log('[API fetch-ics] Fallback payload meta:', payload.meta);
+                        return NextResponse.json(payload);
+                    }
+                } catch (supabaseErr) {
+                    console.error('[API fetch-ics] Supabase fallback failed:', supabaseErr.message);
+                    // Les deux ont échoué - retourner erreur spécifique
+                    return NextResponse.json({
+                        error: "Galao indisponible et Supabase indisponible",
+                        details: "Aucune donnée à afficher. Contacter l'administrateur !",
+                        icsError: icsErr.message,
+                        supabaseError: supabaseErr.message
+                    }, {status: 503});
+                }
             }
-        });
+            
+            // Si pas de Supabase disponible, retourner erreur ICS
+            return NextResponse.json({
+                error: "Galao indisponible",
+                details: icsErr.message || 'Impossible de récupérer le fichier ICS',
+                icsError: icsErr.message
+            }, {status: 503});
+        }
     } catch (err) {
-        console.error('[API fetch-ics] Error:', err.message);
+        // Erreur générale (configuration, etc.)
+        console.error('[API fetch-ics] General error:', err.message);
         return NextResponse.json({
             error: err.message,
-            details: err.cause?.message || 'Vérifier la connexion réseau et l\'URL ICS'
+            details: err.cause?.message || 'Vérifier la configuration'
         }, {status: 500});
     }
 }

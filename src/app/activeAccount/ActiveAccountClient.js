@@ -131,13 +131,6 @@ export default function ActiveAccountClient() {
         <div className={styles.page}>
             <div className={styles.wrapper}>
                 <div className={styles.card}>
-                    <header className={styles.cardHeader}>
-                        <div>
-                            <h1>Activation du compte</h1>
-                            <p>Cette étape confirme votre identité @lecnam.net.</p>
-                        </div>
-                    </header>
-
                     {renderStatusBanner()}
 
                     {email && (

@@ -19,6 +19,7 @@ import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
+import SupabaseNotification from "@/components/SupabaseNotification";
 import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import DevNotification from "@/components/DevNotification";
@@ -41,6 +42,7 @@ function HomeContent({searchParams}) {
     const [error, setError] = useState(null);
     const [debugInfo, setDebugInfo] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [eventsCalculated, setEventsCalculated] = useState(false);
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [selectedWeek, setSelectedWeek] = useState(null);
     const [darkMode, setDarkMode] = useState(false);
@@ -70,6 +72,9 @@ function HomeContent({searchParams}) {
     // Notification de debug pour le mode dev
     const [devNotification, setDevNotification] = useState(null);
     const [showDevNotification, setShowDevNotification] = useState(false);
+    // Notification Supabase
+    const [showSupabaseNotification, setShowSupabaseNotification] = useState(false);
+    const [supabaseSource, setSupabaseSource] = useState(null);
     
     // Présence d'un deep-link vers un cours précis
     const eventKeyParam = searchParams?.get('eventKey');
@@ -268,6 +273,27 @@ function HomeContent({searchParams}) {
     // Ref pour le UpdateChecker
     const updateCheckerRef = useRef(null);
 
+    // Fonction utilitaire pour charger le cache et mettre à jour l'état
+    const loadCacheAndUpdateState = (cached) => {
+        if (!cached || !cached.events || cached.events.length === 0) return false;
+        
+        console.log('[Page] Utilisation du cache:', cached.events.length, 'événements');
+        setAllEvents(cached.events);
+        setSubjectColors(cached.colors);
+        const weeks = extractAvailableWeeks(cached.events);
+        setAvailableWeeks(weeks);
+        if (!eventKeyParam && weeks.length > 0) {
+            const weekToSelect = selectBestWeek(weeks);
+            setSelectedWeek(weekToSelect?.monday);
+        }
+        setLoading(false);
+        setError(null);
+        setDebugInfo(null);
+        setShowSupabaseNotification(false);
+        setSupabaseSource(null);
+        return true;
+    };
+
     const fetchEvents = async () => {
         try {
             // Ne pas remettre loading à true si on a déjà des données à afficher
@@ -276,27 +302,8 @@ function HomeContent({searchParams}) {
             }
             setError(null);
             setDebugInfo(null);
-
-            // Vérifier si on est en ligne avant d'essayer de fetch
-            if (!isOnline) {
-                // En mode hors ligne, utiliser le cache si disponible
-                const cached = loadEventsFromCache();
-                if (cached) {
-                    console.log('[Page] Mode hors ligne - Utilisation du cache');
-            setAllEvents(cached.events);
-                    setSubjectColors(cached.colors);
-                    const weeks = extractAvailableWeeks(cached.events);
-                    setAvailableWeeks(weeks);
-            if (!eventKeyParam && weeks.length > 0) {
-                const weekToSelect = selectBestWeek(weeks);
-                setSelectedWeek(weekToSelect?.monday);
-            }
-                    setLoading(false);
-                    return; // Sortir sans erreur
-                } else {
-                    throw new Error('Mode hors connexion - Aucune donnée en cache disponible');
-                }
-            }
+            setShowSupabaseNotification(false);
+            setSupabaseSource(null);
 
             const debug = {
                 capacitorAvailable: !!Capacitor,
@@ -308,10 +315,10 @@ function HomeContent({searchParams}) {
 
             let response;
             try {
-                // Récupérer les données normales
+                // Essayer de récupérer les données (ICS ou Supabase en fallback)
                 response = await fetchICSEvents(isNative, Http);
             } catch (fetchError) {
-                // Si l'erreur est due à la connexion, essayer le cache
+                // En cas d'erreur réseau, utiliser le cache
                 const isNetworkError = !isOnline ||
                     fetchError.message.includes('Failed to fetch') ||
                     fetchError.message.includes('réseau') ||
@@ -319,27 +326,14 @@ function HomeContent({searchParams}) {
                     fetchError.message.includes('fetch failed');
 
                 if (isNetworkError) {
-                    setHasNetworkError(true); // Déclencher la notification hors ligne
+                    setHasNetworkError(true);
                     const cached = loadEventsFromCache();
-                    if (cached) {
-                        console.log('[Page] Erreur réseau - Utilisation du cache');
-                        setAllEvents(cached.events);
-                        setSubjectColors(cached.colors);
-                        const weeks = extractAvailableWeeks(cached.events);
-                        setAvailableWeeks(weeks);
-                        if (!eventKeyParam && weeks.length > 0) {
-                            const weekToSelect = selectBestWeek(weeks);
-                            setSelectedWeek(weekToSelect?.monday);
-                        }
-                        setLoading(false);
-                        // Ne pas afficher l'erreur si on a réussi à charger depuis le cache
-                        setError(null);
-                        setDebugInfo(null);
-                        return; // Sortir sans erreur
+                    if (loadCacheAndUpdateState(cached)) {
+                        return; // Cache chargé avec succès
                     }
                 }
 
-                // Si on arrive ici, on n'a pas de cache ou ce n'est pas une erreur réseau
+                // Si pas de cache ou erreur non-réseau, propager l'erreur
                 debug.fetchError = fetchError.message;
                 debug.fetchStack = fetchError.stack;
                 setDebugInfo(debug);
@@ -355,6 +349,23 @@ function HomeContent({searchParams}) {
             const meta = response?.meta || {};
             const diff = response?.diff || { added: [], updated: [], removed: [] };
             const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
+
+            // Vérifier si les données viennent de Supabase
+            const isSupabaseSource = meta.source === 'database' || 
+                                    meta.source === 'database-fallback' || 
+                                    meta.source === 'force-db' ||
+                                    (meta.source === 'cache' && meta.fromCache === true);
+            
+            console.log('[Page] Meta source:', meta.source, '| isSupabaseSource:', isSupabaseSource);
+            
+            if (isSupabaseSource) {
+                console.log('[Page] Affichage notification Supabase avec source:', meta.source);
+                setShowSupabaseNotification(true);
+                setSupabaseSource(meta.source);
+            } else {
+                setShowSupabaseNotification(false);
+                setSupabaseSource(null);
+            }
 
             if (!eventsData || eventsData.length === 0) {
                 throw new Error("Aucun emploi du temps trouvé");
@@ -400,83 +411,70 @@ function HomeContent({searchParams}) {
                     });
                 }
                 
-                // Créer le message avec les champs modifiés
-                let notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}`;
-                if (diff.added.length > 0) notificationMsg += ` | +${diff.added.length} added`;
-                if (diff.updated.length > 0) {
-                    notificationMsg += ` | ~${diff.updated.length} updated`;
-                    const fieldsList = Object.entries(fieldChanges)
-                        .map(([field, count]) => `${field}(${count})`)
-                        .join(', ');
-                    if (fieldsList) {
-                        notificationMsg += ` [${fieldsList}]`;
-                    }
-                }
-                if (diff.removed.length > 0) notificationMsg += ` | -${diff.removed.length} removed`;
+                // Créer le message avec les champs modifiés (désactivé - notification supprimée)
+                // let notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}`;
+                // if (diff.added.length > 0) notificationMsg += ` | +${diff.added.length} added`;
+                // if (diff.updated.length > 0) {
+                //     notificationMsg += ` | ~${diff.updated.length} updated`;
+                //     const fieldsList = Object.entries(fieldChanges)
+                //         .map(([field, count]) => `${field}(${count})`)
+                //         .join(', ');
+                //     if (fieldsList) {
+                //         notificationMsg += ` [${fieldsList}]`;
+                //     }
+                // }
+                // if (diff.removed.length > 0) notificationMsg += ` | -${diff.removed.length} removed`;
                 
-                setDevNotification(notificationMsg);
-                setShowDevNotification(true);
+                // setDevNotification(notificationMsg);
+                // setShowDevNotification(true);
                 
-                // Logger aussi dans la console
+                // Logger aussi dans la console (gardé pour le debug)
+                const notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}` + 
+                    (diff.added.length > 0 ? ` | +${diff.added.length} added` : '') +
+                    (diff.updated.length > 0 ? ` | ~${diff.updated.length} updated` : '') +
+                    (diff.removed.length > 0 ? ` | -${diff.removed.length} removed` : '');
                 console.log('[DEV] Sync summary:', notificationMsg);
                 if (Object.keys(fieldChanges).length > 0) {
                     console.log('[DEV] Modified fields breakdown:', fieldChanges);
                 }
             }
         } catch (err) {
-            // Vérifier si c'est une erreur réseau et si on a du cache
+            // Dernier recours : essayer le cache
+            const cached = loadEventsFromCache();
+            if (loadCacheAndUpdateState(cached)) {
+                setHasNetworkError(true);
+                return; // Cache chargé, on sort
+            }
+
+            // Pas de cache disponible, afficher l'erreur
             const isNetworkError = err.message.includes('Failed to fetch') ||
                 err.message.includes('réseau') ||
                 err.message.includes('network') ||
                 err.message.includes('fetch failed');
-
-            const saved = loadEventsFromCache();
-            if (isNetworkError && saved) {
-                setHasNetworkError(true); // Déclencher la notification hors ligne
-                // Si c'est une erreur réseau et qu'on a du cache, utiliser le cache sans afficher l'erreur
-                console.log('[Page] Erreur réseau - Utilisation du cache (fallback)');
-                setAllEvents(saved.events);
-                setSubjectColors(saved.colors);
-                const weeks = extractAvailableWeeks(saved.events);
-                setAvailableWeeks(weeks);
-                if (!eventKeyParam && weeks.length > 0) {
-                    const weekToSelect = selectBestWeek(weeks);
-                    setSelectedWeek(weekToSelect?.monday);
-                }
-                setError(null);
-                setDebugInfo(null);
-            } else {
-                // Afficher l'erreur seulement si on n'a pas de cache ou si ce n'est pas une erreur réseau
-                setError(err.message);
-                if (!debugInfo) {
-                    setDebugInfo({
-                        error: err.message,
-                        stack: err.stack,
-                        capacitorAvailable: !!Capacitor,
-                        isNativePlatform: Capacitor && Capacitor.isNativePlatform(),
-                        protocol: window.location.protocol,
-                        href: window.location.href
-                    });
-                }
-
-                // Essayer quand même le cache comme dernier recours
-                if (saved) {
-                    const data = saved.events;
-                    setAllEvents(data);
-                    const weeks = extractAvailableWeeks(data);
-                    setAvailableWeeks(weeks);
-
-                    if (!eventKeyParam && weeks.length > 0) {
-                        const weekToSelect = selectBestWeek(weeks);
-                        setSelectedWeek(weekToSelect?.monday);
-                    }
-
-                    if (saved.colors) {
-                        setSubjectColors(saved.colors);
-                    } else {
-                        setSubjectColors(createSubjectColorMapping(data));
-                    }
-                }
+            
+            if (isNetworkError) {
+                setHasNetworkError(true);
+            }
+            
+            setShowSupabaseNotification(false);
+            setSupabaseSource(null);
+            
+            // Gérer le message d'erreur spécifique pour Galao + Supabase indisponibles
+            let errorMessage = err.message;
+            if (err.details) {
+                errorMessage = err.details;
+            }
+            setError(errorMessage);
+            
+            if (!debugInfo) {
+                setDebugInfo({
+                    error: err.message,
+                    stack: err.stack,
+                    capacitorAvailable: !!Capacitor,
+                    isNativePlatform: Capacitor && Capacitor.isNativePlatform(),
+                    protocol: window.location.protocol,
+                    href: window.location.href
+                });
             }
         } finally {
             setLoading(false);
@@ -511,7 +509,10 @@ function HomeContent({searchParams}) {
     }, [subjects]);
 
     useEffect(() => {
-        if (!selectedWeek || allEvents.length === 0) return;
+        if (!selectedWeek || allEvents.length === 0) {
+            setEventsCalculated(false);
+            return;
+        }
 
         // Toujours afficher toute la semaine (du lundi au dimanche)
         const startDate = new Date(selectedWeek);
@@ -553,6 +554,7 @@ function HomeContent({searchParams}) {
         }
 
         setEvents(filtered);
+        setEventsCalculated(true);
     }, [selectedWeek, allEvents, searchParams, selectedSubjects, showOnlyExams]);
 
     // Si un eventKey est présent dans l'URL, naviguer vers la semaine du cours
@@ -594,43 +596,43 @@ function HomeContent({searchParams}) {
         if (currentIndex !== -1) previousWeekIndexRef.current = currentIndex;
     }, [selectedWeek, availableWeeks]);
 
+    // Chargement initial : cache puis fetch si en ligne
     useEffect(() => {
-        // Attendre que Capacitor soit prêt avant de charger
         if (!capacitorReady) return;
 
         // Initialiser le mode test
         setTestModeState(isTestModeEnabled());
         setTestWeekModeState(isTestWeekEnabled());
 
-        // L'état réseau vient du hook cross-plateforme
-
-        // Charger immédiatement depuis le cache si disponible
+        // 1. Charger le cache immédiatement (si disponible)
         const cached = loadEventsFromCache();
-        if (cached) {
-            console.log('[Page] Chargement depuis le cache');
+        if (cached && cached.events && cached.events.length > 0) {
+            console.log('[Page] Chargement depuis le cache:', cached.events.length, 'événements');
             setAllEvents(cached.events);
             setSubjectColors(cached.colors);
-
             const weeks = extractAvailableWeeks(cached.events);
             setAvailableWeeks(weeks);
-            if (!eventKeyParam) {
+            if (!eventKeyParam && weeks.length > 0) {
                 const weekToSelect = selectBestWeek(weeks);
                 setSelectedWeek(weekToSelect?.monday);
             }
-
             setLoading(false);
         }
 
-        // Si on est en ligne, faire un refresh en arrière-plan pour mettre à jour
-        // Si on est hors ligne, on utilise seulement le cache (déjà chargé)
+        // 2. Si en ligne, fetch pour mettre à jour (le cache reste affiché pendant le fetch)
+        // 3. Si hors ligne, utiliser le cache uniquement
         if (isOnline) {
             fetchEvents();
         } else {
             console.log('[Page] Mode hors ligne - Utilisation du cache uniquement');
-            // Si on est hors ligne, déclencher la notification une seule fois
-            setHasNetworkError(true);
+            if (!cached || !cached.events || cached.events.length === 0) {
+                setError('Mode hors ligne\n\nAucune sauvegarde en cache');
+                setHasNetworkError(true);
+            } else {
+                setHasNetworkError(true); // Notification hors ligne
+            }
         }
-    }, [capacitorReady]);
+    }, [capacitorReady, isOnline]);
 
     useEffect(() => {
         const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -1321,7 +1323,7 @@ function HomeContent({searchParams}) {
                         overflow: 'auto'
                     }}>
                         <h3 style={{color: '#c00', margin: '0 0 1rem 0'}}>❌ Erreur</h3>
-                        <div style={{marginBottom: '1rem', fontSize: '14px'}}>
+                        <div style={{marginBottom: '1rem', fontSize: '14px', whiteSpace: 'pre-line'}}>
                             <strong>Message:</strong> {error}
                         </div>
 
@@ -1364,7 +1366,7 @@ function HomeContent({searchParams}) {
 
                 {loading && events.length === 0 && <LoadingSpinner/>}
 
-                {!loading && events.length === 0 && allEvents.length > 0 && (
+                {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
                     <div style={{
                         textAlign: 'center',
                         padding: '3rem 1rem',
@@ -1450,6 +1452,11 @@ function HomeContent({searchParams}) {
             <ScrollToTop/>
 
             <OfflineNotification forceShow={hasNetworkError}/>
+            
+            <SupabaseNotification 
+                show={showSupabaseNotification} 
+                source={supabaseSource}
+            />
             
             <DevNotification 
                 message={devNotification} 

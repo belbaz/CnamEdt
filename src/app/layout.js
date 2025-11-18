@@ -57,25 +57,19 @@ export default function RootLayout({children}) {
                         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                             // Ne pas enregistrer dans Capacitor natif
                             var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-                            // Éviter l'enregistrement en développement local (localhost, 127.0.0.1, ::1)
+                            // Enregistrer le Service Worker même en localhost (pour tester le mode hors ligne)
                             var host = (typeof location !== 'undefined') ? location.hostname : '';
                             var isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-                            if (isLocalhost) {
-                                // Sur localhost: nettoyer tout cache + SW existants pour éviter le cache
+                            
+                            if (!isNative) {
                                 window.addEventListener('load', function() {
-                                    try {
-                                        if (window.caches && caches.keys) {
-                                            caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
-                                        }
-                                    } catch(e) {}
-                                    try {
-                                        navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); });
-                                    } catch(e) {}
-                                });
-                            }
-                            if (!isNative && !isLocalhost) {
-                                window.addEventListener('load', function() {
-                                    navigator.serviceWorker.register('/sw.js').catch(function(){});
+                                    navigator.serviceWorker.register('/sw.js')
+                                        .then(function(registration) {
+                                            console.log('[SW] Service Worker enregistré:', registration.scope);
+                                        })
+                                        .catch(function(err) {
+                                            console.warn('[SW] Erreur enregistrement Service Worker:', err);
+                                        });
                                 });
                             }
                         }

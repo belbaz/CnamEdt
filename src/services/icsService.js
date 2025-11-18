@@ -4,8 +4,7 @@
 
 // URL de l'ICS EICNAM (utilise la variable d'environnement si disponible, sinon fallback)
 // Next.js remplace process.env.NEXT_PUBLIC_* au moment du build
-const ICS_URL = process.env.NEXT_PUBLIC_ICS_URL || 
-    'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
+const ICS_URL = process.env.NEXT_PUBLIC_ICS_URL;
 
 /**
  * Parse un fichier ICS en format texte vers un tableau d'événements
@@ -46,41 +45,70 @@ function parseICSContent(icsContent) {
 }
 
 /**
- * Récupère les événements ICS pour le mobile (avec CapacitorHttp)
+ * Récupère les événements ICS pour le mobile (via API route avec CapacitorHttp)
+ * Utilise l'API route pour bénéficier du fallback Supabase
  */
 async function fetchEventsForMobile(CapacitorHttp) {
-    console.log('[ICS Service] Fetching from mobile with CapacitorHttp');
+    console.log('[ICS Service] Fetching from mobile via API route');
+    
+    // Utiliser l'API route pour avoir le fallback Supabase
+    const apiUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/api/fetch-ics`
+        : '/api/fetch-ics';
     
     const response = await CapacitorHttp.get({
-        url: ICS_URL,
+        url: apiUrl,
         headers: {
-            'Accept': 'text/calendar,text/plain,*/*'
+            'Accept': 'application/json'
         }
     });
     
     if (response.status !== 200) {
-        throw new Error(`HTTP ${response.status}`);
+        const errorData = response.data && typeof response.data === 'object' ? response.data : {};
+        const errorMessage = errorData.error || `HTTP ${response.status}`;
+        const error = new Error(errorMessage);
+        if (errorData.details) error.details = errorData.details;
+        if (errorData.icsError) error.icsError = errorData.icsError;
+        if (errorData.supabaseError) error.supabaseError = errorData.supabaseError;
+        throw error;
     }
     
-    const icsContent = response.data;
-    console.log('[ICS Service] ICS downloaded, length:', icsContent.length);
+    const data = response.data;
     
-    const events = parseICSContent(icsContent);
-    console.log('[ICS Service] Events parsed:', events.length);
+    if (data?.error) {
+        const error = new Error(data.error + (data.details ? ` - ${data.details}` : ''));
+        if (data.details) error.details = data.details;
+        if (data.icsError) error.icsError = data.icsError;
+        if (data.supabaseError) error.supabaseError = data.supabaseError;
+        throw error;
+    }
     
-    return {
-        events,
-        diff: {
-            added: [],
-            updated: [],
-            removed: []
-        },
-        meta: {
-            source: 'mobile-direct',
-            fromCache: false,
-            changed: null
+    let events = [];
+    let diff = { added: [], updated: [], removed: [] };
+    let meta = { source: 'mobile-api', fromCache: false, changed: null };
+    
+    if (Array.isArray(data)) {
+        events = data;
+        meta.source = 'legacy-array';
+    } else if (data && typeof data === 'object') {
+        if (Array.isArray(data.events)) {
+            events = data.events;
         }
-    };
+        if (data.diff && typeof data.diff === 'object') {
+            diff = {
+                added: Array.isArray(data.diff.added) ? data.diff.added : [],
+                updated: Array.isArray(data.diff.updated) ? data.diff.updated : [],
+                removed: Array.isArray(data.diff.removed) ? data.diff.removed : []
+            };
+        }
+        if (data.meta && typeof data.meta === 'object') {
+            meta = { ...meta, ...data.meta };
+        }
+    }
+    
+    console.log('[ICS Service] Events fetched from API:', events.length, 'changes:', (diff.added.length + diff.updated.length + diff.removed.length));
+    
+    return { events, diff, meta };
 }
 
 /**
@@ -90,7 +118,7 @@ async function fetchEventsForWeb() {
     console.log('[ICS Service] Fetching from web API route');
     
     try {
-        const res = await fetch("/api/fetch-ics", {
+        const res = await fetch('/api/fetch-ics', {
             headers: {
                 'Accept': 'application/json',
             },
@@ -100,13 +128,23 @@ async function fetchEventsForWeb() {
         if (!res.ok) {
             const errorData = await res.json().catch(() => ({}));
             const errorMessage = errorData.error || `HTTP ${res.status}: ${res.statusText}`;
-            throw new Error(errorMessage);
+            const error = new Error(errorMessage);
+            // Propager les détails de l'erreur
+            if (errorData.details) error.details = errorData.details;
+            if (errorData.icsError) error.icsError = errorData.icsError;
+            if (errorData.supabaseError) error.supabaseError = errorData.supabaseError;
+            throw error;
         }
         
         const data = await res.json();
         
         if (data?.error) {
-            throw new Error(data.error + (data.details ? ` - ${data.details}` : ''));
+            const error = new Error(data.error + (data.details ? ` - ${data.details}` : ''));
+            // Propager les détails de l'erreur
+            if (data.details) error.details = data.details;
+            if (data.icsError) error.icsError = data.icsError;
+            if (data.supabaseError) error.supabaseError = data.supabaseError;
+            throw error;
         }
 
         let events = [];

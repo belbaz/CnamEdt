@@ -12,26 +12,24 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  if (IS_LOCALHOST) {
-    // Do not cache anything on localhost
-    event.waitUntil(self.skipWaiting());
-    return;
-  }
+  // Toujours installer le cache, même en localhost (pour tester le mode hors ligne)
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        // Essayer de mettre en cache les ressources de base
+        // Si ça échoue (hors ligne), on continue quand même
+        return cache.addAll(APP_SHELL).catch((err) => {
+          console.warn('[SW] Cache install partiel (certaines ressources non disponibles):', err);
+          // Continuer même si certaines ressources ne peuvent pas être mises en cache
+          return Promise.resolve();
+        });
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
-  if (IS_LOCALHOST) {
-    event.waitUntil(
-      caches.keys()
-        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-        .then(() => self.registration.unregister())
-        .then(() => self.clients.claim())
-    );
-    return;
-  }
+  // Toujours activer le cache, même en localhost (pour tester le mode hors ligne)
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
@@ -42,23 +40,38 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
-  // On localhost, never use Cache Storage and don't intercept beyond passthrough
-  if (IS_LOCALHOST) {
-    event.respondWith(fetch(req));
-    return;
-  }
-
-  // For navigation requests, try network first; on success update cache, fallback to cache, then to '/'
+  // For navigation requests, try cache first for offline, then network
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          return res;
+      caches.match(req)
+        .then((cached) => {
+          // Si on a un cache, l'utiliser immédiatement (offline-first pour navigation)
+          if (cached) {
+            // En arrière-plan, essayer de mettre à jour le cache
+            fetch(req)
+              .then((res) => {
+                if (res && res.ok) {
+                  const resClone = res.clone();
+                  caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+                }
+              })
+              .catch(() => {}); // Ignorer les erreurs de mise à jour en arrière-plan
+            return cached;
+          }
+          // Sinon, essayer le réseau
+          return fetch(req)
+            .then((res) => {
+              if (res && res.ok) {
+                const resClone = res.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+              }
+              return res;
+            })
+            .catch(() => {
+              // Si le réseau échoue, essayer le cache de la page d'accueil
+              return caches.match('/').then((fallback) => fallback || new Response('Page non disponible hors ligne', { status: 503 }));
+            });
         })
-        .catch(() => caches.match(req))
-        .then((res) => res || caches.match('/'))
     );
     return;
   }
