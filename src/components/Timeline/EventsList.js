@@ -3,6 +3,7 @@ import {useEffect, useRef, useState} from "react";
 import EventCard from "./EventCard";
 import {getEventPosition, getEventPositionVertical} from "@/utils/timelineUtils";
 import {getCompactModeValues} from "@/utils/compactModeUtils";
+import { parseStoredNoteValue } from "@/utils/noteEntries";
 import "./EventsList.css";
 
 export default function EventsList({
@@ -13,7 +14,8 @@ export default function EventsList({
     subjectColors, 
     onOpenEventDetails,
     compactMode = 5,
-    hide15MinSpacing = false
+    hide15MinSpacing = false,
+    courseNotes = null
 }) {
     const {dayHeightFactor, cardTopPadding, eventsContainerPadding} = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
@@ -119,6 +121,12 @@ export default function EventsList({
                             const pos = getEventPosition(ev.start, ev.end_time || ev.end, startMinutes, endMinutes, previousEventEnd, nextEventStart, hide15MinSpacing);
                             stylePos = {left: pos.left, width: pos.width};
                         }
+                        const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
+                        const noteEntries = courseNote
+                            ? (Array.isArray(courseNote.entries)
+                                ? courseNote.entries
+                                : parseStoredNoteValue(courseNote.notes))
+                            : [];
                         return (
                             <EventCard
                                 key={idx}
@@ -126,6 +134,7 @@ export default function EventsList({
                                 stylePos={stylePos}
                                 subjectColors={subjectColors}
                                 onOpenEventDetails={onOpenEventDetails}
+                                noteEntries={noteEntries}
                             />
                         );
                     });

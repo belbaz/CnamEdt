@@ -1,7 +1,6 @@
 .events-container {
     position: relative;
     padding: 0.2rem 0 0.2rem 0;
-    z-index: 5;
     display: flex;
     align-items: stretch;
     transition: min-height 0.2s ease;

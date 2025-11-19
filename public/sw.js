@@ -1,10 +1,5 @@
 // Basic service worker for offline reload and static asset caching
 const CACHE_NAME = 'edt-app-shell-v1';
-// Detect localhost within the service worker scope
-const SCOPE_HOSTNAME = (() => {
-  try { return new URL(self.registration.scope).hostname; } catch (e) { return ''; }
-})();
-const IS_LOCALHOST = SCOPE_HOSTNAME === 'localhost' || SCOPE_HOSTNAME === '127.0.0.1' || SCOPE_HOSTNAME === '::1';
 const APP_SHELL = [
   '/',
   '/favicon.svg',

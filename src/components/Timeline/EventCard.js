@@ -1,19 +1,74 @@
 "use client";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./EventCard.css";
 import {useDevMode} from "../../utils/env";
+import { sanitizeNoteEntries } from "@/utils/noteEntries";
 
 const isVisioLocation = (location) => {
     if (!location || typeof location !== 'string') return false;
     return /visio/i.test(location);
 };
 
-export default function EventCard({event, stylePos, subjectColors, onOpenEventDetails}) {
+export default function EventCard({
+                                       event,
+                                       stylePos,
+                                       subjectColors,
+                                       onOpenEventDetails,
+                                       noteEntries = []
+                                   }) {
     const {matiere, prof, description} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
+    const noteTooltipRef = useRef(null);
+    const [tooltipAlign, setTooltipAlign] = useState("align-left");
     const devMode = useDevMode();
+
+    const adjustTooltipOrientation = useCallback(() => {
+        const tooltipEl = noteTooltipRef.current;
+        const badgeEl = tooltipEl?.parentElement;
+        if (!tooltipEl || !badgeEl || typeof window === "undefined") return;
+
+        const margin = 16;
+        const tooltipWidth = tooltipEl.offsetWidth || 0;
+        const badgeRect = badgeEl.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+
+        // Position si la tooltip est alignée à gauche (valeur par défaut : s'étend vers la gauche)
+        const leftAlignedLeftEdge = badgeRect.right - tooltipWidth;
+        const canAlignLeft = leftAlignedLeftEdge >= margin;
+
+        // Position si elle est alignée à droite (s'étend vers la droite)
+        const rightAlignedRightEdge = badgeRect.left + tooltipWidth;
+        const canAlignRight = rightAlignedRightEdge <= (windowWidth - margin);
+
+        let orientation = "align-left";
+
+        if (!canAlignLeft && canAlignRight) {
+            orientation = "align-right";
+        } else if (!canAlignLeft && !canAlignRight) {
+            // Choisir le côté qui offre le plus d'espace disponible
+            const spaceLeft = badgeRect.left;
+            const spaceRight = windowWidth - badgeRect.right;
+            orientation = spaceRight > spaceLeft ? "align-right" : "align-left";
+        }
+
+        setTooltipAlign((prev) => (prev === orientation ? prev : orientation));
+    }, []);
+
+    useEffect(() => {
+        adjustTooltipOrientation();
+    }, [adjustTooltipOrientation, stylePos?.left, noteEntries]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const handleResize = () => {
+            adjustTooltipOrientation();
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [adjustTooltipOrientation]);
 
     const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
     const formatDurationHours = (start, end) => {
@@ -82,6 +137,42 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
                     EXAMEN
                 </div>
             )}
+            {(() => {
+                const cleanedEntries = sanitizeNoteEntries(noteEntries);
+                const noteCount = cleanedEntries.length;
+                if (noteCount === 0) {
+                    return null;
+                }
+                const previewEntries = cleanedEntries.slice(0, 3);
+                const remaining = noteCount - previewEntries.length;
+                return (
+                <div
+                    className="note-badge-card"
+                    aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
+                    onMouseEnter={adjustTooltipOrientation}
+                    onFocus={adjustTooltipOrientation}
+                >
+                    <span className="note-icon">📝</span>
+                    <span className="note-count-badge">{noteCount}</span>
+                    <div
+                        ref={noteTooltipRef}
+                        className={`note-tooltip ${tooltipAlign}`}
+                    >
+                        <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
+                        <ul className="note-tooltip-list">
+                            {previewEntries.map((entry, idx) => (
+                                <li key={idx}>{entry}</li>
+                            ))}
+                            {remaining > 0 && (
+                                <li className="note-tooltip-more">
+                                    +{remaining} autre{remaining > 1 ? "s" : ""}
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                </div>
+                );
+            })()}
             <div className="event-time">
                 {formatTime(event.start)}{" - "}{formatTime(event.end)}
             </div>
@@ -115,3 +206,4 @@ export default function EventCard({event, stylePos, subjectColors, onOpenEventDe
         </li>
     );
 }
+

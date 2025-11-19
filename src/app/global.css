@@ -13,6 +13,7 @@
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.08);
+    --bg-color: #ffffff;
 }
 
 .dark-mode {
@@ -30,6 +31,7 @@
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    --bg-color: #f7fafc;
 }
 
 /* Mode OLED - Vrais noirs pour économiser la batterie sur écrans OLED */
@@ -37,7 +39,7 @@
 .oled-mode {
     --primary-color: #60a5fa;
     --bg-primary: #000000;
-    --bg-secondary: #0a0a0a; /* Noir très sombre pour les conteneurs */
+    --bg-secondary: #f1f6ff; /* Noir très sombre pour les conteneurs */
     --bg-tertiary: #1a1a1a; /* Gris très foncé pour les cartes */
     --bg-gradient: #000000;
     --text-primary: #ffffff;

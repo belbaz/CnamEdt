@@ -16,7 +16,8 @@ export default function TimelineWrapper({
     onOpenEventDetails,
     compactMode = 5,
     showTimeLabels = true,
-    hide15MinSpacing = false
+    hide15MinSpacing = false,
+    courseNotes = null
 }) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
@@ -46,6 +47,7 @@ export default function TimelineWrapper({
                 onOpenEventDetails={onOpenEventDetails}
                 compactMode={compactMode}
                 hide15MinSpacing={hide15MinSpacing}
+                courseNotes={courseNotes}
             />
         </div>
     );

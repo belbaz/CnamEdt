@@ -5,6 +5,8 @@
 // URL de l'ICS EICNAM (utilise la variable d'environnement si disponible, sinon fallback)
 // Next.js remplace process.env.NEXT_PUBLIC_* au moment du build
 const ICS_URL = process.env.NEXT_PUBLIC_ICS_URL;
+const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
+const ACTIVE_CACHE = String(activeCacheEnv).toLowerCase() !== 'false';
 
 /**
  * Parse un fichier ICS en format texte vers un tableau d'événements
@@ -211,6 +213,7 @@ export async function fetchICSEvents(isNative, CapacitorHttp) {
  * Charge les événements depuis le cache localStorage
  */
 export function loadEventsFromCache() {
+    if (!ACTIVE_CACHE || typeof localStorage === 'undefined') return null;
     const saved = localStorage.getItem("events");
     const savedColors = localStorage.getItem("subjectColors");
     
@@ -228,6 +231,13 @@ export function loadEventsFromCache() {
  * Sauvegarde les événements dans le cache localStorage
  */
 export function saveEventsToCache(events, colors) {
+    if (typeof localStorage === 'undefined') return;
+    if (!ACTIVE_CACHE) {
+        localStorage.removeItem("events");
+        localStorage.removeItem("subjectColors");
+        localStorage.removeItem("lastUpdateTimestamp");
+        return;
+    }
     localStorage.setItem("events", JSON.stringify(events));
     localStorage.setItem("subjectColors", JSON.stringify(colors));
     // Sauvegarder le timestamp de la dernière mise à jour

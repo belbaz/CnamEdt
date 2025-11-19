@@ -1,5 +1,8 @@
 import "./global.css";
 
+const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
+const IS_CACHE_ENABLED = String(activeCacheEnv).toLowerCase() !== 'false';
+
 export const metadata = {
     title: "Edt EICNAM",
     description: "Consultez votre emploi du temps EICNAM",
@@ -30,6 +33,7 @@ export default function RootLayout({children}) {
                             // Exposer le canal et la version au runtime (renforcé pour Capacitor/file:)
                             window.__APP_CHANNEL = ${JSON.stringify(process.env.NEXT_PUBLIC_ENV || 'prod')};
                             window.__APP_VERSION = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_VERSION || '')};
+                            window.__ACTIVE_CACHE = ${JSON.stringify(IS_CACHE_ENABLED)};
                         } catch (e) {}
                     })();
                 `}}
@@ -57,15 +61,55 @@ export default function RootLayout({children}) {
                         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                             // Ne pas enregistrer dans Capacitor natif
                             var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-                            // Enregistrer le Service Worker même en localhost (pour tester le mode hors ligne)
-                            var host = (typeof location !== 'undefined') ? location.hostname : '';
-                            var isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+                            var cacheEnabled = (typeof window.__ACTIVE_CACHE !== 'undefined') ? !!window.__ACTIVE_CACHE : true;
                             
                             if (!isNative) {
                                 window.addEventListener('load', function() {
+                                    if (!cacheEnabled) {
+                                        navigator.serviceWorker.getRegistrations()
+                                            .then(function(registrations) {
+                                                registrations.forEach(function(registration) {
+                                                    registration.unregister().catch(function(err) {
+                                                        console.warn('[SW] Erreur deregister Service Worker:', err);
+                                                    });
+                                                });
+                                            })
+                                            .catch(function(err) {
+                                                console.warn('[SW] Impossible de récupérer les Service Workers:', err);
+                                            });
+                                        
+                                        if ('caches' in window) {
+                                            caches.keys()
+                                                .then(function(names) {
+                                                    return Promise.all(names.map(function(name) { return caches.delete(name); }));
+                                                })
+                                                .catch(function(err) {
+                                                    console.warn('[SW] Suppression des caches impossible:', err);
+                                                });
+                                        }
+                                        
+                                        try {
+                                            localStorage.removeItem('events');
+                                            localStorage.removeItem('subjectColors');
+                                            localStorage.removeItem('lastUpdateTimestamp');
+                                        } catch (e) {}
+                                        return;
+                                    }
+                                    
                                     navigator.serviceWorker.register('/sw.js')
                                         .then(function(registration) {
                                             console.log('[SW] Service Worker enregistré:', registration.scope);
+                                            if (!navigator.serviceWorker.controller && typeof window !== 'undefined') {
+                                                var reloadFlagKey = 'swInitialReloadDone';
+                                                if (!sessionStorage.getItem(reloadFlagKey)) {
+                                                    var reloadOnce = function() {
+                                                        navigator.serviceWorker.removeEventListener('controllerchange', reloadOnce);
+                                                        sessionStorage.setItem(reloadFlagKey, '1');
+                                                        window.location.reload();
+                                                    };
+                                                    navigator.serviceWorker.addEventListener('controllerchange', reloadOnce);
+                                                }
+                                            }
                                         })
                                         .catch(function(err) {
                                             console.warn('[SW] Erreur enregistrement Service Worker:', err);

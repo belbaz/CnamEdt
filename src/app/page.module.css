@@ -59,3 +59,353 @@
         margin: 0.5rem auto;
     }
 }
+
+:global(.modal-notes-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+:global(.modal-notes-title) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+:global(.modal-notes-title h3) {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+:global(.modal-note-edit-icon) {
+    border: none;
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+:global(.modal-note-edit-icon:hover) {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+:global(.modal-notes-list) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+:global(.modal-note-entry) {
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 0.35rem;
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+:global(.modal-note-header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+:global(.modal-note-remove) {
+    border: none;
+    background: none;
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+:global(.modal-note-remove:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+:global(.modal-note-remove:not(:disabled):hover) {
+    color: #b91c1c;
+}
+
+:global(.modal-note-textarea) {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+    min-height: 20px;
+}
+
+:global(.modal-note-textarea:focus) {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+:global(.modal-note-view) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+:global(.modal-note-last-person) {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    margin-right: 0.7rem;
+    text-align: right;
+    opacity: 0.7;
+}
+
+:global(.modal-note-view-card) {
+    border: 1px solid var(--text-primary);
+    border-radius: 10px;
+    padding: 0 0.75rem;
+    background: var(--bg-gradient);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+:global(.modal-note-view-text){
+    font-size: 15px;
+    padding: 0;
+    margin: .25rem .1rem;
+}
+
+:global(.modal-note-view-index) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+:global(.modal-notes-empty) {
+    border: 1px dashed var(--text-primary);
+    border-radius: 10px;
+    padding: 0.28rem;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+:global(.modal-note-add) {
+    width: fit-content;
+    border: 1px solid #2563eb;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+:global(.modal-note-add.secondary) {
+    background: transparent;
+    border-style: dashed;
+}
+
+:global(.modal-note-add:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+:global(.modal-note-add:not(:disabled):hover) {
+    background: rgba(37, 99, 235, 0.15);
+}
+
+:global(.modal-notes-actions) {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    gap: 0.5rem;
+}
+
+:global(.modal-note-save) {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+:global(.modal-note-save:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+:global(.modal-note-save:not(:disabled):hover) {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+:global(.modal-note-cancel) {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+:global(.modal-note-cancel:hover) {
+    background: rgba(148, 163, 184, 0.15);
+}
+
+:global(.modal-note-view-actions) {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
+
+/* Container principal */
+.pageWrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Bloc d'erreur */
+.errorContainer {
+    padding: 1rem;
+    margin: 1rem 0;
+    background: #fee;
+    border: 2px solid #c00;
+    border-radius: 8px;
+    color: #000;
+    max-height: 400px;
+    overflow: auto;
+}
+
+.errorTitle {
+    color: #c00;
+    margin: 0 0 1rem 0;
+}
+
+.errorMessage {
+    margin-bottom: 1rem;
+    font-size: 14px;
+    white-space: pre-line;
+}
+
+/* Debug info */
+.debugDetails {
+    margin-top: 1rem;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.debugSummary {
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.debugContent {
+    background: #fff;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+.debugHr {
+    margin: 0.5rem 0;
+}
+
+.debugUserAgent {
+    margin-top: 0.5rem;
+    font-size: 10px;
+    color: #666;
+}
+
+/* Message "Pas de cours" */
+.noCoursesMessage {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Texte du temps restant avant la fin du cours */
+.timeRemainingText {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+/* Spacer pour le jour actuel */
+.todaySpacer {
+    height: 0px;
+    width: 100%;
+    background: transparent;
+}
+
+/* Icône emoji dans les modales */
+.modalIcon {
+    font-size: 0.9rem;
+}
+
+/* Section notes non authentifiées */
+.notesUnauthContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.notesUnauthTitle {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.notesUnauthLink {
+    font-size: 0.8rem;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    transition: all 0.2s;
+}
+
+.notesUnauthLink:hover {
+    background: rgba(37, 99, 235, 0.2);
+}

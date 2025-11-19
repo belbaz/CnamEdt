@@ -27,7 +27,7 @@ export default function SignupForm() {
         const normalizedEmail = email.trim().toLowerCase();
 
         if (!normalizedEmail.endsWith("@lecnam.net")) {
-            setErrorMessage("Utilisez uniquement une adresse @lecnam.net.");
+            setErrorMessage("Utilisez uniquement une adresse @lecnam.net");
             return;
         }
 

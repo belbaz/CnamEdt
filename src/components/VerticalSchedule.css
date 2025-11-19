@@ -229,7 +229,7 @@
     justify-content: center;
     position: relative;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     min-height: 400px;
     max-width: 100%;
     box-sizing: border-box;
@@ -303,26 +303,26 @@
     right: 0;
     background: rgba(66, 153, 225, 0.5);
     pointer-events: none;
-    z-index: 1;
+    z-index: 10;
 }
 
 /* Conteneur des événements */
 .vertical-events-container {
+    z-index: 2;
     top: .1rem;
     height: 99.2%;
     max-height: 99.2%;
-    z-index: 10;
     position: relative;
     width: 97%;
     max-width: 97%;
     padding: 0 0.2rem;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Styles spécifiques pour les cartes d'événements en mode vertical - une seule ligne */
 .vertical-events-container .event-card {
-    overflow: hidden;
+    overflow: visible;
     padding: 0.5rem 0.5rem;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
@@ -333,7 +333,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .vertical-events-container .event-time {

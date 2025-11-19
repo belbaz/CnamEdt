@@ -26,7 +26,8 @@ export default function PageHeader({
                                        onSubjectsChange = null,
                                        showOnlyExams = false,
                                        onShowOnlyExamsChange = null,
-                                       showFilter = false
+                                       showFilter = false,
+                                       userInfo = null
                                    }) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [showEasterEgg, setShowEasterEgg] = useState(false);
@@ -135,7 +136,19 @@ export default function PageHeader({
                         <img src="/cnam.svg" alt="Logo CNAM" className="cnam-logo"
                              aria-hidden="true"/>
                     </h1>
-
+                    {/* Salutation utilisateur */}
+                    {userInfo && userInfo.name && (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '0.5rem 1rem',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            color: 'var(--text-primary)',
+                            background: 'var(--bg-secondary)'
+                        }}>
+                            Bonjour {userInfo.lastName} {userInfo.name || ""}
+                        </div>
+                    )}
                 </div>
                 <div className="header-actions">
                     {!isNative && (

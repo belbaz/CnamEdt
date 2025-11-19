@@ -5,6 +5,7 @@ import {groupEventsByDay} from "@/utils/eventUtils";
 import {isToday} from "@/utils/dateUtils";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
+import { parseStoredNoteValue } from "@/utils/noteEntries";
 
 export default function VerticalSchedule({
                                              events,
@@ -14,7 +15,8 @@ export default function VerticalSchedule({
                                              showTimeLabels = true,
                                              hide15MinSpacing = false,
                                              isNative = false,
-                                             monthFormat = 'long'
+                                             monthFormat = 'long',
+                                             courseNotes = null
                                          }) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat), [events, monthFormat]);
@@ -380,6 +382,12 @@ export default function VerticalSchedule({
                                                 const nextEventStart = nextEvent ? nextEvent.start : null;
                                                 
                                                 const pos = getEventVerticalPosition(ev.start, ev.end_time || ev.end, previousEventEnd, nextEventStart);
+                                                const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
+                                                const noteEntries = courseNote
+                                                    ? (Array.isArray(courseNote.entries)
+                                                        ? courseNote.entries
+                                                        : parseStoredNoteValue(courseNote.notes))
+                                                    : [];
                                                 return (
                                                     <EventCard
                                                         key={evIdx}
@@ -393,6 +401,7 @@ export default function VerticalSchedule({
                                                         }}
                                                         subjectColors={subjectColors}
                                                         onOpenEventDetails={onOpenEventDetails}
+                                                        noteEntries={noteEntries}
                                                     />
                                                 );
                                             });

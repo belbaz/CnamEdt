@@ -15,7 +15,8 @@ const DayBlock = forwardRef(({
     onOpenEventDetails,
     compactMode = 5,
     showTimeLabels = true,
-    hide15MinSpacing = false
+    hide15MinSpacing = false,
+    courseNotes = null
 }, ref) => {
     const dayDate = events[0] ? new Date(events[0].start) : new Date();
     const todayCheck = isToday(dayDate);
@@ -61,6 +62,7 @@ const DayBlock = forwardRef(({
                     compactMode={compactMode}
                     showTimeLabels={showTimeLabels}
                     hide15MinSpacing={hide15MinSpacing}
+                    courseNotes={courseNotes}
                 />
             )}
         </div>

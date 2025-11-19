@@ -1,15 +1,23 @@
 "use client";
 import {useState, useEffect, useRef, useMemo, Suspense} from "react";
-import MapViewer from "@/components/MapViewer/MapViewer";
 import {useSearchParams} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
 import {useDevMode} from "@/utils/env";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
-import {addTestCoursesForToday, isTestModeEnabled, setTestMode, generateTestWeek, isTestWeekEnabled, setTestWeekMode} from "@/services/testDataService";
+import {
+    addTestCoursesForToday,
+    isTestModeEnabled,
+    setTestMode,
+    generateTestWeek,
+    isTestWeekEnabled,
+    setTestWeekMode
+} from "@/services/testDataService";
 import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
 import {useNetworkStatus} from "@/hooks/useNetworkStatus";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
+import {useCourseNotes} from "@/hooks/useCourseNotes";
+import {useHomePageHandlers} from "@/hooks/useHomePageHandlers";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
@@ -24,17 +32,12 @@ import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
+import EventModal from "@/components/EventModal/EventModal";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
-
-// Fonction pour générer l'event_key (identique à celle dans fetch-ics/route.js)
-function generateEventKey(ev) {
-    const s = new Date(ev.start).toISOString();
-    const sum = (ev.summary || '').trim();
-    const loc = (ev.location || '').trim();
-    return `${s}|${sum}|${loc}`;
-}
+import {parseStoredNoteValue} from "@/utils/noteEntries";
+import {generateEventKey} from "@/utils/eventModalUtils";
 
 function HomeContent({searchParams}) {
     const [events, setEvents] = useState([]);
@@ -51,6 +54,7 @@ function HomeContent({searchParams}) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [autoScrollToday, setAutoScrollToday] = useState(true);
     const [collapsedDays, setCollapsedDays] = useState({});
+    const [progressionExpanded, setProgressionExpanded] = useState(new Map());
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -75,186 +79,16 @@ function HomeContent({searchParams}) {
     // Notification Supabase
     const [showSupabaseNotification, setShowSupabaseNotification] = useState(false);
     const [supabaseSource, setSupabaseSource] = useState(null);
-    
+
+    // Notes des cours
+    const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
+
+    // Infos utilisateur
+    const [userInfo, setUserInfo] = useState(null);
+
+
     // Présence d'un deep-link vers un cours précis
     const eventKeyParam = searchParams?.get('eventKey');
-
-    const formatDurationHM = (start, end) => {
-        if (!start || !end) return null;
-        const s = new Date(start);
-        const e = new Date(end);
-        if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
-        const ms = e.getTime() - s.getTime();
-        if (ms <= 0) return null;
-        const totalMinutes = Math.round(ms / (1000 * 60));
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        if (h > 0 && m === 0) return `${h}h`;
-        if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
-        return `${m}min`;
-    };
-
-    // Calculer les heures totales et effectuées pour une matière donnée
-    const getSubjectHoursStats = (subjectName, referenceEvent = null) => {
-        if (!subjectName || subjectName === ':') return null;
-
-        const now = new Date();
-        const referenceDateInput = referenceEvent
-            ? (referenceEvent.end_time || referenceEvent.end || referenceEvent.start || null)
-            : null;
-        const referenceDate = (() => {
-            if (!referenceDateInput) return now;
-            const parsed = new Date(referenceDateInput);
-            return isNaN(parsed.getTime()) ? now : parsed;
-        })();
-        const referenceTimestamp = referenceDate.getTime();
-        const msPerHour = 1000 * 60 * 60;
-
-        let totalHours = 0;
-        let completedHours = 0;
-
-        allEvents.forEach(event => {
-            const {matiere} = getEventTitle(event);
-            if (matiere !== subjectName) return;
-
-            const start = new Date(event.start);
-            const endDate = event.end_time || event.end;
-            if (!endDate) return;
-
-            const end = new Date(endDate);
-
-            // Vérifier que les dates sont valides
-            if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
-
-            const durationMs = end.getTime() - start.getTime();
-            if (durationMs <= 0) return;
-
-            const durationHours = durationMs / msPerHour;
-            totalHours += durationHours;
-
-            const startMs = start.getTime();
-            const endMs = end.getTime();
-
-            if (endMs <= referenceTimestamp) {
-                completedHours += durationHours;
-                return;
-            }
-
-            if (referenceTimestamp > startMs && referenceTimestamp < endMs) {
-                const partialMs = referenceTimestamp - startMs;
-                if (partialMs > 0) {
-                    completedHours += partialMs / msPerHour;
-                }
-            }
-        });
-
-        const remainingHours = Math.max(totalHours - completedHours, 0);
-
-        return {
-            total: totalHours,
-            completed: completedHours,
-            remaining: remainingHours,
-            percentage: totalHours > 0 ? Math.round((completedHours / totalHours) * 100) : 0
-        };
-    };
-
-    // Formater les heures décimales en format lisible
-    const formatHoursDecimal = (decimalHours) => {
-        if (decimalHours == null || isNaN(decimalHours) || decimalHours === 0) return "0h";
-        const totalMinutes = Math.round(decimalHours * 60);
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        if (h > 0 && m === 0) return `${h}h`;
-        if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
-        return `${m}min`;
-    };
-
-    // Extraire l'identifiant de la matière depuis le summary (ex: USSI0D)
-    const extractCourseIdFromSummary = (summary) => {
-        if (!summary || typeof summary !== 'string') return null;
-        // Tente: SUMMARY:USSI0D : ... ou USSI0D : ...
-        const m = summary.match(/^\s*(?:SUMMARY:)?\s*([A-Z]{3,}[A-Z0-9]*)\s*:/i);
-        return m ? m[1].toUpperCase() : null;
-    };
-
-    // Détecter le type de cours (Cours / TD / TP / ED) depuis summary/description
-    const extractCourseType = (ev) => {
-        const text = `${ev?.summary || ''} ${ev?.description || ''}`.toLowerCase();
-        if (!text.trim()) return null;
-        if (/(\bexercices?\s*dirigés?\b|\bed\b)/i.test(text)) return 'Exercices dirigés';
-        if (/\btd\b/i.test(text)) return 'Travaux dirigés';
-        if (/\btp\b/i.test(text)) return 'Travaux pratiques';
-        if (/\bcours\b/i.test(text)) return 'Cours';
-        return null;
-    };
-
-    // Détecter le site CNAM (Conté ou Saint-Martin) depuis la localisation
-    const getCnamSite = (location) => {
-        if (!location || typeof location !== 'string') return null;
-        
-        // Extraire le numéro de rue depuis la localisation
-        // Format attendu: "Salle : 30.2.12" ou "30.2.12" ou "Salle 30-2-12"
-        const cleaned = location.replace(/^Salle\s*:\s*/i, '').trim();
-        
-        // Extraire le premier nombre (numéro de rue)
-        const match = cleaned.match(/^(\d+)(bis)?[\.\-\s]/i);
-        if (!match) return null;
-        
-        const streetNumber = match[1];
-        const isBis = !!match[2];
-        
-        // Site Conté : 30, 31, 33, 34, 35, 37, 39
-        const conteNumbers = ['30', '31', '33', '34', '35', '37', '39'];
-        
-        // Site Saint-Martin : 1, 2, 3, 4, 5, 6, 7, 9, 9bis, 10, 11, 12, 13, 14, 15, 16, 17, 21, 23, 27
-        const saintMartinNumbers = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '21', '23', '27'];
-        
-        if (conteNumbers.includes(streetNumber)) {
-            return { site: 'Conté', color: '#10b981' }; // Vert émeraude
-        }
-        
-        if (saintMartinNumbers.includes(streetNumber) || (streetNumber === '9' && isBis)) {
-            return { site: 'St-Martin', color: '#f59e0b' }; // Orange ambre
-        }
-        
-        return null;
-    };
-
-    const isVisioLocation = (location) => {
-        if (!location || typeof location !== 'string') return false;
-        return /visio/i.test(location);
-    };
-
-    const parseLocationMeta = (location) => {
-        const raw = location || '';
-        const cleaned = raw.replace(/^Salle\s*:\s*/i, '').trim();
-        const visio = isVisioLocation(raw);
-        const siteInfo = !visio && raw ? getCnamSite(raw) : null;
-        const hasPhysical = Boolean(!visio && cleaned);
-        return {
-            display: visio
-                ? 'Cours en visio'
-                : (cleaned || (raw ? raw.trim() : '?')),
-            isVisio: visio,
-            siteInfo,
-            hasPhysical
-        };
-    };
-
-    // Retourne l'année scolaire sous forme [yyyyStart, yyyyEnd] en se basant sur la date du cours
-    // Règle: année scolaire commence en septembre (mois >= 8)
-    const getAcademicYearParts = (dateLike) => {
-        const d = new Date(dateLike || Date.now());
-        if (isNaN(d.getTime())) {
-            const now = new Date();
-            const y = now.getFullYear();
-            const start = now.getMonth() >= 8 ? y : y - 1;
-            return [start, start + 1];
-        }
-        const y = d.getFullYear();
-        const start = d.getMonth() >= 8 ? y : y - 1;
-        return [start, start + 1];
-    };
 
     // Hook Capacitor pour mobile
     const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
@@ -276,7 +110,7 @@ function HomeContent({searchParams}) {
     // Fonction utilitaire pour charger le cache et mettre à jour l'état
     const loadCacheAndUpdateState = (cached) => {
         if (!cached || !cached.events || cached.events.length === 0) return false;
-        
+
         console.log('[Page] Utilisation du cache:', cached.events.length, 'événements');
         setAllEvents(cached.events);
         setSubjectColors(cached.colors);
@@ -347,17 +181,17 @@ function HomeContent({searchParams}) {
                     : [];
 
             const meta = response?.meta || {};
-            const diff = response?.diff || { added: [], updated: [], removed: [] };
+            const diff = response?.diff || {added: [], updated: [], removed: []};
             const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
 
             // Vérifier si les données viennent de Supabase
-            const isSupabaseSource = meta.source === 'database' || 
-                                    meta.source === 'database-fallback' || 
-                                    meta.source === 'force-db' ||
-                                    (meta.source === 'cache' && meta.fromCache === true);
-            
+            const isSupabaseSource = meta.source === 'database' ||
+                meta.source === 'database-fallback' ||
+                meta.source === 'force-db' ||
+                (meta.source === 'cache' && meta.fromCache === true);
+
             console.log('[Page] Meta source:', meta.source, '| isSupabaseSource:', isSupabaseSource);
-            
+
             if (isSupabaseSource) {
                 console.log('[Page] Affichage notification Supabase avec source:', meta.source);
                 setShowSupabaseNotification(true);
@@ -393,11 +227,11 @@ function HomeContent({searchParams}) {
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger
             setHasNetworkError(false);
-            
+
             // Afficher une notification de debug en mode dev
             if (devMode) {
                 const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
-                
+
                 // Compter les champs modifiés
                 const fieldChanges = {};
                 if (diff.updated && Array.isArray(diff.updated)) {
@@ -410,7 +244,7 @@ function HomeContent({searchParams}) {
                         }
                     });
                 }
-                
+
                 // Créer le message avec les champs modifiés (désactivé - notification supprimée)
                 // let notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}`;
                 // if (diff.added.length > 0) notificationMsg += ` | +${diff.added.length} added`;
@@ -424,12 +258,12 @@ function HomeContent({searchParams}) {
                 //     }
                 // }
                 // if (diff.removed.length > 0) notificationMsg += ` | -${diff.removed.length} removed`;
-                
+
                 // setDevNotification(notificationMsg);
                 // setShowDevNotification(true);
-                
+
                 // Logger aussi dans la console (gardé pour le debug)
-                const notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}` + 
+                const notificationMsg = `📊 Events: ${eventsData.length} | Changes: ${totalChanges}` +
                     (diff.added.length > 0 ? ` | +${diff.added.length} added` : '') +
                     (diff.updated.length > 0 ? ` | ~${diff.updated.length} updated` : '') +
                     (diff.removed.length > 0 ? ` | -${diff.removed.length} removed` : '');
@@ -451,21 +285,21 @@ function HomeContent({searchParams}) {
                 err.message.includes('réseau') ||
                 err.message.includes('network') ||
                 err.message.includes('fetch failed');
-            
+
             if (isNetworkError) {
                 setHasNetworkError(true);
             }
-            
+
             setShowSupabaseNotification(false);
             setSupabaseSource(null);
-            
+
             // Gérer le message d'erreur spécifique pour Galao + Supabase indisponibles
             let errorMessage = err.message;
             if (err.details) {
                 errorMessage = err.details;
             }
             setError(errorMessage);
-            
+
             if (!debugInfo) {
                 setDebugInfo({
                     error: err.message,
@@ -634,22 +468,28 @@ function HomeContent({searchParams}) {
         }
     }, [capacitorReady, isOnline]);
 
+    // Charger les infos utilisateur
+    useEffect(() => {
+        const loadUserInfo = async () => {
+            try {
+                const res = await fetch("/api/user", {cache: "no-store"});
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserInfo(data);
+                }
+            } catch (error) {
+                // Ignorer silencieusement si non connecté
+            }
+        };
+        loadUserInfo();
+    }, []);
+
+
     useEffect(() => {
         const interval = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
 
-    // Fermer la modale d'événement avec la touche Échap
-    useEffect(() => {
-        if (!selectedEvent) return;
-        const onKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                setSelectedEvent(null);
-            }
-        };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [selectedEvent]);
 
     // Fonction pour vérifier si une modale est ouverte
     const isAnyModalOpen = () => {
@@ -1022,224 +862,100 @@ function HomeContent({searchParams}) {
         }
     };
 
-    const handleRefresh = () => {
-        fetchEvents();
-    };
+    // Calculer groupByDay avant de l'utiliser dans le hook
+    const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short'), [events, viewMode]);
 
-    const handleToday = () => {
-        // Utiliser la sélection intelligente de semaine sans déclencher de scroll
-        const weekToSelect = selectBestWeek(availableWeeks);
-        if (weekToSelect) {
-            setSelectedWeek(weekToSelect.monday);
-        }
-    };
+    // Utiliser le hook pour les handlers
+    const handlers = useHomePageHandlers({
+        availableWeeks,
+        setSelectedWeek,
+        allEvents,
+        setAllEvents,
+        setSubjectColors,
+        setAvailableWeeks,
+        collapsedDays,
+        setCollapsedDays,
+        groupByDay,
+        fetchEvents,
+        setTestModeState,
+        setTestMode,
+        setTestWeekModeState,
+        setTestWeekMode,
+        updateCheckerRef
+    });
 
-    const handleWeekChange = (newWeekMonday) => {
-        setSelectedWeek(newWeekMonday);
-    };
+    const handleRefresh = handlers.handleRefresh;
+    const handleToday = handlers.handleToday;
+    const handleWeekChange = handlers.handleWeekChange;
+    const handleToggleAutoScroll = (enabled) => handlers.handleToggleAutoScroll(enabled, setAutoScrollToday);
+    const handleViewModeChange = (mode) => handlers.handleViewModeChange(mode, setViewMode);
+    const handleToggleTimeLabels = (enabled) => handlers.handleToggleTimeLabels(enabled, setShowTimeLabels);
+    const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
+    const handleToggleDay = handlers.handleToggleDay;
+    const handleToggleAllDays = handlers.handleToggleAllDays;
+    const handleToggleTestMode = () => handlers.handleToggleTestMode(testMode);
+    const handleToggleTestWeek = () => handlers.handleToggleTestWeek(testWeekMode);
+    const handleCheckUpdates = handlers.handleCheckUpdates;
 
-    const handleToggleAutoScroll = (enabled) => {
-        setAutoScrollToday(enabled);
-        localStorage.setItem('autoScrollToday', enabled.toString());
-    };
+    // Trouver le prochain cours en cours aujourd'hui
+    const getNextOngoingCourse = useMemo(() => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Compacité fixe, plus de fonction de changement
+        // Filtrer les événements d'aujourd'hui
+        const todayEvents = allEvents.filter(event => {
+            if (!event.start || !event.end) return false;
+            const eventStart = new Date(event.start);
+            const eventEnd = event.end_time ? new Date(event.end_time) : new Date(event.end);
+            
+            // Vérifier que l'événement est aujourd'hui
+            const eventDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+            if (eventDate.getTime() !== today.getTime()) return false;
 
-    const handleViewModeChange = (mode) => {
-        setViewMode(mode);
-        localStorage.setItem('viewMode', mode);
-    };
+            // Vérifier que le cours a commencé mais n'est pas encore terminé
+            const nowTime = now.getTime();
+            const startTime = eventStart.getTime();
+            const endTime = eventEnd.getTime();
+            
+            return nowTime >= startTime && nowTime < endTime;
+        });
 
-    const handleToggleTimeLabels = (enabled) => {
-        setShowTimeLabels(enabled);
-        localStorage.setItem('showTimeLabels', enabled.toString());
-    };
+        if (todayEvents.length === 0) return null;
 
-    const handleToggle15MinSpacing = (enabled) => {
-        setHide15MinSpacing(enabled);
-        localStorage.setItem('hide15MinSpacing', enabled.toString());
-    };
+        // Trouver le cours qui se termine le plus tôt (le prochain à se terminer)
+        todayEvents.sort((a, b) => {
+            const endA = a.end_time ? new Date(a.end_time).getTime() : new Date(a.end).getTime();
+            const endB = b.end_time ? new Date(b.end_time).getTime() : new Date(b.end).getTime();
+            return endA - endB;
+        });
 
-    const handleToggleDay = (day) => {
-        const newCollapsedDays = {
-            ...collapsedDays,
-            [day]: !collapsedDays[day]
-        };
-        setCollapsedDays(newCollapsedDays);
-        localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
-    };
+        return todayEvents[0];
+    }, [allEvents, currentTime]);
 
-    const handleToggleAllDays = () => {
-        const dayKeys = Object.keys(groupByDay);
-        if (dayKeys.length === 0) return;
-        const someExpanded = dayKeys.some(d => !collapsedDays[d]);
-        const nextCollapsed = {};
-        for (const d of dayKeys) {
-            nextCollapsed[d] = someExpanded; // if any expanded -> collapse all; else expand all
-        }
-        setCollapsedDays(nextCollapsed);
-        localStorage.setItem('collapsedDays', JSON.stringify(nextCollapsed));
-    };
+    // Calculer le temps restant avant la fin du cours
+    const getTimeRemainingText = useMemo(() => {
+        if (!getNextOngoingCourse) return null;
 
-    const handleToggleTestMode = () => {
-        if (!testMode) {
-            // Activer le mode test : ajouter des cours pour aujourd'hui si nécessaire
+        const now = new Date();
+        const endTime = getNextOngoingCourse.end_time 
+            ? new Date(getNextOngoingCourse.end_time).getTime()
+            : new Date(getNextOngoingCourse.end).getTime();
+        const remainingMs = endTime - now.getTime();
 
-            // Vérifier si aujourd'hui a déjà des cours (version simplifiée)
-            const today = new Date();
-            const todayString = today.toDateString();
-            const hasCoursesToday = allEvents.some(event => {
-                if (!event.start) return false;
-                const eventDate = new Date(event.start);
-                return eventDate.toDateString() === todayString;
-            });
+        if (remainingMs <= 0) return null;
 
-            if (hasCoursesToday) {
-                alert('Aujourd\'hui a déjà des cours ! Le bouton n\'ajoute des cours de test que si la journée est vide.');
-                return;
+        const remainingMinutes = Math.floor(remainingMs / (1000 * 60));
+        const remainingHours = Math.floor(remainingMinutes / 60);
+        const minutes = remainingMinutes % 60;
+
+        if (remainingHours > 0) {
+            if (minutes === 0) {
+                return `${remainingHours}h avant la fin du cours`;
             }
-
-            // Créer 7 cours d'affilée de 6h30 à 20h avec 15 minutes de pause entre chaque
-            const testEvents = [];
-            const courses = [
-                { subject: 'Mathématiques Appliquées', prof: 'M. Dupont', location: '3.1.08' }, // Saint-Martin
-                { subject: 'Informatique Théorique', prof: 'Mme Martin', location: '35.1.15' }, // Conté
-                { subject: 'Base de Données', prof: 'M. Bernard', location: '2.2.18' }, // Saint-Martin
-                { subject: 'Développement Web', prof: 'Mme Dubois', location: '33.1.10' }, // Conté
-                { subject: 'Architecture Logicielle', prof: 'M. Lefebvre', location: '11.1.12' }, // Saint-Martin
-                { subject: 'Intelligence Artificielle', prof: 'Mme Garcia', location: '34.1.16' }, // Conté
-                { subject: 'Sécurité Informatique', prof: 'M. Moreau', location: '15.2.13' } // Saint-Martin
-            ];
-            
-            // Calcul de la durée optimale pour finir exactement à 20h
-            // De 6h30 à 20h = 13h30 = 810 minutes
-            // 6 pauses * 15 min = 90 minutes
-            // Temps disponible pour les cours = 810 - 90 = 720 minutes
-            // Durée par cours = 720 / 7 ≈ 102.86 minutes ≈ 1h43
-            const totalMinutes = 13 * 60 + 30; // 6h30 à 20h = 810 minutes
-            const pauseDurationMinutes = 15;
-            const totalPauseMinutes = 6 * pauseDurationMinutes; // 6 pauses entre 7 cours
-            const availableMinutes = totalMinutes - totalPauseMinutes;
-            const courseDurationMinutes = Math.floor(availableMinutes / 7); // ≈ 102 minutes (1h42)
-            
-            // Premier cours commence à 6h30
-            let currentStartHour = 6;
-            let currentStartMinute = 30;
-            
-            // Créer 7 cours d'affilée
-            for (let i = 0; i < 7; i++) {
-                const course = courses[i];
-                
-                const startTime = new Date(today);
-                startTime.setHours(currentStartHour, currentStartMinute, 0, 0);
-                
-                const endTime = new Date(startTime);
-                
-                // Pour le dernier cours (index 6), on force la fin à 20h
-                if (i === 6) {
-                    endTime.setHours(20, 0, 0, 0);
-                } else {
-                    endTime.setMinutes(startTime.getMinutes() + courseDurationMinutes);
-                }
-                
-                testEvents.push({
-                    summary: course.subject,
-                    start: startTime,
-                    end: endTime,
-                    location: course.location,
-                    description: `Professeur : ${course.prof}\nMatière : ${course.subject}\n\n[Cours de test généré automatiquement]`
-                });
-                
-                // Calculer l'heure de début du prochain cours (fin du cours actuel + pause)
-                // Sauf pour le dernier cours
-                if (i < 6) {
-                    const nextStartTime = new Date(endTime);
-                    nextStartTime.setMinutes(nextStartTime.getMinutes() + pauseDurationMinutes);
-                    currentStartHour = nextStartTime.getHours();
-                    currentStartMinute = nextStartTime.getMinutes();
-                }
-            }
-
-            const eventsWithTest = [...allEvents, ...testEvents];
-
-            setAllEvents(eventsWithTest);
-
-            // Mettre à jour les couleurs et semaines
-            const colorMapping = createSubjectColorMapping(eventsWithTest);
-            setSubjectColors(colorMapping);
-
-            const weeks = extractAvailableWeeks(eventsWithTest);
-            setAvailableWeeks(weeks);
-
-            // S'assurer que la semaine actuelle est sélectionnée
-            const currentWeek = getCurrentWeek();
-            const weekToSelect = weeks.find(w => w.monday.getTime() === currentWeek.getTime());
-            if (weekToSelect) {
-                setSelectedWeek(weekToSelect.monday);
-            }
-
-            // Sauvegarder dans le cache
-            saveEventsToCache(eventsWithTest, colorMapping);
-
-            // Ne pas enregistrer d'historique en mode test
-
-            setTestModeState(true);
-            setTestMode(true);
-        } else {
-            // Désactiver le mode test : recharger les données normales
-            setTestModeState(false);
-            setTestMode(false);
-            fetchEvents();
+            return `${remainingHours}h${String(minutes).padStart(2, '0')} avant la fin du cours`;
         }
-    };
-
-    const handleToggleTestWeek = () => {
-        if (!testWeekMode) {
-            // Activer le mode "Test Semaine" : remplacer tous les événements par une semaine de test
-            console.log('[Test Week] Activation du mode Test Semaine');
-            
-            // Générer une semaine complète de test (dimanche à dimanche)
-            const testWeekEvents = generateTestWeek();
-            
-            // Remplacer tous les événements par la semaine de test
-            setAllEvents(testWeekEvents);
-            
-            // Mettre à jour les couleurs et semaines
-            const colorMapping = createSubjectColorMapping(testWeekEvents);
-            setSubjectColors(colorMapping);
-            
-            const weeks = extractAvailableWeeks(testWeekEvents);
-            setAvailableWeeks(weeks);
-            
-            // Sélectionner la semaine de test (normalement il n'y en aura qu'une)
-            if (weeks.length > 0) {
-                setSelectedWeek(weeks[0].monday);
-            }
-            
-            // Sauvegarder dans le cache
-            saveEventsToCache(testWeekEvents, colorMapping);
-            
-            // Activer le mode
-            setTestWeekModeState(true);
-            setTestWeekMode(true);
-            
-            console.log('[Test Week] Mode Test Semaine activé avec', testWeekEvents.length, 'cours');
-        } else {
-            // Désactiver le mode "Test Semaine" : recharger les données normales
-            console.log('[Test Week] Désactivation du mode Test Semaine');
-            setTestWeekModeState(false);
-            setTestWeekMode(false);
-            fetchEvents();
-        }
-    };
-
-    const handleCheckUpdates = () => {
-        if (updateCheckerRef.current) {
-            updateCheckerRef.current.checkForUpdates();
-        }
-    };
-
-    const groupByDay = groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short');
+        return `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} avant la fin du cours`;
+    }, [getNextOngoingCourse, currentTime]);
 
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
@@ -1259,10 +975,9 @@ function HomeContent({searchParams}) {
         }
     };
 
-    const selectedEventLocationMeta = selectedEvent ? parseLocationMeta(selectedEvent.location) : null;
 
     return (
-        <div style={{display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%'}}>
+        <div className={styles.pageWrapper}>
             {/* Demande de permissions au démarrage (app native uniquement) */}
             <PermissionRequest isNative={isNative}/>
 
@@ -1307,37 +1022,23 @@ function HomeContent({searchParams}) {
                 showOnlyExams={showOnlyExams}
                 onShowOnlyExamsChange={setShowOnlyExams}
                 showFilter={!loading && allEvents.length > 0}
+                userInfo={userInfo}
             />
 
             <main className={styles.container}>
-
                 {error && !(isNative || isSmallScreen) && (
-                    <div style={{
-                        padding: '1rem',
-                        margin: '1rem 0',
-                        background: '#fee',
-                        border: '2px solid #c00',
-                        borderRadius: '8px',
-                        color: '#000',
-                        maxHeight: '400px',
-                        overflow: 'auto'
-                    }}>
-                        <h3 style={{color: '#c00', margin: '0 0 1rem 0'}}>❌ Erreur</h3>
-                        <div style={{marginBottom: '1rem', fontSize: '14px', whiteSpace: 'pre-line'}}>
+                    <div className={styles.errorContainer}>
+                        <h3 className={styles.errorTitle}>❌ Erreur</h3>
+                        <div className={styles.errorMessage}>
                             <strong>Message:</strong> {error}
                         </div>
 
                         {debugInfo && (
-                            <details style={{marginTop: '1rem', fontSize: '12px', fontFamily: 'monospace'}}>
-                                <summary style={{cursor: 'pointer', fontWeight: 'bold', marginBottom: '0.5rem'}}>
+                            <details className={styles.debugDetails}>
+                                <summary className={styles.debugSummary}>
                                     🔍 Informations de débogage (cliquer pour voir)
                                 </summary>
-                                <div style={{
-                                    background: '#fff',
-                                    padding: '0.5rem',
-                                    borderRadius: '4px',
-                                    marginTop: '0.5rem'
-                                }}>
+                                <div className={styles.debugContent}>
                                     <div>
                                         <strong>Mode:</strong> {debugInfo.isNativePlatform ? '📱 MOBILE (APK)' : '🌐 WEB'}
                                     </div>
@@ -1349,12 +1050,12 @@ function HomeContent({searchParams}) {
                                     <div><strong>URL:</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
                                         <>
-                                            <hr style={{margin: '0.5rem 0'}}/>
+                                            <hr className={styles.debugHr}/>
                                             <div><strong>Erreur Fetch:</strong> {debugInfo.fetchError}</div>
                                         </>
                                     )}
                                     {debugInfo.userAgent && (
-                                        <div style={{marginTop: '0.5rem', fontSize: '10px', color: '#666'}}>
+                                        <div className={styles.debugUserAgent}>
                                             <strong>User Agent:</strong> {debugInfo.userAgent}
                                         </div>
                                     )}
@@ -1367,12 +1068,7 @@ function HomeContent({searchParams}) {
                 {loading && events.length === 0 && <LoadingSpinner/>}
 
                 {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
-                    <div style={{
-                        textAlign: 'center',
-                        padding: '3rem 1rem',
-                        color: 'var(--text-secondary)',
-                        fontSize: '1rem'
-                    }}>
+                    <div className={styles.noCoursesMessage}>
                         Pas de cours trouvé pour cette semaine
                     </div>
                 )}
@@ -1389,6 +1085,11 @@ function HomeContent({searchParams}) {
                                     : '')
                         }
                     >
+                        {getTimeRemainingText && (
+                            <div className={styles.timeRemainingText}>
+                                {getTimeRemainingText}
+                            </div>
+                        )}
                         {viewMode === 'vertical' ? (
                             <VerticalSchedule
                                 events={events}
@@ -1399,6 +1100,7 @@ function HomeContent({searchParams}) {
                                 hide15MinSpacing={hide15MinSpacing}
                                 isNative={isNative}
                                 monthFormat={'short'}
+                                courseNotes={courseNotes}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {
@@ -1418,14 +1120,11 @@ function HomeContent({searchParams}) {
                                             compactMode={compactMode}
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}
+                                            courseNotes={courseNotes}
                                         />
                                         {isToday && (
                                             <div
-                                                style={{
-                                                    height: '0px',
-                                                    width: '100%',
-                                                    background: 'transparent'
-                                                }}
+                                                className={styles.todaySpacer}
                                                 aria-hidden="true"
                                             />
                                         )}
@@ -1442,7 +1141,7 @@ function HomeContent({searchParams}) {
                 )}
             </main>
 
-            <Footer 
+            <Footer
                 testMode={testMode}
                 onToggleTestMode={handleToggleTestMode}
                 testWeekMode={testWeekMode}
@@ -1452,206 +1151,36 @@ function HomeContent({searchParams}) {
             <ScrollToTop/>
 
             <OfflineNotification forceShow={hasNetworkError}/>
-            
-            <SupabaseNotification 
-                show={showSupabaseNotification} 
+
+            <SupabaseNotification
+                show={showSupabaseNotification}
                 source={supabaseSource}
             />
-            
-            <DevNotification 
-                message={devNotification} 
-                isVisible={showDevNotification} 
-                onClose={() => setShowDevNotification(false)} 
+
+            <DevNotification
+                message={devNotification}
+                isVisible={showDevNotification}
+                onClose={() => setShowDevNotification(false)}
             />
 
             {/* Test mode indicator removed; show badge in footer instead */}
 
-            {showMap && selectedEvent && (
-                <MapViewer 
-                    location={selectedEvent.location} 
-                    onClose={() => setShowMap(false)}
-                />
-            )}
-            {selectedEvent && (
-                <div className="event-modal-layer" aria-modal="true" role="dialog">
-                    <div className="event-modal-overlay" onClick={() => setSelectedEvent(null)}/>
-                    <div className="event-modal">
-                        <div className="event-modal-header">
-                            <div className="event-modal-title">
-                                {selectedEvent.summary || selectedEvent.description || 'Cours'}
-                                {/* Badge Examen si présent dans la description */}
-                                {selectedEvent.description && selectedEvent.description.toUpperCase().includes("EXAMEN") && (
-                                    <span className="exam-badge-modal" title="Examen">
-                                        📝 EXAMEN
-                                    </span>
-                                )}
-                            </div>
-                            <button className="event-modal-close" aria-label="Fermer"
-                                    onClick={() => setSelectedEvent(null)}>✕
-                            </button>
-                        </div>
-                        <div className="event-modal-content">
-                            {/* Section Informations principales */}
-                            <div className="modal-section">
-                                <div className="pop-row">
-                                    <span>⏰</span>
-                                    <span>{new Date(selectedEvent.start).toLocaleTimeString('fr-FR', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })} - {new Date(selectedEvent.end).toLocaleTimeString('fr-FR', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}</span>
-                                </div>
-                                {formatDurationHM(selectedEvent.start, selectedEvent.end) && (
-                                    <div className="pop-row">
-                                        <span>⏳</span>
-                                        <span>Durée : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</span>
-                                    </div>
-                                )}
-                                {(() => {
-                                    const courseType = extractCourseType(selectedEvent);
-                                    const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
-                                    const {prof: extractedProf} = getEventTitle(selectedEvent) || {};
-                                    const profName = extractedProf || selectedEvent.prof;
-                                    return (
-                                        <>
-                                            {courseId && (
-                                                <div className="pop-row">
-                                                    <span>🎓</span>
-                                                    <span>UE : {courseId}</span>
-                                                </div>
-                                            )}
-                                            {courseType && (
-                                                <div className="pop-row">
-                                                    <span>📘</span>
-                                                    <span>{courseType}</span>
-                                                </div>
-                                            )}
-                                            <div className="pop-row">
-                                                <span>👤</span>
-                                                <span>Professeur : {profName || "?"}</span>
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                                <div className="pop-row location-row">
-                                    <span>{selectedEventLocationMeta?.isVisio ? '🎥' : '🚪'}</span>
-                                    <span>
-                                        {selectedEventLocationMeta?.isVisio
-                                            ? selectedEventLocationMeta.display
-                                            : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
-                                    </span>
-                                    {selectedEventLocationMeta?.isVisio ? (
-                                        <span className="site-badge visio-badge">VISIO</span>
-                                    ) : selectedEventLocationMeta?.siteInfo ? (
-                                        <span
-                                            className="site-badge"
-                                            style={{
-                                                backgroundColor: selectedEventLocationMeta.siteInfo.color,
-                                                color: 'white'
-                                            }}
-                                        >
-                                            {selectedEventLocationMeta.siteInfo.site}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            </div>
-
-                            {/* Section Progression */}
-                            {(() => {
-                                const {matiere} = getEventTitle(selectedEvent) || {};
-                                const hoursStats = getSubjectHoursStats(matiere, selectedEvent);
-                                
-                                if (!hoursStats || hoursStats.total === 0) return null;
-                                
-                                return (
-                                    <div className="modal-section">
-                                        <div className="hours-stats-compact">
-                                            <div className="hours-stats-header">
-                                                <span className="hours-stats-icon">📊</span>
-                                                <span className="hours-stats-label">Progression à ce cours</span>
-                                            </div>
-                                            <div className="hours-stats-bar-wrapper">
-                                                <div className="hours-stats-bar">
-                                                    <div 
-                                                        className="hours-stats-bar-fill" 
-                                                        style={{width: `${hoursStats.percentage}%`}}
-                                                    />
-                                                </div>
-                                                <span className="hours-stats-bar-percent">{hoursStats.percentage}%</span>
-                                            </div>
-                                            <div className="hours-stats-details">
-                                                <span className="hours-stats-completed">{formatHoursDecimal(hoursStats.completed)} / {formatHoursDecimal(hoursStats.total)}</span>
-                                                {hoursStats.remaining > 0 && (
-                                                    <>
-                                                        <span className="hours-stats-dot">•</span>
-                                                        <span className="hours-stats-remaining">{formatHoursDecimal(hoursStats.remaining)} restantes après ce cours</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-
-                            {/* Section Actions */}
-                            <div className="modal-section modal-actions">
-                                {selectedEventLocationMeta?.hasPhysical && (
-                                    <button
-                                        className="action-btn map-btn"
-                                        onClick={() => setShowMap(true)}
-                                        aria-label="Voir le plan"
-                                    >
-                                        <span className="action-btn-icon">🗺️</span>
-                                        <span className="action-btn-text">Voir le plan</span>
-                                    </button>
-                                )}
-                                {(() => {
-                                    const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
-                                    if (!courseId) return null;
-                                    const [yearStart, yearEnd] = getAcademicYearParts(selectedEvent.start || Date.now());
-                                    const query = `${courseId} ${yearStart} ${yearEnd}`;
-                                    const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
-                                    return (
-                                        <a
-                                            className="action-btn moodle-btn"
-                                            href={moodleUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            aria-label={`Ouvrir Moodle pour ${courseId}`}
-                                        >
-                                            <span className="action-btn-icon">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20" height="20">
-                                                    <circle cx="28" cy="28" r="26" fill="white"/>
-                                                    <g transform="translate(4, 4)">
-                                                        <path fill="#ffab40" d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z"/>
-                                                        <path d="M5.5 16.2H6.5V32H5.5z"/>
-                                                        <path fill="#424242" d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z"/>
-                                                        <path fill="#616161" d="M18,17H4l11-7h14L18,17z"/>
-                                                        <path fill="#424242" d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z"/>
-                                                    </g>
-                                                </svg>
-                                            </span>
-                                            <span className="action-btn-text">Ouvrir Moodle</span>
-                                        </a>
-                                    );
-                                })()}
-                            </div>
-
-                            {/* Debug info */}
-                            {devMode && selectedEvent.description && (
-                                <div className="modal-section">
-                                    <div className="pop-desc">{selectedEvent.description}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <EventModal
+                selectedEvent={selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+                onShowMap={setShowMap}
+                showMap={showMap}
+                allEvents={allEvents}
+                progressionExpanded={progressionExpanded}
+                setProgressionExpanded={setProgressionExpanded}
+                courseNotes={courseNotes}
+                notesAuthenticated={notesAuthenticated}
+                refreshNotes={refreshNotes}
+                devMode={devMode}
+            />
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}
-            <DevToolsButton />
+            <DevToolsButton/>
         </div>
     );
 }

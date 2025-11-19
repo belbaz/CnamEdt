@@ -35,7 +35,8 @@ export default function Navbar({
                                    onSubjectsChange = null,
                                    showOnlyExams = false,
                                    onShowOnlyExamsChange = null,
-                                   showFilter = false
+                                   showFilter = false,
+                                   userInfo = null
                                }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [newHistoryCount, setNewHistoryCount] = useState(0);
@@ -171,6 +172,7 @@ export default function Navbar({
                     showOnlyExams={showOnlyExams}
                     onShowOnlyExamsChange={onShowOnlyExamsChange}
                     showFilter={showFilter}
+                    userInfo={userInfo}
                 />
 
                 <div className="navbar-controls">
