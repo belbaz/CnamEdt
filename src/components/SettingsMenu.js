@@ -14,7 +14,9 @@ export default function SettingsMenu({
                                          showTimeLabels = true,
                                          onToggleTimeLabels = null,
                                          hide15MinSpacing = false,
-                                         onToggle15MinSpacing = null
+                                         onToggle15MinSpacing = null,
+                                         showTimeRemaining = true,
+                                         onToggleTimeRemaining = null
                                      }) {
     const [isOpen, setIsOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
@@ -141,6 +143,18 @@ export default function SettingsMenu({
                                         onChange={(e) => onToggle15MinSpacing && onToggle15MinSpacing(e.target.checked)}
                                     />
                                     <span>Masquer les pauses de 15 minutes</span>
+                                </label>
+                            </div>
+
+                            <div className="setting-item">
+                                <label htmlFor="showTimeRemaining-checkbox">
+                                    <input
+                                        id="showTimeRemaining-checkbox"
+                                        type="checkbox"
+                                        checked={showTimeRemaining}
+                                        onChange={(e) => onToggleTimeRemaining && onToggleTimeRemaining(e.target.checked)}
+                                    />
+                                    <span>Afficher le temps restant du cours</span>
                                 </label>
                             </div>
 

@@ -57,6 +57,11 @@ export function useHomePageHandlers({
         localStorage.setItem('hide15MinSpacing', enabled.toString());
     };
 
+    const handleToggleTimeRemaining = (enabled, setShowTimeRemaining) => {
+        setShowTimeRemaining(enabled);
+        localStorage.setItem('showTimeRemaining', enabled.toString());
+    };
+
     const handleToggleDay = (day) => {
         const newCollapsedDays = {
             ...collapsedDays,
@@ -244,6 +249,7 @@ export function useHomePageHandlers({
         handleViewModeChange,
         handleToggleTimeLabels,
         handleToggle15MinSpacing,
+        handleToggleTimeRemaining,
         handleToggleDay,
         handleToggleAllDays,
         handleToggleTestMode,
@@ -251,4 +257,5 @@ export function useHomePageHandlers({
         handleCheckUpdates
     };
 }
+
 

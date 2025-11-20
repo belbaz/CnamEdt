@@ -187,7 +187,7 @@
 
 :global(.modal-note-view-text){
     font-size: 15px;
-    padding: 0;
+    padding: .15rem;
     margin: .25rem .1rem;
 }
 
@@ -206,7 +206,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem;
+    gap: 0.35rem;
 }
 
 :global(.modal-note-add) {
@@ -220,6 +220,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    margin-bottom: .5rem;
 }
 
 :global(.modal-note-add.secondary) {
@@ -357,11 +358,12 @@
 /* Texte du temps restant avant la fin du cours */
 .timeRemainingText {
     text-align: center;
-    padding: 0.5rem 1rem;
+    padding: 0.1rem;
     margin-bottom: 0.75rem;
     color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 500;
+    font-style: italic;
     opacity: 0.8;
 }
 
@@ -400,6 +402,7 @@
     text-decoration: none;
     font-weight: 600;
     padding: 0.3rem 0.6rem;
+    margin: .5rem;
     border-radius: 6px;
     background: rgba(37, 99, 235, 0.1);
     border: 1px solid rgba(37, 99, 235, 0.2);

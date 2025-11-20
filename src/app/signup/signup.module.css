@@ -1,15 +1,14 @@
 .page {
-    min-height: 100vh;
+    min-height: 100dvh;
     background: var(--bg-gradient);
-    padding: clamp(1rem, 3vw, 2rem) 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .wrapper {
-    width: min(480px, 100%);
-    max-width: 100%;
+    width: 100%;
+    max-width: 480px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 24px;
@@ -360,10 +359,6 @@
 }
 
 @media (max-width: 768px) {
-    .page {
-        padding: 1rem 0.75rem;
-    }
-
     .wrapper {
         border-radius: 18px;
         padding: 1rem;
@@ -399,6 +394,7 @@
     .wrapper {
         width: 100%;
         border-radius: 16px;
+        padding: 1rem 0.75rem;
     }
 
     .notice h1 {
@@ -409,4 +405,3 @@
         font-size: 1.25rem;
     }
 }
-

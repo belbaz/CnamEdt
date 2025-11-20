@@ -68,6 +68,7 @@ function HomeContent({searchParams}) {
     const [viewMode, setViewMode] = useState('horizontal'); // 'horizontal' or 'vertical'
     const [showTimeLabels, setShowTimeLabels] = useState(true); // Afficher les labels d'heures
     const [hide15MinSpacing, setHide15MinSpacing] = useState(false); // Masquer l'espacement visuel de 15 minutes
+    const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -741,6 +742,9 @@ function HomeContent({searchParams}) {
 
         const savedHide15MinSpacing = localStorage.getItem("hide15MinSpacing");
         if (savedHide15MinSpacing !== null) setHide15MinSpacing(savedHide15MinSpacing === "true");
+
+        const savedShowTimeRemaining = localStorage.getItem("showTimeRemaining");
+        if (savedShowTimeRemaining !== null) setShowTimeRemaining(savedShowTimeRemaining === "true");
     }, []);
 
     useEffect(() => {
@@ -891,11 +895,19 @@ function HomeContent({searchParams}) {
     const handleViewModeChange = (mode) => handlers.handleViewModeChange(mode, setViewMode);
     const handleToggleTimeLabels = (enabled) => handlers.handleToggleTimeLabels(enabled, setShowTimeLabels);
     const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
+    const handleToggleTimeRemaining = (enabled) => handlers.handleToggleTimeRemaining(enabled, setShowTimeRemaining);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
     const handleToggleTestMode = () => handlers.handleToggleTestMode(testMode);
     const handleToggleTestWeek = () => handlers.handleToggleTestWeek(testWeekMode);
     const handleCheckUpdates = handlers.handleCheckUpdates;
+
+    // Vérifier si la semaine affichée est la semaine en cours
+    const isCurrentWeekSelected = useMemo(() => {
+        if (!selectedWeek) return false;
+        const currentWeekMonday = getCurrentWeek();
+        return selectedWeek.getTime() === currentWeekMonday.getTime();
+    }, [selectedWeek]);
 
     // Trouver le prochain cours en cours aujourd'hui
     const getNextOngoingCourse = useMemo(() => {
@@ -934,7 +946,7 @@ function HomeContent({searchParams}) {
 
     // Calculer le temps restant avant la fin du cours
     const getTimeRemainingText = useMemo(() => {
-        if (!getNextOngoingCourse) return null;
+        if (!showTimeRemaining || !isCurrentWeekSelected || !getNextOngoingCourse) return null;
 
         const now = new Date();
         const endTime = getNextOngoingCourse.end_time 
@@ -955,7 +967,7 @@ function HomeContent({searchParams}) {
             return `${remainingHours}h${String(minutes).padStart(2, '0')} avant la fin du cours`;
         }
         return `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} avant la fin du cours`;
-    }, [getNextOngoingCourse, currentTime]);
+    }, [getNextOngoingCourse, currentTime, isCurrentWeekSelected, showTimeRemaining]);
 
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
@@ -1016,6 +1028,8 @@ function HomeContent({searchParams}) {
                 onToggleTimeLabels={handleToggleTimeLabels}
                 hide15MinSpacing={hide15MinSpacing}
                 onToggle15MinSpacing={handleToggle15MinSpacing}
+                showTimeRemaining={showTimeRemaining}
+                onToggleTimeRemaining={handleToggleTimeRemaining}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}

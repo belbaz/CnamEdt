@@ -26,7 +26,7 @@ export default function WeekPicker({
 
     const currentWeekLabel = currentWeekIndex >= 0
         ? availableWeeks[currentWeekIndex].label
-        : "Aucune semaine";
+        : "Chargement ...";
 
     const canGoPrevious = currentWeekIndex > 0;
     const canGoNext = currentWeekIndex < availableWeeks.length - 1;

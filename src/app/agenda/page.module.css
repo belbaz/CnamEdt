@@ -1,7 +1,13 @@
+/* =========================================
+   LAYOUT & RESET
+   ========================================= */
 .page {
     min-height: 100vh;
     background: var(--bg-gradient);
     padding: clamp(1rem, 3vw, 2rem);
+    color: var(--text-primary);
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
 }
 
 .pageCentered {
@@ -14,21 +20,22 @@
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
+    /* Match main page width */
     margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
+/* =========================================
+   HEADER
+   ========================================= */
 .header {
-    margin-bottom: 2rem;
-}
-
-.userGreeting {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .headerTop {
@@ -36,89 +43,890 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .backIconButton {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
     border: 1px solid var(--border-light);
     background: var(--bg-secondary);
     color: var(--text-primary);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.2rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
 }
 
 .backIconButton:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
+    transform: translateX(-2px);
+    background: var(--bg-primary);
 }
 
 .userBar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    flex: 1;
-    justify-content: flex-end;
-}
-
-.userGreeting {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 0;
+    gap: 1rem;
+    margin-left: auto;
 }
 
 .userGreetingCompact {
     font-weight: 600;
+    font-size: 0.95rem;
     color: var(--text-primary);
+    display: none;
+    /* Hidden on mobile by default to save space */
 }
 
-.logoutSection {
-    text-align: center;
-    margin-bottom: 1rem;
+@media (min-width: 640px) {
+    .userGreetingCompact {
+        display: block;
+    }
 }
 
 .logoutButton {
-    border: 1px solid var(--border-light);
+    border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 8px;
     padding: 0.5rem 1rem;
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    font-weight: 500;
-    font-size: 0.875rem;
+    background: rgba(239, 68, 68, 0.05);
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
 }
 
 .logoutButton:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.15);
     transform: translateY(-1px);
 }
 
 .header h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
     color: var(--text-primary);
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .subtitle {
     margin: 0;
     color: var(--text-secondary);
     font-size: 1rem;
+    max-width: 600px;
+    line-height: 1.5;
+}
+
+/* =========================================
+   TABS & LAYOUT
+   ========================================= */
+.tabsLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Tabs Navigation */
+.tabNavigation {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 1px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE 10+ */
+}
+
+.tabNavigation::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+.tabButton {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.tabButton strong {
+    font-weight: 600;
+}
+
+.tabButton span {
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.tabButton:hover {
+    color: var(--text-primary);
+}
+
+.tabButtonActive {
+    color: var(--primary-color) !important;
+}
+
+.tabButtonActive::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary-color);
+    border-radius: 2px 2px 0 0;
+}
+
+/* =========================================
+   PUBLIC TAB
+   ========================================= */
+.publicContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.publicIntroCard {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .publicIntroCard {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.publicIntroCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-color);
+}
+
+.publicIntroCard h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+}
+
+.publicIntroCard p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.publicStats {
+    display: flex;
+    gap: 2rem;
+}
+
+.publicStatsValue {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: block;
+    line-height: 1;
+}
+
+.publicStatsLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-top: 0.25rem;
+    display: block;
+    letter-spacing: 0.05em;
+}
+
+.publicNotesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.publicNoteCard {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.publicNoteCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.publicNoteHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.publicNoteHeader h3 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.publicNoteDate {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
+.publicNoteLocation {
+    font-size: 0.75rem;
+    background: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.publicNoteMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.publicNoteMeta span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.publicNoteEntries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.publicNoteEntry {
+    background: var(--bg-primary);
+    padding: .5rem .9rem;
+    border-radius: 18px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    border: 1px solid var(--border-light);
+}
+
+.publicEmptyState {
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border-light);
+    border-radius: 16px;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* =========================================
+   PRIVATE TAB (AGENDA)
+   ========================================= */
+.privateContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .privateContainer {
+        grid-template-columns: 350px 1fr;
+        align-items: start;
+    }
+}
+
+/* Left Column: Date & Courses */
+.agendaSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Date Selector */
+.dateSelector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+    position: relative;
+}
+
+.dateVisual {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 1rem;
+}
+
+.dateWeekday {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.dateDay {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin: 0.25rem 0;
+}
+
+.dateMonth {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.datePickerButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.datePickerButton:hover {
+    background: var(--bg-secondary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Calendar Popover */
+.calendarPopover {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+    width: 350px;
+    max-width: 90vw;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+    box-sizing: border-box;
+}
+
+.calendarPopoverHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.calendarMonthLabel {
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: capitalize;
+    font-size: 1.1rem;
+}
+
+.calendarHeaderButtons button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    margin-left: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.calendarHeaderButtons button:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+}
+
+.calendarGrid {
+    display: grid;
+    gap: 2px;
+    margin-bottom: 0.75rem;
+}
+
+.calendarWeekday {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding-bottom: 0.25rem;
+}
+
+.calendarDay {
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.calendarDay:hover {
+    background: var(--bg-secondary);
+}
+
+.calendarDaySelected {
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.calendarDayToday {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.calendarDayMuted {
+    color: var(--text-secondary);
+    opacity: 0.4;
+}
+
+.calendarFooter {
+    border-top: 1px solid var(--border-light);
+    padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.calendarFilter {
+    display: flex;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.calendarFilterButton {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.calendarFilterButtonActive {
+    background: var(--bg-primary);
+    color: var(--primary-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+/* Courses List */
+.coursesList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sectionTitle {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.courseButton {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.courseButton:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.courseButtonSelected {
+    border-color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.05);
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.courseButtonSelected::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--primary-color);
+}
+
+.courseButtonContent {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    gap: 1rem;
+}
+
+.courseButtonInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.courseButtonTime {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.1);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    width: fit-content;
+}
+
+.courseButtonTitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.courseButtonLocation {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.noCourseAlert {
+    padding: 3rem 1rem;
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-light);
+    border-radius: 16px;
+    color: var(--text-secondary);
+}
+
+/* Right Column: Note Editor */
+.notePanel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 2rem;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+    .notePanel {
+        position: sticky;
+        top: 2rem;
+    }
+}
+
+.notePlaceholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-secondary);
+    gap: 1rem;
+    opacity: 0.7;
+}
+
+.noteHeader {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.noteTitle {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+    font-weight: 800;
+}
+
+.noteTime {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.noteEntriesList {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+.noteEntryCard {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.noteEntryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.noteEntryRemove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.noteEntryRemove:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.noteEntryTextarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 120px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.noteEntryTextarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.noteDisplayCard {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.noteLastPerson {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: right;
+    margin-top: 0.75rem;
+    font-style: italic;
+}
+
+.noteActions,
+.noteViewActions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.noteActions button,
+.noteViewActions button {
+    flex: 1;
+    padding: 0.85rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.addNoteButton,
+.saveButton {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.addNoteButton:hover,
+.saveButton:hover {
+    filter: brightness(110%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.cancelButton {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.cancelButton:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.noteEditButton {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
+.noteEditButton:hover {
+    background: rgba(37, 99, 235, 0.2);
+}
+
+.deleteButton {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* =========================================
+   LOGIN & ERROR
+   ========================================= */
+.privateLocked {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    text-align: center;
+    gap: 1.5rem;
+}
+
+.badgeGuest {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 700;
 }
 
 .errorBox {
     background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
     color: #dc2626;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -130,1182 +938,85 @@
     color: #dc2626;
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 0 0.5rem;
 }
 
-/* Sélecteur de date */
-.dateSelector {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 1.1rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    position: relative;
-}
-
-.dateSelectorHeader {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.dateHeaderTitle {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dateLabel {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-.dateBadge {
-    padding: 0.15rem 0.8rem;
-    border-radius: 999px;
-    background: rgba(59, 130, 246, 0.12);
-    font-size: 0.85rem;
-    color: #1d4ed8;
-    font-weight: 600;
-}
-
-.dateHeaderActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.dateHint {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    flex: 1;
-}
-
-.datePickerCard {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12));
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 14px;
-    padding: 0.4rem;
-    max-width: 380px;
-    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
-}
-
-.datePickerButton {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(15, 23, 42, 0.05);
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.datePickerButton:hover {
-    background: rgba(15, 23, 42, 0.18);
-    transform: translateY(-1px);
-}
-
-.dateVisualWrapper {
-    position: relative;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-
-.dateVisual {
-    width: -webkit-fill-available;
-    min-width: 130px;
-    background: var(--bg-primary);
-    border-radius: 15px;
-    padding: 0.25rem 0.75rem;
-    text-align: center;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 0.05rem;
-    /*box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 10px rgba(15, 23, 42, 0.08);*/
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    color: var(--text-primary);
-    transition: transform 0.15s, border-color 0.15s;
-}
-
-.dateVisual:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-}
-
-.dateVisual:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 4px;
-}
-
-.dateWeekday {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    line-height: 1.1;
-}
-
-.dateDay {
-    font-size: 1.85rem;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--text-primary);
-}
-
-.dateMonth {
-    font-size: 0.72rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    line-height: 1.1;
-}
-
-.calendarPopover {
-    position: absolute;
-    top: calc(100% + 0.4rem);
-    left: 50%;
-    transform: translate(-50%, 0);
-    width: min(320px, 90vw);
-    border-radius: 14px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    background: var(--bg-primary);
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
-    padding: 0.75rem;
-    z-index: 20;
-    animation: calendarPop 0.18s ease-out;
-}
-
-@keyframes calendarPop {
-    from {
-        opacity: 0;
-        transform: translateY(-6px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.calendarPopoverHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.calendarPopoverTitle {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-}
-
-.calendarMonthLabel {
-    font-weight: 600;
-    color: var(--text-primary);
-    text-transform: capitalize;
-}
-
-.calendarWeekRange {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.calendarHeaderButtons {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.calendarNavButton,
-.calendarCloseButton {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: 1px solid var(--border-light);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.85rem;
-}
-
-.calendarNavButton:hover,
-.calendarCloseButton:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.calendarWrapper {
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    border-radius: 12px;
-    padding: 0.5rem;
-    background: var(--bg-secondary);
-}
-
-.calendarGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.25rem;
-}
-
-.calendarWeekday {
-    text-align: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-}
-
-.calendarDay {
-    border: none;
-    border-radius: 10px;
-    padding: 0.45rem 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.calendarDay:hover {
-    background: rgba(59, 130, 246, 0.15);
-}
-
-.calendarDayMuted {
-    color: var(--text-secondary);
-    background: rgba(148, 163, 184, 0.12);
-}
-
-.calendarDayToday {
-    border: 1px solid var(--primary-color);
-}
-
-.calendarDaySelected {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: #fff;
-    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
-}
-
-.calendarDayEmpty {
-    border-radius: 10px;
-    padding: 0.45rem 0;
-    background: transparent;
-}
-
-.calendarDayHidden {
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.calendarFooter {
-    margin-top: 0.6rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.calendarFilter {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.calendarFilterButton {
-    flex: 1;
-    border: 1px solid rgba(148, 163, 184, 0.5);
-    border-radius: 10px;
-    padding: 0.35rem 0.6rem;
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.calendarFilterButton:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.calendarFilterButtonActive {
-    border-color: #1d4ed8;
-    color: #1d4ed8;
-    background: rgba(59, 130, 246, 0.12);
-}
-
-.calendarTodayButton {
-    border: none;
-    border-radius: 999px;
-    padding: 0.45rem 1.2rem;
-    background: rgba(59, 130, 246, 0.12);
-    color: #1d4ed8;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-}
-
-.calendarTodayButton:hover {
-    background: rgba(59, 130, 246, 0.2);
-    transform: translateY(-1px);
-}
-
-/* Grille de contenu */
-.contentGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    align-items: start;
-}
-
-/* Liste des cours */
-.coursesList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.sectionTitle {
-    margin: 0 0 .1rem 0;
-    font-size: 1rem;
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.courseButton {
-    width: 100%;
-    background: var(--bg-secondary);
-    border: 2px solid var(--border-light);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-}
-
-.courseButton:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.courseButtonSelected {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.courseButtonContent {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 1rem;
-}
-
-.courseButtonInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
-    min-width: 0;
-}
-
-.courseButtonTime {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-
-.courseButtonTitle {
-    font-size: 1rem;
-    color: var(--text-primary);
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.courseButtonLocation {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.courseButtonBadge {
-    font-size: 1.2rem;
-    flex-shrink: 0;
-}
-
-.noCourseAlert {
-    padding: 1.25rem;
-    border: 1px solid rgba(248, 113, 113, 0.4);
-    border-radius: 12px;
-    background: rgba(248, 113, 113, 0.12);
-    color: #b91c1c;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.noCourseAlert p {
-    margin: 0;
-    font-weight: 600;
-}
-
-.noCourseAlert span {
-    font-size: 0.9rem;
-    color: #b91c1c;
-}
-
-/* Panneau de notes */
-.notePanel {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 1.5rem;
-    min-height: 400px;
-    position: sticky;
-    top: 2rem;
-}
-
-.notePlaceholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 300px;
-    color: var(--text-secondary);
-    text-align: center;
-}
-
-.notePlaceholder p {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.inlineLoader {
-    position: relative;
-    overflow: hidden;
-    padding: 1.25rem;
-    border-radius: 14px;
-    background: var(--bg-secondary);
-    border: 1px solid rgba(59, 130, 246, 0.25);
-    color: var(--text-primary);
-    animation: shimmer 1.5s linear infinite;
-}
-
-.inlineLoader::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
-    transform: translateX(-100%);
-    animation: shimmer-slide 1.5s linear infinite;
-}
-
-.inlineLoaderContent {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.skeletonLine {
-    height: 12px;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.3);
-}
-
-.skeletonLine:first-child {
-    width: 60%;
-    height: 14px;
-}
-
-.skeletonLine:last-child {
-    width: 80%;
-}
-
-.inlineSpinner {
+/* =========================================
+   MOBILE UTILS
+   ========================================= */
+.mobileDateInput {
     display: none;
 }
 
-@keyframes shimmer-slide {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-@keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: 200px 0; }
-}
-.noCourseNoteWarning {
-    background: rgba(248, 113, 113, 0.15);
-    border: 1px solid rgba(248, 113, 113, 0.35);
-    color: #b91c1c;
-    font-weight: 700;
-    padding: 0.75rem 1rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-
-.noteHeader {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.noteTitle {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-    color: var(--text-primary);
-    font-weight: 600;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.noteTime {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-weight: 400;
-}
-
-.noteLocation {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.noteEditor,
-.noteDisplay {
-    display: flex;
-    flex-direction: column;
-}
-
-.noteHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: flex-start;
-}
-
-.noteHeaderInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.noteEditIconButton {
-    border: none;
-    background: rgba(59, 130, 246, 0.1);
-    color: #1d4ed8;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.noteEditIconButton:hover {
-    background: rgba(59, 130, 246, 0.2);
-    transform: translateY(-1px);
-}
-
-.noteEntriesList {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.noteEntryCard {
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 0.75rem;
-    background: var(--bg-secondary);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.noteEntryHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.noteEntryIndex {
-    font-size: 0.9rem;
-}
-
-.noteEntryRemove {
-    border: none;
-    background: transparent;
-    color: #dc2626;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
-
-.noteEntryRemove:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.noteEntryRemove:not(:disabled):hover {
-    color: #b91c1c;
-}
-
-.noteEntryTextarea {
-    width: 100%;
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 0.65rem;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.95rem;
-    resize: vertical;
-    min-height: 120px;
-}
-
-.noteEntryTextarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.noteDisplay {
-    gap: 0.75rem;
-}
-
-.noteAuthorInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: rgba(59, 130, 246, 0.08);
-    border-radius: 8px;
-    border-left: 3px solid var(--primary-color);
-    margin-bottom: 0.75rem;
-}
-
-.noteHistoryTitle {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.noteHistoryTable {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.8rem;
-}
-
-.noteHistoryTable thead {
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.noteHistoryTable th {
-    padding: 0.5rem;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.75rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.noteHistoryTable td {
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border-light);
-    color: var(--text-secondary);
-}
-
-.noteHistoryTable tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.noteHistoryBadge {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.noteHistoryBadge.created {
-    background: rgba(16, 185, 129, 0.15);
-    color: #059669;
-}
-
-.noteHistoryBadge.modified {
-    background: rgba(59, 130, 246, 0.15);
-    color: #2563eb;
-}
-
-.noteAuthorLabel {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.noteAuthorName {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.noteAuthorDate {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-.noteDisplayList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.noteLastPerson {
-    font-size: 0.65rem;
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 0.25rem;
-    text-align: right;
-    opacity: 0.7;
-    padding-right: 0.5rem;
-}
-
-.noteDisplayCard {
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    background: rgba(15, 23, 42, 0.04);
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.noteDisplayIndex {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.noteTextarea {
-    width: auto;
-    padding: 0.75rem;
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.95rem;
-    resize: vertical;
-    min-height: 200px;
-    margin-bottom: 1rem;
-}
-
-.noteTextarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.noteContent {
-    padding: 1rem;
-    background: rgba(15, 23, 42, 0.05);
-    border-radius: 8px;
-    color: var(--text-primary);
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin-bottom: 1rem;
-    min-height: 100px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.emptyNote {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-.noteEmpty {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-}
-
-.noteEmpty p {
-    margin: 0 0 1rem 0;
-}
-
-.noteActions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    margin-top: 1rem;
-}
-
-.addNoteButton,
-.editButton,
-.saveButton,
-.cancelButton,
-.deleteButton {
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-}
-
-.addNoteButton {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: white;
-    width: 100%;
-}
-
-.addNoteButton:hover {
-    background: linear-gradient(135deg, #1e40af, #1d4ed8);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.noteAddButtonSecondary {
-    margin-top: 0.5rem;
-    background: rgba(37, 99, 235, 0.08);
-    color: #1d4ed8;
-    border: 1px dashed rgba(37, 99, 235, 0.4);
-    width: fit-content;
-    align-self: flex-start;
-}
-
-.noteAddButtonSecondary:hover:not(:disabled) {
-    background: rgba(37, 99, 235, 0.15);
-}
-
-.noteViewActions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.editButton {
-    background: rgba(59, 130, 246, 0.1);
-    color: #2563eb;
-    flex: 1;
-}
-
-.editButton:hover {
-    background: rgba(59, 130, 246, 0.2);
-}
-
-.saveButton {
-    background: linear-gradient(135deg, #059669, #10b981);
-    color: white;
-    flex: 1;
-}
-
-.saveButton:hover:not(:disabled) {
-    background: linear-gradient(135deg, #047857, #059669);
-    transform: translateY(-1px);
-}
-
-.noteEditButton {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: white;
-    flex: 0 0 auto;
-}
-
-.saveButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.cancelButton {
-    background: rgba(148, 163, 184, 0.1);
-    color: var(--text-secondary);
-    flex: 1;
-}
-
-.cancelButton:hover:not(:disabled) {
-    background: rgba(148, 163, 184, 0.2);
-}
-
-.deleteButton {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    flex: 1;
-}
-
-.deleteButton:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
-.emptyState {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 16px;
-    padding: 3rem;
-    text-align: center;
-    color: var(--text-secondary);
-}
-
-.card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 24px;
-    padding: clamp(1.5rem, 3vw, 2rem);
-    box-shadow: var(--shadow-lg);
-    width: min(600px, 100%);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.card p {
-    text-align: center;
-    margin: 0;
-    color: var(--text-primary);
-}
-
-.loadingCard {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-}
-
-.loadingSpinner {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 4px solid rgba(59, 130, 246, 0.2);
-    border-top-color: #2563eb;
-    animation: agendaSpinner 0.9s linear infinite;
-}
-
-.loadingText {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.loadingHint {
-    display: block;
-    margin-top: 0.15rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-@keyframes agendaSpinner {
-    from {
-        transform: rotate(0deg);
+@media (max-width: 768px) {
+    .page {
+        padding: 1rem 0.75rem;
     }
-    to {
-        transform: rotate(360deg);
+
+    .container {
+        gap: 1.5rem;
     }
-}
 
-.status {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
+    .header h1 {
+        font-size: 1.75rem;
+    }
 
-.status h1 {
-    margin: 0;
-    font-size: clamp(1.5rem, 2vw, 1.8rem);
-    color: var(--text-primary);
-}
+    .tabNavigation {
+        justify-content: flex-start;
+        padding-bottom: 0.5rem;
+    }
 
-.status p {
-    margin: 0;
-    color: var(--text-secondary);
-}
+    .tabButton {
+        padding: 0.5rem 1rem;
+        background: var(--bg-secondary);
+        border-radius: 99px;
+        border: 1px solid var(--border-light);
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-.badge {
-    align-self: flex-start;
-    padding: 0.35rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
+    .tabButtonActive {
+        background: var(--primary-color);
+        color: white !important;
+        border-color: var(--primary-color);
+    }
 
-.badgeGuest {
-    background: rgba(248, 113, 113, 0.15);
-    color: #b91c1c;
-}
+    .tabButtonActive::after {
+        display: none;
+    }
 
-.actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.primaryButton {
-    border: none;
-    border-radius: 10px;
-    padding: 0.65rem 1.5rem;
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    color: #fff;
-    font-weight: 500;
-    font-size: 0.875rem;
-    text-decoration: none;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
-    display: inline-block;
-    text-align: center;
-    transition: all 0.2s ease;
-    min-width: 140px;
-}
-
-.primaryButton:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-    background: linear-gradient(135deg, #1e40af, #1d4ed8);
-}
-
-.ghostLink {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    display: inline-block;
-}
-
-.ghostLink:hover {
-    background: rgba(59, 130, 246, 0.08);
-    text-decoration: none;
-}
-
-.backButton {
-    border: 1px solid var(--border-light);
-    border-radius: 10px;
-    padding: 0.65rem 1.5rem;
-    background: transparent;
-    color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 0.875rem;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 140px;
-    margin-top: 0.25rem;
-}
-
-.backButton:hover {
-    background: rgba(148, 163, 184, 0.08);
-    border-color: var(--border-light);
-    transform: translateY(-1px);
-    color: var(--text-primary);
-}
-
-@media (max-width: 968px) {
-    .contentGrid {
-        grid-template-columns: 1fr;
+    .tabButtonActive span {
+        color: rgba(255, 255, 255, 0.8);
     }
 
     .notePanel {
-        position: static;
+        padding: 1.5rem;
+        min-height: auto;
     }
 }
 
-@media (max-width: 768px) {
-    .dateSelector {
-        flex-direction: column;
-        align-items: stretch;
-    }
+/* Loading Animation */
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+}
 
-    .datePickerCard {
-        flex-direction: column;
-    }
+.loader {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--primary-color);
+    animation: spin 1s linear infinite;
+}
 
-    .datePickerButton {
-        width: 100%;
-    }
-
-    .dateVisual {
-        width: 100%;
-    }
-
-    .dateHeaderActions {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .calendarPopover {
-        position: static;
-        width: 100%;
-        margin-top: 0.5rem;
-        box-shadow: var(--shadow-md);
-        transform: none;
-        left: auto;
-    }
-
-    .noteActions {
-        flex-direction: column;
-    }
-
-    .addNoteButton,
-    .editButton,
-    .saveButton,
-    .cancelButton,
-    .deleteButton {
-        width: 100%;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }

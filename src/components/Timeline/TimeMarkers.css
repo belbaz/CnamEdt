@@ -38,6 +38,11 @@
     opacity: 0.8;
 }
 
+.time-marker.hour-marker:first-child,
+.time-marker.hour-marker:last-child {
+    height: 0px;
+}
+
 .time-marker.hour-marker::before {
     width: 2px;
     background: var(--border-color);

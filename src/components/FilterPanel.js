@@ -3,13 +3,13 @@ import {useState, useEffect, useRef} from "react";
 import "./FilterPanel.css";
 
 export default function FilterPanel({
-    subjects = [],
-    selectedSubjects = [],
-    onSubjectsChange,
-    showOnlyExams = false,
-    onShowOnlyExamsChange,
-    isVisible = false
-}) {
+                                        subjects = [],
+                                        selectedSubjects = [],
+                                        onSubjectsChange,
+                                        showOnlyExams = false,
+                                        onShowOnlyExamsChange,
+                                        isVisible = false
+                                    }) {
     const [isOpen, setIsOpen] = useState(false);
     const panelRef = useRef(null);
 
@@ -46,26 +46,26 @@ export default function FilterPanel({
         if (isOpen) {
             // Sauvegarder la position du scroll actuelle
             const scrollY = window.scrollY;
-            
+
             // Ajouter la classe pour forcer le background gradient
             document.body.classList.add('modal-open');
-            
+
             // Bloquer le scroll
             document.body.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = '100%';
-            
+
             return () => {
                 // Retirer la classe
                 document.body.classList.remove('modal-open');
-                
+
                 // Restaurer le scroll quand la modale est fermée
                 document.body.style.overflow = '';
                 document.body.style.position = '';
                 document.body.style.top = '';
                 document.body.style.width = '';
-                
+
                 // Restaurer la position du scroll
                 window.scrollTo(0, scrollY);
             };
@@ -76,7 +76,7 @@ export default function FilterPanel({
         const newSelected = selectedSubjects.includes(subject)
             ? selectedSubjects.filter(s => s !== subject)
             : [...selectedSubjects, subject];
-        
+
         onSubjectsChange(newSelected);
     };
 
@@ -104,8 +104,10 @@ export default function FilterPanel({
                 title="Filtrer les cours"
                 aria-label="Filtrer les cours"
             >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 4h18M7 8h10M11 12h2M9 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     aria-hidden="true">
+                    <path d="M3 4h18M7 8h10M11 12h2M9 16h6" stroke="currentColor" strokeWidth="2"
+                          strokeLinecap="round"/>
                 </svg>
                 {hasAnyFilter && (
                     <span className="filter-badge" aria-label={`Filtres actifs`}>
@@ -120,8 +122,8 @@ export default function FilterPanel({
                     <div className="filter-panel" ref={panelRef}>
                         <div className="filter-header">
                             <h3>Filtrer les cours</h3>
-                            <button 
-                                className="filter-close" 
+                            <button
+                                className="filter-close"
                                 onClick={() => setIsOpen(false)}
                                 aria-label="Fermer"
                             >
@@ -130,21 +132,6 @@ export default function FilterPanel({
                         </div>
 
                         <div className="filter-content">
-                            {/* Toggle Examens uniquement */}
-                            <div className="filter-exam-toggle">
-                                <label className="exam-toggle-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={showOnlyExams}
-                                        onChange={(e) => onShowOnlyExamsChange && onShowOnlyExamsChange(e.target.checked)}
-                                        className="exam-toggle-checkbox"
-                                    />
-                                    <span className="exam-toggle-text">
-                                        📝 Afficher uniquement les examens
-                                    </span>
-                                </label>
-                            </div>
-
                             {subjects.length === 0 ? (
                                 <div className="filter-empty">
                                     <p>Aucune matière disponible</p>
@@ -189,8 +176,19 @@ export default function FilterPanel({
                                                 </label>
                                             );
                                         })}
+                                        {/* Toggle Examens uniquement */}
+                                        <div className="filter-exam-toggle">
+                                            <label className="exam-toggle-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={showOnlyExams}
+                                                    onChange={(e) => onShowOnlyExamsChange && onShowOnlyExamsChange(e.target.checked)}
+                                                    className="exam-toggle-checkbox"
+                                                />
+                                                <span className="exam-toggle-text">Afficher uniquement les examens</span>
+                                            </label>
+                                        </div>
                                     </div>
-
                                     {hasActiveFilters && (
                                         <div className="filter-info">
                                             {activeFiltersCount} matière{activeFiltersCount > 1 ? 's' : ''} sélectionnée{activeFiltersCount > 1 ? 's' : ''}

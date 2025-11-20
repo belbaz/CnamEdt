@@ -302,8 +302,13 @@ export default function EventModal({
                                         {savedModalEntries.length === 0 ? (
                                             <div className="modal-notes-empty">
                                                 <p className="modal-note-view-text">Aucune note disponible</p>
-                                                <p className="modal-note-view-text" style={{ fontSize: '0.9em', color: '#666', marginTop: '0.5em' }}>
-                                                    Connectez-vous pour ajouter des notes
+                                                <p
+                                                    className="modal-note-view-text"
+                                                    style={{ fontSize: '0.9em', color: '#666', marginTop: '0.5em' }}
+                                                >
+                                                    <a href="/login" className={styles.notesUnauthLink}>
+                                                        Connectez-vous
+                                                    </a>pour ajouter des notes
                                                 </p>
                                             </div>
                                         ) : (
@@ -343,8 +348,14 @@ export default function EventModal({
                                                                 )}
                                                             </div>
                                                         ))}
-                                                        <p className="modal-note-view-text" style={{ fontSize: '0.9em', color: '#666', marginTop: '1em', fontStyle: 'italic' }}>
+                                                        <p
+                                                            className="modal-note-view-text"
+                                                            style={{ fontSize: '0.9em', color: '#666', marginTop: '1em', fontStyle: 'italic' }}
+                                                        >
                                                             Connectez-vous pour modifier ces notes
+                                                            <a href="/login" className={styles.notesUnauthLink}>
+                                                                Connexion
+                                                            </a>{" "}
                                                         </p>
                                                     </div>
                                                 );
@@ -467,6 +478,14 @@ export default function EventModal({
                                     <>
                                         {isModalEditingNotes ? (
                                             <div className="modal-notes-actions">
+                                                <button
+                                                    type="button"
+                                                    className="modal-note-cancel"
+                                                    onClick={handleCancelEditing}
+                                                    disabled={savingNote}
+                                                >
+                                                    Annuler
+                                                </button>
                                                 {modalHasChanges && (
                                                     <button
                                                         onClick={handleSaveNote}
@@ -480,14 +499,6 @@ export default function EventModal({
                                                                 : "Enregistrer"}
                                                     </button>
                                                 )}
-                                                <button
-                                                    type="button"
-                                                    className="modal-note-cancel"
-                                                    onClick={handleCancelEditing}
-                                                    disabled={savingNote}
-                                                >
-                                                    Annuler
-                                                </button>
                                             </div>
                                         ) : savedModalEntries.length > 0 ? (
                                             <div className="modal-note-view-actions">

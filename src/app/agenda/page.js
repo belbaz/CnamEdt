@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
+import LoginForm from "@/app/login/LoginForm";
 
 function AgendaContent() {
     const router = useRouter();
@@ -20,6 +21,8 @@ function AgendaContent() {
     const [userInfo, setUserInfo] = useState(null); // { name, lastName }
     const [events, setEvents] = useState([]);
     const [notes, setNotes] = useState(new Map()); // Map<course_uid, note>
+    const [publicNotes, setPublicNotes] = useState([]); // Notes visibles par tous
+    const [activeTab, setActiveTab] = useState("public");
     const [selectedDate, setSelectedDate] = useState("");
     const [selectedCourse, setSelectedCourse] = useState(null); // course_uid sélectionné
     const [noteEntries, setNoteEntries] = useState([]);
@@ -33,6 +36,113 @@ function AgendaContent() {
     const [calendarMonth, setCalendarMonth] = useState(null); // Date sur le 1er jour du mois affiché
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [showOnlyCourseDays, setShowOnlyCourseDays] = useState(true);
+
+    const refreshPublicNotes = useCallback(async ({ existingResponse = null, silent = false } = {}) => {
+        try {
+            const response = existingResponse || await fetch("/api/agenda?mode=public", {
+                cache: "no-store",
+            });
+
+            if (!response.ok) {
+                throw new Error("Erreur lors de la récupération des notes publiques");
+            }
+
+            const data = await response.json();
+            const noteList = Array.isArray(data.notes) ? data.notes : [];
+            setPublicNotes(noteList);
+            return noteList;
+        } catch (err) {
+            console.error("[Agenda] Erreur notes publiques:", err);
+            if (!silent) {
+                throw err;
+            }
+            return [];
+        }
+    }, []);
+
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const userPromise = fetch("/api/user", { cache: "no-store" });
+            const eventsPromise = fetch("/api/fetch-ics", { cache: "no-store" });
+            const publicPromise = fetch("/api/agenda?mode=public", { cache: "no-store" });
+
+            const [userRes, eventsRes, publicRes] = await Promise.all([
+                userPromise,
+                eventsPromise,
+                publicPromise,
+            ]);
+
+            await refreshPublicNotes({ existingResponse: publicRes });
+
+            if (!eventsRes.ok) {
+                throw new Error("Erreur lors de la récupération des cours");
+            }
+
+            const eventsData = await eventsRes.json();
+            const eventsList = Array.isArray(eventsData.events)
+                ? eventsData.events
+                : [];
+
+            eventsList.sort((a, b) => {
+                const dateA = new Date(a.start || 0);
+                const dateB = new Date(b.start || 0);
+                return dateA - dateB;
+            });
+
+            setEvents(eventsList);
+
+            let isAuthenticated = false;
+
+            if (userRes.status === 401) {
+                setAuthenticated(false);
+                setUserInfo(null);
+            } else {
+                if (!userRes.ok) {
+                    const errorData = await userRes.json().catch(() => ({}));
+                    console.error("[Agenda] Erreur récupération user:", errorData);
+                    throw new Error(errorData.error || "Erreur lors de la récupération des informations utilisateur");
+                }
+
+                const userData = await userRes.json();
+                setUserInfo(userData);
+                setAuthenticated(true);
+                isAuthenticated = true;
+            }
+
+            if (isAuthenticated) {
+                const personalRes = await fetch("/api/agenda", {
+                    cache: "no-store",
+                });
+
+                if (!personalRes.ok) {
+                    throw new Error("Erreur lors de la récupération de vos notes");
+                }
+
+                const personalData = await personalRes.json();
+                const notesMap = new Map();
+                if (personalData.notes && Array.isArray(personalData.notes)) {
+                    personalData.notes.forEach((note) => {
+                        notesMap.set(note.course_uid, note);
+                    });
+                }
+                setNotes(notesMap);
+            } else {
+                setNotes(new Map());
+                setSelectedCourse(null);
+                setNoteEntries([]);
+                setOriginalNoteEntries([]);
+                setIsEditingNotes(false);
+            }
+        } catch (err) {
+            console.error("[Agenda] Erreur chargement:", err);
+            setError(err.message || "Erreur lors du chargement");
+        } finally {
+            setLoading(false);
+        }
+    }, [refreshPublicNotes]);
 
     // Initialiser la date par défaut (aujourd'hui) uniquement côté client
     useEffect(() => {
@@ -50,12 +160,12 @@ function AgendaContent() {
     // Vérifier l'authentification et charger les données
     useEffect(() => {
         loadData();
-    }, []);
+    }, [loadData]);
 
     // Gérer le paramètre course_uid depuis l'URL
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        
+
         const courseUidParam = searchParams?.get('course_uid');
         if (courseUidParam && events.length > 0) {
             // Trouver le cours correspondant
@@ -93,96 +203,10 @@ function AgendaContent() {
     const sanitizedCurrentEntries = sanitizeNoteEntries(noteEntries);
     const savedEntries = sanitizeNoteEntries(originalNoteEntries);
 
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            // 1. Récupérer les infos utilisateur
-            const userRes = await fetch("/api/user", {
-                cache: "no-store",
-            });
-
-            if (userRes.status === 401) {
-                setAuthenticated(false);
-                setUserInfo(null);
-                setLoading(false);
-                return;
-            }
-
-            if (!userRes.ok) {
-                const errorData = await userRes.json().catch(() => ({}));
-                console.error("[Agenda] Erreur récupération user:", errorData);
-                throw new Error(errorData.error || "Erreur lors de la récupération des informations utilisateur");
-            }
-
-            const userData = await userRes.json();
-            console.log("[Agenda] User data:", userData); // Debug
-            setUserInfo(userData);
-            setAuthenticated(true);
-
-            // 2. Récupérer les notes
-            const notesRes = await fetch("/api/agenda", {
-                cache: "no-store",
-            });
-
-            if (!notesRes.ok) {
-                throw new Error("Erreur lors de la récupération des notes");
-            }
-
-            const notesData = await notesRes.json();
-            
-            // Vérifier l'authentification depuis la réponse
-            if (!notesData.authenticated) {
-                setAuthenticated(false);
-                setUserInfo(null);
-                setLoading(false);
-                return;
-            }
-            
-            // Convertir les notes en Map pour accès rapide
-            const notesMap = new Map();
-            if (notesData.notes && Array.isArray(notesData.notes)) {
-                notesData.notes.forEach((note) => {
-                    notesMap.set(note.course_uid, note);
-                });
-            }
-            setNotes(notesMap);
-
-            // 2. Charger les cours
-            const eventsRes = await fetch("/api/fetch-ics", {
-                cache: "no-store",
-            });
-
-            if (!eventsRes.ok) {
-                throw new Error("Erreur lors de la récupération des cours");
-            }
-
-            const eventsData = await eventsRes.json();
-            const eventsList = Array.isArray(eventsData.events)
-                ? eventsData.events
-                : [];
-
-            // Trier par date
-            eventsList.sort((a, b) => {
-                const dateA = new Date(a.start || 0);
-                const dateB = new Date(b.start || 0);
-                return dateA - dateB;
-            });
-
-            setEvents(eventsList);
-        } catch (err) {
-            console.error("[Agenda] Erreur chargement:", err);
-            setError(err.message || "Erreur lors du chargement");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Filtrer les cours pour la date sélectionnée
     const getCoursesForDate = (dateStr) => {
         if (!dateStr) return [];
-        
+
         const selectedDateObj = new Date(dateStr + 'T00:00:00');
         const selectedDateString = selectedDateObj.toDateString();
 
@@ -198,6 +222,38 @@ function AgendaContent() {
     };
 
     const coursesForSelectedDate = getCoursesForDate(selectedDate);
+
+    const eventsByUid = useMemo(() => {
+        const map = new Map();
+        events.forEach((event) => {
+            if (event?.uid) {
+                map.set(event.uid, event);
+            }
+        });
+        return map;
+    }, [events]);
+
+    const publicNotesList = useMemo(() => {
+        if (!publicNotes.length) return [];
+
+        return publicNotes
+            .map((note) => {
+                const relatedEvent = note?.course_uid ? eventsByUid.get(note.course_uid) : null;
+                const entries = sanitizeNoteEntries(note?.entries);
+                const displayDate = relatedEvent?.start || note?.updated_at || note?.created_at || null;
+                return {
+                    ...note,
+                    entries,
+                    event: relatedEvent,
+                    displayDate,
+                };
+            })
+            .sort((a, b) => {
+                const dateA = new Date(a.displayDate || 0).getTime();
+                const dateB = new Date(b.displayDate || 0).getTime();
+                return dateB - dateA;
+            });
+    }, [publicNotes, eventsByUid]);
 
     const setCalendarBaseMonth = (dateStr) => {
         const base = dateStr ? new Date(dateStr + "T00:00:00") : new Date();
@@ -318,15 +374,19 @@ function AgendaContent() {
         const firstDayOfMonth = new Date(year, month, 1);
         const startOffset = (firstDayOfMonth.getDay() + 6) % 7; // Lundi = 0
         const startDate = new Date(year, month, 1 - startOffset);
+
         const weeks = [];
-        for (let weekIndex = 0; weekIndex < 6; weekIndex++) {
+        let currentDate = new Date(startDate);
+
+        // On continue tant qu'on n'a pas dépassé le mois en cours
+        // OU qu'on n'a pas fini la semaine en cours
+        while (true) {
             const days = [];
             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + weekIndex * 7 + dayIndex);
                 const y = currentDate.getFullYear();
                 const m = String(currentDate.getMonth() + 1).padStart(2, "0");
                 const d = String(currentDate.getDate()).padStart(2, "0");
+
                 days.push({
                     label: currentDate.getDate(),
                     dateString: `${y}-${m}-${d}`,
@@ -337,8 +397,17 @@ function AgendaContent() {
                         return today.toDateString() === currentDate.toDateString();
                     })(),
                 });
+
+                // Avancer d'un jour
+                currentDate.setDate(currentDate.getDate() + 1);
             }
             weeks.push(days);
+
+            // Si le premier jour de la prochaine semaine est dans le mois suivant, on arrête
+            // (currentDate est déjà au début de la semaine suivante ici)
+            if (currentDate.getMonth() !== month && weeks.length >= 4) {
+                break;
+            }
         }
         return weeks;
     };
@@ -441,6 +510,15 @@ function AgendaContent() {
         closeCalendar();
     };
 
+    const handleNativeDateChange = (event) => {
+        const nextValue = event?.target?.value;
+        if (!nextValue) {
+            return;
+        }
+        updateSelectedDate(nextValue);
+        closeCalendar();
+    };
+
     useEffect(() => {
         const handleKeyboardNavigation = (event) => {
             if (!event.ctrlKey) return;
@@ -507,7 +585,7 @@ function AgendaContent() {
             }
 
             const data = await res.json();
-            
+
             // Mettre à jour la Map des notes
             const newNotes = new Map(notes);
             if (data.note) {
@@ -527,6 +605,7 @@ function AgendaContent() {
             }
             setNotes(newNotes);
             setIsEditingNotes(false);
+            await refreshPublicNotes({ silent: true }).catch(() => { });
         } catch (err) {
             console.error("[Agenda] Erreur sauvegarde:", err);
             setError(err.message || "Erreur lors de la sauvegarde");
@@ -537,7 +616,7 @@ function AgendaContent() {
 
     const deleteNote = async () => {
         if (!selectedCourse) return;
-        
+
         if (!confirm("Supprimer cette note ?")) {
             return;
         }
@@ -563,6 +642,7 @@ function AgendaContent() {
             setNoteEntries([]);
             setOriginalNoteEntries([]);
             setIsEditingNotes(false);
+            await refreshPublicNotes({ silent: true }).catch(() => { });
         } catch (err) {
             console.error("[Agenda] Erreur suppression:", err);
             setError(err.message || "Erreur lors de la suppression");
@@ -594,46 +674,15 @@ function AgendaContent() {
     if (loading) {
         return (
             <div className={styles.pageCentered}>
-                <div className={styles.card}>
-                    <p>Chargement...</p>
+                <div className={styles.loadingContainer}>
+                    <div className={styles.loader}></div>
+                    <p>Chargement de votre agenda...</p>
                 </div>
             </div>
         );
     }
 
-    if (!authenticated) {
-        return (
-            <div className={styles.pageCentered}>
-                <div className={styles.card}>
-                    <div className={styles.status}>
-                        <span className={`${styles.badge} ${styles.badgeGuest}`}>
-                            Non connecté
-                        </span>
-                        <h1>Accès réservé</h1>
-                        <p>
-                            Vous devez être connecté pour créer ou modifier l'agenda.
-                        </p>
-                    </div>
-                    <div className={styles.actions}>
-                        <Link href="/login" className={styles.primaryButton}>
-                            Se connecter
-                        </Link>
-                        <Link href="/signup" className={styles.ghostLink}>
-                            Créer un compte
-                        </Link>
-                        <button 
-                            onClick={() => router.push('/')} 
-                            className={styles.backButton}
-                        >
-                            Retour
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const selectedCourseData = selectedCourse 
+    const selectedCourseData = selectedCourse
         ? coursesForSelectedDate.find(c => c.uid === selectedCourse)
         : null;
 
@@ -651,11 +700,6 @@ function AgendaContent() {
                             ←
                         </button>
                         <div className={styles.userBar}>
-                            {userInfo && userInfo.name && (
-                                <span className={styles.userGreetingCompact}>
-                                    Bonjour {userInfo.name} {userInfo.lastName || ""}
-                                </span>
-                            )}
                             {userInfo && (
                                 <button
                                     onClick={handleLogout}
@@ -666,15 +710,16 @@ function AgendaContent() {
                             )}
                         </div>
                     </div>
-                    <h1>Agenda</h1>
-                    <p className={styles.subtitle}>
-                        Sélectionnez une date, puis un cours pour ajouter ou modifier vos notes.
-                    </p>
+                    <div>
+                        <h1>Agenda</h1>
+                    </div>
                 </div>
 
                 {error && (
                     <div className={styles.errorBox}>
-                        <strong>Erreur :</strong> {error}
+                        <div>
+                            <strong>Erreur :</strong> {error}
+                        </div>
                         <button
                             onClick={() => setError(null)}
                             className={styles.closeError}
@@ -684,473 +729,360 @@ function AgendaContent() {
                     </div>
                 )}
 
-                <div className={styles.dateSelector}>
-                    <div className={styles.datePickerCard}>
+                <div className={styles.tabsLayout}>
+                    <div className={styles.tabNavigation}>
                         <button
                             type="button"
-                            className={styles.datePickerButton}
-                            onClick={() => shiftSelectedDate(-1)}
-                            aria-label="Jour précédent"
+                            className={`${styles.tabButton} ${activeTab === "public" ? styles.tabButtonActive : ""}`}
+                            onClick={() => setActiveTab("public")}
+                            aria-pressed={activeTab === "public"}
                         >
-                            ←
+                            <strong>Notes</strong>
+                            <span>Consulter les notes</span>
                         </button>
-                        <div className={styles.dateVisualWrapper}>
-                            <button
-                                type="button"
-                                className={styles.dateVisual}
-                                onClick={handleCalendarToggle}
-                                aria-haspopup="dialog"
-                                aria-expanded={isCalendarOpen}
-                                ref={dateTriggerRef}
-                            >
-                                <span className={styles.dateWeekday}>{readableWeekday}</span>
-                                <span className={styles.dateDay}>{readableDay}</span>
-                                <span className={styles.dateMonth}>{readableMonth}</span>
-                            </button>
-                            {isCalendarOpen && (
-                                <div
-                                    className={styles.calendarPopover}
-                                    role="dialog"
-                                    aria-label="Choisir une date"
-                                    ref={calendarPopoverRef}
-                                >
-                                    <div className={styles.calendarPopoverHeader}>
-                                        <div className={styles.calendarPopoverTitle}>
-                                            <span className={styles.calendarMonthLabel}>{calendarMonthLabel}</span>
-                                        </div>
-                                        <div className={styles.calendarHeaderButtons}>
-                                            <button
-                                                type="button"
-                                                className={styles.calendarNavButton}
-                                                onClick={() => changeMonth(-1)}
-                                                aria-label="Mois précédent"
-                                            >
-                                                ←
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.calendarNavButton}
-                                                onClick={() => changeMonth(1)}
-                                                aria-label="Mois suivant"
-                                            >
-                                                →
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.calendarCloseButton}
-                                                onClick={closeCalendar}
-                                                aria-label="Fermer le calendrier"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className={styles.calendarWrapper}>
-                                        <div
-                                            className={styles.calendarGrid}
-                                            style={{ gridTemplateColumns: `repeat(${weekdayIndexesToRender.length}, 1fr)` }}
-                                        >
-                                            {weekdayIndexesToRender.map((weekdayIndex) => (
-                                                <span key={weekDayLabels[weekdayIndex]} className={styles.calendarWeekday}>
-                                                    {weekDayLabels[weekdayIndex]}
-                                                </span>
-                                            ))}
-                                            {calendarMatrix.map((week, weekIndex) =>
-                                                weekdayIndexesToRender.map((weekdayIndex) => {
-                                                    const day = week[weekdayIndex];
-                                                    if (!day) return null;
-                                                    if (!day.isCurrentMonth) {
-                                                        return null;
-                                                    }
-                                                    const dayHasCourse = hasEventsOnDate(day.dateString);
-                                                    if (showOnlyCourseDays && !dayHasCourse) {
-                                                        return (
-                                                            <span
-                                                                key={`${weekIndex}-${day.dateString}`}
-                                                                className={styles.calendarDayHidden}
-                                                                aria-hidden="true"
-                                                            />
-                                                        );
-                                                    }
-                                                    return (
-                                                        <button
-                                                            key={`${weekIndex}-${day.dateString}`}
-                                                            type="button"
-                                                            className={[
-                                                                styles.calendarDay,
-                                                                !day.isCurrentMonth ? styles.calendarDayMuted : "",
-                                                                day.isToday ? styles.calendarDayToday : "",
-                                                                day.isSelected ? styles.calendarDaySelected : "",
-                                                            ].join(" ")}
-                                                            onClick={() => handleCalendarDaySelect(day.dateString)}
-                                                        >
-                                                            {day.label}
-                                                        </button>
-                                                    );
-                                                })
-                                            )}
-                                        </div>
-                                    </div>
-                            <div className={styles.calendarFooter}>
-                                <div className={styles.calendarFilter}>
-                                    <button
-                                        type="button"
-                                        className={`${styles.calendarFilterButton} ${!showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
-                                        onClick={() => setShowOnlyCourseDays(false)}
-                                    >
-                                        Tous les jours
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`${styles.calendarFilterButton} ${showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
-                                        onClick={() => setShowOnlyCourseDays(true)}
-                                    >
-                                        Jours avec cours
-                                    </button>
-                                </div>
-                                        <button
-                                            type="button"
-                                            className={styles.calendarTodayButton}
-                                            onClick={handleTodaySelect}
-                                        >
-                                            Aujourd&apos;hui
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                         <button
                             type="button"
-                            className={styles.datePickerButton}
-                            onClick={() => shiftSelectedDate(1)}
-                            aria-label="Jour suivant"
+                            className={`${styles.tabButton} ${activeTab === "private" ? styles.tabButtonActive : ""}`}
+                            onClick={() => setActiveTab("private")}
+                            aria-pressed={activeTab === "private"}
                         >
-                            →
+                            <strong>Ajout / modification</strong>
+                            <span>{authenticated ? "Gérer mes notes" : "Connexion requise"}</span>
                         </button>
                     </div>
-                </div>
 
-                <div className={styles.contentGrid}>
-                    <div className={styles.coursesList}>
-                        <h2 className={styles.sectionTitle}>
-                            {coursesForSelectedDate.length > 0
-                                ? `Cours du jour (${coursesForSelectedDate.length})`
-                                : "Aucun cours pour ce jour"}
-                        </h2>
-                        {dateLoading ? (
-                            <div className={styles.inlineLoader}>
-                                <div className={styles.inlineLoaderContent}>
-                                    <div className={styles.skeletonLine}></div>
-                                    <div className={styles.skeletonLine}></div>
-                                    <div className={styles.skeletonLine}></div>
-                                </div>
-                            </div>
-                        ) : coursesForSelectedDate.length === 0 ? (
-                            <div className={styles.noCourseAlert}>
-                                <p>Pas de cours pour ce jour.</p>
-                                <span>Choisissez un jour contenant au moins un cours pour ajouter une note.</span>
-                            </div>
-                        ) : (
-                            coursesForSelectedDate.map((course) => {
-                                const { matiere, prof } = getEventTitle(course);
-                                const courseNote = notes.get(course.uid);
-                                const courseNoteEntries = extractNoteEntries(courseNote);
-                                const courseHasEntries = sanitizeNoteEntries(courseNoteEntries).length > 0;
-                                const isSelected = selectedCourse === course.uid;
-
-                                return (
-                                    <button
-                                        key={course.uid}
-                                        onClick={() => handleCourseSelect(course.uid)}
-                                        className={`${styles.courseButton} ${isSelected ? styles.courseButtonSelected : ''}`}
-                                    >
-                                        <div className={styles.courseButtonContent}>
-                                            <div className={styles.courseButtonInfo}>
-                                                <span className={styles.courseButtonTime}>
-                                                    {formatTime(course.start)} - {formatTime(course.end)}
-                                                </span>
-                                                <span className={styles.courseButtonTitle}>
-                                                    {matiere || course.summary || "Sans titre"}
-                                                </span>
-                                                {course.location && (
-                                                    <span className={styles.courseButtonLocation}>
-                                                        📍 {course.location}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {courseHasEntries && (
-                                                <span className={styles.courseButtonBadge}>
-                                                    📝
-                                                </span>
-                                            )}
-                                        </div>
-                                    </button>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    <div className={styles.notePanel}>
-                        {dateLoading ? (
-                            <div className={styles.notePlaceholder}>
-                                <div className={styles.inlineLoaderContent}>
-                                    <div className={styles.skeletonLine}></div>
-                                    <div className={styles.skeletonLine}></div>
-                                    <div className={styles.skeletonLine}></div>
-                                </div>
-                            </div>
-                        ) : (
-                            <>
-                                {selectedDate && coursesForSelectedDate.length === 0 && (
-                                    <div className={styles.noCourseNoteWarning}>
-                                        Pas de cours pour ce jour !
+                    <div className={styles.tabContent}>
+                        {activeTab === "public" ? (
+                            <div className={styles.publicContainer}>
+                                <div className={styles.publicIntroCard}>
+                                    <div>
+                                        <h2>Notes</h2>
+                                        <p>Retrouvez ici toutes les notes partagées</p>
                                     </div>
-                                )}
-                                {!selectedCourse ? (
-                                    <div className={styles.notePlaceholder}>
-                                        <p>
-                                            {coursesForSelectedDate.length === 0
-                                                ? "Choisissez un autre jour avec cours pour ajouter une note."
-                                                : "👈 Sélectionnez un cours pour voir ou modifier une note"}
-                                        </p>
+                                    <div className={styles.publicStats}>
+                                        <div>
+                                            <span className={styles.publicStatsValue}>{publicNotesList.length}</span>
+                                            <span className={styles.publicStatsLabel}>Cours notés</span>
+                                        </div>
+                                        <div>
+                                            <span className={styles.publicStatsValue}>{events.length}</span>
+                                            <span className={styles.publicStatsLabel}>Cours</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {publicNotesList.length === 0 ? (
+                                    <div className={styles.publicEmptyState}>
+                                        <p>Aucune note disponible pour le moment.</p>
+                                        <span>Connectez-vous pour publier la première note (elle sera visible de tous).</span>
                                     </div>
                                 ) : (
-                                    <>
-                                        <div className={styles.noteHeader}>
-                                            <div className={styles.noteHeaderInfo}>
-                                                <h3 className={styles.noteTitle}>
-                                                    {selectedCourseData ? (
-                                                        <>
-                                                            {getEventTitle(selectedCourseData).matiere || selectedCourseData.summary || "Sans titre"}
-                                                            <span className={styles.noteTime}>
-                                                                {formatTime(selectedCourseData.start)} - {formatTime(selectedCourseData.end)}
+                                    <div className={styles.publicNotesGrid}>
+                                        {publicNotesList.map((note) => {
+                                            const relatedEvent = note.event;
+                                            const { matiere, prof } = relatedEvent
+                                                ? getEventTitle(relatedEvent)
+                                                : { matiere: null, prof: null };
+                                            return (
+                                                <article key={note.id || note.course_uid} className={styles.publicNoteCard}>
+                                                    <div className={styles.publicNoteHeader}>
+                                                        <div>
+                                                            <h3>{matiere || relatedEvent?.summary || "Cours à identifier"}</h3>
+                                                            <span className={styles.publicNoteDate}>
+                                                                {formatDate(relatedEvent?.start || note.displayDate)}
                                                             </span>
-                                                        </>
-                                                    ) : (
-                                                        "Cours sélectionné"
-                                                    )}
-                                                </h3>
-                                                {selectedCourseData?.location && (
-                                                    <span className={styles.noteLocation}>
-                                                        📍 {selectedCourseData.location}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {savedEntries.length > 0 && !isEditingNotes && (
-                                                <button
-                                                    type="button"
-                                                    className={styles.noteEditIconButton}
-                                                    onClick={handleStartEditing}
-                                                    title="Modifier les notes"
-                                                    aria-label="Modifier les notes"
-                                                >
-                                                    ✏️
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className={styles.noteEditor}>
-                                            {savedEntries.length === 0 && !isEditingNotes ? (
-                                                <div className={styles.noteEmpty}>
-                                                    <p>Aucune note pour ce cours pour le moment.</p>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.noteAddButton}
-                                                        onClick={() => {
-                                                            setIsEditingNotes(true);
-                                                            setNoteEntries([""]);
-                                                        }}
-                                                        disabled={saving}
-                                                    >
-                                                        + Ajouter une note
-                                                    </button>
-                                                </div>
-                                            ) : isEditingNotes ? (
-                                                <>
-                                                    {noteEntries.length === 0 ? (
-                                                        <div className={styles.noteEmpty}>
-                                                            <p>Aucune note en cours d’édition.</p>
-                                                            <button
-                                                                type="button"
-                                                                className={styles.noteAddButton}
-                                                                onClick={handleAddEntry}
-                                                                disabled={saving}
-                                                            >
-                                                                + Ajouter une note
-                                                            </button>
                                                         </div>
-                                                    ) : (
-                                                        <div className={styles.noteEntriesList}>
-                                                            {noteEntries.map((entry, index) => (
-                                                                <div
-                                                                    key={`${selectedCourse || "course"}-${index}`}
-                                                                    className={styles.noteEntryCard}
-                                                                >
-                                                                    <div className={styles.noteEntryHeader}>
-                                                                        <span className={styles.noteEntryIndex}>
-                                                                            Note {index + 1}
-                                                                        </span>
-                                                                        <button
-                                                                            type="button"
-                                                                            className={styles.noteEntryRemove}
-                                                                            onClick={() => handleRemoveEntry(index)}
-                                                                            disabled={saving}
-                                                                        >
-                                                                            Supprimer
-                                                                        </button>
-                                                                    </div>
-                                                                    <textarea
-                                                                        value={entry}
-                                                                        onChange={(e) => handleEntryChange(index, e.target.value)}
-                                                                        placeholder="Ajoutez vos notes pour ce cours..."
-                                                                        className={styles.noteEntryTextarea}
-                                                                        rows={4}
-                                                                    />
+                                                        {relatedEvent?.location && (
+                                                            <span className={styles.publicNoteLocation}>
+                                                                📍 {relatedEvent.location}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.publicNoteMeta}>
+                                                        {relatedEvent?.start && relatedEvent?.end && (
+                                                            <span>
+                                                                {formatTime(relatedEvent.start)} - {formatTime(relatedEvent.end)}
+                                                            </span>
+                                                        )}
+                                                        {prof && <span>{prof}</span>}
+                                                        {note.user_name && (
+                                                            <span>✍️ {note.user_name}</span>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.publicNoteEntries}>
+                                                        {note.entries.map((entry, idx) => (
+                                                            <p key={idx} className={styles.publicNoteEntry}>
+                                                                {entry}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                </article>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* ONGLET PRIVÉ (Ajout/Modif) */
+                            <>
+                                {!authenticated ? (
+                                    <div className={styles.privateLocked}>
+                                        <span className={styles.badgeGuest}>Mode Invité</span>
+                                        <h2>Connectez-vous pour ajouter des notes</h2>
+                                        <LoginForm onSuccess={loadData} embedded={true} />
+                                    </div>
+                                ) : (
+                                    <div className={styles.privateContainer}>
+                                        {/* Colonne Gauche : Calendrier + Liste des cours */}
+                                        <div className={styles.agendaSidebar}>
+                                            {/* Sélecteur de date */}
+                                            <div className={styles.dateSelector} ref={dateTriggerRef}>
+                                                <button
+                                                    className={styles.datePickerButton}
+                                                    onClick={() => shiftSelectedDate(-1)}
+                                                    aria-label="Jour précédent"
+                                                >
+                                                    ←
+                                                </button>
+
+                                                <div
+                                                    className={styles.dateVisual}
+                                                    onClick={handleCalendarToggle}
+                                                >
+                                                    <span className={styles.dateWeekday}>{readableWeekday}</span>
+                                                    <span className={styles.dateDay}>{readableDay}</span>
+                                                    <span className={styles.dateMonth}>{readableMonth}</span>
+                                                </div>
+
+                                                <button
+                                                    className={styles.datePickerButton}
+                                                    onClick={() => shiftSelectedDate(1)}
+                                                    aria-label="Jour suivant"
+                                                >
+                                                    →
+                                                </button>
+
+                                                {/* Popover Calendrier */}
+                                                {isCalendarOpen && (
+                                                    <div className={styles.calendarPopover} ref={calendarPopoverRef}>
+                                                        <div className={styles.calendarPopoverHeader}>
+                                                            <span className={styles.calendarMonthLabel}>{calendarMonthLabel}</span>
+                                                            <div className={styles.calendarHeaderButtons}>
+                                                                <button onClick={() => changeMonth(-1)}>←</button>
+                                                                <button onClick={() => changeMonth(1)}>→</button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div
+                                                            className={styles.calendarGrid}
+                                                            style={{
+                                                                gridTemplateColumns: `repeat(${weekdayIndexesToRender.length}, 1fr)`
+                                                            }}
+                                                        >
+                                                            {weekdayIndexesToRender.map((dayIndex) => (
+                                                                <div key={weekDayLabels[dayIndex]} className={styles.calendarWeekday}>
+                                                                    {weekDayLabels[dayIndex]}
                                                                 </div>
                                                             ))}
+                                                            {calendarMatrix.map((week, wIndex) => (
+                                                                week.map((dayObj, dIndex) => {
+                                                                    if (!weekdayIndexesToRender.includes(dIndex)) return null;
+                                                                    return (
+                                                                        <button
+                                                                            key={`${wIndex}-${dIndex}`}
+                                                                            className={`${styles.calendarDay} 
+                                                                                ${dayObj.isToday ? styles.calendarDayToday : ""} 
+                                                                                ${dayObj.isSelected ? styles.calendarDaySelected : ""} 
+                                                                                ${!dayObj.isCurrentMonth ? styles.calendarDayMuted : ""}`}
+                                                                            onClick={() => handleCalendarDaySelect(dayObj.dateString)}
+                                                                        >
+                                                                            {dayObj.label}
+                                                                        </button>
+                                                                    );
+                                                                })
+                                                            ))}
                                                         </div>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        className={styles.noteAddButtonSecondary}
-                                                        onClick={handleAddEntry}
-                                                        disabled={saving}
-                                                    >
-                                                        + Ajouter une note
-                                                    </button>
-                                                    <div className={styles.noteActions}>
-                                                        {hasChanges && (
+
+
+
+                                                        <div className={styles.calendarFooter}>
+                                                            <div className={styles.calendarFilter}>
+                                                                <button
+                                                                    className={`${styles.calendarFilterButton} ${showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
+                                                                    onClick={() => setShowOnlyCourseDays(true)}
+                                                                >
+                                                                    Jours de cours
+                                                                </button>
+                                                                <button
+                                                                    className={`${styles.calendarFilterButton} ${!showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
+                                                                    onClick={() => setShowOnlyCourseDays(false)}
+                                                                >
+                                                                    Tous les jours
+                                                                </button>
+                                                            </div>
                                                             <button
-                                                                onClick={saveNote}
-                                                                disabled={saving}
-                                                                className={styles.saveButton}
+                                                                className={styles.courseButton}
+                                                                style={{ justifyContent: 'center', padding: '0.75rem' }}
+                                                                onClick={handleTodaySelect}
                                                             >
-                                                                {saving
-                                                                    ? "Enregistrement..."
-                                                                    : sanitizedCurrentEntries.length === 0
-                                                                        ? "Enregistrer (supprimer)"
-                                                                        : "Enregistrer"}
+                                                                Aujourd'hui
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            onClick={handleCancelEditing}
-                                                            disabled={saving}
-                                                            className={styles.cancelButton}
-                                                        >
-                                                            Annuler
-                                                        </button>
+                                                        </div>
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className={styles.noteDisplay}>
-                                                    {(() => {
-                                                        const courseNote = notes.get(selectedCourse);
-                                                        const modificationHistory = courseNote?.modification_history || [];
-                                                        
-                                                        const formatDateTime = (dateString) => {
-                                                            if (!dateString) return '';
-                                                            const date = new Date(dateString);
-                                                            return date.toLocaleDateString('fr-FR', { 
-                                                                day: 'numeric', 
-                                                                month: 'long', 
-                                                                year: 'numeric',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            });
-                                                        };
-                                                        
+                                                )}
+                                            </div>
+
+                                            {/* Liste des cours */}
+                                            <div className={styles.coursesList}>
+                                                <div className={styles.sectionTitle}>Cours du jour</div>
+                                                {dateLoading ? (
+                                                    <div className={styles.noCourseAlert}>Chargement...</div>
+                                                ) : coursesForSelectedDate.length === 0 ? (
+                                                    <div className={styles.noCourseAlert}>
+                                                        Aucun cours ce jour-là
+                                                    </div>
+                                                ) : (
+                                                    coursesForSelectedDate.map((course) => {
+                                                        const { matiere } = getEventTitle(course);
+                                                        const isSelected = selectedCourse === course.uid;
                                                         return (
-                                                            <>
-                                                                {modificationHistory.length > 0 && (
-                                                                    <div className={styles.noteAuthorInfo}>
-                                                                        <div className={styles.noteHistoryTitle}>Historique des modifications</div>
-                                                                        <table className={styles.noteHistoryTable}>
-                                                                            <thead>
-                                                                                <tr>
-                                                                                    <th>Action</th>
-                                                                                    <th>Personne</th>
-                                                                                    <th>Date et heure</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {modificationHistory.map((entry, idx) => (
-                                                                                    <tr key={idx}>
-                                                                                        <td>
-                                                                                            <span className={`${styles.noteHistoryBadge} ${entry.action === 'created' ? styles.created : styles.modified}`}>
-                                                                                                {entry.action === 'created' ? 'Créé' : 'Modifié'}
-                                                                                            </span>
-                                                                                        </td>
-                                                                                        <td>{entry.user_name || 'Utilisateur inconnu'}</td>
-                                                                                        <td>{formatDateTime(entry.timestamp)}</td>
-                                                                                    </tr>
-                                                                                ))}
-                                                                            </tbody>
-                                                                        </table>
+                                                            <button
+                                                                key={course.uid}
+                                                                className={`${styles.courseButton} ${isSelected ? styles.courseButtonSelected : ""}`}
+                                                                onClick={() => handleCourseSelect(course.uid)}
+                                                            >
+                                                                <div className={styles.courseButtonContent}>
+                                                                    <div className={styles.courseButtonInfo}>
+                                                                        <span className={styles.courseButtonTime}>
+                                                                            {formatTime(course.start)} - {formatTime(course.end)}
+                                                                        </span>
+                                                                        <span className={styles.courseButtonTitle}>
+                                                                            {matiere || course.summary}
+                                                                        </span>
+                                                                        {course.location && (
+                                                                            <span className={styles.courseButtonLocation}>
+                                                                                📍 {course.location}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
-                                                                )}
-                                                                <div className={styles.noteDisplayList}>
-                                                                    {savedEntries.map((entry, index) => {
-                                                                        // Récupérer la dernière personne (modification ou création)
-                                                                        const lastPerson = modificationHistory.length > 0 
-                                                                            ? modificationHistory[modificationHistory.length - 1] 
-                                                                            : null;
-                                                                        
-                                                                        const formatDateTime = (dateString) => {
-                                                                            if (!dateString) return '';
-                                                                            const date = new Date(dateString);
-                                                                            return date.toLocaleDateString('fr-FR', {
-                                                                                day: 'numeric',
-                                                                                month: 'numeric',
-                                                                                year: 'numeric',
-                                                                                hour: '2-digit',
-                                                                                minute: '2-digit'
-                                                                            });
-                                                                        };
-                                                                        
-                                                                        return (
-                                                                            <div key={`${selectedCourse}-view-${index}`}>
-                                                                                <div className={styles.noteDisplayCard}>
-                                                                                    <span className={styles.noteDisplayIndex}>Note {index + 1}</span>
-                                                                                    <p>{entry}</p>
-                                                                                </div>
-                                                                                {lastPerson && (
-                                                                                    <div className={styles.noteLastPerson}>
-                                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
+                                                                    {isSelected && <span>👉</span>}
                                                                 </div>
-                                                            </>
+                                                            </button>
                                                         );
-                                                    })()}
-                                                    <div className={styles.noteViewActions}>
-                                                        <button
-                                                            type="button"
-                                                            className={styles.noteEditButton}
-                                                            onClick={handleStartEditing}
-                                                            disabled={saving}
-                                                        >
-                                                            ✏️ Modifier
-                                                        </button>
-                                                        <button
-                                                            onClick={deleteNote}
-                                                            disabled={saving}
-                                                            className={styles.deleteButton}
-                                                        >
-                                                            🗑️ Supprimer
-                                                        </button>
-                                                    </div>
+                                                    })
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Colonne Droite : Éditeur */}
+                                        <div className={styles.notePanel}>
+                                            {!selectedCourse ? (
+                                                <div className={styles.notePlaceholder}>
+                                                    <div style={{ fontSize: '3rem' }}>👈</div>
+                                                    <p>Sélectionnez un cours à gauche<br />pour ajouter ou modifier une note.</p>
                                                 </div>
+                                            ) : (
+                                                <>
+                                                    <div className={styles.noteHeader}>
+                                                        <h2 className={styles.noteTitle}>
+                                                            {selectedCourseData
+                                                                ? (getEventTitle(selectedCourseData).matiere || selectedCourseData.summary)
+                                                                : "Cours sélectionné"}
+                                                        </h2>
+                                                        {selectedCourseData && (
+                                                            <div className={styles.noteTime}>
+                                                                🕒 {formatTime(selectedCourseData.start)} - {formatTime(selectedCourseData.end)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {isEditingNotes ? (
+                                                        <>
+                                                            <div className={styles.noteEntriesList}>
+                                                                {noteEntries.map((entry, index) => (
+                                                                    <div key={index} className={styles.noteEntryCard}>
+                                                                        <div className={styles.noteEntryHeader}>
+                                                                            <span>Paragraphe {index + 1}</span>
+                                                                            <button
+                                                                                onClick={() => handleRemoveEntry(index)}
+                                                                                className={styles.noteEntryRemove}
+                                                                            >
+                                                                                Supprimer
+                                                                            </button>
+                                                                        </div>
+                                                                        <textarea
+                                                                            className={styles.noteEntryTextarea}
+                                                                            value={entry}
+                                                                            onChange={(e) => handleEntryChange(index, e.target.value)}
+                                                                            placeholder="Écrivez votre note ici..."
+                                                                        />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            <div className={styles.noteActions}>
+                                                                <button onClick={handleAddEntry} className={styles.addNoteButton}>
+                                                                    + Ajouter un paragraphe
+                                                                </button>
+                                                                <button
+                                                                    onClick={saveNote}
+                                                                    disabled={saving}
+                                                                    className={styles.saveButton}
+                                                                >
+                                                                    {saving ? "Sauvegarde..." : "Enregistrer"}
+                                                                </button>
+                                                                <button
+                                                                    onClick={handleCancelEditing}
+                                                                    disabled={saving}
+                                                                    className={styles.cancelButton}
+                                                                >
+                                                                    Annuler
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {noteEntries.length === 0 ? (
+                                                                <div className={styles.notePlaceholder}>
+                                                                    <p>Aucune note pour ce cours.</p>
+                                                                    <button onClick={handleStartEditing} className={styles.addNoteButton}>
+                                                                        + Ajouter une note
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className={styles.noteEntriesList}>
+                                                                    {noteEntries.map((entry, idx) => (
+                                                                        <div key={idx} className={styles.noteDisplayCard}>
+                                                                            {entry}
+                                                                        </div>
+                                                                    ))}
+
+                                                                    {notes.get(selectedCourse)?.user_name && (
+                                                                        <div className={styles.noteLastPerson}>
+                                                                            Dernière modif par : {notes.get(selectedCourse).user_name}
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className={styles.noteViewActions}>
+                                                                        <button onClick={handleStartEditing} className={styles.noteEditButton}>
+                                                                            ✏️ Modifier
+                                                                        </button>
+                                                                        <button onClick={deleteNote} className={styles.deleteButton}>
+                                                                            🗑️ Supprimer
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
-                                    </>
+                                    </div>
                                 )}
                             </>
                         )}
                     </div>
+
                 </div>
             </div>
         </div>

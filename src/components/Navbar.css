@@ -147,6 +147,12 @@
     flex-shrink: 0;
 }
 
+.view-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 /* Bouton DEV - Clear cache */
 .dev-clear-cache-btn {
     background: var(--bg-secondary);

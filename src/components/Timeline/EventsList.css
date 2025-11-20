@@ -1,4 +1,6 @@
 .events-container {
+    border: 3px solid var(--border-color);
+    border-radius: 13px;
     position: relative;
     padding: 0.2rem 0 0.2rem 0;
     display: flex;

@@ -36,11 +36,11 @@ export default function VerticalSchedule({
     const globalTimeRange = useMemo(() => {
         const MIN_START = 9 * 60; // 9h00
         const MIN_END = 18 * 60; // 18h00
-        
+
         if (events.length === 0) {
             return {startMinutes: MIN_START, endMinutes: MIN_END};
         }
-        
+
         let minTime = Infinity, maxTime = -Infinity;
         events.forEach(ev => {
             const start = new Date(ev.start);
@@ -48,15 +48,15 @@ export default function VerticalSchedule({
             minTime = Math.min(minTime, start.getHours() * 60 + start.getMinutes());
             maxTime = Math.max(maxTime, end.getHours() * 60 + end.getMinutes());
         });
-        
+
         // Arrondir aux 15 minutes
         let startMinutes = Math.floor(minTime / 15) * 15;
         let endMinutes = Math.ceil(maxTime / 15) * 15;
-        
+
         // Garantir un minimum de 9h à 18h, mais s'étendre si nécessaire
         startMinutes = Math.min(startMinutes, MIN_START);
         endMinutes = Math.max(endMinutes, MIN_END);
-        
+
         return {startMinutes, endMinutes};
     }, [events]);
 
@@ -187,7 +187,7 @@ export default function VerticalSchedule({
             const prevEnd = new Date(previousEventEnd);
             const prevEndMin = prevEnd.getHours() * 60 + prevEnd.getMinutes();
             const gapMinutes = sMin - prevEndMin;
-            
+
             // Si l'écart est exactement de 15 minutes, partager équitablement : chaque cours prend 7.5 minutes
             if (gapMinutes === 15) {
                 // Le cours suivant commence 7.5 minutes après la fin réelle du cours précédent
@@ -197,19 +197,19 @@ export default function VerticalSchedule({
         }
         // Calculer la durée de base
         let dur = eMin - sMin;
-        
+
         // Si le cours commence plus tôt (ajustement du début), augmenter la durée pour compenser
         if (hasGapFromPrev) {
             dur += 7.5; // Compenser le début plus tôt en augmentant la durée
         }
-        
+
         // Si hide15MinSpacing est activé et qu'il y a un événement suivant avec un écart de 15 minutes
         // Le cours actuel s'étend de 7.5 minutes (la moitié des 15 minutes)
         if (hide15MinSpacing && nextEventStart !== null) {
             const nextStart = new Date(nextEventStart);
             const nextStartMin = nextStart.getHours() * 60 + nextStart.getMinutes();
             const gapToNext = nextStartMin - eMin;
-            
+
             // Si l'écart avec le cours suivant est exactement de 15 minutes, augmenter la hauteur de 7.5 minutes
             if (gapToNext === 15) {
                 dur += 7.5; // Ajouter 7.5 minutes (la moitié des 15 minutes)
@@ -218,7 +218,7 @@ export default function VerticalSchedule({
                 dur -= (total * 0.00125); // 0.125% de la durée totale en minutes
             }
         }
-        
+
         // Si hide15MinSpacing est activé et qu'il n'y a PAS d'événement suivant mais qu'il y a un écart de 15 minutes avec le précédent
         // Le dernier cours ne doit PAS ajouter de durée supplémentaire car on a déjà compensé le début plus tôt
         // Le startOffset a déjà été ajusté dans le premier bloc, et la durée a déjà été augmentée pour compenser le début plus tôt
@@ -301,17 +301,29 @@ export default function VerticalSchedule({
                         {/* Colonne des heures */}
                         {showTimeLabels && (
                             <div className="vertical-time-column">
-                                {timeMarkers.filter(m => m.isHour).map((marker, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="vertical-time-label"
-                                        style={{
-                                            top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
-                                        }}
-                                    >
-                                        {marker.label}
-                                    </div>
-                                ))}
+                                {timeMarkers.filter(m => m.isHour).map((marker, idx, array) => {
+                                    // On vérifie si c'est le dernier élément du tableau filtré
+                                    const isLast = idx === array.length - 1;
+
+                                    // Calcul du pourcentage standard
+                                    const percent = ((marker.totalMinutes - startMinutes) / totalMinutes) * 100;
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className="vertical-time-label"
+                                            style={{
+                                                // Si c'est le dernier, on le place à 100% moins la taille de la police (.75rem)
+                                                // Sinon, on utilise le pourcentage calculé normalement
+                                                top: isLast
+                                                    ? 'calc(100% - 0.75rem)'
+                                                    : `${percent}%`
+                                            }}
+                                        >
+                                            {marker.label}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
 
@@ -376,11 +388,11 @@ export default function VerticalSchedule({
                                                 // Trouver l'événement précédent (trié par heure de début)
                                                 const previousEvent = evIdx > 0 ? sortedEvents[evIdx - 1] : null;
                                                 const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
-                                                
+
                                                 // Trouver l'événement suivant (trié par heure de début)
                                                 const nextEvent = evIdx < sortedEvents.length - 1 ? sortedEvents[evIdx + 1] : null;
                                                 const nextEventStart = nextEvent ? nextEvent.start : null;
-                                                
+
                                                 const pos = getEventVerticalPosition(ev.start, ev.end_time || ev.end, previousEventEnd, nextEventStart);
                                                 const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
                                                 const noteEntries = courseNote

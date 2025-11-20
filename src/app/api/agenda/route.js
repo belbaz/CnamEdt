@@ -50,6 +50,7 @@ async function getAuthenticatedUser() {
  * GET /api/agenda
  * Récupère toutes les notes de l'utilisateur connecté
  * Ou toutes les notes publiques (la plus récente par cours) si non connecté
+ * Ou, si mode=public, toujours les notes publiques
  * Ou les notes d'un cours spécifique si course_uid est fourni en query param
  * Retourne toujours 200, avec authenticated: false si non connecté
  */
@@ -67,11 +68,13 @@ export async function GET(request) {
 
         const { searchParams } = new URL(request.url);
         const courseUid = searchParams.get('course_uid');
+        const viewMode = searchParams.get('mode');
+        const forcePublicMode = viewMode === 'public';
 
         let query;
         let isAuthenticated = !!user;
 
-        if (user) {
+        if (user && !forcePublicMode) {
             // Utilisateur connecté : récupérer ses propres notes
             query = supabase
                 .from('edt_agenda')
@@ -83,7 +86,7 @@ export async function GET(request) {
                 query = query.eq('course_uid', courseUid);
             }
         } else {
-            // Utilisateur non connecté : récupérer toutes les notes publiques
+            // Utilisateur non connecté ou mode public forcé : récupérer toutes les notes publiques
             // Pour chaque course_uid, on prend la note la plus récente
             query = supabase
                 .from('edt_agenda')
