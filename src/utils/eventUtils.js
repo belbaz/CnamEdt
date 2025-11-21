@@ -23,16 +23,18 @@ export function createSubjectColorMapping(data) {
 }
 
 /**
- * Parse les informations de demi-groupe depuis la description
- * Format attendu: "MMe SARDESAI salle 30.-1.16 - Mr AUCHE salle 30.-1.27"
- * Ou format mixte: "Mr Auche salle 17.1.08 - Professeur : Madame SARDESAI" + location pour la 2e salle
+ * Parse les descriptions de cours en demi-groupe
+ * Supporte plusieurs formats:
+ * - Format 1: "MMe SARDESAI salle 30.-1.16 - Mr AUCHE salle 30.-1.27"
+ * - Format 2: "Mr Auche salle 30.-1.19 - Professeur : - Madame Kirti SARDESAI" + LOCATION
+ * - Format 3: "JEAN AUCHE salle 21.104 - Professeur : - Madame Kirti SARDESAI" + LOCATION (sans titre)
  */
 function parseSplitGroup(description, location = "") {
     if (!description) return null;
 
-    // Regex pour capturer: (Titre) (Nom) salle (Salle)
-    // Supporte: MMe, Mr, Mme, M., Madame, Monsieur
-    const groupRegex = /(?:MMe|Mr|Mme|M\.|Madame|Monsieur)\s+([A-ZÀ-ÿ\s]+?)\s+salle\s+([\d\.\-]+)/gi;
+    // Regex amélioré : rendre le titre (Mr/Mme) optionnel
+    // Capture soit "Mr/Mme NOM salle X" soit "NOM salle X"
+    const groupRegex = /(?:(?:MMe|Mr|Mme|M\.|Madame|Monsieur)\s+)?([A-ZÀ-ÿ][A-ZÀ-ÿ\s]+?)\s+salle\s+([\d\.\-]+)/gi;
     const matches = [...description.matchAll(groupRegex)];
 
     // Cas 1: Au moins 2 groupes avec format "X salle Y"
@@ -42,10 +44,8 @@ function parseSplitGroup(description, location = "") {
         return { professors, rooms };
     }
 
-    // Cas 2: Format mixte - 1 groupe "X salle Y" + professeur dans "Professeur : Z"
+    // Cas 2: Format mixte - 1 prof avec "salle X" + 1 prof dans "Professeur : Y"
     if (matches.length === 1) {
-        // Chercher le professeur dans le champ "Professeur :"
-        // Capturer jusqu'à la fin de la ligne ou avant un tiret
         const profMatch = description.match(/Professeur\s*:\s*-?\s*(?:Madame|Monsieur|Mme|M\.|MMe|Mr)\s+([A-ZÀ-ÿ\s]+?)(?:\s*$|-|Professeur)/i);
 
         if (profMatch) {
@@ -53,17 +53,16 @@ function parseSplitGroup(description, location = "") {
             const room1 = matches[0][2].trim();
             const prof2 = profMatch[1].trim();
 
-            // Extraire la salle de la location pour le 2e professeur
+            // Utiliser la LOCATION pour la salle du 2e prof
             let room2 = "";
             if (location) {
                 const locationCleaned = location.replace(/^Salle\s*:\s*/i, "").trim();
-                // Vérifier que ce n'est pas la même salle que room1
-                if (locationCleaned && locationCleaned !== room1) {
+                // Ignorer si location est "-" ou identique à room1
+                if (locationCleaned && locationCleaned !== room1 && locationCleaned !== "-") {
                     room2 = locationCleaned;
                 }
             }
 
-            // Retourner les deux professeurs et leurs salles
             const rooms = room2 ? [room1, room2] : [room1];
             return {
                 professors: [prof1, prof2],

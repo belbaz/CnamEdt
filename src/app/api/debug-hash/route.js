@@ -5,11 +5,9 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DEFAULT_ICS_URL = 'https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics';
-
 export async function GET() {
     try {
-        const icsUrl = process.env.ICS_URL || DEFAULT_ICS_URL;
+        const icsUrl = process.env.ICS_URL;
         
         // Télécharger le fichier ICS
         const res = await fetch(icsUrl, {

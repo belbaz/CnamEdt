@@ -1,10 +1,10 @@
 "use client";
-import {useState, useEffect, useRef, useMemo, Suspense} from "react";
-import {useSearchParams} from "next/navigation";
-import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
-import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
-import {useDevMode} from "@/utils/env";
-import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek } from "@/utils/dateUtils";
+import { createSubjectColorMapping, groupEventsByDay, getEventTitle } from "@/utils/eventUtils";
+import { useDevMode } from "@/utils/env";
+import { fetchICSEvents, loadEventsFromCache, saveEventsToCache } from "@/services/icsService";
 import {
     addTestCoursesForToday,
     isTestModeEnabled,
@@ -13,11 +13,11 @@ import {
     isTestWeekEnabled,
     setTestWeekMode
 } from "@/services/testDataService";
-import {useCapacitor, useSplashScreen} from "@/hooks/useCapacitor";
-import {useNetworkStatus} from "@/hooks/useNetworkStatus";
-import {usePullToRefresh} from "@/hooks/usePullToRefresh";
-import {useCourseNotes} from "@/hooks/useCourseNotes";
-import {useHomePageHandlers} from "@/hooks/useHomePageHandlers";
+import { useCapacitor, useSplashScreen } from "@/hooks/useCapacitor";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useCourseNotes } from "@/hooks/useCourseNotes";
+import { useHomePageHandlers } from "@/hooks/useHomePageHandlers";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
@@ -25,6 +25,7 @@ import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
 import ApkDownloadPopup from "@/components/ApkDownloadPopup";
 import UpdateChecker from "@/components/UpdateChecker";
+import WebVersionChecker from "@/components/WebVersionChecker";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import SupabaseNotification from "@/components/SupabaseNotification";
@@ -35,11 +36,11 @@ import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
-import {saveSnapshotIfChanged} from "@/utils/historyService";
-import {parseStoredNoteValue} from "@/utils/noteEntries";
-import {generateEventKey} from "@/utils/eventModalUtils";
+import { saveSnapshotIfChanged } from "@/utils/historyService";
+import { parseStoredNoteValue } from "@/utils/noteEntries";
+import { generateEventKey } from "@/utils/eventModalUtils";
 
-function HomeContent({searchParams}) {
+function HomeContent({ searchParams }) {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -82,7 +83,7 @@ function HomeContent({searchParams}) {
     const [supabaseSource, setSupabaseSource] = useState(null);
 
     // Notes des cours
-    const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
+    const { notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes } = useCourseNotes();
 
     // Infos utilisateur
     const [userInfo, setUserInfo] = useState(null);
@@ -92,8 +93,8 @@ function HomeContent({searchParams}) {
     const eventKeyParam = searchParams?.get('eventKey');
 
     // Hook Capacitor pour mobile
-    const {isNative, capacitorReady, Capacitor, Http, SplashScreen} = useCapacitor();
-    const {isOnline} = useNetworkStatus();
+    const { isNative, capacitorReady, Capacitor, Http, SplashScreen } = useCapacitor();
+    const { isOnline } = useNetworkStatus();
     const devMode = useDevMode();
 
     // Gérer le splash screen (cacher quand chargé)
@@ -182,7 +183,7 @@ function HomeContent({searchParams}) {
                     : [];
 
             const meta = response?.meta || {};
-            const diff = response?.diff || {added: [], updated: [], removed: []};
+            const diff = response?.diff || { added: [], updated: [], removed: [] };
             const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
 
             // Vérifier si les données viennent de Supabase
@@ -223,7 +224,7 @@ function HomeContent({searchParams}) {
             saveEventsToCache(eventsData, colorMapping);
 
             // Historiser les matières détectées si elles ont changé
-            await saveSnapshotIfChanged(eventsData, {skip: shouldSkipHistory});
+            await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
             // Mettre à jour le timestamp dans l'état
             setLastUpdateTimestamp(new Date().toISOString());
             // Réinitialiser l'erreur réseau si on a réussi à charger
@@ -321,7 +322,7 @@ function HomeContent({searchParams}) {
         return Array.from(new Set(
             allEvents
                 .map(event => {
-                    const {matiere} = getEventTitle(event);
+                    const { matiere } = getEventTitle(event);
                     return matiere && matiere !== ":" ? matiere : null;
                 })
                 .filter(Boolean)
@@ -373,7 +374,7 @@ function HomeContent({searchParams}) {
         // Filtrer par matières sélectionnées si des filtres sont actifs
         if (selectedSubjects.length > 0) {
             filtered = filtered.filter((e) => {
-                const {matiere} = getEventTitle(e);
+                const { matiere } = getEventTitle(e);
                 return matiere && selectedSubjects.includes(matiere);
             });
         }
@@ -473,7 +474,7 @@ function HomeContent({searchParams}) {
     useEffect(() => {
         const loadUserInfo = async () => {
             try {
-                const res = await fetch("/api/user", {cache: "no-store"});
+                const res = await fetch("/api/user", { cache: "no-store" });
                 if (res.ok) {
                     const data = await res.json();
                     setUserInfo(data);
@@ -629,8 +630,8 @@ function HomeContent({searchParams}) {
         };
 
         // Ajouter les listeners sur le document
-        document.addEventListener('touchstart', handleTouchStart, {passive: true});
-        document.addEventListener('touchend', handleTouchEnd, {passive: true});
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchend', handleTouchEnd, { passive: true });
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
@@ -792,7 +793,7 @@ function HomeContent({searchParams}) {
         setTimeout(() => {
             const today = new Date();
             const todayDateString = today.toDateString();
-            const newCollapsedDays = {...collapsedDays};
+            const newCollapsedDays = { ...collapsedDays };
             let todayDayKey = null;
 
             // Fermer tous les jours de la semaine actuelle
@@ -919,7 +920,7 @@ function HomeContent({searchParams}) {
             if (!event.start || !event.end) return false;
             const eventStart = new Date(event.start);
             const eventEnd = event.end_time ? new Date(event.end_time) : new Date(event.end);
-            
+
             // Vérifier que l'événement est aujourd'hui
             const eventDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
             if (eventDate.getTime() !== today.getTime()) return false;
@@ -928,7 +929,7 @@ function HomeContent({searchParams}) {
             const nowTime = now.getTime();
             const startTime = eventStart.getTime();
             const endTime = eventEnd.getTime();
-            
+
             return nowTime >= startTime && nowTime < endTime;
         });
 
@@ -949,7 +950,7 @@ function HomeContent({searchParams}) {
         if (!showTimeRemaining || !isCurrentWeekSelected || !getNextOngoingCourse) return null;
 
         const now = new Date();
-        const endTime = getNextOngoingCourse.end_time 
+        const endTime = getNextOngoingCourse.end_time
             ? new Date(getNextOngoingCourse.end_time).getTime()
             : new Date(getNextOngoingCourse.end).getTime();
         const remainingMs = endTime - now.getTime();
@@ -991,10 +992,10 @@ function HomeContent({searchParams}) {
     return (
         <div className={styles.pageWrapper}>
             {/* Demande de permissions au démarrage (app native uniquement) */}
-            <PermissionRequest isNative={isNative}/>
+            <PermissionRequest isNative={isNative} />
 
             {/* Popup de téléchargement APK pour Android (web uniquement) */}
-            <ApkDownloadPopup/>
+            <ApkDownloadPopup />
 
             {/* Vérification des mises à jour (app native uniquement) */}
             <UpdateChecker
@@ -1002,6 +1003,12 @@ function HomeContent({searchParams}) {
                 currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
                 isNative={isNative}
             />
+
+            {/* Vérificateur de version web (pour tous les utilisateurs) */}
+            <WebVersionChecker />
+
+            {/* Bouton de scroll to top */}
+            <ScrollToTop />
 
             <Navbar
                 darkMode={darkMode}
@@ -1064,7 +1071,7 @@ function HomeContent({searchParams}) {
                                     <div><strong>URL:</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
                                         <>
-                                            <hr className={styles.debugHr}/>
+                                            <hr className={styles.debugHr} />
                                             <div><strong>Erreur Fetch:</strong> {debugInfo.fetchError}</div>
                                         </>
                                     )}
@@ -1079,7 +1086,7 @@ function HomeContent({searchParams}) {
                     </div>
                 )}
 
-                {loading && events.length === 0 && <LoadingSpinner/>}
+                {loading && events.length === 0 && <LoadingSpinner />}
 
                 {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
                     <div className={styles.noCoursesMessage}>
@@ -1148,7 +1155,7 @@ function HomeContent({searchParams}) {
                         )}
                         {/* Affichage de la date et heure de dernière sauvegarde */}
                         <div className="last-update-info">
-                            <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
+                            <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} />
                             <span>EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}</span>
                         </div>
                     </div>
@@ -1162,9 +1169,9 @@ function HomeContent({searchParams}) {
                 onToggleTestWeek={handleToggleTestWeek}
             />
 
-            <ScrollToTop/>
+            <ScrollToTop />
 
-            <OfflineNotification forceShow={hasNetworkError}/>
+            <OfflineNotification forceShow={hasNetworkError} />
 
             <SupabaseNotification
                 show={showSupabaseNotification}
@@ -1194,20 +1201,20 @@ function HomeContent({searchParams}) {
             />
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}
-            <DevToolsButton/>
+            <DevToolsButton />
         </div>
     );
 }
 
 export default function Home() {
     return (
-        <Suspense fallback={<LoadingSpinner/>}>
-            <HomeContentWrapper/>
+        <Suspense fallback={<LoadingSpinner />}>
+            <HomeContentWrapper />
         </Suspense>
     );
 }
 
 function HomeContentWrapper() {
     const searchParams = useSearchParams();
-    return <HomeContent searchParams={searchParams}/>;
+    return <HomeContent searchParams={searchParams} />;
 }
