@@ -80,6 +80,64 @@ export default function WebVersionChecker() {
         };
     }, [currentBuildId]);
 
+    // Vider le cache automatiquement lors d'un rechargement manuel si une mise à jour est disponible
+    useEffect(() => {
+        if (!updateAvailable) return;
+
+        const handleBeforeUnload = async (e) => {
+            // Ne pas afficher de message de confirmation
+            // Juste vider le cache en arrière-plan
+            console.log('[WebVersionChecker] Rechargement détecté - Nettoyage du cache...');
+
+            try {
+                // Vider les caches de manière synchrone (navigator.sendBeacon style)
+                if ('caches' in window) {
+                    // Marquer pour nettoyage au prochain chargement
+                    sessionStorage.setItem('_clearCacheOnLoad', 'true');
+                }
+            } catch (error) {
+                console.error('[WebVersionChecker] Erreur beforeunload:', error);
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [updateAvailable]);
+
+    // Nettoyer le cache au chargement si demandé
+    useEffect(() => {
+        const shouldClearCache = sessionStorage.getItem('_clearCacheOnLoad');
+
+        if (shouldClearCache === 'true') {
+            console.log('[WebVersionChecker] Nettoyage du cache au chargement...');
+            sessionStorage.removeItem('_clearCacheOnLoad');
+
+            // Vider tous les caches
+            (async () => {
+                try {
+                    if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        console.log('[WebVersionChecker] Suppression de', cacheNames.length, 'caches');
+                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    }
+
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        console.log('[WebVersionChecker] Désinscription de', registrations.length, 'service workers');
+                        await Promise.all(registrations.map(reg => reg.unregister()));
+                    }
+
+                    console.log('[WebVersionChecker] Cache nettoyé avec succès');
+                } catch (error) {
+                    console.error('[WebVersionChecker] Erreur lors du nettoyage:', error);
+                }
+            })();
+        }
+    }, []);
+
     const handleReload = useCallback(async () => {
         setIsReloading(true);
 
