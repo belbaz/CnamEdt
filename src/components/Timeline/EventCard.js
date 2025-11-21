@@ -1,8 +1,8 @@
 "use client";
-import {useCallback, useEffect, useRef, useState} from "react";
-import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getEventTitle, getColorIndexForSubject } from "@/utils/eventUtils";
 import "./EventCard.css";
-import {useDevMode} from "../../utils/env";
+import { useDevMode } from "../../utils/env";
 import { sanitizeNoteEntries } from "@/utils/noteEntries";
 
 const isVisioLocation = (location) => {
@@ -11,13 +11,13 @@ const isVisioLocation = (location) => {
 };
 
 export default function EventCard({
-                                       event,
-                                       stylePos,
-                                       subjectColors,
-                                       onOpenEventDetails,
-                                       noteEntries = []
-                                   }) {
-    const {matiere, prof, description} = getEventTitle(event);
+    event,
+    stylePos,
+    subjectColors,
+    onOpenEventDetails,
+    noteEntries = []
+}) {
+    const { matiere, prof, description, splitGroup } = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
     const noteTooltipRef = useRef(null);
@@ -70,7 +70,7 @@ export default function EventCard({
         return () => window.removeEventListener("resize", handleResize);
     }, [adjustTooltipOrientation]);
 
-    const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
+    const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     const formatDurationHours = (start, end) => {
         if (!start || !end) return null;
         const s = new Date(start);
@@ -90,25 +90,25 @@ export default function EventCard({
     // Détecter le site CNAM (Conté ou Saint-Martin)
     const getCnamSite = (location) => {
         if (!location || typeof location !== 'string') return null;
-        
+
         const cleaned = location.trim();
         const match = cleaned.match(/^(\d+)(bis)?[\.\-\s]/i);
         if (!match) return null;
-        
+
         const streetNumber = match[1];
         const isBis = !!match[2];
-        
+
         const conteNumbers = ['30', '31', '33', '34', '35', '37', '39'];
         const saintMartinNumbers = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '21', '23', '27'];
-        
+
         if (conteNumbers.includes(streetNumber)) {
             return { site: 'Conté', fullName: 'Conté', color: '#10b981' };
         }
-        
+
         if (saintMartinNumbers.includes(streetNumber) || (streetNumber === '9' && isBis)) {
             return { site: 'St-Martin', fullName: 'Saint-Martin', color: '#f59e0b' };
         }
-        
+
         return null;
     };
 
@@ -146,31 +146,31 @@ export default function EventCard({
                 const previewEntries = cleanedEntries.slice(0, 3);
                 const remaining = noteCount - previewEntries.length;
                 return (
-                <div
-                    className="note-badge-card"
-                    aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
-                    onMouseEnter={adjustTooltipOrientation}
-                    onFocus={adjustTooltipOrientation}
-                >
-                    <span className="note-icon">📝</span>
-                    <span className="note-count-badge">{noteCount}</span>
                     <div
-                        ref={noteTooltipRef}
-                        className={`note-tooltip ${tooltipAlign}`}
+                        className="note-badge-card"
+                        aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
+                        onMouseEnter={adjustTooltipOrientation}
+                        onFocus={adjustTooltipOrientation}
                     >
-                        <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
-                        <ul className="note-tooltip-list">
-                            {previewEntries.map((entry, idx) => (
-                                <li key={idx}>{entry}</li>
-                            ))}
-                            {remaining > 0 && (
-                                <li className="note-tooltip-more">
-                                    +{remaining} autre{remaining > 1 ? "s" : ""}
-                                </li>
-                            )}
-                        </ul>
+                        <span className="note-icon">📝</span>
+                        <span className="note-count-badge">{noteCount}</span>
+                        <div
+                            ref={noteTooltipRef}
+                            className={`note-tooltip ${tooltipAlign}`}
+                        >
+                            <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
+                            <ul className="note-tooltip-list">
+                                {previewEntries.map((entry, idx) => (
+                                    <li key={idx}>{entry}</li>
+                                ))}
+                                {remaining > 0 && (
+                                    <li className="note-tooltip-more">
+                                        +{remaining} autre{remaining > 1 ? "s" : ""}
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
                     </div>
-                </div>
                 );
             })()}
             <div className="event-time">
@@ -183,25 +183,63 @@ export default function EventCard({
                     description && <strong>{description}</strong>
                 )}
                 <span className="prof">{prof || "?"}</span>
-                <div className={`location ${visioLocation ? 'visio-location' : ''}`}>
-                    <span className="location-text">{locationLabel}</span>
-                    {visioLocation ? (
-                        <span
-                            className="site-badge-card visio-badge"
-                            title="Cours en visio"
-                        >
-                            VISIO
-                        </span>
-                    ) : siteInfo && (
-                        <span 
-                            className="site-badge-card" 
-                            style={{ backgroundColor: siteInfo.color }}
-                            title={siteInfo.fullName}
-                        >
-                            {siteInfo.site}
-                        </span>
-                    )}
-                </div>
+                {splitGroup ? (
+                    // Affichage demi-groupe: salles multiples
+                    <div className="location split-group-location">
+                        <span className="location-text">{splitGroup.rooms.join(" / ")}</span>
+                        {(() => {
+                            // Détecter le site pour chaque salle
+                            const sites = splitGroup.rooms.map(room => getCnamSite(room)).filter(Boolean);
+
+                            // Si toutes les salles sont sur le même site, afficher un seul badge
+                            if (sites.length > 0 && sites.every(s => s.site === sites[0].site)) {
+                                return (
+                                    <span
+                                        className="site-badge-card"
+                                        style={{ backgroundColor: sites[0].color }}
+                                        title={sites[0].fullName}
+                                    >
+                                        {sites[0].site}
+                                    </span>
+                                );
+                            }
+
+                            // Sinon, afficher un badge par site unique
+                            const uniqueSites = Array.from(new Map(sites.map(s => [s.site, s])).values());
+                            return uniqueSites.map((siteInfo, idx) => (
+                                <span
+                                    key={idx}
+                                    className="site-badge-card"
+                                    style={{ backgroundColor: siteInfo.color }}
+                                    title={siteInfo.fullName}
+                                >
+                                    {siteInfo.site}
+                                </span>
+                            ));
+                        })()}
+                    </div>
+                ) : (
+                    // Affichage normal: salle unique
+                    <div className={`location ${visioLocation ? 'visio-location' : ''}`}>
+                        <span className="location-text">{locationLabel}</span>
+                        {visioLocation ? (
+                            <span
+                                className="site-badge-card visio-badge"
+                                title="Cours en visio"
+                            >
+                                VISIO
+                            </span>
+                        ) : siteInfo && (
+                            <span
+                                className="site-badge-card"
+                                style={{ backgroundColor: siteInfo.color }}
+                                title={siteInfo.fullName}
+                            >
+                                {siteInfo.site}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </li>
     );

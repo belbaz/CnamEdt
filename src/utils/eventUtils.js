@@ -23,19 +23,84 @@ export function createSubjectColorMapping(data) {
 }
 
 /**
+ * Parse les informations de demi-groupe depuis la description
+ * Format attendu: "MMe SARDESAI salle 30.-1.16 - Mr AUCHE salle 30.-1.27"
+ * Ou format mixte: "Mr Auche salle 17.1.08 - Professeur : Madame SARDESAI" + location pour la 2e salle
+ */
+function parseSplitGroup(description, location = "") {
+    if (!description) return null;
+
+    // Regex pour capturer: (Titre) (Nom) salle (Salle)
+    // Supporte: MMe, Mr, Mme, M., Madame, Monsieur
+    const groupRegex = /(?:MMe|Mr|Mme|M\.|Madame|Monsieur)\s+([A-ZÀ-ÿ\s]+?)\s+salle\s+([\d\.\-]+)/gi;
+    const matches = [...description.matchAll(groupRegex)];
+
+    // Cas 1: Au moins 2 groupes avec format "X salle Y"
+    if (matches.length >= 2) {
+        const professors = matches.map(m => m[1].trim());
+        const rooms = matches.map(m => m[2].trim());
+        return { professors, rooms };
+    }
+
+    // Cas 2: Format mixte - 1 groupe "X salle Y" + professeur dans "Professeur : Z"
+    if (matches.length === 1) {
+        // Chercher le professeur dans le champ "Professeur :"
+        // Capturer jusqu'à la fin de la ligne ou avant un tiret
+        const profMatch = description.match(/Professeur\s*:\s*-?\s*(?:Madame|Monsieur|Mme|M\.|MMe|Mr)\s+([A-ZÀ-ÿ\s]+?)(?:\s*$|-|Professeur)/i);
+
+        if (profMatch) {
+            const prof1 = matches[0][1].trim();
+            const room1 = matches[0][2].trim();
+            const prof2 = profMatch[1].trim();
+
+            // Extraire la salle de la location pour le 2e professeur
+            let room2 = "";
+            if (location) {
+                const locationCleaned = location.replace(/^Salle\s*:\s*/i, "").trim();
+                // Vérifier que ce n'est pas la même salle que room1
+                if (locationCleaned && locationCleaned !== room1) {
+                    room2 = locationCleaned;
+                }
+            }
+
+            // Retourner les deux professeurs et leurs salles
+            const rooms = room2 ? [room1, room2] : [room1];
+            return {
+                professors: [prof1, prof2],
+                rooms
+            };
+        }
+    }
+
+    return null; // Pas un demi-groupe
+}
+
+/**
  * Extrait les informations d'un événement (matière, prof, description)
  */
 export function getEventTitle(ev) {
     let matiere = ev.summary?.trim() || "";
     const description = ev.description || "";
+    const location = ev.location || "";
     let prof = "";
     matiere = matiere.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, "").trim();
+
+    // Essayer de parser les demi-groupes (passer la location pour le cas mixte)
+    const splitGroup = parseSplitGroup(description, location);
+
+    if (splitGroup) {
+        // Mode demi-groupe: combiner les professeurs avec "/"
+        prof = splitGroup.professors.join(" / ");
+        return { matiere, prof, description, splitGroup };
+    }
+
+    // Mode normal: extraire le professeur depuis "Professeur : ..."
     const match = description.match(/Professeur\s*:\s*-?\s*(.*)$/i);
     if (match) {
         prof = match[1].trim();
         prof = prof.replace(/^(Madame|Monsieur|Mme|M\.)\s+/i, "").trim();
     }
-    return {matiere, prof, description};
+    return { matiere, prof, description };
 }
 
 /**
@@ -52,9 +117,9 @@ export function getColorIndexForSubject(matiere, subjectColors) {
 export function groupEventsByDay(events, monthFormat = "short") {
     return events.reduce((acc, ev) => {
         const d = new Date(ev.start);
-        const weekday = d.toLocaleDateString("fr-FR", {weekday: "long"});
-        const date = d.toLocaleDateString("fr-FR", {day: "numeric", month: "long"});
-        const date_short = d.toLocaleDateString("fr-FR", {day: "numeric", month: "short"});
+        const weekday = d.toLocaleDateString("fr-FR", { weekday: "long" });
+        const date = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+        const date_short = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
         const monthLabel = monthFormat === "long" ? date : date_short;
         const key = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${monthLabel}`;
         if (!acc[key]) acc[key] = [];

@@ -1,5 +1,5 @@
 "use client";
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import MapViewer from "@/components/MapViewer/MapViewer";
 import {
     formatDurationHM,
@@ -10,8 +10,8 @@ import {
     parseLocationMeta,
     getAcademicYearParts
 } from "@/utils/eventModalUtils";
-import {getEventTitle} from "@/utils/eventUtils";
-import {areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries} from "@/utils/noteEntries";
+import { getEventTitle } from "@/utils/eventUtils";
+import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
 import styles from "@/app/page.module.css";
 
 export default function EventModal({
@@ -69,7 +69,7 @@ export default function EventModal({
     if (!selectedEvent) return null;
 
     const selectedEventLocationMeta = parseLocationMeta(selectedEvent.location);
-    const {matiere} = getEventTitle(selectedEvent) || {};
+    const { matiere, splitGroup } = getEventTitle(selectedEvent) || {};
     const hoursStats = getSubjectHoursStats(matiere, allEvents, selectedEvent);
 
     // Gestion des notes
@@ -151,7 +151,7 @@ export default function EventModal({
                 />
             )}
             <div className="event-modal-layer" aria-modal="true" role="dialog">
-                <div className="event-modal-overlay" onClick={onClose}/>
+                <div className="event-modal-overlay" onClick={onClose} />
                 <div className="event-modal">
                     <div className="event-modal-header">
                         <div className="event-modal-title">
@@ -164,7 +164,7 @@ export default function EventModal({
                             )}
                         </div>
                         <button className="event-modal-close" aria-label="Fermer"
-                                onClick={onClose}>✕
+                            onClick={onClose}>✕
                         </button>
                     </div>
                     <div className="event-modal-content">
@@ -189,7 +189,7 @@ export default function EventModal({
                             {(() => {
                                 const courseType = extractCourseType(selectedEvent);
                                 const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
-                                const {prof: extractedProf} = getEventTitle(selectedEvent) || {};
+                                const { prof: extractedProf } = getEventTitle(selectedEvent) || {};
                                 const profName = extractedProf || selectedEvent.prof;
                                 return (
                                     <>
@@ -207,7 +207,7 @@ export default function EventModal({
                                         )}
                                         <div className="pop-row">
                                             <span>👤</span>
-                                            <span>Professeur : {profName || "?"}</span>
+                                            <span>Professeur{splitGroup && splitGroup.professors.length > 1 ? 's' : ''} : {profName || "?"}</span>
                                         </div>
                                     </>
                                 );
@@ -217,10 +217,66 @@ export default function EventModal({
                                 <span>
                                     {selectedEventLocationMeta?.isVisio
                                         ? selectedEventLocationMeta.display
-                                        : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
+                                        : splitGroup
+                                            ? `Salle${splitGroup.rooms.length > 1 ? 's' : ''} : ${splitGroup.rooms.join(' / ')}`
+                                            : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
                                 </span>
                                 {selectedEventLocationMeta?.isVisio ? (
                                     <span className="site-badge visio-badge">VISIO</span>
+                                ) : splitGroup ? (
+                                    (() => {
+                                        // Détecter le site pour chaque salle du demi-groupe
+                                        const getCnamSite = (location) => {
+                                            if (!location || typeof location !== 'string') return null;
+                                            const cleaned = location.trim();
+                                            const match = cleaned.match(/^(\d+)(bis)?[\.\-\s]/i);
+                                            if (!match) return null;
+                                            const streetNumber = match[1];
+                                            const isBis = !!match[2];
+                                            const conteNumbers = ['30', '31', '33', '34', '35', '37', '39'];
+                                            const saintMartinNumbers = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '21', '23', '27'];
+                                            if (conteNumbers.includes(streetNumber)) {
+                                                return { site: 'Conté', fullName: 'Conté', color: '#10b981' };
+                                            }
+                                            if (saintMartinNumbers.includes(streetNumber) || (streetNumber === '9' && isBis)) {
+                                                return { site: 'St-Martin', fullName: 'Saint-Martin', color: '#f59e0b' };
+                                            }
+                                            return null;
+                                        };
+
+                                        const sites = splitGroup.rooms.map(room => getCnamSite(room)).filter(Boolean);
+
+                                        // Si toutes les salles sont sur le même site, afficher un seul badge
+                                        if (sites.length > 0 && sites.every(s => s.site === sites[0].site)) {
+                                            return (
+                                                <span
+                                                    className="site-badge"
+                                                    style={{
+                                                        backgroundColor: sites[0].color,
+                                                        color: 'white'
+                                                    }}
+                                                >
+                                                    {sites[0].site}
+                                                </span>
+                                            );
+                                        }
+
+                                        // Sinon, afficher un badge par site unique
+                                        const uniqueSites = Array.from(new Map(sites.map(s => [s.site, s])).values());
+                                        return uniqueSites.map((siteInfo, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="site-badge"
+                                                style={{
+                                                    backgroundColor: siteInfo.color,
+                                                    color: 'white',
+                                                    marginLeft: idx > 0 ? '4px' : '0'
+                                                }}
+                                            >
+                                                {siteInfo.site}
+                                            </span>
+                                        ));
+                                    })()
                                 ) : selectedEventLocationMeta?.siteInfo ? (
                                     <span
                                         className="site-badge"
@@ -252,7 +308,7 @@ export default function EventModal({
                                         <div
                                             className="hours-stats-header"
                                             onClick={toggleExpanded}
-                                            style={{cursor: 'pointer'}}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             <span className="hours-stats-icon">📊</span>
                                             <span className="hours-stats-label">Progression</span>
@@ -264,7 +320,7 @@ export default function EventModal({
                                                     <div className="hours-stats-bar">
                                                         <div
                                                             className="hours-stats-bar-fill"
-                                                            style={{width: `${hoursStats.percentage}%`}}
+                                                            style={{ width: `${hoursStats.percentage}%` }}
                                                         />
                                                     </div>
                                                     <span
@@ -352,7 +408,7 @@ export default function EventModal({
                                                             className="modal-note-view-text"
                                                             style={{ fontSize: '0.9em', color: '#666', marginTop: '1em', fontStyle: 'italic' }}
                                                         >
-                                                            Connectez-vous pour modifier ces notes
+                                                            Connectez-vous pour modifier cette note
                                                             <a href="/login" className={styles.notesUnauthLink}>
                                                                 Connexion
                                                             </a>{" "}
@@ -397,7 +453,7 @@ export default function EventModal({
                                             <>
                                                 {editingNoteEntries.map((entry, index) => (
                                                     <div key={`${selectedEvent.uid}-${index}`}
-                                                         className="modal-note-entry">
+                                                        className="modal-note-entry">
                                                         <div className="modal-note-header">
                                                             <span>Note {index + 1}</span>
                                                             <button
@@ -545,17 +601,17 @@ export default function EventModal({
                                     >
                                         <span className="action-btn-icon">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20"
-                                                 height="20">
-                                                <circle cx="28" cy="28" r="26" fill="white"/>
+                                                height="20">
+                                                <circle cx="28" cy="28" r="26" fill="white" />
                                                 <g transform="translate(4, 4)">
                                                     <path fill="#ffab40"
-                                                          d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z"/>
-                                                    <path d="M5.5 16.2H6.5V32H5.5z"/>
+                                                        d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z" />
+                                                    <path d="M5.5 16.2H6.5V32H5.5z" />
                                                     <path fill="#424242"
-                                                          d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z"/>
-                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z"/>
+                                                        d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z" />
+                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z" />
                                                     <path fill="#424242"
-                                                          d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z"/>
+                                                        d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z" />
                                                 </g>
                                             </svg>
                                         </span>
