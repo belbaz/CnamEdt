@@ -116,6 +116,52 @@
 .event-modal-content {
     overflow: auto;
     padding: 0.85rem 0.9rem 1rem 0.9rem;
+    /* Scrollbar Firefox - Mode clair */
+    scrollbar-width: thin;
+    scrollbar-color: #718096 rgba(0, 0, 0, 0.05);
+}
+
+/* Scrollbar Webkit (Chrome, Safari, Edge) - Mode clair */
+.event-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.event-modal-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.event-modal-content::-webkit-scrollbar-thumb {
+    background: #718096;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.event-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #4a5568;
+}
+
+/* Mode dark : scrollbar */
+.dark-mode .event-modal-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    margin: 4px;
+}
+
+.dark-mode .event-modal-content::-webkit-scrollbar-thumb {
+    background: #a0aec0;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .event-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e0;
+}
+
+.dark-mode .event-modal-content {
+    scrollbar-width: thin;
+    scrollbar-color: #a0aec0 rgba(255, 255, 255, 0.05);
 }
 
 /* Bouton Moodle dans la modale */
@@ -123,10 +169,12 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background: #f97316; /* orange-500 */
+    background: #f97316;
+    /* orange-500 */
     color: #fff;
     text-decoration: none;
-    border: 1px solid #ea580c; /* orange-600 */
+    border: 1px solid #ea580c;
+    /* orange-600 */
     border-radius: 25px;
     padding: 0.35rem 0.6rem;
     font-size: 0.85rem;
@@ -134,7 +182,8 @@
 }
 
 .moodle-btn:hover {
-    background: #fb923c; /* orange-400 */
+    background: #fb923c;
+    /* orange-400 */
     border-color: #f97316;
 }
 
@@ -264,6 +313,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -274,6 +324,7 @@
         opacity: 0;
         transform: translate(-50%, -50%) scale(0.95);
     }
+
     100% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
@@ -398,6 +449,7 @@
         opacity: 0;
         transform: scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -780,9 +832,12 @@
 }
 
 @keyframes examPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
     }
+
     50% {
         box-shadow: 0 2px 8px rgba(220, 38, 38, 0.6);
     }
@@ -893,85 +948,106 @@
 
 /* Accent de couleur avec personnalité - 20 teintes unies */
 
-.event-card[data-index="0"]::before { /* Sky */
+.event-card[data-index="0"]::before {
+    /* Sky */
     background-color: #0ea5e9;
 }
 
-.event-card[data-index="1"]::before { /* Emerald */
+.event-card[data-index="1"]::before {
+    /* Emerald */
     background-color: #10b981;
 }
 
-.event-card[data-index="2"]::before { /* Amber */
+.event-card[data-index="2"]::before {
+    /* Amber */
     background-color: #f59e0b;
 }
 
-.event-card[data-index="3"]::before { /* Violet */
+.event-card[data-index="3"]::before {
+    /* Violet */
     background-color: #8b5cf6;
 }
 
-.event-card[data-index="4"]::before { /* Rose */
+.event-card[data-index="4"]::before {
+    /* Rose */
     background-color: #f43f5e;
 }
 
-.event-card[data-index="5"]::before { /* Teal */
+.event-card[data-index="5"]::before {
+    /* Teal */
     background-color: #14b8a6;
 }
 
-.event-card[data-index="6"]::before { /* Lime */
+.event-card[data-index="6"]::before {
+    /* Lime */
     background-color: #84cc16;
 }
 
-.event-card[data-index="7"]::before { /* Indigo */
+.event-card[data-index="7"]::before {
+    /* Indigo */
     background-color: #6366f1;
 }
 
-.event-card[data-index="8"]::before { /* Orange */
+.event-card[data-index="8"]::before {
+    /* Orange */
     background-color: #f97316;
 }
 
-.event-card[data-index="9"]::before { /* Cyan */
+.event-card[data-index="9"]::before {
+    /* Cyan */
     background-color: #06b6d4;
 }
 
-.event-card[data-index="10"]::before { /* Green */
+.event-card[data-index="10"]::before {
+    /* Green */
     background-color: #22c55e;
 }
 
-.event-card[data-index="11"]::before { /* Fuchsia */
+.event-card[data-index="11"]::before {
+    /* Fuchsia */
     background-color: #e879f9;
 }
 
-.event-card[data-index="12"]::before { /* Blue */
+.event-card[data-index="12"]::before {
+    /* Blue */
     background-color: #3b82f6;
 }
 
-.event-card[data-index="13"]::before { /* Red */
+.event-card[data-index="13"]::before {
+    /* Red */
     background-color: #ef4444;
 }
 
-.event-card[data-index="14"]::before { /* Yellow */
+.event-card[data-index="14"]::before {
+    /* Yellow */
     background-color: #eab308;
 }
 
-.event-card[data-index="15"]::before { /* Purple */
+.event-card[data-index="15"]::before {
+    /* Purple */
     background-color: #a855f7;
 }
 
-.event-card[data-index="16"]::before { /* Pink */
+.event-card[data-index="16"]::before {
+    /* Pink */
     background-color: #ec4899;
 }
 
-.event-card[data-index="17"]::before { /* Mint */
+.event-card[data-index="17"]::before {
+    /* Mint */
     background-color: #2dd4bf;
 }
 
-.event-card[data-index="18"]::before { /* Carrot */
+.event-card[data-index="18"]::before {
+    /* Carrot */
     background-color: #fb923c;
 }
 
-.event-card[data-index="19"]::before { /* Deep Blue */
+.event-card[data-index="19"]::before {
+    /* Deep Blue */
     background-color: #1d4ed8;
 }
+
 /* Mobile */
 @media (max-width: 768px) {
     .event-card {
@@ -1011,7 +1087,8 @@
         font-size: 0.825rem;
     }
 
-    .prof, .location {
+    .prof,
+    .location {
         font-size: 0.7rem;
     }
 }
