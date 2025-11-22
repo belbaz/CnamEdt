@@ -16,7 +16,7 @@ export async function GET() {
     try {
         const cookieStore = await cookies();
         const session = cookieStore.get("edt_session")?.value;
-        
+
         if (!session) {
             return NextResponse.json(
                 { error: "Non authentifié" },
@@ -25,7 +25,7 @@ export async function GET() {
         }
 
         const user = verifySessionToken(session);
-        
+
         if (!user) {
             return NextResponse.json(
                 { error: "Session invalide" },

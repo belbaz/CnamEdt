@@ -1,4 +1,5 @@
 import "./global.css";
+import AnalyticsCollector from "@/components/AnalyticsCollector";
 
 const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
 const IS_CACHE_ENABLED = String(activeCacheEnv).toLowerCase() !== 'false';
@@ -8,26 +9,27 @@ export const metadata = {
     description: "Consultez votre emploi du temps EICNAM",
 };
 
-export default function RootLayout({children}) {
+export default function RootLayout({ children }) {
     return (
         <html lang="fr" suppressHydrationWarning>
-        <head>
-            <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-            <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
-            <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
-            <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48x48.png" />
-            <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
-            <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
-            <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
-            <link rel="shortcut icon" href="/favicon/favicon.ico" />
-            <link rel="manifest" href="/manifest.webmanifest" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
-            <link rel="preconnect" href="https://fonts.googleapis.com"/>
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-                  rel="stylesheet"/>
-            <script
-                dangerouslySetInnerHTML={{__html: `
+            <head>
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
+                <link rel="icon" type="image/png" sizes="48x48" href="/favicon/favicon-48x48.png" />
+                <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+                <link rel="icon" type="image/png" sizes="192x192" href="/favicon/android-chrome-192x192.png" />
+                <link rel="icon" type="image/png" sizes="512x512" href="/favicon/android-chrome-512x512.png" />
+                <link rel="shortcut icon" href="/favicon/favicon.ico" />
+                <link rel="manifest" href="/manifest.webmanifest" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+                    rel="stylesheet" />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
                     (function() {
                         try {
                             // Exposer le canal et la version au runtime (renforcé pour Capacitor/file:)
@@ -37,9 +39,10 @@ export default function RootLayout({children}) {
                         } catch (e) {}
                     })();
                 `}}
-            />
-            <script
-                dangerouslySetInnerHTML={{__html: `
+                />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
                     (function() {
                         try {
                             var cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
@@ -54,9 +57,10 @@ export default function RootLayout({children}) {
                         } catch (e) {}
                     })();
                 `}}
-            />
-            <script
-                dangerouslySetInnerHTML={{__html: `
+                />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
                     (function() {
                         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
                             // Ne pas enregistrer dans Capacitor natif
@@ -119,9 +123,12 @@ export default function RootLayout({children}) {
                         }
                     })();
                 `}}
-            />
-        </head>
-        <body>{children}</body>
+                />
+            </head>
+            <body>
+                <AnalyticsCollector />
+                {children}
+            </body>
         </html>
     );
 }
