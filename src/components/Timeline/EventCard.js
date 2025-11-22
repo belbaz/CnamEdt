@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getEventTitle, getColorIndexForSubject } from "@/utils/eventUtils";
 import "./EventCard.css";
 import { useDevMode } from "../../utils/env";
@@ -20,55 +21,79 @@ export default function EventCard({
     const { matiere, prof, description, splitGroup } = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
-    const noteTooltipRef = useRef(null);
-    const [tooltipAlign, setTooltipAlign] = useState("align-left");
+    const badgeRef = useRef(null);
+    const tooltipRef = useRef(null);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipStyle, setTooltipStyle] = useState({});
+    const [isMounted, setIsMounted] = useState(false);
     const devMode = useDevMode();
 
-    const adjustTooltipOrientation = useCallback(() => {
-        const tooltipEl = noteTooltipRef.current;
-        const badgeEl = tooltipEl?.parentElement;
-        if (!tooltipEl || !badgeEl || typeof window === "undefined") return;
-
-        const margin = 16;
-        const tooltipWidth = tooltipEl.offsetWidth || 0;
-        const badgeRect = badgeEl.getBoundingClientRect();
-        const windowWidth = window.innerWidth;
-
-        // Position si la tooltip est alignée à gauche (valeur par défaut : s'étend vers la gauche)
-        const leftAlignedLeftEdge = badgeRect.right - tooltipWidth;
-        const canAlignLeft = leftAlignedLeftEdge >= margin;
-
-        // Position si elle est alignée à droite (s'étend vers la droite)
-        const rightAlignedRightEdge = badgeRect.left + tooltipWidth;
-        const canAlignRight = rightAlignedRightEdge <= (windowWidth - margin);
-
-        let orientation = "align-left";
-
-        if (!canAlignLeft && canAlignRight) {
-            orientation = "align-right";
-        } else if (!canAlignLeft && !canAlignRight) {
-            // Choisir le côté qui offre le plus d'espace disponible
-            const spaceLeft = badgeRect.left;
-            const spaceRight = windowWidth - badgeRect.right;
-            orientation = spaceRight > spaceLeft ? "align-right" : "align-left";
-        }
-
-        setTooltipAlign((prev) => (prev === orientation ? prev : orientation));
+    useEffect(() => {
+        setIsMounted(true);
     }, []);
 
-    useEffect(() => {
-        adjustTooltipOrientation();
-    }, [adjustTooltipOrientation, stylePos?.left, noteEntries]);
+    const updateTooltipPosition = useCallback(() => {
+        if (!badgeRef.current || !tooltipRef.current || !showTooltip) return;
+
+        const badgeRect = badgeRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const margin = 8;
+
+        // Si la tooltip n'a pas encore de dimensions, attendre
+        if (tooltipRect.width === 0 || tooltipRect.height === 0) {
+            requestAnimationFrame(updateTooltipPosition);
+            return;
+        }
+
+        // Position verticale : sous le badge
+        let top = badgeRect.bottom + margin;
+
+        // Si ça dépasse en bas, mettre au-dessus
+        if (top + tooltipRect.height > window.innerHeight - margin) {
+            top = badgeRect.top - tooltipRect.height - margin;
+            // Si ça dépasse toujours, coller en haut
+            if (top < margin) {
+                top = margin;
+            }
+        }
+
+        // Position horizontale : aligner à droite du badge par défaut
+        let left = badgeRect.right - tooltipRect.width;
+
+        // Si ça dépasse à gauche, aligner à gauche du badge
+        if (left < margin) {
+            left = badgeRect.left;
+        }
+
+        // Si ça dépasse à droite, ajuster
+        if (left + tooltipRect.width > window.innerWidth - margin) {
+            left = window.innerWidth - tooltipRect.width - margin;
+        }
+
+        setTooltipStyle({ top: `${top}px`, left: `${left}px` });
+    }, [showTooltip]);
 
     useEffect(() => {
-        if (typeof window === "undefined") return;
-        const handleResize = () => {
-            adjustTooltipOrientation();
+        if (showTooltip) {
+            // Attendre que la tooltip soit rendue pour calculer sa position
+            requestAnimationFrame(() => {
+                requestAnimationFrame(updateTooltipPosition);
+            });
+        }
+    }, [showTooltip, updateTooltipPosition]);
+
+    useEffect(() => {
+        if (!showTooltip) return;
+
+        const handleUpdate = () => updateTooltipPosition();
+        window.addEventListener("scroll", handleUpdate, true);
+        window.addEventListener("resize", handleUpdate);
+        
+        return () => {
+            window.removeEventListener("scroll", handleUpdate, true);
+            window.removeEventListener("resize", handleUpdate);
         };
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [adjustTooltipOrientation]);
+    }, [showTooltip, updateTooltipPosition]);
 
     const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     const formatDurationHours = (start, end) => {
@@ -146,31 +171,42 @@ export default function EventCard({
                 const previewEntries = cleanedEntries.slice(0, 3);
                 const remaining = noteCount - previewEntries.length;
                 return (
-                    <div
-                        className="note-badge-card"
-                        aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
-                        onMouseEnter={adjustTooltipOrientation}
-                        onFocus={adjustTooltipOrientation}
-                    >
-                        <span className="note-icon">📝</span>
-                        <span className="note-count-badge">{noteCount}</span>
+                    <>
                         <div
-                            ref={noteTooltipRef}
-                            className={`note-tooltip ${tooltipAlign}`}
+                            ref={badgeRef}
+                            className="note-badge-card"
+                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
+                            onMouseEnter={() => setShowTooltip(true)}
+                            onMouseLeave={() => setShowTooltip(false)}
+                            onFocus={() => setShowTooltip(true)}
+                            onBlur={() => setShowTooltip(false)}
                         >
-                            <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
-                            <ul className="note-tooltip-list">
-                                {previewEntries.map((entry, idx) => (
-                                    <li key={idx}>{entry}</li>
-                                ))}
-                                {remaining > 0 && (
-                                    <li className="note-tooltip-more">
-                                        +{remaining} autre{remaining > 1 ? "s" : ""}
-                                    </li>
-                                )}
-                            </ul>
+                            <span className="note-icon">📝</span>
+                            <span className="note-count-badge">{noteCount}</span>
                         </div>
-                    </div>
+                        {isMounted && showTooltip && createPortal(
+                            <div
+                                ref={tooltipRef}
+                                className="note-tooltip"
+                                style={tooltipStyle}
+                                onMouseEnter={() => setShowTooltip(true)}
+                                onMouseLeave={() => setShowTooltip(false)}
+                            >
+                                <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
+                                <ul className="note-tooltip-list">
+                                    {previewEntries.map((entry, idx) => (
+                                        <li key={idx}>{entry}</li>
+                                    ))}
+                                    {remaining > 0 && (
+                                        <li className="note-tooltip-more">
+                                            +{remaining} autre{remaining > 1 ? "s" : ""}
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>,
+                            document.body
+                        )}
+                    </>
                 );
             })()}
             <div className="event-time">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styles from "./login.module.css";
 
@@ -9,6 +9,7 @@ const LOG_PREFIX = "[LoginForm]";
 
 export default function LoginForm({ onSuccess, embedded = false }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -67,8 +68,25 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                 // On passe en mode redirection
                 setIsRedirecting(true);
 
+                // Récupérer l'URL de redirection depuis les paramètres de l'URL
+                const redirectTo = searchParams.get('redirect');
+                // Décoder l'URL et valider qu'elle est relative (sécurité)
+                let targetPath = "/agenda"; // Par défaut
+                
+                if (redirectTo) {
+                    try {
+                        const decodedPath = decodeURIComponent(redirectTo);
+                        // Vérifier que c'est un chemin relatif (sécurité contre les redirections malveillantes)
+                        if (decodedPath.startsWith('/') && !decodedPath.startsWith('//')) {
+                            targetPath = decodedPath;
+                        }
+                    } catch (e) {
+                        console.warn(`${LOG_PREFIX} Erreur décodage redirect:`, e);
+                    }
+                }
+
                 const timer = setTimeout(() => {
-                    router.replace("/agenda");
+                    router.replace(targetPath);
                 }, 1200);
                 setRedirectTimer(timer);
             }

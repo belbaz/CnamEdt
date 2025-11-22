@@ -461,6 +461,21 @@
     font-size: .95rem;
     color: var(--text-primary);
     background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.userRoleLabel {
+    font-size: 0.7rem;
+    color: white;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
 }
 
 /* Mobile */

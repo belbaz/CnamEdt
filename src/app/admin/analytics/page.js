@@ -17,6 +17,10 @@ export default function AnalyticsPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [userStats, setUserStats] = useState(null);
     const [loadingUser, setLoadingUser] = useState(false);
+    const [lastUpdate, setLastUpdate] = useState(null);
+    const [authChecked, setAuthChecked] = useState(false);
+    const [unauthorized, setUnauthorized] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     
     // Filtres
     const [filters, setFilters] = useState({
@@ -35,9 +39,66 @@ export default function AnalyticsPage() {
     const [sortBy, setSortBy] = useState('created_at');
     const [sortOrder, setSortOrder] = useState('desc');
 
+    // Vérifier l'authentification et le rôle au chargement
     useEffect(() => {
-        fetchAnalytics();
-    }, [limit, offset, sortBy, sortOrder]);
+        checkAuth();
+    }, []);
+
+    // Charger les données après vérification de l'auth
+    useEffect(() => {
+        if (authChecked && !unauthorized) {
+            fetchAnalytics();
+        }
+    }, [limit, offset, sortBy, sortOrder, authChecked, unauthorized]);
+
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/user');
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setIsAuthenticated(false);
+                    setUnauthorized(true);
+                    setError('Vous devez être connecté pour accéder à cette page.');
+                    setTimeout(() => {
+                        // Passer la page actuelle comme paramètre de redirection
+                        const currentPath = encodeURIComponent(window.location.pathname);
+                        window.location.href = `/login?redirect=${currentPath}`;
+                    }, 2000);
+                } else {
+                    setIsAuthenticated(false);
+                    setUnauthorized(true);
+                    setError('Erreur lors de la vérification de votre session.');
+                }
+                setAuthChecked(true);
+                setLoading(false);
+                return;
+            }
+
+            const user = await response.json();
+            setIsAuthenticated(true);
+            
+            // Vérifier le rôle superAdmin
+            if (user.role !== 'superAdmin') {
+                console.warn('[Analytics] Accès refusé - Rôle:', user.role);
+                setUnauthorized(true);
+                setError('Accès refusé : vous devez être un admin pour accéder à cette page.');
+                setLoading(false);
+                setAuthChecked(true);
+                return;
+            }
+
+            // Utilisateur autorisé
+            setAuthChecked(true);
+        } catch (err) {
+            console.error('[Analytics] Erreur vérification auth:', err);
+            setIsAuthenticated(false);
+            setUnauthorized(true);
+            setError('Erreur lors de la vérification de votre session.');
+            setLoading(false);
+            setAuthChecked(true);
+        }
+    };
 
     const fetchAnalytics = async () => {
         setLoading(true);
@@ -57,10 +118,20 @@ export default function AnalyticsPage() {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 if (response.status === 401) {
+                    setIsAuthenticated(false);
+                    setUnauthorized(true);
                     setError('Vous devez être connecté pour accéder à cette page. Redirection vers la page de connexion...');
                     setTimeout(() => {
-                        window.location.href = '/login';
+                        // Passer la page actuelle comme paramètre de redirection
+                        const currentPath = encodeURIComponent(window.location.pathname);
+                        window.location.href = `/login?redirect=${currentPath}`;
                     }, 2000);
+                } else if (response.status === 403) {
+                    setUnauthorized(true);
+                    setError('Accès refusé : vous devez être un admin pour accéder à cette page.');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 3000);
                 } else if (response.status === 500) {
                     let errorMsg = errorData.error || "Erreur serveur";
                     if (errorData.details) {
@@ -81,6 +152,7 @@ export default function AnalyticsPage() {
             setData(result.data || []);
             setStatistics(result.statistics);
             setTotalCount(result.count || 0);
+            setLastUpdate(new Date());
         } catch (err) {
             console.error('[Analytics] Erreur:', err);
             setError(`Erreur de connexion au serveur: ${err.message}`);
@@ -133,6 +205,18 @@ export default function AnalyticsPage() {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         return `${hours}h ${mins}m`;
+    };
+
+    const formatLastUpdate = (date) => {
+        if (!date) return '';
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return `Il y a ${diff} seconde${diff > 1 ? 's' : ''}`;
+        const minutes = Math.floor(diff / 60);
+        if (minutes < 60) return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+        return date.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     };
 
     // Filtrer les données
@@ -242,12 +326,35 @@ export default function AnalyticsPage() {
         window.URL.revokeObjectURL(url);
     };
 
-    if (loading && data.length === 0) {
+    // Afficher le chargement pendant la vérification de l'auth
+    if (!authChecked || (loading && data.length === 0 && !unauthorized)) {
         return (
             <div className="analytics-container">
                 <div className="analytics-loading">
                     <div className="loading-spinner"></div>
-                    <p>Chargement des données analytics...</p>
+                    <p>{authChecked ? 'Chargement des données analytics...' : 'Vérification des permissions...'}</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Afficher l'erreur d'autorisation
+    if (unauthorized || (error && (error.includes('Accès refusé') || error.includes('superAdmin')))) {
+        const currentPath = encodeURIComponent(window.location.pathname);
+        return (
+            <div className="analytics-container">
+                <div className="analytics-error">
+                    <h2>🚫 Accès Refusé</h2>
+                    <p className="error-message">{error || 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.'}</p>
+                    <div className="error-actions">
+                        <button onClick={() => window.location.href = '/'}>Retour à l'accueil</button>
+                        {/* Afficher le bouton "Se connecter" seulement si l'utilisateur n'est pas déjà connecté */}
+                        {!isAuthenticated && (
+                            <button onClick={() => window.location.href = `/login?redirect=${currentPath}`}>
+                                Se connecter
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -270,8 +377,13 @@ export default function AnalyticsPage() {
                     <p className="error-message">{formatError(error)}</p>
                     <div className="error-actions">
                         <button onClick={fetchAnalytics}>Réessayer</button>
-                        {error.includes('connecté') && (
-                            <button onClick={() => window.location.href = '/login'}>Se connecter</button>
+                        {error.includes('connecté') && !isAuthenticated && (
+                            <button onClick={() => {
+                                const currentPath = encodeURIComponent(window.location.pathname);
+                                window.location.href = `/login?redirect=${currentPath}`;
+                            }}>
+                                Se connecter
+                            </button>
                         )}
                     </div>
                 </div>
@@ -314,6 +426,12 @@ export default function AnalyticsPage() {
                 <div>
                     <h1>📊 Analytics du Site</h1>
                     <p>Analyse complète des visiteurs et de leur comportement</p>
+                    {lastUpdate && (
+                        <div className="last-update">
+                            <span className="last-update-icon">🔄</span>
+                            <span>Dernière mise à jour : {formatLastUpdate(lastUpdate)}</span>
+                        </div>
+                    )}
                 </div>
                 <button className="export-btn" onClick={exportData} title="Exporter en CSV">
                     📥 Exporter
@@ -362,31 +480,59 @@ export default function AnalyticsPage() {
                             <div className="stat-icon">📊</div>
                             <h3>Total d'enregistrements</h3>
                             <p className="stat-value">{statistics.total.toLocaleString()}</p>
+                            <div className="stat-badge">
+                                <span>Toutes périodes</span>
+                            </div>
                         </div>
                         <div className="stat-card stat-card-success">
                             <div className="stat-icon">👤</div>
                             <h3>Sessions uniques</h3>
                             <p className="stat-value">{statistics.uniqueSessions?.toLocaleString() || 0}</p>
+                            {statistics.uniqueSessions && statistics.total > 0 && (
+                                <div className="stat-badge">
+                                    <span>{Math.round((statistics.uniqueSessions / statistics.total) * 100)}% du total</span>
+                                </div>
+                            )}
                         </div>
                         <div className="stat-card stat-card-info">
                             <div className="stat-icon">🌐</div>
                             <h3>IPs uniques</h3>
                             <p className="stat-value">{statistics.uniqueIPs?.toLocaleString() || 0}</p>
+                            {statistics.uniqueIPs && statistics.uniqueSessions > 0 && (
+                                <div className="stat-badge">
+                                    <span>{Math.round((statistics.uniqueIPs / statistics.uniqueSessions) * 100)}% des sessions</span>
+                                </div>
+                            )}
                         </div>
                         <div className="stat-card stat-card-warning">
                             <div className="stat-icon">🔄</div>
                             <h3>Total visites</h3>
                             <p className="stat-value">{statistics.totalVisits?.toLocaleString() || 0}</p>
+                            {statistics.totalVisits && statistics.uniqueSessions > 0 && (
+                                <div className="stat-badge">
+                                    <span>{Math.round(statistics.totalVisits / statistics.uniqueSessions)} visites/session</span>
+                                </div>
+                            )}
                         </div>
                         <div className="stat-card stat-card-secondary">
                             <div className="stat-icon">⏱️</div>
                             <h3>Temps moyen sur page</h3>
                             <p className="stat-value">{formatDuration(statistics.avgTimeOnPage || 0)}</p>
+                            {statistics.avgTimeOnPage && statistics.avgTimeOnPage > 60 && (
+                                <div className="stat-badge stat-badge-trend up">
+                                    <span>↑ Engagement élevé</span>
+                                </div>
+                            )}
                         </div>
                         <div className="stat-card stat-card-tertiary">
                             <div className="stat-icon">📈</div>
                             <h3>Visites moyennes/session</h3>
                             <p className="stat-value">{statistics.avgVisitsPerSession || '0'}</p>
+                            {statistics.avgVisitsPerSession && parseFloat(statistics.avgVisitsPerSession) > 2 && (
+                                <div className="stat-badge stat-badge-trend up">
+                                    <span>↑ Bonne rétention</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -475,6 +621,11 @@ export default function AnalyticsPage() {
 
             {selectedTab === 'sessions' && (
                 <div className="analytics-sessions">
+                    {loading && data.length > 0 && (
+                        <div className="loading-overlay">
+                            <div className="loading-spinner"></div>
+                        </div>
+                    )}
                     <div className="filters-panel">
                         <h3>🔍 Filtres</h3>
                         <div className="filters-grid">
@@ -484,6 +635,7 @@ export default function AnalyticsPage() {
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
                                 className="filter-input"
+                                title="Recherche dans les sessions, IPs, appareils, OS et navigateurs"
                             />
                             <select
                                 value={filters.deviceType}
@@ -610,11 +762,17 @@ export default function AnalyticsPage() {
                                     <option value="asc">Croissant</option>
                                 </select>
                             </label>
+                            {filteredData.length > 0 && (
+                                <div className="stat-badge" style={{ margin: 0 }}>
+                                    <span>{filteredData.length} résultat{filteredData.length > 1 ? 's' : ''} affiché{filteredData.length > 1 ? 's' : ''}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="pagination">
                             <button 
                                 disabled={offset === 0}
                                 onClick={() => setOffset(Math.max(0, offset - limit))}
+                                title="Page précédente"
                             >
                                 ← Précédent
                             </button>
@@ -622,6 +780,7 @@ export default function AnalyticsPage() {
                             <button 
                                 disabled={offset + limit >= totalCount}
                                 onClick={() => setOffset(offset + limit)}
+                                title="Page suivante"
                             >
                                 Suivant →
                             </button>
@@ -646,9 +805,14 @@ export default function AnalyticsPage() {
                             </thead>
                             <tbody>
                                 {filteredData.map((session, idx) => (
-                                    <tr key={idx} className="session-row" onClick={() => handleUserClick(session)}>
-                                        <td className="session-id">{session.session_id.substring(0, 8)}...</td>
-                                        <td>{session.ip_address || 'N/A'}</td>
+                                    <tr 
+                                        key={idx} 
+                                        className="session-row" 
+                                        onClick={() => handleUserClick(session)}
+                                        title="Cliquer pour voir les détails de cette session"
+                                    >
+                                        <td className="session-id" title={session.session_id}>{session.session_id.substring(0, 8)}...</td>
+                                        <td title={`Adresse IP: ${session.ip_address || 'N/A'}`}>{session.ip_address || 'N/A'}</td>
                                         <td>
                                             <div className="device-info">
                                                 <span className="device-type">{session.device_type || 'unknown'}</span>
@@ -676,9 +840,9 @@ export default function AnalyticsPage() {
                                                 )}
                                             </div>
                                         </td>
-                                        <td>{session.visit_count || 1}</td>
-                                        <td>{formatDate(session.first_visit_at)}</td>
-                                        <td>{formatDate(session.last_visit_at)}</td>
+                                        <td title={`${session.visit_count || 1} visite${(session.visit_count || 1) > 1 ? 's' : ''}`}>{session.visit_count || 1}</td>
+                                        <td title={`Première visite: ${formatDate(session.first_visit_at)}`}>{formatDate(session.first_visit_at)}</td>
+                                        <td title={`Dernière visite: ${formatDate(session.last_visit_at)}`}>{formatDate(session.last_visit_at)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -686,6 +850,9 @@ export default function AnalyticsPage() {
                         {filteredData.length === 0 && (
                             <div className="no-results">
                                 <p>Aucun résultat trouvé avec ces filtres</p>
+                                <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.7 }}>
+                                    Essayez de modifier vos critères de recherche ou de réinitialiser les filtres
+                                </p>
                             </div>
                         )}
                     </div>

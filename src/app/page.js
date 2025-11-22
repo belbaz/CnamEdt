@@ -1198,6 +1198,7 @@ function HomeContent({ searchParams }) {
                 notesAuthenticated={notesAuthenticated}
                 refreshNotes={refreshNotes}
                 devMode={devMode}
+                userRole={userInfo?.role}
             />
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}

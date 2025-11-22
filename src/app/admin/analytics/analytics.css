@@ -1,5 +1,5 @@
 /* ============================================
-   ANALYTICS PAGE - DESIGN MODERNE
+   ANALYTICS PAGE - DESIGN MODERNE AMÉLIORÉ
    ============================================ */
 
 .analytics-container {
@@ -7,8 +7,20 @@
     margin: 0 auto;
     padding: 2rem;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 50%, #f5f7fa 100%);
     min-height: 100vh;
+    animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ============================================
@@ -22,8 +34,28 @@
     margin-bottom: 2.5rem;
     padding: 2rem;
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.analytics-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 .analytics-header h1 {
@@ -55,6 +87,26 @@
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.export-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.export-btn:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .export-btn:hover {
@@ -64,6 +116,24 @@
 
 .export-btn:active {
     transform: translateY(0);
+}
+
+.last-update {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.last-update-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* ============================================
@@ -76,9 +146,10 @@
     margin-bottom: 2rem;
     background: white;
     padding: 0.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
     flex-wrap: wrap;
+    border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .analytics-tabs button {
@@ -130,14 +201,33 @@
 
 .stat-card {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 2rem;
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.stat-card:hover::after {
+    width: 300px;
+    height: 300px;
 }
 
 .stat-card::before {
@@ -158,14 +248,20 @@
 .stat-card-tertiary::before { background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%); }
 
 .stat-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .stat-icon {
-    font-size: 3rem;
+    font-size: 3.5rem;
     margin-bottom: 1rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.12));
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .stat-card h3 {
@@ -201,16 +297,35 @@
 
 .chart-card {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.chart-card:hover::before {
+    transform: scaleX(1);
 }
 
 .chart-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(102, 126, 234, 0.1);
 }
 
 .chart-card-wide {
@@ -267,6 +382,12 @@
     border-color: #667eea;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     background: #fafbff;
+    transform: translateY(-1px);
+}
+
+.filter-input::placeholder {
+    color: #94a3b8;
+    opacity: 0.7;
 }
 
 .filter-label {
@@ -329,7 +450,25 @@
     padding: 1rem 1.25rem;
     background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
     border-left: 4px solid #667eea;
-    border-radius: 8px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-info::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .filter-info p {
@@ -463,10 +602,35 @@
     transition: all 0.15s;
 }
 
+.sessions-table tbody tr {
+    position: relative;
+}
+
+.sessions-table tbody tr[title] {
+    cursor: help;
+}
+
+.sessions-table tbody tr::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
+.sessions-table tbody tr:hover::before {
+    transform: scaleY(1);
+}
+
 .sessions-table tbody tr:hover {
     background: linear-gradient(90deg, #f8f9ff 0%, #f0f4ff 100%);
     cursor: pointer;
-    transform: scale(1.001);
+    transform: scale(1.002);
+    box-shadow: inset 0 0 0 1px rgba(102, 126, 234, 0.1);
 }
 
 .sessions-table tbody tr:last-child td {
@@ -519,6 +683,17 @@
     text-align: center;
     color: #94a3b8;
     font-size: 1.1rem;
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    border-radius: 16px;
+    border: 2px dashed #e2e8f0;
+}
+
+.no-results::before {
+    content: '🔍';
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
 }
 
 /* ============================================
@@ -755,6 +930,86 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   BADGES & INDICATORS
+   ============================================ */
+
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-top: 0.5rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.stat-badge-trend {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.stat-badge-trend.up {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.stat-badge-trend.down {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Amélioration des tooltips */
+[title] {
+    position: relative;
+}
+
+/* Animation pour les transitions d'onglets */
+.analytics-overview,
+.analytics-sessions,
+.analytics-devices,
+.analytics-versions,
+.analytics-user-detail {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-in;
+}
+
+.analytics-sessions {
+    position: relative;
 }
 
 /* ============================================
@@ -1007,5 +1262,10 @@
         background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+    }
+
+    .no-results {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border-color: #475569;
     }
 }

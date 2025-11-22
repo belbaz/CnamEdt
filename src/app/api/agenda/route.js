@@ -19,12 +19,20 @@ function formatAgendaRow(row) {
     const userInfo = row.edt_user || null;
     const userName = userInfo ? `${userInfo.name || ''} ${userInfo.last_name || ''}`.trim() : null;
 
+    // Parser les labels par paragraphe depuis entry_labels
+    let entryLabels = {};
+    if (row.entry_labels && typeof row.entry_labels === 'object') {
+        entryLabels = row.entry_labels;
+    }
+    
     return {
         ...row,
         entries: parseStoredNoteValue(row.notes),
         user_name: userName,
         user_name_first: userInfo?.name || null,
         user_name_last: userInfo?.last_name || null,
+        labels: Array.isArray(row.labels) ? row.labels : (row.labels ? [row.labels] : []), // Garder pour compatibilité
+        entry_labels: entryLabels, // Nouveau : labels par paragraphe
     };
 }
 
@@ -78,7 +86,7 @@ export async function GET(request) {
             // Utilisateur connecté : récupérer ses propres notes
             query = supabase
                 .from('edt_agenda')
-                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history')
+                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels')
                 .eq('user_id', user.sub)
                 .order('updated_at', { ascending: false });
 
@@ -90,7 +98,7 @@ export async function GET(request) {
             // Pour chaque course_uid, on prend la note la plus récente
             query = supabase
                 .from('edt_agenda')
-                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history')
+                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels')
                 .order('updated_at', { ascending: false });
 
             if (courseUid) {
@@ -198,6 +206,7 @@ export async function GET(request) {
  * POST /api/agenda
  * Crée ou met à jour une note pour un cours
  * Body: { course_uid: string, notes: string }
+ * Les visiteurs ne peuvent pas créer ou modifier de notes
  */
 export async function POST(request) {
     try {
@@ -218,8 +227,32 @@ export async function POST(request) {
             );
         }
 
+        // Vérifier le rôle depuis la base de données (pas depuis le token)
+        const { data: dbUser, error: roleError } = await supabase
+            .from('edt_user')
+            .select('role')
+            .eq('id', user.sub)
+            .maybeSingle();
+
+        if (roleError) {
+            console.error(`${LOG_PREFIX} Erreur vérification rôle:`, roleError);
+            return NextResponse.json(
+                { error: "Erreur lors de la vérification des permissions" },
+                { status: 500 }
+            );
+        }
+
+        // Refuser l'accès aux visiteurs
+        if (dbUser?.role === 'visiteur') {
+            console.warn(`${LOG_PREFIX} Tentative de modification par un visiteur - User ID: ${user.sub}`);
+            return NextResponse.json(
+                { error: "Accès refusé : les visiteurs ne peuvent pas créer ou modifier de notes" },
+                { status: 403 }
+            );
+        }
+
         const body = await request.json();
-        const { course_uid, notes } = body;
+        const { course_uid, notes, labels, entry_labels } = body;
 
         if (!course_uid || typeof course_uid !== 'string') {
             return NextResponse.json(
@@ -233,6 +266,51 @@ export async function POST(request) {
                 { error: "notes doit être une chaîne de caractères ou un tableau" },
                 { status: 400 }
             );
+        }
+
+        // Valider et normaliser les labels par paragraphe (entry_labels)
+        let normalizedEntryLabels = {};
+        if (entry_labels !== undefined) {
+            if (typeof entry_labels !== 'object' || Array.isArray(entry_labels)) {
+                return NextResponse.json(
+                    { error: "entry_labels doit être un objet avec des index numériques comme clés" },
+                    { status: 400 }
+                );
+            }
+            // Normaliser entry_labels : chaque clé doit être un index numérique, chaque valeur un tableau de strings
+            for (const [indexStr, labelArray] of Object.entries(entry_labels)) {
+                const index = parseInt(indexStr, 10);
+                if (isNaN(index) || index < 0) {
+                    return NextResponse.json(
+                        { error: `entry_labels: la clé "${indexStr}" doit être un index numérique valide` },
+                        { status: 400 }
+                    );
+                }
+                if (!Array.isArray(labelArray)) {
+                    return NextResponse.json(
+                        { error: `entry_labels: la valeur pour l'index ${index} doit être un tableau` },
+                        { status: 400 }
+                    );
+                }
+                // Filtrer les labels vides et s'assurer qu'ils sont des chaînes
+                normalizedEntryLabels[indexStr] = labelArray
+                    .filter(label => typeof label === 'string' && label.trim().length > 0)
+                    .map(label => label.trim());
+            }
+        }
+
+        // Garder la compatibilité avec l'ancien système de labels (pour migration progressive)
+        let normalizedLabels = [];
+        if (labels !== undefined) {
+            if (!Array.isArray(labels)) {
+                return NextResponse.json(
+                    { error: "labels doit être un tableau" },
+                    { status: 400 }
+                );
+            }
+            normalizedLabels = labels
+                .filter(label => typeof label === 'string' && label.trim().length > 0)
+                .map(label => label.trim());
         }
 
         const normalizedEntries = normalizeIncomingNotes(notes);
@@ -264,8 +342,9 @@ export async function POST(request) {
 
                 if (deleteError) {
                     console.error(`${LOG_PREFIX} Erreur suppression note vide:`, deleteError);
+                    const errorMessage = deleteError.message || deleteError.code || "Erreur lors de la suppression";
                     return NextResponse.json(
-                        { error: "Erreur lors de la suppression" },
+                        { error: `Erreur SQL lors de la suppression : ${errorMessage}` },
                         { status: 500 }
                     );
                 }
@@ -310,13 +389,25 @@ export async function POST(request) {
             const updatedHistory = [...historyArray, newHistoryEntry];
 
             // Mettre à jour la note existante
+            const updateData = {
+                notes: JSON.stringify(normalizedEntries),
+                updated_at: now,
+                modification_history: updatedHistory
+            };
+            
+            // Ajouter les labels par paragraphe (entry_labels) si fournis
+            if (entry_labels !== undefined) {
+                updateData.entry_labels = normalizedEntryLabels;
+            }
+            
+            // Garder la compatibilité avec l'ancien système (pour migration progressive)
+            if (labels !== undefined) {
+                updateData.labels = normalizedLabels;
+            }
+            
             const { data, error } = await supabase
                 .from('edt_agenda')
-                .update({
-                    notes: JSON.stringify(normalizedEntries),
-                    updated_at: now,
-                    modification_history: updatedHistory
-                })
+                .update(updateData)
                 .eq('id', existing.id)
                 .eq('user_id', user.sub)
                 .select()
@@ -324,8 +415,9 @@ export async function POST(request) {
 
             if (error) {
                 console.error(`${LOG_PREFIX} Erreur mise à jour note:`, error);
+                const errorMessage = error.message || error.code || "Erreur lors de la mise à jour";
                 return NextResponse.json(
-                    { error: "Erreur lors de la mise à jour" },
+                    { error: `Erreur SQL lors de la mise à jour : ${errorMessage}` },
                     { status: 500 }
                 );
             }
@@ -340,21 +432,34 @@ export async function POST(request) {
                 timestamp: now
             }];
 
+            const insertData = {
+                user_id: user.sub,
+                course_uid: course_uid,
+                notes: JSON.stringify(normalizedEntries),
+                modification_history: initialHistory
+            };
+            
+            // Ajouter les labels par paragraphe (entry_labels) si fournis
+            if (entry_labels !== undefined) {
+                insertData.entry_labels = normalizedEntryLabels;
+            }
+            
+            // Garder la compatibilité avec l'ancien système (pour migration progressive)
+            if (labels !== undefined) {
+                insertData.labels = normalizedLabels;
+            }
+            
             const { data, error } = await supabase
                 .from('edt_agenda')
-                .insert({
-                    user_id: user.sub,
-                    course_uid: course_uid,
-                    notes: JSON.stringify(normalizedEntries),
-                    modification_history: initialHistory
-                })
+                .insert(insertData)
                 .select()
                 .single();
 
             if (error) {
                 console.error(`${LOG_PREFIX} Erreur création note:`, error);
+                const errorMessage = error.message || error.code || "Erreur lors de la création";
                 return NextResponse.json(
-                    { error: "Erreur lors de la création" },
+                    { error: `Erreur SQL lors de la création : ${errorMessage}` },
                     { status: 500 }
                 );
             }
@@ -379,6 +484,7 @@ export async function POST(request) {
 /**
  * DELETE /api/agenda?course_uid=...
  * Supprime une note pour un cours
+ * Les visiteurs ne peuvent pas supprimer de notes
  */
 export async function DELETE(request) {
     try {
@@ -396,6 +502,30 @@ export async function DELETE(request) {
             return NextResponse.json(
                 { error: "Service indisponible" },
                 { status: 500 }
+            );
+        }
+
+        // Vérifier le rôle depuis la base de données (pas depuis le token)
+        const { data: dbUser, error: roleError } = await supabase
+            .from('edt_user')
+            .select('role')
+            .eq('id', user.sub)
+            .maybeSingle();
+
+        if (roleError) {
+            console.error(`${LOG_PREFIX} Erreur vérification rôle:`, roleError);
+            return NextResponse.json(
+                { error: "Erreur lors de la vérification des permissions" },
+                { status: 500 }
+            );
+        }
+
+        // Refuser l'accès aux visiteurs
+        if (dbUser?.role === 'visiteur') {
+            console.warn(`${LOG_PREFIX} Tentative de suppression par un visiteur - User ID: ${user.sub}`);
+            return NextResponse.json(
+                { error: "Accès refusé : les visiteurs ne peuvent pas supprimer de notes" },
+                { status: 403 }
             );
         }
 

@@ -45,6 +45,7 @@ export function useCourseNotes() {
                         entries: Array.isArray(note?.entries)
                             ? note.entries
                             : parseStoredNoteValue(note?.notes),
+                        labels: Array.isArray(note?.labels) ? note.labels : (note?.labels ? [note.labels] : []),
                     };
                     notesMap.set(note.course_uid, normalizedNote);
                 });

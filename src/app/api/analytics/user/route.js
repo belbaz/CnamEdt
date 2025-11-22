@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getSupabaseServerClient } from '@/lib/supabaseServer';
-import { verifySessionToken } from '@/lib/sessionToken';
+import { requireSuperAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -11,25 +10,18 @@ const LOG_PREFIX = "[API analytics/user]";
 /**
  * GET /api/analytics/user?session_id=xxx ou ?ip_address=xxx
  * Récupère les statistiques détaillées d'un utilisateur spécifique
+ * Nécessite le rôle superAdmin
  */
 export async function GET(request) {
     try {
-        // Vérifier l'authentification
-        const cookieStore = await cookies();
-        const session = cookieStore.get("edt_session")?.value;
-
-        if (!session) {
+        // Vérifier l'authentification et le rôle superAdmin (double vérification)
+        const authResult = await requireSuperAdmin();
+        
+        if (authResult.error) {
+            console.warn(`${LOG_PREFIX} Accès refusé: ${authResult.error}`);
             return NextResponse.json(
-                { error: "Non authentifié" },
-                { status: 401 }
-            );
-        }
-
-        const user = verifySessionToken(session);
-        if (!user) {
-            return NextResponse.json(
-                { error: "Session invalide" },
-                { status: 401 }
+                { error: authResult.error },
+                { status: authResult.status }
             );
         }
 

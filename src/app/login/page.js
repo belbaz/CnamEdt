@@ -3,9 +3,22 @@ export const metadata = {
     description: "Accédez à votre espace utilisateur pour gérer votre emploi du temps EICNAM.",
 };
 
+import { Suspense } from "react";
 import LoginForm from "./LoginForm";
 
+function LoginFormFallback() {
+    return (
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+            <p>Chargement...</p>
+        </div>
+    );
+}
+
 export default function LoginPage() {
-    return <LoginForm />;
+    return (
+        <Suspense fallback={<LoginFormFallback />}>
+            <LoginForm />
+        </Suspense>
+    );
 }
 

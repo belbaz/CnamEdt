@@ -474,7 +474,6 @@
     .vertical-day-header {
         padding: 0.5rem 0;
         border-radius: 10px;
-        width: auto;
         flex-shrink: 0;
     }
 

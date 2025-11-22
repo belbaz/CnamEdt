@@ -134,8 +134,16 @@ export default function PageHeader({
 
                     {/* Salutation utilisateur */}
                     {userInfo && userInfo.name && (
-                        <div className="userInfo">
+                        <div 
+                            className="userInfo"
+                            onClick={() => window.location.href = '/info'}
+                            style={{ cursor: 'pointer' }}
+                            title="Voir mes informations"
+                        >
                             Bonjour {userInfo.lastName} {userInfo.name || ""}
+                            {userInfo.role && (
+                                <span className="userRoleLabel">({userInfo.role})</span>
+                            )}
                         </div>
                     )}
                 </div>

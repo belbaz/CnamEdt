@@ -1,4 +1,3 @@
-// ---- src/app/api/user/route.js ----
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/sessionToken";
@@ -7,12 +6,12 @@ import { getSupabaseServerClient } from "@/lib/supabaseServer";
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const LOG_PREFIX = "[API user]";
+const LOG_PREFIX = "[API user/role]";
 
 /**
- * GET /api/user
- * Récupère les informations de l'utilisateur connecté
- * Le rôle est toujours récupéré depuis la base de données pour refléter les changements en temps réel
+ * GET /api/user/role
+ * Retourne le rôle de l'utilisateur connecté depuis la base de données, ou null si non connecté
+ * Le rôle est toujours récupéré depuis la DB pour refléter les changements en temps réel
  */
 export async function GET() {
     try {
@@ -21,8 +20,8 @@ export async function GET() {
 
         if (!session) {
             return NextResponse.json(
-                { error: "Non authentifié" },
-                { status: 401 }
+                { role: null, authenticated: false },
+                { status: 200 }
             );
         }
 
@@ -30,8 +29,8 @@ export async function GET() {
 
         if (!user || !user.sub) {
             return NextResponse.json(
-                { error: "Session invalide" },
-                { status: 401 }
+                { role: null, authenticated: false },
+                { status: 200 }
             );
         }
 
@@ -39,49 +38,39 @@ export async function GET() {
         const supabase = getSupabaseServerClient();
         if (!supabase) {
             console.error(`${LOG_PREFIX} Client Supabase introuvable`);
-            // En cas d'erreur DB, retourner quand même les infos du token (fallback)
+            // En cas d'erreur DB, retourner le rôle du token (fallback)
             return NextResponse.json({
-                id: user.sub,
-                email: user.email,
-                name: user.name,
-                lastName: user.lastName,
                 role: user.role,
+                authenticated: true
             });
         }
 
         const { data: dbUser, error: dbError } = await supabase
             .from('edt_user')
-            .select('id, email, role, name, last_name')
+            .select('role')
             .eq('id', user.sub)
             .maybeSingle();
 
         if (dbError) {
             console.error(`${LOG_PREFIX} Erreur récupération DB:`, dbError);
-            // En cas d'erreur DB, retourner quand même les infos du token (fallback)
+            // En cas d'erreur DB, retourner le rôle du token (fallback)
             return NextResponse.json({
-                id: user.sub,
-                email: user.email,
-                name: user.name,
-                lastName: user.lastName,
                 role: user.role,
+                authenticated: true
             });
         }
 
-        // Utiliser les données de la DB si disponibles, sinon fallback sur le token
+        // Retourner le rôle depuis la DB (toujours à jour)
         return NextResponse.json({
-            id: dbUser?.id || user.sub,
-            email: dbUser?.email || user.email,
-            name: dbUser?.name || user.name,
-            lastName: dbUser?.last_name || user.lastName,
-            role: dbUser?.role || user.role, // Rôle depuis la DB (toujours à jour)
+            role: dbUser?.role || user.role,
+            authenticated: true
         });
 
     } catch (error) {
         console.error(`${LOG_PREFIX} Erreur inattendue:`, error);
         return NextResponse.json(
-            { error: "Erreur serveur" },
+            { role: null, authenticated: false, error: "Erreur serveur" },
             { status: 500 }
         );
     }
 }
-

@@ -25,12 +25,17 @@ export default function EventModal({
     courseNotes,
     notesAuthenticated,
     refreshNotes,
-    devMode
+    devMode,
+    userRole = null
 }) {
     const [editingNoteEntries, setEditingNoteEntries] = useState([]);
     const [originalNoteEntries, setOriginalNoteEntries] = useState([]);
     const [savingNote, setSavingNote] = useState(false);
     const [isModalEditingNotes, setIsModalEditingNotes] = useState(false);
+    const [entryLabels, setEntryLabels] = useState({}); // Labels par note : { "0": ["Contrôle"], "1": ["Devoir"] }
+    const [originalEntryLabels, setOriginalEntryLabels] = useState({}); // Labels originaux pour détecter les modifications
+    const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
+    const [newLabelValue, setNewLabelValue] = useState(""); // Valeur du nouveau label
 
     const extractNoteEntries = (record) => {
         if (!record) return [];
@@ -47,11 +52,20 @@ export default function EventModal({
             setEditingNoteEntries(entries.length ? [...entries] : []);
             setOriginalNoteEntries(entries);
             setIsModalEditingNotes(false);
+            
+            // Charger les labels par note
+            const entryLabelsData = courseNote?.entry_labels || {};
+            setEntryLabels({ ...entryLabelsData });
+            setOriginalEntryLabels({ ...entryLabelsData });
         } else {
             setEditingNoteEntries([]);
             setOriginalNoteEntries([]);
             setIsModalEditingNotes(false);
+            setEntryLabels({});
+            setOriginalEntryLabels({});
         }
+        setShowLabelInputForEntry(null);
+        setNewLabelValue("");
     }, [selectedEvent, courseNotes]);
 
     // Fermer la modale avec la touche Échap
@@ -73,7 +87,15 @@ export default function EventModal({
     const hoursStats = getSubjectHoursStats(matiere, allEvents, selectedEvent);
 
     // Gestion des notes
-    const modalHasChanges = !areNoteEntriesEqual(editingNoteEntries, originalNoteEntries);
+    // Vérifier si les entrées de notes ont changé
+    const entriesChanged = !areNoteEntriesEqual(editingNoteEntries, originalNoteEntries);
+    
+    // Vérifier si les labels ont changé
+    const labelsChanged = JSON.stringify(entryLabels) !== JSON.stringify(originalEntryLabels);
+    
+    // Il y a des modifications si les entrées OU les labels ont changé
+    const modalHasChanges = entriesChanged || labelsChanged;
+    
     const sanitizedModalEntries = sanitizeNoteEntries(editingNoteEntries);
     const savedModalEntries = sanitizeNoteEntries(originalNoteEntries);
 
@@ -86,6 +108,10 @@ export default function EventModal({
     };
 
     const handleAddEntry = () => {
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
         if (!isModalEditingNotes) {
             setIsModalEditingNotes(true);
         }
@@ -97,6 +123,10 @@ export default function EventModal({
     };
 
     const handleStartEditing = () => {
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
         setIsModalEditingNotes(true);
         if (editingNoteEntries.length === 0) {
             setEditingNoteEntries([""]);
@@ -105,11 +135,104 @@ export default function EventModal({
 
     const handleCancelEditing = () => {
         setEditingNoteEntries(originalNoteEntries);
+        setEntryLabels(originalEntryLabels);
         setIsModalEditingNotes(false);
+        setShowLabelInputForEntry(null);
+        setNewLabelValue("");
+    };
+
+    // Labels prédéfinis avec leurs couleurs
+    const predefinedLabels = [
+        { name: "Contrôle", color: "#ef4444" }, // Rouge
+        { name: "Devoir", color: "#f59e0b" }, // Orange
+        { name: "Examens", color: "#a855f7" }, // Violet
+        { name: "Lien", color: "#3b82f6" }, // Bleu
+        { name: "Information", color: "#10b981" }, // Vert
+    ];
+
+    // Fonction pour générer une couleur à partir d'un label
+    const getLabelColor = (labelName) => {
+        // Chercher dans les labels prédéfinis
+        const predefined = predefinedLabels.find(l => l.name === labelName);
+        if (predefined) {
+            return predefined.color;
+        }
+        
+        // Générer une couleur basée sur le hash du nom du label
+        let hash = 0;
+        for (let i = 0; i < labelName.length; i++) {
+            hash = labelName.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Générer une couleur HSL avec une saturation et luminosité fixes pour avoir des couleurs vives
+        const hue = Math.abs(hash) % 360;
+        return `hsl(${hue}, 65%, 50%)`;
+    };
+
+    // Gérer les labels par note
+    const handleAddLabel = (entryIndex, label) => {
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
+        
+        // Activer le mode édition si ce n'est pas déjà le cas
+        if (!isModalEditingNotes) {
+            setIsModalEditingNotes(true);
+        }
+        
+        const labelName = typeof label === 'string' ? label : label.name;
+        if (!labelName.trim()) return;
+        
+        const indexStr = String(entryIndex);
+        setEntryLabels(prev => {
+            const currentLabels = prev[indexStr] || [];
+            if (!currentLabels.includes(labelName.trim())) {
+                return {
+                    ...prev,
+                    [indexStr]: [...currentLabels, labelName.trim()]
+                };
+            }
+            return prev;
+        });
+    };
+
+    const handleRemoveLabel = (entryIndex, labelToRemove) => {
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
+        
+        // Activer le mode édition si ce n'est pas déjà le cas
+        if (!isModalEditingNotes) {
+            setIsModalEditingNotes(true);
+        }
+        
+        const indexStr = String(entryIndex);
+        setEntryLabels(prev => {
+            const currentLabels = prev[indexStr] || [];
+            return {
+                ...prev,
+                [indexStr]: currentLabels.filter(label => label !== labelToRemove)
+            };
+        });
+    };
+
+    const handleCreateCustomLabel = (entryIndex) => {
+        if (newLabelValue.trim()) {
+            handleAddLabel(entryIndex, newLabelValue.trim());
+            setNewLabelValue("");
+            setShowLabelInputForEntry(null);
+        }
     };
 
     const handleSaveNote = async () => {
         if (!selectedEvent || !selectedEvent.uid) return;
+
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
 
         try {
             setSavingNote(true);
@@ -121,6 +244,7 @@ export default function EventModal({
                 body: JSON.stringify({
                     course_uid: selectedEvent.uid,
                     notes: sanitizedModalEntries,
+                    entry_labels: entryLabels,
                 }),
             });
 
@@ -129,7 +253,11 @@ export default function EventModal({
                 throw new Error(data.error || "Erreur lors de la sauvegarde");
             }
 
+            const data = await res.json();
             setOriginalNoteEntries(sanitizedModalEntries);
+            const entryLabelsData = data.note?.entry_labels || {};
+            setOriginalEntryLabels(entryLabelsData);
+            setEntryLabels(entryLabelsData);
             setIsModalEditingNotes(false);
             if (refreshNotes) {
                 refreshNotes();
@@ -352,6 +480,8 @@ export default function EventModal({
                                         <h3>Notes de l&apos;agenda</h3>
                                     </div>
                                 </div>
+                                
+                                
                                 {!notesAuthenticated ? (
                                     // Mode lecture seule pour utilisateurs non connectés
                                     <div className="modal-note-view">
@@ -391,19 +521,44 @@ export default function EventModal({
 
                                                 return (
                                                     <div>
-                                                        {savedModalEntries.map((entry, index) => (
-                                                            <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                                <div className="modal-note-view-card">
-                                                                    <p className="modal-note-view-text">{entry}</p>
-                                                                </div>
-                                                                {lastPerson && (
-                                                                    <div className="modal-note-last-person">
-                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                        {savedModalEntries.map((entry, index) => {
+                                                            const courseNote = courseNotes?.get(selectedEvent.uid);
+                                                            const entryLabelsForIndex = (courseNote?.entry_labels && courseNote.entry_labels[String(index)]) || [];
+                                                            return (
+                                                                <div key={`${selectedEvent.uid}-view-${index}`}>
+                                                                    {/* Labels pour cette note */}
+                                                                    {entryLabelsForIndex.length > 0 && (
+                                                                        <div className="modal-note-labels-inline">
+                                                                            {entryLabelsForIndex.map((label, idx) => {
+                                                                                const labelColor = getLabelColor(label);
+                                                                                return (
+                                                                                    <span 
+                                                                                        key={idx} 
+                                                                                        className="modal-label-inline"
+                                                                                        style={{ 
+                                                                                            backgroundColor: `${labelColor}15`,
+                                                                                            borderColor: labelColor,
+                                                                                            color: labelColor
+                                                                                        }}
+                                                                                    >
+                                                                                        {label}
+                                                                                    </span>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="modal-note-view-card">
+                                                                        <p className="modal-note-view-text">{entry}</p>
                                                                     </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
+                                                                    {lastPerson && (
+                                                                        <div className="modal-note-last-person">
+                                                                            {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                            {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
                                                         <p
                                                             className="modal-note-view-text"
                                                             style={{ fontSize: '0.9em', color: '#666', marginTop: '1em', fontStyle: 'italic' }}
@@ -426,10 +581,15 @@ export default function EventModal({
                                             type="button"
                                             className="modal-note-add"
                                             onClick={() => {
+                                                if (userRole === 'visiteur') {
+                                                    alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+                                                    return;
+                                                }
                                                 setIsModalEditingNotes(true);
                                                 setEditingNoteEntries([""]);
                                             }}
-                                            disabled={savingNote}
+                                            disabled={savingNote || userRole === 'visiteur'}
+                                            title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                         >
                                             + Ajouter une note
                                         </button>
@@ -444,41 +604,173 @@ export default function EventModal({
                                                     type="button"
                                                     className="modal-note-add"
                                                     onClick={handleAddEntry}
-                                                    disabled={savingNote}
+                                                    disabled={savingNote || userRole === 'visiteur'}
+                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                                 >
                                                     + Ajouter une note
                                                 </button>
                                             </div>
                                         ) : (
                                             <>
-                                                {editingNoteEntries.map((entry, index) => (
-                                                    <div key={`${selectedEvent.uid}-${index}`}
-                                                        className="modal-note-entry">
-                                                        <div className="modal-note-header">
-                                                            <span>Note {index + 1}</span>
-                                                            <button
-                                                                type="button"
-                                                                className="modal-note-remove"
-                                                                onClick={() => handleRemoveEntry(index)}
-                                                                disabled={savingNote}
-                                                            >
-                                                                Supprimer
-                                                            </button>
+                                                {editingNoteEntries.map((entry, index) => {
+                                                    const entryLabelsForIndex = entryLabels[String(index)] || [];
+                                                    return (
+                                                        <div key={`${selectedEvent.uid}-${index}`}
+                                                            className="modal-note-entry">
+                                                            <div className="modal-note-header">
+                                                                <span>Note {index + 1}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    className="modal-note-remove"
+                                                                    onClick={() => handleRemoveEntry(index)}
+                                                                    disabled={savingNote || userRole === 'visiteur'}
+                                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : ""}
+                                                                >
+                                                                    Supprimer
+                                                                </button>
+                                                            </div>
+                                                            
+                                                            {/* Labels pour ce paragraphe */}
+                                                            <div className="modal-labels-section">
+                                                                <div className="modal-labels-header">
+                                                                    <span className="modal-labels-title">Labels</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (userRole === 'visiteur') {
+                                                                                alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+                                                                                return;
+                                                                            }
+                                                                            if (!isModalEditingNotes) {
+                                                                                setIsModalEditingNotes(true);
+                                                                            }
+                                                                            setShowLabelInputForEntry(showLabelInputForEntry === index ? null : index);
+                                                                        }}
+                                                                        className="modal-add-label-button"
+                                                                        title="Créer un label personnalisé"
+                                                                        disabled={userRole === 'visiteur'}
+                                                                    >
+                                                                        + Nouveau
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {/* Labels existants pour cette note */}
+                                                                <div className="modal-labels-list">
+                                                                    {entryLabelsForIndex.length > 0 ? (
+                                                                        entryLabelsForIndex.map((label, idx) => {
+                                                                            const labelColor = getLabelColor(label);
+                                                                            return (
+                                                                                <span 
+                                                                                    key={idx} 
+                                                                                    className="modal-label"
+                                                                                    style={{ 
+                                                                                        backgroundColor: `${labelColor}15`,
+                                                                                        borderColor: labelColor,
+                                                                                        color: labelColor
+                                                                                    }}
+                                                                                >
+                                                                                    {label}
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => handleRemoveLabel(index, label)}
+                                                                                        className="modal-remove-label-button"
+                                                                                        title="Supprimer ce label"
+                                                                                        style={{ color: labelColor }}
+                                                                                        disabled={userRole === 'visiteur'}
+                                                                                    >
+                                                                                        ×
+                                                                                    </button>
+                                                                                </span>
+                                                                            );
+                                                                        })
+                                                                    ) : (
+                                                                        <span className="modal-no-labels-text">
+                                                                            {isModalEditingNotes ? "Aucun label pour cette note." : "Aucun label"}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Boutons des labels prédéfinis */}
+                                                                <div className="modal-predefined-labels">
+                                                                    {predefinedLabels.map((labelObj) => (
+                                                                        <button
+                                                                            key={labelObj.name}
+                                                                            type="button"
+                                                                            onClick={() => handleAddLabel(index, labelObj.name)}
+                                                                            disabled={entryLabelsForIndex.includes(labelObj.name) || userRole === 'visiteur'}
+                                                                            className={`modal-predefined-label-button ${entryLabelsForIndex.includes(labelObj.name) ? 'modal-predefined-label-button-disabled' : ''}`}
+                                                                            style={!entryLabelsForIndex.includes(labelObj.name) ? {
+                                                                                borderColor: labelObj.color,
+                                                                                color: labelObj.color
+                                                                            } : {
+                                                                                backgroundColor: `${labelObj.color}15`,
+                                                                                borderColor: labelObj.color,
+                                                                                color: labelObj.color
+                                                                            }}
+                                                                        >
+                                                                            {labelObj.name}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Input pour créer un label personnalisé */}
+                                                                {showLabelInputForEntry === index && (
+                                                                    <div className="modal-custom-label-input">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={newLabelValue}
+                                                                            onChange={(e) => setNewLabelValue(e.target.value)}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter') {
+                                                                                    handleCreateCustomLabel(index);
+                                                                                } else if (e.key === 'Escape') {
+                                                                                    setShowLabelInputForEntry(null);
+                                                                                    setNewLabelValue("");
+                                                                                }
+                                                                            }}
+                                                                            placeholder="Nom du label..."
+                                                                            className="modal-custom-label-input-field"
+                                                                            autoFocus
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleCreateCustomLabel(index)}
+                                                                            disabled={!newLabelValue.trim() || entryLabelsForIndex.includes(newLabelValue.trim())}
+                                                                            className="modal-custom-label-add-button"
+                                                                        >
+                                                                            Ajouter
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setShowLabelInputForEntry(null);
+                                                                                setNewLabelValue("");
+                                                                            }}
+                                                                            className="modal-custom-label-cancel-button"
+                                                                        >
+                                                                            Annuler
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            <textarea
+                                                                value={entry}
+                                                                onChange={(e) => handleEntryChange(index, e.target.value)}
+                                                                className="modal-note-textarea"
+                                                                placeholder={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : "Ajoutez vos notes..."}
+                                                                rows={3}
+                                                                disabled={userRole === 'visiteur'}
+                                                            />
                                                         </div>
-                                                        <textarea
-                                                            value={entry}
-                                                            onChange={(e) => handleEntryChange(index, e.target.value)}
-                                                            className="modal-note-textarea"
-                                                            placeholder="Ajoutez vos notes..."
-                                                            rows={3}
-                                                        />
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                                 <button
                                                     type="button"
                                                     className="modal-note-add secondary"
                                                     onClick={handleAddEntry}
-                                                    disabled={savingNote}
+                                                    disabled={savingNote || userRole === 'visiteur'}
+                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                                 >
                                                     + Ajouter une note
                                                 </button>
@@ -511,19 +803,43 @@ export default function EventModal({
 
                                             return (
                                                 <div>
-                                                    {savedModalEntries.map((entry, index) => (
-                                                        <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                            <div className="modal-note-view-card">
-                                                                <p className="modal-note-view-text">{entry}</p>
-                                                            </div>
-                                                            {lastPerson && (
-                                                                <div className="modal-note-last-person">
-                                                                    {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                    {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                    {savedModalEntries.map((entry, index) => {
+                                                        const entryLabelsForIndex = (courseNote?.entry_labels && courseNote.entry_labels[String(index)]) || [];
+                                                        return (
+                                                            <div key={`${selectedEvent.uid}-view-${index}`}>
+                                                                {/* Labels pour cette note */}
+                                                                {entryLabelsForIndex.length > 0 && (
+                                                                    <div className="modal-note-labels-inline">
+                                                                        {entryLabelsForIndex.map((label, idx) => {
+                                                                            const labelColor = getLabelColor(label);
+                                                                            return (
+                                                                                <span 
+                                                                                    key={idx} 
+                                                                                    className="modal-label-inline"
+                                                                                    style={{ 
+                                                                                        backgroundColor: `${labelColor}15`,
+                                                                                        borderColor: labelColor,
+                                                                                        color: labelColor
+                                                                                    }}
+                                                                                >
+                                                                                    {label}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                <div className="modal-note-view-card">
+                                                                    <p className="modal-note-view-text">{entry}</p>
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                                {lastPerson && (
+                                                                    <div className="modal-note-last-person">
+                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             );
                                         })()}
@@ -545,8 +861,9 @@ export default function EventModal({
                                                 {modalHasChanges && (
                                                     <button
                                                         onClick={handleSaveNote}
-                                                        disabled={savingNote}
+                                                        disabled={savingNote || userRole === 'visiteur'}
                                                         className="modal-note-save"
+                                                        title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer ou modifier de notes" : ""}
                                                     >
                                                         {savingNote
                                                             ? "Enregistrement..."
@@ -558,14 +875,23 @@ export default function EventModal({
                                             </div>
                                         ) : savedModalEntries.length > 0 ? (
                                             <div className="modal-note-view-actions">
-                                                <button
-                                                    type="button"
-                                                    className="modal-note-add"
-                                                    onClick={handleStartEditing}
-                                                    disabled={savingNote}
-                                                >
-                                                    ✏️ Modifier
-                                                </button>
+                                                {userRole === 'visiteur' ? (
+                                                    <div className="modal-visitor-warning">
+                                                        <span className="modal-visitor-warning-icon">ℹ️</span>
+                                                        <span className="modal-visitor-warning-text">
+                                                            En tant que visiteur, vous ne pouvez pas modifier de notes
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        className="modal-note-add"
+                                                        onClick={handleStartEditing}
+                                                        disabled={savingNote}
+                                                    >
+                                                        ✏️ Modifier
+                                                    </button>
+                                                )}
                                             </div>
                                         ) : null}
                                     </>

@@ -4,29 +4,72 @@
 .page {
     min-height: 100vh;
     background: var(--bg-gradient);
-    padding: clamp(1rem, 3vw, 2rem);
     color: var(--text-primary);
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
+    padding: 1rem 0.75rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+}
+
+@media (min-width: 640px) {
+    .page {
+        padding: 1.5rem 1.25rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .page {
+        padding: 2rem 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .page {
+        padding: 2.5rem 2.5rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .page {
+        padding: 3rem 3rem;
+    }
 }
 
 .pageCentered {
     min-height: 100vh;
     background: var(--bg-gradient);
-    padding: clamp(1rem, 3vw, 2rem);
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.card p {
+    margin: 0;
+    font-size: 1rem;
 }
 
 .container {
-    max-width: 1400px;
+    max-width: min(1400px, 100%);
     /* Match main page width */
     margin: 0 auto;
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    box-sizing: border-box;
 }
 
 /* =========================================
@@ -42,13 +85,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
 
+@media (min-width: 640px) {
+    .headerTop {
+        gap: 1rem;
+    }
+}
+
 .backIconButton {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border-radius: 12px;
     border: 1px solid var(--border-light);
     background: var(--bg-secondary);
@@ -57,9 +106,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     transition: all 0.2s ease;
     box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .backIconButton {
+        width: 42px;
+        height: 42px;
+        font-size: 1.2rem;
+    }
 }
 
 .backIconButton:hover {
@@ -93,13 +151,22 @@
 .logoutButton {
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 8px;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
     background: rgba(239, 68, 68, 0.05);
     color: #ef4444;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .logoutButton {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
 }
 
 .logoutButton:hover {
@@ -129,13 +196,19 @@
 .tabsLayout {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .tabsLayout {
+        gap: 1.5rem;
+    }
 }
 
 /* Tabs Navigation */
 .tabNavigation {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     border-bottom: 1px solid var(--border-light);
     padding-bottom: 1px;
     overflow-x: auto;
@@ -143,6 +216,13 @@
     /* Firefox */
     -ms-overflow-style: none;
     /* IE 10+ */
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 640px) {
+    .tabNavigation {
+        gap: 1rem;
+    }
 }
 
 .tabNavigation::-webkit-scrollbar {
@@ -154,7 +234,7 @@
     background: transparent;
     border: none;
     padding: 0.75rem 0.5rem;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
@@ -165,6 +245,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
+    min-width: fit-content;
+}
+
+@media (min-width: 640px) {
+    .tabButton {
+        font-size: 1rem;
+    }
 }
 
 .tabButton strong {
@@ -209,12 +296,19 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     position: relative;
     overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .publicIntroCard {
+        padding: 1.5rem;
+        gap: 1.5rem;
+    }
 }
 
 @media (min-width: 768px) {
@@ -249,7 +343,14 @@
 
 .publicStats {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+    .publicStats {
+        gap: 2rem;
+    }
 }
 
 .publicStatsValue {
@@ -272,19 +373,38 @@
 
 .publicNotesGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .publicNotesGrid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .publicNotesGrid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
 }
 
 .publicNoteCard {
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (min-width: 640px) {
+    .publicNoteCard {
+        padding: 1.5rem;
+    }
 }
 
 .publicNoteCard:hover {
@@ -293,11 +413,53 @@
     border-color: var(--primary-color);
 }
 
+.publicNoteCardPast {
+    opacity: 0.5;
+    filter: grayscale(0.3);
+}
+
+.publicNoteCardPast:hover {
+    opacity: 0.7;
+    filter: grayscale(0.1);
+}
+
+/* Séparateur entre notes passées et futures */
+.publicNotesSeparator {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0 1rem 0;
+}
+
+.publicNotesSeparatorLine {
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+}
+
+.publicNotesSeparatorText {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
 .publicNoteHeader {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+    .publicNoteHeader {
+        gap: 1rem;
+        flex-wrap: nowrap;
+    }
 }
 
 .publicNoteHeader h3 {
@@ -339,6 +501,27 @@
     gap: 0.35rem;
 }
 
+.publicNoteLabels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.publicNoteLabel {
+    display: inline-block;
+    background: var(--bg-primary);
+    border: 1px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    transition: all 0.2s;
+}
+
 .publicNoteEntries {
     display: flex;
     flex-direction: column;
@@ -355,11 +538,106 @@
     border: 1px solid var(--border-light);
 }
 
+.publicNotesFilter {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.publicNotesFilters {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.publicNotesFilter {
+    display: flex;
+    justify-content: center;
+}
+
+.showOldNotesButton {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.showOldNotesButton:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Filtre par label */
+.labelFilterSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.labelFilterTitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.labelFilterButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.labelFilterButton {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.labelFilterButton:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.labelFilterButtonActive {
+    color: #fff;
+}
+
+.labelFilterButtonActive:hover {
+    filter: brightness(110%);
+}
+
+@media (min-width: 640px) {
+    .showOldNotesButton {
+        padding: 0.85rem 2rem;
+        font-size: 0.95rem;
+    }
+}
+
 .publicEmptyState {
     background: var(--bg-secondary);
     border: 2px dashed var(--border-light);
     border-radius: 16px;
-    padding: 4rem 2rem;
+    padding: 3rem 1.5rem;
     text-align: center;
     color: var(--text-secondary);
     display: flex;
@@ -368,19 +646,37 @@
     gap: 1rem;
 }
 
+@media (min-width: 640px) {
+    .publicEmptyState {
+        padding: 4rem 2rem;
+    }
+}
+
 /* =========================================
    PRIVATE TAB (AGENDA)
    ========================================= */
 .privateContainer {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .privateContainer {
+        gap: 2rem;
+    }
+}
+
+@media (min-width: 900px) {
+    .privateContainer {
+        grid-template-columns: 320px 1fr;
+        align-items: start;
+    }
 }
 
 @media (min-width: 1024px) {
     .privateContainer {
         grid-template-columns: 350px 1fr;
-        align-items: start;
     }
 }
 
@@ -388,7 +684,13 @@
 .agendaSidebar {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .agendaSidebar {
+        gap: 2rem;
+    }
 }
 
 /* Date Selector */
@@ -397,17 +699,32 @@
     align-items: center;
     justify-content: space-between;
     background: var(--bg-secondary);
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 16px;
     border: 1px solid var(--border-light);
     position: relative;
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .dateSelector {
+        padding: 1rem;
+        gap: 0;
+    }
 }
 
 .dateVisual {
     flex: 1;
     text-align: center;
     cursor: pointer;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
+    min-width: 0;
+}
+
+@media (min-width: 640px) {
+    .dateVisual {
+        padding: 0 1rem;
+    }
 }
 
 .dateWeekday {
@@ -421,11 +738,17 @@
 
 .dateDay {
     display: block;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1.1;
     margin: 0.25rem 0;
+}
+
+@media (min-width: 640px) {
+    .dateDay {
+        font-size: 2rem;
+    }
 }
 
 .dateMonth {
@@ -436,18 +759,27 @@
 }
 
 .datePickerButton {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     border: 1px solid var(--border-light);
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .datePickerButton {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
 }
 
 .datePickerButton:hover {
@@ -460,11 +792,11 @@
 .calendarPopover {
     position: absolute;
     top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
     margin-top: 10px;
-    width: 350px;
-    max-width: 90vw;
+    width: 100%;
+    max-width: 100%;
     background: var(--bg-primary);
     border: 1px solid var(--border-light);
     border-radius: 16px;
@@ -472,6 +804,17 @@
     box-shadow: var(--shadow-lg);
     z-index: 50;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .calendarPopover {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 350px;
+        max-width: calc(100vw - 4rem);
+    }
 }
 
 .calendarPopoverHeader {
@@ -479,13 +822,36 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+    .calendarPopoverHeader {
+        flex-wrap: nowrap;
+    }
 }
 
 .calendarMonthLabel {
     font-weight: 700;
     color: var(--text-primary);
     text-transform: capitalize;
-    font-size: 1.1rem;
+    font-size: 1rem;
+    min-width: 0;
+    flex: 1;
+}
+
+@media (min-width: 640px) {
+    .calendarMonthLabel {
+        font-size: 1.1rem;
+        flex: none;
+    }
+}
+
+.calendarHeaderButtons {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 .calendarHeaderButtons button {
@@ -496,11 +862,21 @@
     border-radius: 8px;
     cursor: pointer;
     color: var(--text-primary);
-    margin-left: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .calendarHeaderButtons {
+        gap: 6px;
+    }
+    
+    .calendarHeaderButtons button {
+        margin-left: 0;
+    }
 }
 
 .calendarHeaderButtons button:hover {
@@ -512,6 +888,7 @@
     display: grid;
     gap: 2px;
     margin-bottom: 0.75rem;
+    min-width: 0;
 }
 
 .calendarWeekday {
@@ -531,9 +908,36 @@
     color: var(--text-primary);
     cursor: pointer;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 2px;
     transition: all 0.2s;
+    position: relative;
+    padding-top: 4px;
+    min-width: 0;
+}
+
+.calendarDayNumber {
+    display: block;
+    line-height: 1;
+}
+
+.calendarDayNoteIndicator {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background: #ef4444;
+    border-radius: 50%;
+    display: block;
+    box-shadow: 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.calendarDayHasNotes .calendarDayNumber {
+    font-weight: 600;
 }
 
 .calendarDay:hover {
@@ -558,10 +962,16 @@
 
 .calendarFooter {
     border-top: 1px solid var(--border-light);
-    padding-top: 1rem;
+    padding-top: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .calendarFooter {
+        padding-top: 1rem;
+    }
 }
 
 .calendarFilter {
@@ -575,12 +985,20 @@
     flex: 1;
     border: none;
     background: transparent;
-    padding: 6px;
-    font-size: 0.8rem;
+    padding: 6px 8px;
+    font-size: 0.75rem;
     border-radius: 6px;
     cursor: pointer;
     color: var(--text-secondary);
     transition: all 0.2s;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .calendarFilterButton {
+        padding: 6px;
+        font-size: 0.8rem;
+    }
 }
 
 .calendarFilterButtonActive {
@@ -597,6 +1015,19 @@
     gap: 1rem;
 }
 
+.courseButtonWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.courseButtonWrapperExpanded {
+    background: var(--bg-secondary);
+    border: 1px solid var(--primary-color);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
 .sectionTitle {
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -610,7 +1041,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 16px;
-    padding: 1.25rem;
+    padding: 1rem;
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -618,6 +1049,21 @@
     align-items: center;
     position: relative;
     overflow: hidden;
+    width: 100%;
+}
+
+.courseButtonExpanded {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    margin-bottom: 0;
+}
+
+@media (min-width: 640px) {
+    .courseButton {
+        padding: 1.25rem;
+    }
 }
 
 .courseButton:hover {
@@ -643,6 +1089,28 @@
     background: var(--primary-color);
 }
 
+.courseButtonHasNote {
+    border-left: 3px solid #ef4444;
+}
+
+.courseButtonHasNote.courseButtonSelected {
+    border-left-color: var(--primary-color);
+}
+
+.courseButtonNoteBadge {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 8px;
+    padding: 0.3rem 0.5rem;
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    line-height: 1;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
+}
+
 .courseButtonContent {
     display: flex;
     justify-content: space-between;
@@ -655,6 +1123,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.courseButtonHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .courseButtonTime {
@@ -668,9 +1145,17 @@
 }
 
 .courseButtonTitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+@media (min-width: 640px) {
+    .courseButtonTitle {
+        font-size: 1rem;
+    }
 }
 
 .courseButtonLocation {
@@ -679,12 +1164,20 @@
 }
 
 .noCourseAlert {
-    padding: 3rem 1rem;
+    padding: 2rem 1rem;
     text-align: center;
     background: var(--bg-secondary);
     border: 1px dashed var(--border-light);
     border-radius: 16px;
     color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+@media (min-width: 640px) {
+    .noCourseAlert {
+        padding: 3rem 1rem;
+        font-size: 1rem;
+    }
 }
 
 /* Right Column: Note Editor */
@@ -692,10 +1185,50 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 20px;
-    padding: 2rem;
-    min-height: 500px;
+    padding: 1.25rem;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
+}
+
+/* Note Panel sur mobile (inséré dans le cours sélectionné) */
+.notePanelMobile {
+    background: var(--bg-primary);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid var(--border-light);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+@media (min-width: 640px) {
+    .notePanel {
+        padding: 1.5rem;
+        min-height: 500px;
+    }
+}
+
+@media (min-width: 900px) {
+    .notePanel {
+        padding: 2rem;
+    }
 }
 
 @media (min-width: 1024px) {
@@ -723,11 +1256,204 @@
     margin-bottom: 1.5rem;
 }
 
+/* Section des labels */
+.noteLabelsSection {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.noteLabelsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.noteLabelsTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.addLabelButton {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.addLabelButton:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.noteLabelsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    min-height: 1.5rem;
+}
+
+.noteLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.removeLabelButton {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.removeLabelButton:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.noLabelsText {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.predefinedLabels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.predefinedLabelButton {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.predefinedLabelButton:hover:not(.predefinedLabelButtonDisabled) {
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.predefinedLabelButtonDisabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--bg-primary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.customLabelInput {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.customLabelInputField {
+    flex: 1;
+    min-width: 150px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+
+.customLabelInputField:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.customLabelAddButton,
+.customLabelCancelButton {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.customLabelAddButton {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.customLabelAddButton:hover:not(:disabled) {
+    filter: brightness(110%);
+    transform: translateY(-1px);
+}
+
+.customLabelAddButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.customLabelCancelButton {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+}
+
+.customLabelCancelButton:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
 .noteTitle {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     color: var(--text-primary);
     margin: 0 0 0.5rem 0;
     font-weight: 800;
+    word-wrap: break-word;
+}
+
+@media (min-width: 640px) {
+    .noteTitle {
+        font-size: 1.5rem;
+    }
 }
 
 .noteTime {
@@ -826,6 +1552,12 @@
     text-align: right;
     margin-top: 0.75rem;
     font-style: italic;
+    white-space: normal;
+    word-spacing: normal;
+}
+
+.noteLastPerson span {
+    margin-left: 0;
 }
 
 .noteActions,
@@ -836,20 +1568,59 @@
     flex-wrap: wrap;
 }
 
+.visitorWarning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    width: 100%;
+    color: #92400e;
+    font-size: 0.8rem;
+}
+
+.dark-mode .visitorWarning {
+    background: rgba(146, 64, 14, 0.2);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.visitorWarningIcon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.visitorWarningText {
+    flex: 1;
+    line-height: 1.4;
+}
+
 .noteActions button,
 .noteViewActions button {
     flex: 1;
-    padding: 0.85rem 1.5rem;
+    min-width: 0;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .noteActions button,
+    .noteViewActions button {
+        padding: 0.85rem 1.5rem;
+        font-size: 0.95rem;
+    }
 }
 
 .addNoteButton,
@@ -903,12 +1674,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4rem 2rem;
+    padding: 3rem 1.5rem;
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 20px;
     text-align: center;
     gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .privateLocked {
+        padding: 4rem 2rem;
+    }
 }
 
 .badgeGuest {
@@ -921,24 +1698,86 @@
 }
 
 .errorBox {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.15);
+    border: 2px solid #dc2626;
     color: #dc2626;
-    padding: 1rem;
+    padding: 0.875rem 1rem;
     border-radius: 12px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+    animation: errorSlideIn 0.3s ease-out;
+}
+
+@media (min-width: 640px) {
+    .errorBox {
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+        gap: 1rem;
+    }
+}
+
+@keyframes errorSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.errorContent {
+    display: flex;
     align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.errorIcon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.errorText {
+    flex: 1;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    min-width: 0;
+    word-wrap: break-word;
+}
+
+@media (min-width: 640px) {
+    .errorText {
+        font-size: 0.95rem;
+    }
+}
+
+.errorText strong {
+    font-weight: 600;
 }
 
 .closeError {
-    background: none;
+    background: rgba(239, 68, 68, 0.1);
     border: none;
     color: #dc2626;
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.closeError:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.1);
 }
 
 /* =========================================
@@ -948,32 +1787,38 @@
     display: none;
 }
 
-@media (max-width: 768px) {
-    .page {
-        padding: 1rem 0.75rem;
-    }
-
+@media (max-width: 639px) {
     .container {
-        gap: 1.5rem;
+        gap: 1.25rem;
     }
 
     .header h1 {
         font-size: 1.75rem;
     }
 
+    .headerTop {
+        gap: 0.5rem;
+    }
+
     .tabNavigation {
         justify-content: flex-start;
         padding-bottom: 0.5rem;
+        gap: 0.5rem;
     }
 
     .tabButton {
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         background: var(--bg-secondary);
         border-radius: 99px;
         border: 1px solid var(--border-light);
         flex-direction: row;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .tabButton span {
+        font-size: 0.7rem;
     }
 
     .tabButtonActive {
@@ -991,8 +1836,102 @@
     }
 
     .notePanel {
-        padding: 1.5rem;
+        padding: 1.25rem;
         min-height: auto;
+        border-radius: 16px;
+    }
+
+    .courseButtonWrapperExpanded {
+        border-radius: 12px;
+    }
+
+    .courseButtonExpanded {
+        border-radius: 0;
+    }
+
+    .notePanelMobile {
+        padding: 0.75rem;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .noteLastPerson {
+        text-align: left;
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .publicIntroCard {
+        padding: 1rem;
+    }
+
+    .publicStats {
+        gap: 1rem;
+    }
+
+    .publicStatsValue {
+        font-size: 1.5rem;
+    }
+
+    .dateSelector {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .courseButton {
+        padding: 1rem 0.75rem;
+    }
+
+    .noteActions,
+    .noteViewActions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .noteActions button,
+    .noteViewActions button {
+        width: 100%;
+        flex: none;
+    }
+
+    .calendarPopover {
+        margin-top: 8px;
+        padding: 0.5rem;
+    }
+
+    .calendarGrid {
+        gap: 1px;
+    }
+
+    .calendarDay {
+        height: 32px;
+        font-size: 0.85rem;
+    }
+
+    .courseButtonContent {
+        gap: 0.75rem;
+    }
+
+    .courseButtonTitle {
+        font-size: 0.9rem;
+    }
+
+    .courseButtonLocation {
+        font-size: 0.8rem;
+    }
+
+    .publicNotesGrid {
+        gap: 1rem;
+    }
+
+    .publicNoteCard {
+        padding: 1rem;
+    }
+
+    .tabsLayout {
+        gap: 1.25rem;
+    }
+
+    .container {
+        gap: 1.25rem;
     }
 }
 
@@ -1004,6 +1943,13 @@
     justify-content: center;
     gap: 1rem;
     color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+}
+
+.loadingContainer p {
+    margin: 0;
+    font-size: 1rem;
 }
 
 .loader {

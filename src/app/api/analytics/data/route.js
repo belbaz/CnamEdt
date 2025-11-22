@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getSupabaseServerClient } from '@/lib/supabaseServer';
-import { verifySessionToken } from '@/lib/sessionToken';
+import { requireSuperAdmin } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -10,33 +9,21 @@ const LOG_PREFIX = "[API analytics/data]";
 
 /**
  * GET /api/analytics/data
- * Récupère les données analytics (nécessite une authentification admin)
+ * Récupère les données analytics (nécessite le rôle superAdmin)
  * Query params: limit, offset, order_by, order_direction, filters
  */
 export async function GET(request) {
     try {
-        // Vérifier l'authentification
-        const cookieStore = await cookies();
-        const session = cookieStore.get("edt_session")?.value;
-
-        if (!session) {
+        // Vérifier l'authentification et le rôle superAdmin (double vérification)
+        const authResult = await requireSuperAdmin();
+        
+        if (authResult.error) {
+            console.warn(`${LOG_PREFIX} Accès refusé: ${authResult.error}`);
             return NextResponse.json(
-                { error: "Non authentifié" },
-                { status: 401 }
+                { error: authResult.error },
+                { status: authResult.status }
             );
         }
-
-        const user = verifySessionToken(session);
-        if (!user) {
-            return NextResponse.json(
-                { error: "Session invalide" },
-                { status: 401 }
-            );
-        }
-
-        // Vérifier que l'utilisateur est admin (vous pouvez ajuster selon votre système de rôles)
-        // Pour l'instant, on autorise tous les utilisateurs connectés
-        // Vous pouvez ajouter: if (user.role !== 'admin') return 403;
 
         const supabase = getSupabaseServerClient();
         if (!supabase) {
