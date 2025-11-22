@@ -23,15 +23,16 @@
 
 
 .event-card::before {
+    margin:auto;
     content: '';
     position: absolute;
-    top: 0;
+    top: 1px;
     left: 0;
     right: 0;
-    width: 100%;
-    height: 6px;
+    width: 97%;
+    height: 7px;
     transition: height 0.25s ease;
-    border-radius: 10px 10px 0 0;
+    border-radius: 28px 28px 0 0;
 }
 
 .event-card:hover {
@@ -799,7 +800,7 @@
     transform-origin: top left;
 }
 
-.note-badge-card:hover .note-tooltip,
+.note-badge-card .note-tooltip,
 .note-badge-card:focus-within .note-tooltip {
     opacity: 1;
     transform: translateY(0);
@@ -875,6 +876,7 @@
     font-size: 0.7rem;
     color: var(--text-muted);
     margin-bottom: 0.18rem;
+    margin-top: .1rem;
     display: block;
     white-space: nowrap;
     cursor: pointer;
@@ -1059,7 +1061,14 @@
 
 
     .event-card::before {
-        height: 3px;
+        height: 7px;
+        width: 99%;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .vertical-events-container .event-card::before {
+        height: 6px;
+        width: 97%;
         border-radius: 10px 10px 0 0;
     }
 
@@ -1108,14 +1117,14 @@
     }
 
 
-    .event-card::before {
-        height: 4.5px;
-        border-radius: 10px 10px 0 0;
-        top: -1px;
-        left: -1px;
-        right: -1px;
-        width: calc(100% + 2px);
-    }
+    /*.event-card::before {*/
+    /*    height: 4.5px;*/
+    /*    border-radius: 10px 10px 0 0;*/
+    /*    top: -1px;*/
+    /*    left: -1px;*/
+    /*    right: -1px;*/
+    /*    width: calc(100% + 2px);*/
+    /*}*/
 
     .event-card:hover {
         transform: translateY(-2px);
