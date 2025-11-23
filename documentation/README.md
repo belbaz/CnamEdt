@@ -36,6 +36,7 @@ Ce dossier contient toute la documentation du projet.
 - **[EXPLICATION_FETCH_ICS.md](EXPLICATION_FETCH_ICS.md)** - Fonctionnement de l'API fetch-ics
 - **[SECURITY.md](SECURITY.md)** - Politique de sécurité
 - **[MAP_COORDINATES.md](MAP_COORDINATES.md)** - Gestion des coordonnées des salles sur la carte
+- **[FILES_UPLOAD_GUIDE.md](FILES_UPLOAD_GUIDE.md)** - Guide d'upload de fichiers (Vercel Blob Storage)
 
 ---
 

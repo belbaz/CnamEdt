@@ -8,7 +8,6 @@ export default function HistoPage() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedGroups, setExpandedGroups] = useState(new Set());
-    const [showInfoPanel, setShowInfoPanel] = useState(true);
     const router = useRouter();
 
     // S'assurer que le dark mode est appliqué au chargement
@@ -28,26 +27,6 @@ export default function HistoPage() {
         }
     }, []);
 
-    // Charger la préférence d'affichage du panneau d'information
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('histo-info-panel-closed');
-            if (saved === 'true') {
-                setShowInfoPanel(false);
-            }
-        } catch (e) {
-            // Erreur silencieuse
-        }
-    }, []);
-
-    const handleCloseInfoPanel = () => {
-        setShowInfoPanel(false);
-        try {
-            localStorage.setItem('histo-info-panel-closed', 'true');
-        } catch (e) {
-            // Erreur silencieuse
-        }
-    };
 
     useEffect(() => {
         let cancelled = false;
@@ -162,101 +141,207 @@ export default function HistoPage() {
                 </button>
                 <h1 style={{marginBottom: 0}}>Historique des cours ajoutés</h1>
             </div>
-            {showInfoPanel && (
             <div style={{
-                background: "linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)",
-                border: "1px solid var(--border-color)",
-                borderRadius: 16,
-                padding: "1.5rem",
+                background: "linear-gradient(135deg, rgba(66, 153, 225, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%)",
+                border: "2px solid var(--primary-color)",
+                borderRadius: 20,
+                padding: "1.75rem",
                 marginBottom: "1.5rem",
-                boxShadow: "var(--shadow-sm)",
-                position: "relative"
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.15)",
+                position: "relative",
+                overflow: "hidden"
             }}>
-                <button
-                    onClick={handleCloseInfoPanel}
-                    style={{
-                        position: "absolute",
-                        top: "0.75rem",
-                        right: "0.75rem",
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--text-secondary)",
-                        cursor: "pointer",
-                        fontSize: "1.25rem",
-                        lineHeight: 1,
-                        padding: "0.25rem",
-                        width: "24px",
-                        height: "24px",
+                {/* Effet de brillance en arrière-plan */}
+                <div style={{
+                    position: "absolute",
+                    top: "-50%",
+                    right: "-50%",
+                    width: "200%",
+                    height: "200%",
+                    background: "radial-gradient(circle, rgba(66, 153, 225, 0.1) 0%, transparent 70%)",
+                    pointerEvents: "none"
+                }} />
+                
+                <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "4px",
-                        transition: "all 0.2s ease"
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--bg-primary)";
-                        e.currentTarget.style.color = "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "var(--text-secondary)";
-                    }}
-                    title="Fermer"
-                    aria-label="Fermer"
-                >
-                    ×
-                </button>
-                <h2 style={{
-                    color: "var(--text-primary)",
-                    fontSize: "1.1rem",
-                    fontWeight: 600,
-                    margin: "0 0 0.75rem 0",
-                    letterSpacing: "-0.01em",
-                    paddingRight: "2rem"
-                }}>
-                    Vérification automatique
-                </h2>
-                <div style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "0.9rem",
-                    lineHeight: "1.6"
-                }}>
-                    <p style={{margin: "0 0 0.75rem 0"}}>
+                        gap: "0.75rem",
+                        marginBottom: "1rem"
+                    }}>
+                        <div style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "12px",
+                            background: "linear-gradient(135deg, #4299e1, #2563eb)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 4px 8px rgba(37, 99, 235, 0.3)"
+                        }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </div>
+                        <h2 style={{
+                            color: "var(--text-primary)",
+                            fontSize: "1.25rem",
+                            fontWeight: 700,
+                            margin: 0,
+                            letterSpacing: "-0.02em"
+                        }}>
+                            Vérification automatique
+                        </h2>
+                    </div>
+                    
+                    <p style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.95rem",
+                        margin: "0 0 1.25rem 0",
+                        lineHeight: "1.5"
+                    }}>
                         Les modifications de l'emploi du temps sont détectées automatiquement :
                     </p>
-                    <ul style={{
-                        margin: 0,
-                        paddingLeft: "1.25rem",
-                        listStyle: "none"
+                    
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.875rem"
                     }}>
-                        <li style={{marginBottom: "0.5rem", position: "relative", paddingLeft: "1.25rem"}}>
-                            <span style={{
-                                position: "absolute",
-                                left: 0,
-                                color: "var(--primary-color)"
-                            }}>•</span>
-                            <strong>9h-19h</strong> : toutes les <strong>20 minutes</strong>
-                        </li>
-                        <li style={{marginBottom: "0.5rem", position: "relative", paddingLeft: "1.25rem"}}>
-                            <span style={{
-                                position: "absolute",
-                                left: 0,
-                                color: "var(--primary-color)"
-                            }}>•</span>
-                            <strong>1h-7h</strong> : aucune vérification (pause nocturne)
-                        </li>
-                        <li style={{marginBottom: "0", position: "relative", paddingLeft: "1.25rem"}}>
-                                <span style={{
-                                    position: "absolute",
-                                    left: 0,
-                                    color: "var(--primary-color)"
-                                }}>•</span>
-                            <strong>Le reste du temps</strong> : toutes les <strong>heures</strong>
-                        </li>
-                    </ul>
+                        {/* Période 9h-19h */}
+                        <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "1rem",
+                            padding: "1rem",
+                            background: "var(--bg-secondary)",
+                            borderRadius: "12px",
+                            border: "1px solid rgba(66, 153, 225, 0.3)",
+                            boxShadow: "0 2px 4px rgba(66, 153, 225, 0.1)"
+                        }}>
+                            <div style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg, #10b981, #059669)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                            }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
+                                    <path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    color: "var(--text-primary)",
+                                    fontSize: "0.95rem",
+                                    fontWeight: 600,
+                                    marginBottom: "0.25rem"
+                                }}>
+                                    <span style={{ color: "var(--primary-color)" }}>9h-19h</span> : toutes les <strong style={{ color: "#10b981" }}>20 minutes</strong>
+                                </div>
+                                <div style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: "0.85rem"
+                                }}>
+                                    Période active de la journée
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Période 1h-7h */}
+                        <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "1rem",
+                            padding: "1rem",
+                            background: "var(--bg-secondary)",
+                            borderRadius: "12px",
+                            border: "1px solid rgba(107, 114, 128, 0.3)",
+                            boxShadow: "0 2px 4px rgba(107, 114, 128, 0.1)"
+                        }}>
+                            <div style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg, #6b7280, #4b5563)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                            }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    color: "var(--text-primary)",
+                                    fontSize: "0.95rem",
+                                    fontWeight: 600,
+                                    marginBottom: "0.25rem"
+                                }}>
+                                    <span style={{ color: "#6b7280" }}>1h-7h</span> : <strong style={{ color: "#6b7280" }}>aucune vérification</strong>
+                                </div>
+                                <div style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: "0.85rem"
+                                }}>
+                                    Pause nocturne
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Période reste du temps */}
+                        <div style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "1rem",
+                            padding: "1rem",
+                            background: "var(--bg-secondary)",
+                            borderRadius: "12px",
+                            border: "1px solid rgba(245, 158, 11, 0.3)",
+                            boxShadow: "0 2px 4px rgba(245, 158, 11, 0.1)"
+                        }}>
+                            <div style={{
+                                width: "36px",
+                                height: "36px",
+                                borderRadius: "10px",
+                                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0
+                            }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
+                                    <path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    color: "var(--text-primary)",
+                                    fontSize: "0.95rem",
+                                    fontWeight: 600,
+                                    marginBottom: "0.25rem"
+                                }}>
+                                    <span style={{ color: "#f59e0b" }}>Le reste du temps</span> : toutes les <strong style={{ color: "#f59e0b" }}>heures</strong>
+                                </div>
+                                <div style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: "0.85rem"
+                                }}>
+                                    Période standard
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            )}
             <p style={{color: "var(--text-secondary)", marginBottom: "1rem"}}>
                 Chaque cours apparaît au moment où il est vu pour la première fois dans l'edt. Cliquez sur un cours pour l'afficher dans l'EDT.
             </p>

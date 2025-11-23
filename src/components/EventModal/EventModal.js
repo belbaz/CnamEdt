@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import MapViewer from "@/components/MapViewer/MapViewer";
+import CourseFiles from "@/components/CourseFiles/CourseFiles";
 import {
     formatDurationHM,
     getSubjectHoursStats,
@@ -897,6 +898,14 @@ export default function EventModal({
                                     </>
                                 )}
                             </div>
+                        )}
+
+                        {/* Section Fichiers */}
+                        {selectedEvent.uid && (
+                            <CourseFiles 
+                                courseUid={selectedEvent.uid} 
+                                authenticated={notesAuthenticated}
+                            />
                         )}
 
                         {/* Section Actions */}

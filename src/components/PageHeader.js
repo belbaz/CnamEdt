@@ -26,9 +26,11 @@ export default function PageHeader({
                                        onShowHistory = null
                                    }) {
     const [showEasterEgg, setShowEasterEgg] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
     const clickCount = useRef(0);
     const clickTimer = useRef(null);
     const buttonRef = useRef(null);
+    const userMenuRef = useRef(null);
     const isBlockedRef = useRef(false); // Protection contre les clics juste après activation/désactivation
 
 
@@ -109,6 +111,23 @@ export default function PageHeader({
         };
     }, []);
 
+    // Fermer le menu utilisateur si on clique en dehors
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+                setShowUserMenu(false);
+            }
+        };
+
+        if (showUserMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showUserMenu]);
+
     return (
         <div className="page-header">
             <div className="header-content">
@@ -122,17 +141,69 @@ export default function PageHeader({
                         Edt
                     </h1>
 
-                    {/* Salutation utilisateur */}
+                    {/* Salutation utilisateur avec menu */}
                     {userInfo && userInfo.name && (
                         <div 
+                            ref={userMenuRef}
                             className="userInfo"
-                            onClick={() => window.location.href = '/info'}
-                            style={{ cursor: 'pointer' }}
-                            title="Voir mes informations"
+                            style={{ position: 'relative', cursor: 'pointer' }}
+                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            title="Menu utilisateur"
                         >
-                            Bonjour {userInfo.lastName} {userInfo.name || ""}
-                            {userInfo.role && (
-                                <span className="userRoleLabel">{userInfo.role}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span> {userInfo.lastName} {userInfo.name || ""}</span>
+                                {userInfo.role && (
+                                    <span className="userRoleLabel">{userInfo.role}</span>
+                                )}
+                                <svg 
+                                    width="12" 
+                                    height="12" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    style={{ 
+                                        transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        transition: 'transform 0.2s ease'
+                                    }}
+                                >
+                                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                            {showUserMenu && (
+                                <div className="userMenuDropdown">
+                                    <button
+                                        className="userMenuItem"
+                                        onClick={() => {
+                                            window.location.href = '/dashboard';
+                                            setShowUserMenu(false);
+                                        }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        Tableau de bord
+                                    </button>
+                                    <button
+                                        className="userMenuItem userMenuItemLogout"
+                                        onClick={async () => {
+                                            setShowUserMenu(false);
+                                            try {
+                                                await fetch("/api/logout", { method: "POST" });
+                                                window.location.href = "/";
+                                            } catch (error) {
+                                                console.error("[PageHeader] Erreur déconnexion:", error);
+                                            }
+                                        }}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        Se déconnecter
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}
@@ -193,6 +264,34 @@ export default function PageHeader({
                                 </span>
                             )}
                         </div>
+                    )}
+                    {userInfo && (
+                        <button
+                            className="dashboard-btn"
+                            onClick={() => window.location.href = '/dashboard'}
+                            title="Tableau de bord"
+                            aria-label="Tableau de bord"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
+                    )}
+                    {!userInfo && (
+                        <button
+                            className="login-btn"
+                            onClick={() => window.location.href = '/login'}
+                            title="Se connecter"
+                            aria-label="Se connecter"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
                     )}
                     <div style={{ position: 'relative' }}>
                         <button

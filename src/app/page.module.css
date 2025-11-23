@@ -81,6 +81,14 @@
     color: var(--text-primary);
 }
 
+/* Style uniforme pour tous les titres de sections de la modale */
+:global(.modal-section h3) {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
 :global(.modal-note-edit-icon) {
     border: none;
     background: rgba(59, 130, 246, 0.12);

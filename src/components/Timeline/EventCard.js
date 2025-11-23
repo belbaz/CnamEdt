@@ -26,11 +26,35 @@ export default function EventCard({
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipStyle, setTooltipStyle] = useState({});
     const [isMounted, setIsMounted] = useState(false);
+    const [fileCount, setFileCount] = useState(0);
     const devMode = useDevMode();
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // Charger le nombre de fichiers pour ce cours
+    useEffect(() => {
+        if (!event?.uid) {
+            setFileCount(0);
+            return;
+        }
+
+        const loadFileCount = async () => {
+            try {
+                const response = await fetch(`/api/files/list?course_uid=${encodeURIComponent(event.uid)}`);
+                const data = await response.json();
+                if (data.success) {
+                    setFileCount(data.files?.length || 0);
+                }
+            } catch (err) {
+                console.error("[EventCard] Erreur chargement fichiers:", err);
+                setFileCount(0);
+            }
+        };
+
+        loadFileCount();
+    }, [event?.uid]);
 
     const updateTooltipPosition = useCallback(() => {
         if (!badgeRef.current || !tooltipRef.current || !showTooltip) return;
@@ -165,9 +189,13 @@ export default function EventCard({
             {(() => {
                 const cleanedEntries = sanitizeNoteEntries(noteEntries);
                 const noteCount = cleanedEntries.length;
-                if (noteCount === 0) {
+                const totalCount = noteCount + fileCount;
+                
+                // Afficher le badge seulement s'il y a des notes OU des fichiers
+                if (totalCount === 0) {
                     return null;
                 }
+                
                 const previewEntries = cleanedEntries.slice(0, 3);
                 const remaining = noteCount - previewEntries.length;
                 return (
@@ -175,14 +203,14 @@ export default function EventCard({
                         <div
                             ref={badgeRef}
                             className="note-badge-card"
-                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''} dans votre agenda`}
+                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''}${fileCount > 0 ? ` et ${fileCount} fichier${fileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
                             onFocus={() => setShowTooltip(true)}
                             onBlur={() => setShowTooltip(false)}
                         >
-                            <span className="note-icon">📝</span>
-                            <span className="note-count-badge">{noteCount}</span>
+                            <span className="note-icon">📋</span>
+                            <span className="note-count-badge">{totalCount}</span>
                         </div>
                         {isMounted && showTooltip && createPortal(
                             <div
@@ -203,6 +231,14 @@ export default function EventCard({
                                         </li>
                                     )}
                                 </ul>
+                                {fileCount > 0 && (
+                                    <div className="note-tooltip-files">
+                                        <span className="note-tooltip-files-icon">📄</span>
+                                        <span className="note-tooltip-files-text">
+                                            {fileCount} fichier{fileCount > 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                )}
                             </div>,
                             document.body
                         )}

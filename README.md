@@ -29,6 +29,7 @@ Application web et mobile pour consulter l'emploi du temps EICNAM en temps réel
 - Notifications push (mobile)
 - Mode sombre/clair
 - Export des cours
+- 📄 **Upload de fichiers** pour les cours (Vercel Blob Storage)
 
 ---
 
@@ -154,9 +155,15 @@ NEXT_PUBLIC_APK_URL=https://votre-project-id.supabase.co/storage/v1/object/publi
 # URL du fichier ICS EICNAM
 ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
 NEXT_PUBLIC_ICS_URL=https://galao.cnam.fr/partage/agendas/dbeiparis/agenda_62407593.ics
+
+# Vercel Blob Storage (pour l'upload de fichiers - optionnel pour développement local)
+# En production, le token est automatiquement injecté par Vercel
+BLOB_READ_WRITE_TOKEN=votre-token-vercel-blob
 ```
 
 **Note :** La `SUPABASE_SERVICE_ROLE` est nécessaire pour uploader l'APK automatiquement. Trouvez-la dans : Supabase Dashboard → Project Settings → API → service_role key
+
+**Note Upload de fichiers :** Pour utiliser l'upload de fichiers, configurez Vercel Blob Storage. Voir [documentation/FILES_UPLOAD_GUIDE.md](documentation/FILES_UPLOAD_GUIDE.md) pour plus de détails.
 
 ### Installer sur téléphone
 

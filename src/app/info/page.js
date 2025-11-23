@@ -260,22 +260,6 @@ export default function InfoPage() {
 
                     <div className={styles.actions}>
                         <button 
-                            className={styles.agendaButton}
-                            onClick={() => router.push("/agenda")}
-                        >
-                            📝 Mon Agenda
-                        </button>
-                        
-                        {userInfo.role === 'superAdmin' && (
-                            <button 
-                                className={styles.analyticsButton}
-                                onClick={() => router.push("/admin/analytics")}
-                            >
-                                📊 Analytics
-                            </button>
-                        )}
-
-                        <button 
                             className={styles.logoutButton}
                             onClick={handleLogout}
                             disabled={loggingOut}

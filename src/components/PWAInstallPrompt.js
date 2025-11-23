@@ -13,7 +13,21 @@ export default function PWAInstallPrompt() {
     const [isDismissed, setIsDismissed] = useState(false);
     const [showManualPrompt, setShowManualPrompt] = useState(false);
 
+    // Fonction pour détecter si on est sur mobile (iPhone ou Android)
+    const isMobileDevice = () => {
+        if (typeof window === 'undefined') return false;
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        return /iPhone|iPad|iPod|Android/i.test(userAgent);
+    };
+
     useEffect(() => {
+        // Ne pas afficher si on n'est pas sur mobile
+        if (!isMobileDevice()) {
+            setIsVisible(false);
+            setShowManualPrompt(false);
+            return;
+        }
+
         // Ne pas afficher si déjà installée
         if (isInstalled) {
             setIsVisible(false);
@@ -136,31 +150,5 @@ export default function PWAInstallPrompt() {
     }
 
     return null;
-
-    return (
-        <div className="pwa-install-prompt">
-            <div className="pwa-install-content">
-                <div className="pwa-install-icon">📱</div>
-                <div className="pwa-install-text">
-                    <strong>Installer l'application</strong>
-                    <span>Ajoutez EDT EICNAM à votre écran d'accueil pour un accès rapide</span>
-                </div>
-                <div className="pwa-install-actions">
-                    <button
-                        className="pwa-install-button pwa-install-button-primary"
-                        onClick={handleInstall}
-                    >
-                        Installer
-                    </button>
-                    <button
-                        className="pwa-install-button pwa-install-button-secondary"
-                        onClick={handleDismiss}
-                    >
-                        Plus tard
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 }
 

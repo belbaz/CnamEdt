@@ -17,6 +17,30 @@ export default function LoginForm({ onSuccess, embedded = false }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [redirectTimer, setRedirectTimer] = useState(null);
+    const [isAlreadyLoggedIn, setIsAlreadyLoggedIn] = useState(false);
+    const [userInfo, setUserInfo] = useState(null);
+    const [checkingAuth, setCheckingAuth] = useState(true);
+
+    // Vérifier si l'utilisateur est déjà connecté
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await fetch("/api/user", { cache: "no-store" });
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserInfo(data);
+                    setIsAlreadyLoggedIn(true);
+                } else {
+                    setIsAlreadyLoggedIn(false);
+                }
+            } catch (error) {
+                setIsAlreadyLoggedIn(false);
+            } finally {
+                setCheckingAuth(false);
+            }
+        };
+        checkAuth();
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -71,7 +95,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                 // Récupérer l'URL de redirection depuis les paramètres de l'URL
                 const redirectTo = searchParams.get('redirect');
                 // Décoder l'URL et valider qu'elle est relative (sécurité)
-                let targetPath = "/agenda"; // Par défaut
+                let targetPath = "/"; // Par défaut vers l'EDT (page principale)
                 
                 if (redirectTo) {
                     try {
@@ -96,6 +120,74 @@ export default function LoginForm({ onSuccess, embedded = false }) {
             setIsSubmitting(false);
         }
     };
+
+    // Si déjà connecté, afficher un message avec lien vers le dashboard
+    if (checkingAuth) {
+        return (
+            <div className={styles.page}>
+                <div className={styles.wrapper}>
+                    <div className={styles.formCard}>
+                        <div style={{ padding: "2rem", textAlign: "center" }}>
+                            <div className={styles.loadingState} style={{ justifyContent: "center", marginBottom: "1rem" }}>
+                                <div className={styles.loader}></div>
+                            </div>
+                            <p style={{ color: "var(--text-secondary)" }}>Vérification de votre session...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (isAlreadyLoggedIn && userInfo) {
+        return (
+            <div className={styles.page}>
+                <div className={styles.wrapper}>
+                    <div className={styles.formCard}>
+                        <header className={styles.cardHeader}>
+                            <div>
+                                <h2>Vous êtes déjà connecté</h2>
+                                <p className={styles.cardSubhead}>
+                                    Bonjour {userInfo.name} {userInfo.lastName}
+                                </p>
+                            </div>
+                        </header>
+                        <div style={{ padding: "1.5rem", textAlign: "center" }}>
+                            <div style={{ marginBottom: "1.5rem" }}>
+                                <p style={{ marginBottom: "1rem", color: "var(--text-secondary)" }}>
+                                    Vous êtes déjà connecté à votre compte.
+                                </p>
+                                <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)" }}>
+                                    Vous pouvez accéder à votre emploi du temps ou au tableau de bord.
+                                </p>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                <button
+                                    onClick={() => router.push("/")}
+                                    className={styles.submitButton}
+                                    style={{ width: "100%" }}
+                                >
+                                    Aller à l'EDT
+                                </button>
+                                <button
+                                    onClick={() => router.push("/dashboard")}
+                                    className={styles.submitButton}
+                                    style={{ 
+                                        width: "100%",
+                                        background: "var(--bg-tertiary)",
+                                        color: "var(--text-primary)",
+                                        border: "1px solid var(--border-color)"
+                                    }}
+                                >
+                                    Tableau de bord
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const formContent = (
         <>
