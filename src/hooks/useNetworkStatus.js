@@ -1,112 +1,65 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useCapacitor } from "@/hooks/useCapacitor";
-import { Network } from '@capacitor/network';
+
 /**
- * Cross-platform network status hook.
- * - Web: uses navigator.onLine + light fetch probe
- * - Mobile (Capacitor): uses @capacitor/network for reliable status
+ * Hook pour détecter le statut de la connexion réseau (web uniquement)
  */
 export function useNetworkStatus() {
-    const { isNative } = useCapacitor();
     const [isOnline, setIsOnline] = useState(true);
     const pollingIntervalRef = useRef(null);
-    const lastOfflineNotifiedRef = useRef(0);
 
     useEffect(() => {
-        let removeNetworkListener = null;
         let cancelled = false;
 
         const setStatus = (online) => {
             if (!cancelled) setIsOnline(online);
         };
 
-        const setupWeb = () => {
-            const checkRealConnectionOnce = async () => {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-                    await fetch('/api/version', { method: 'HEAD', cache: 'no-cache', signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    setStatus(true);
-                } catch {
-                    setStatus(false);
-                }
-            };
-
-            const initialOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-            setStatus(initialOnline);
-            // Vérifier une seule fois au chargement pour confirmer la connectivité réelle
-            checkRealConnectionOnce();
-
-            const onOnline = () => setStatus(true);
-            const onOffline = () => setStatus(false);
-            window.addEventListener('online', onOnline);
-            window.addEventListener('offline', onOffline);
-
-            removeNetworkListener = () => {
-                window.removeEventListener('online', onOnline);
-                window.removeEventListener('offline', onOffline);
-                if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current);
-                    pollingIntervalRef.current = null;
-                }
-            };
-        };
-
-        const setupNative = async () => {
+        const checkRealConnection = async () => {
             try {
-                const status = await Network.getStatus();
-                setStatus(!!status?.connected);
-
-                const listener = Network.addListener('networkStatusChange', (st) => {
-                    setStatus(!!st?.connected);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                await fetch('/api/version', { 
+                    method: 'HEAD', 
+                    cache: 'no-cache', 
+                    signal: controller.signal 
                 });
-                removeNetworkListener = () => listener.remove();
-            } catch (e) {
-                // Fallback to web behavior if plugin unavailable
-                setupWeb();
+                clearTimeout(timeoutId);
+                setStatus(true);
+            } catch {
+                setStatus(false);
             }
         };
 
-        if (isNative) setupNative();
-        else setupWeb();
+        // État initial
+        const initialOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        setStatus(initialOnline);
+        
+        // Vérifier une fois au chargement
+        checkRealConnection();
+
+        // Écouter les événements online/offline
+        const onOnline = () => {
+            setStatus(true);
+            // Vérifier la connexion réelle après un court délai
+            setTimeout(checkRealConnection, 1000);
+        };
+        
+        const onOffline = () => setStatus(false);
+
+        window.addEventListener('online', onOnline);
+        window.addEventListener('offline', onOffline);
 
         return () => {
             cancelled = true;
-            if (removeNetworkListener) removeNetworkListener();
+            window.removeEventListener('online', onOnline);
+            window.removeEventListener('offline', onOffline);
             if (pollingIntervalRef.current) {
                 clearInterval(pollingIntervalRef.current);
                 pollingIntervalRef.current = null;
             }
         };
-    }, [isNative]);
+    }, []);
 
-    /**
-     * Helper: trigger a Capacitor Local Notification once when offline.
-     */
-    const notifyOfflineMobileOnce = async (title = 'Mode hors ligne', body = "Certaines données peuvent être indisponibles.") => {
-        if (!isNative) return false;
-        const now = Date.now();
-        if (now - lastOfflineNotifiedRef.current < 60_000) return false; // debounce 60s
-        try {
-            const { LocalNotifications } = await import('@capacitor/local-notifications');
-            const perm = await LocalNotifications.checkPermissions();
-            if (perm.display !== 'granted') {
-                const req = await LocalNotifications.requestPermissions();
-                if (req.display !== 'granted') return false;
-            }
-            await LocalNotifications.schedule({
-                notifications: [{ id: 10001, title, body, smallIcon: 'ic_stat_name' }]
-            });
-            lastOfflineNotifiedRef.current = now;
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    return { isOnline, notifyOfflineMobileOnce };
+    return { isOnline };
 }
-
-

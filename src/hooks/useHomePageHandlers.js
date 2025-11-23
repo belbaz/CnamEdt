@@ -18,8 +18,7 @@ export function useHomePageHandlers({
     setTestModeState,
     setTestMode,
     setTestWeekModeState,
-    setTestWeekMode,
-    updateCheckerRef
+    setTestWeekMode
 }) {
     const handleRefresh = () => {
         fetchEvents();
@@ -235,11 +234,6 @@ export function useHomePageHandlers({
         }
     };
 
-    const handleCheckUpdates = () => {
-        if (updateCheckerRef.current) {
-            updateCheckerRef.current.checkForUpdates();
-        }
-    };
 
     return {
         handleRefresh,
@@ -253,8 +247,7 @@ export function useHomePageHandlers({
         handleToggleDay,
         handleToggleAllDays,
         handleToggleTestMode,
-        handleToggleTestWeek,
-        handleCheckUpdates
+        handleToggleTestWeek
     };
 }
 

@@ -18,9 +18,19 @@ export async function GET(request) {
         const authResult = await requireSuperAdmin();
         
         if (authResult.error) {
-            console.warn(`${LOG_PREFIX} Accès refusé: ${authResult.error}`);
+            console.warn(`${LOG_PREFIX} Accès refusé: ${authResult.error}`, {
+                status: authResult.status,
+                userId: authResult.user?.id,
+                error: authResult.error
+            });
             return NextResponse.json(
-                { error: authResult.error },
+                { 
+                    error: authResult.error,
+                    details: process.env.NODE_ENV === 'development' ? {
+                        status: authResult.status,
+                        userId: authResult.user?.id
+                    } : undefined
+                },
                 { status: authResult.status }
             );
         }

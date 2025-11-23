@@ -13,7 +13,7 @@ import {
     isTestWeekEnabled,
     setTestWeekMode
 } from "@/services/testDataService";
-import { useCapacitor, useSplashScreen } from "@/hooks/useCapacitor";
+import { usePWA } from "@/hooks/usePWA";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useCourseNotes } from "@/hooks/useCourseNotes";
@@ -23,13 +23,11 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
 import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
-import ApkDownloadPopup from "@/components/ApkDownloadPopup";
-import UpdateChecker from "@/components/UpdateChecker";
-import WebVersionChecker from "@/components/WebVersionChecker";
+import PWAUpdateChecker from "@/components/PWAUpdateChecker";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import SupabaseNotification from "@/components/SupabaseNotification";
-import PermissionRequest from "@/components/PermissionRequest";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
@@ -92,22 +90,16 @@ function HomeContent({ searchParams }) {
     // Présence d'un deep-link vers un cours précis
     const eventKeyParam = searchParams?.get('eventKey');
 
-    // Hook Capacitor pour mobile
-    const { isNative, capacitorReady, Capacitor, Http, SplashScreen } = useCapacitor();
+    // Hook PWA pour détecter l'installation
+    const { isInstalled, isStandalone } = usePWA();
     const { isOnline } = useNetworkStatus();
     const devMode = useDevMode();
 
-    // Gérer le splash screen (cacher quand chargé)
-    useSplashScreen(SplashScreen, !loading);
-
-    // Pull-to-refresh sur mobile
-    usePullToRefresh(isNative, () => fetchEvents());
+    // Pull-to-refresh sur mobile/web
+    usePullToRefresh(() => fetchEvents());
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
-
-    // Ref pour le UpdateChecker
-    const updateCheckerRef = useRef(null);
 
     // Fonction utilitaire pour charger le cache et mettre à jour l'état
     const loadCacheAndUpdateState = (cached) => {
@@ -142,8 +134,8 @@ function HomeContent({ searchParams }) {
             setSupabaseSource(null);
 
             const debug = {
-                capacitorAvailable: !!Capacitor,
-                isNativePlatform: isNative,
+                isPWAInstalled: isInstalled,
+                isStandalone: isStandalone,
                 protocol: window.location.protocol,
                 href: window.location.href,
                 userAgent: window.navigator.userAgent.substring(0, 100)
@@ -152,7 +144,7 @@ function HomeContent({ searchParams }) {
             let response;
             try {
                 // Essayer de récupérer les données (ICS ou Supabase en fallback)
-                response = await fetchICSEvents(isNative, Http);
+                response = await fetchICSEvents();
             } catch (fetchError) {
                 // En cas d'erreur réseau, utiliser le cache
                 const isNetworkError = !isOnline ||
@@ -306,8 +298,8 @@ function HomeContent({ searchParams }) {
                 setDebugInfo({
                     error: err.message,
                     stack: err.stack,
-                    capacitorAvailable: !!Capacitor,
-                    isNativePlatform: Capacitor && Capacitor.isNativePlatform(),
+                    isPWAInstalled: isInstalled,
+                    isStandalone: isStandalone,
                     protocol: window.location.protocol,
                     href: window.location.href
                 });
@@ -434,7 +426,7 @@ function HomeContent({ searchParams }) {
 
     // Chargement initial : cache puis fetch si en ligne
     useEffect(() => {
-        if (!capacitorReady) return;
+        // Pas besoin d'attendre Capacitor pour PWA
 
         // Initialiser le mode test
         setTestModeState(isTestModeEnabled());
@@ -468,7 +460,7 @@ function HomeContent({ searchParams }) {
                 setHasNetworkError(true); // Notification hors ligne
             }
         }
-    }, [capacitorReady, isOnline]);
+    }, [isOnline]);
 
     // Charger les infos utilisateur
     useEffect(() => {
@@ -546,7 +538,7 @@ function HomeContent({ searchParams }) {
     // Navigation par swipe horizontal pour changer de semaine (mobile uniquement)
     useEffect(() => {
         // Ne s'activer que sur mobile
-        if (!isNative && !isSmallScreen) return;
+        if (!isSmallScreen) return;
 
         let touchStartX = null;
         let touchStartY = null;
@@ -637,7 +629,7 @@ function HomeContent({ searchParams }) {
             document.removeEventListener('touchstart', handleTouchStart);
             document.removeEventListener('touchend', handleTouchEnd);
         };
-    }, [isNative, isSmallScreen, availableWeeks, selectedWeek]);
+    }, [isSmallScreen, availableWeeks, selectedWeek]);
 
     // Détecter un petit écran (smartphone) côté web pour adopter l'UI mobile
     useEffect(() => {
@@ -662,7 +654,7 @@ function HomeContent({ searchParams }) {
                         const dayHeight = todayRef.current.offsetHeight;
                         const newSpacing = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20);
                         // Conserver l'espacement uniquement sur desktop et en vue horizontale
-                        if (!(isNative || isSmallScreen) && viewMode === 'horizontal') {
+                        if (!isSmallScreen && viewMode === 'horizontal') {
                             setTodaySpacing(newSpacing);
                         } else {
                             setTodaySpacing(0);
@@ -674,7 +666,7 @@ function HomeContent({ searchParams }) {
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [todaySpacing, isNative, isSmallScreen, viewMode]);
+    }, [todaySpacing, isSmallScreen, viewMode]);
 
     // État pour le timestamp de dernière mise à jour
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
@@ -851,7 +843,7 @@ function HomeContent({ searchParams }) {
             const spacingNeeded = Math.max(0, viewportHeight - navbarHeight - dayHeight - 20); // 20px de marge réduite
 
             // Définir l'espacement uniquement sur desktop et en vue horizontale
-            if (!(isNative || isSmallScreen) && viewMode === 'horizontal') {
+            if (!isSmallScreen && viewMode === 'horizontal') {
                 setTodaySpacing(spacingNeeded);
             } else {
                 setTodaySpacing(0);
@@ -886,7 +878,6 @@ function HomeContent({ searchParams }) {
         setTestMode,
         setTestWeekModeState,
         setTestWeekMode,
-        updateCheckerRef
     });
 
     const handleRefresh = handlers.handleRefresh;
@@ -901,7 +892,6 @@ function HomeContent({ searchParams }) {
     const handleToggleAllDays = handlers.handleToggleAllDays;
     const handleToggleTestMode = () => handlers.handleToggleTestMode(testMode);
     const handleToggleTestWeek = () => handlers.handleToggleTestWeek(testWeekMode);
-    const handleCheckUpdates = handlers.handleCheckUpdates;
 
     // Vérifier si la semaine affichée est la semaine en cours
     const isCurrentWeekSelected = useMemo(() => {
@@ -991,21 +981,11 @@ function HomeContent({ searchParams }) {
 
     return (
         <div className={styles.pageWrapper}>
-            {/* Demande de permissions au démarrage (app native uniquement) */}
-            <PermissionRequest isNative={isNative} />
-
-            {/* Popup de téléchargement APK pour Android (web uniquement) */}
-            <ApkDownloadPopup />
-
-            {/* Vérification des mises à jour (app native uniquement) */}
-            <UpdateChecker
-                ref={updateCheckerRef}
-                currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
-                isNative={isNative}
-            />
-
-            {/* Vérificateur de version web (pour tous les utilisateurs) */}
-            <WebVersionChecker />
+            {/* Vérification des mises à jour PWA */}
+            <PWAUpdateChecker />
+            
+            {/* Prompt d'installation PWA */}
+            <PWAInstallPrompt />
 
             {/* Bouton de scroll to top */}
             <ScrollToTop />
@@ -1020,15 +1000,14 @@ function HomeContent({ searchParams }) {
                 onWeekChange={handleWeekChange}
                 onRefresh={handleRefresh}
                 onToday={handleToday}
-                showRefreshButton={!(isNative || isSmallScreen)}
-                isMobile={isNative || isSmallScreen}
+                showRefreshButton={!isSmallScreen}
+                isMobile={isSmallScreen}
                 onSettingsOpenChange={setSettingsOpen}
                 onToggleAllDays={handleToggleAllDays}
                 allDaysCollapsed={Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => collapsedDays[d])}
                 compactMode={compactMode}
-                isNative={isNative}
+                isPWAInstalled={isInstalled}
                 currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
-                onCheckUpdates={handleCheckUpdates}
                 viewMode={viewMode}
                 onViewModeChange={handleViewModeChange}
                 showTimeLabels={showTimeLabels}
@@ -1047,7 +1026,7 @@ function HomeContent({ searchParams }) {
             />
 
             <main className={styles.container}>
-                {error && !(isNative || isSmallScreen) && (
+                {error && !isSmallScreen && (
                     <div className={styles.errorContainer}>
                         <h3 className={styles.errorTitle}>❌ Erreur</h3>
                         <div className={styles.errorMessage}>
@@ -1061,12 +1040,12 @@ function HomeContent({ searchParams }) {
                                 </summary>
                                 <div className={styles.debugContent}>
                                     <div>
-                                        <strong>Mode:</strong> {debugInfo.isNativePlatform ? '📱 MOBILE (APK)' : '🌐 WEB'}
+                                        <strong>Mode:</strong> {debugInfo.isPWAInstalled ? '📱 PWA (Installée)' : '🌐 WEB'}
                                     </div>
-                                    <div><strong>Capacitor
-                                        disponible:</strong> {debugInfo.capacitorAvailable ? 'Oui ✅' : 'Non ❌'}</div>
-                                    <div><strong>Plateforme
-                                        native:</strong> {debugInfo.isNativePlatform ? 'Oui ✅' : 'Non ❌'}</div>
+                                    <div><strong>PWA
+                                        installée:</strong> {debugInfo.isPWAInstalled ? 'Oui ✅' : 'Non ❌'}</div>
+                                    <div><strong>Mode
+                                        standalone:</strong> {debugInfo.isStandalone ? 'Oui ✅' : 'Non ❌'}</div>
                                     <div><strong>Protocole:</strong> {debugInfo.protocol}</div>
                                     <div><strong>URL:</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
@@ -1119,7 +1098,7 @@ function HomeContent({ searchParams }) {
                                 compactMode={compactMode}
                                 showTimeLabels={showTimeLabels}
                                 hide15MinSpacing={hide15MinSpacing}
-                                isNative={isNative}
+                                isPWAInstalled={isInstalled}
                                 monthFormat={'short'}
                                 courseNotes={courseNotes}
                             />

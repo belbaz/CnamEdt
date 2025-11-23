@@ -22,9 +22,8 @@ export default function Navbar({
                                    onToggleAllDays,
                                    allDaysCollapsed = false,
                                    compactMode,
-                                   isNative = false,
+                                   isPWAInstalled = false,
                                    currentVersion = null,
-                                   onCheckUpdates = null,
                                    viewMode = 'horizontal',
                                    onViewModeChange = null,
                                    showTimeLabels = true,
@@ -160,9 +159,8 @@ export default function Navbar({
                     isMobile={isMobile}
                     onSettingsOpenChange={onSettingsOpenChange}
                     compactMode={compactMode}
-                    isNative={isNative}
+                    isPWAInstalled={isPWAInstalled}
                     currentVersion={currentVersion}
-                    onCheckUpdates={onCheckUpdates}
                     viewMode={viewMode}
                     onViewModeChange={onViewModeChange}
                     showTimeLabels={showTimeLabels}

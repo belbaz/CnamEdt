@@ -12,7 +12,8 @@ const LOG_PREFIX = "[API user]";
 /**
  * GET /api/user
  * Récupère les informations de l'utilisateur connecté
- * Le rôle est toujours récupéré depuis la base de données pour refléter les changements en temps réel
+ * SÉCURITÉ : Le rôle est toujours récupéré depuis la base de données (source de vérité)
+ * On utilise uniquement l'ID utilisateur du token JWT (signé et vérifié)
  */
 export async function GET() {
     try {
@@ -26,54 +27,73 @@ export async function GET() {
             );
         }
 
-        const user = verifySessionToken(session);
+        // Vérifier le token JWT pour obtenir l'ID utilisateur de manière sécurisée
+        const tokenData = verifySessionToken(session);
 
-        if (!user || !user.sub) {
+        if (!tokenData || !tokenData.sub) {
             return NextResponse.json(
                 { error: "Session invalide" },
                 { status: 401 }
             );
         }
 
-        // Récupérer le rôle actuel depuis la base de données (pas depuis le token)
+        const userId = tokenData.sub; // ID utilisateur depuis le token (sécurisé car signé)
+
+        // Récupérer le rôle actuel depuis la base de données (source de vérité)
+        // On ignore le rôle dans le token pour éviter les falsifications
         const supabase = getSupabaseServerClient();
         if (!supabase) {
             console.error(`${LOG_PREFIX} Client Supabase introuvable`);
-            // En cas d'erreur DB, retourner quand même les infos du token (fallback)
+            // En cas d'erreur DB, retourner quand même les infos du token (fallback pour affichage uniquement)
             return NextResponse.json({
-                id: user.sub,
-                email: user.email,
-                name: user.name,
-                lastName: user.lastName,
-                role: user.role,
+                id: userId,
+                email: tokenData.email,
+                name: tokenData.name,
+                lastName: tokenData.lastName,
+                role: tokenData.role,
+                lastLogin: null,
+                createdAt: null,
             });
         }
 
         const { data: dbUser, error: dbError } = await supabase
             .from('edt_user')
-            .select('id, email, role, name, last_name')
-            .eq('id', user.sub)
+            .select('id, email, role, name, last_name, date_online, created_at')
+            .eq('id', userId)
             .maybeSingle();
 
         if (dbError) {
             console.error(`${LOG_PREFIX} Erreur récupération DB:`, dbError);
-            // En cas d'erreur DB, retourner quand même les infos du token (fallback)
+            // En cas d'erreur DB, retourner quand même les infos du token (fallback pour affichage uniquement)
+            // Note: Ce fallback est acceptable car cette API est utilisée pour l'affichage, pas pour l'autorisation
             return NextResponse.json({
-                id: user.sub,
-                email: user.email,
-                name: user.name,
-                lastName: user.lastName,
-                role: user.role,
+                id: userId,
+                email: tokenData.email,
+                name: tokenData.name,
+                lastName: tokenData.lastName,
+                role: tokenData.role, // Fallback uniquement en cas d'erreur DB
+                lastLogin: null,
+                createdAt: null,
             });
         }
 
-        // Utiliser les données de la DB si disponibles, sinon fallback sur le token
+        if (!dbUser) {
+            console.warn(`${LOG_PREFIX} Utilisateur introuvable en DB - User ID: ${userId}`);
+            return NextResponse.json(
+                { error: "Utilisateur introuvable" },
+                { status: 404 }
+            );
+        }
+
+        // Utiliser les données de la DB (source de vérité)
         return NextResponse.json({
-            id: dbUser?.id || user.sub,
-            email: dbUser?.email || user.email,
-            name: dbUser?.name || user.name,
-            lastName: dbUser?.last_name || user.lastName,
-            role: dbUser?.role || user.role, // Rôle depuis la DB (toujours à jour)
+            id: dbUser.id,
+            email: dbUser.email,
+            name: dbUser.name || tokenData.name,
+            lastName: dbUser.last_name || tokenData.lastName,
+            role: dbUser.role, // Rôle depuis la DB (source de vérité)
+            lastLogin: dbUser.date_online || null, // Dernière connexion
+            createdAt: dbUser.created_at || null, // Date de création du compte
         });
 
     } catch (error) {

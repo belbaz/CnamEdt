@@ -47,74 +47,7 @@ function parseICSContent(icsContent) {
 }
 
 /**
- * Récupère les événements ICS pour le mobile (via API route avec CapacitorHttp)
- * Utilise l'API route pour bénéficier du fallback Supabase
- */
-async function fetchEventsForMobile(CapacitorHttp) {
-    console.log('[ICS Service] Fetching from mobile via API route');
-    
-    // Utiliser l'API route pour avoir le fallback Supabase
-    const apiUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/fetch-ics`
-        : '/api/fetch-ics';
-    
-    const response = await CapacitorHttp.get({
-        url: apiUrl,
-        headers: {
-            'Accept': 'application/json'
-        }
-    });
-    
-    if (response.status !== 200) {
-        const errorData = response.data && typeof response.data === 'object' ? response.data : {};
-        const errorMessage = errorData.error || `HTTP ${response.status}`;
-        const error = new Error(errorMessage);
-        if (errorData.details) error.details = errorData.details;
-        if (errorData.icsError) error.icsError = errorData.icsError;
-        if (errorData.supabaseError) error.supabaseError = errorData.supabaseError;
-        throw error;
-    }
-    
-    const data = response.data;
-    
-    if (data?.error) {
-        const error = new Error(data.error + (data.details ? ` - ${data.details}` : ''));
-        if (data.details) error.details = data.details;
-        if (data.icsError) error.icsError = data.icsError;
-        if (data.supabaseError) error.supabaseError = data.supabaseError;
-        throw error;
-    }
-    
-    let events = [];
-    let diff = { added: [], updated: [], removed: [] };
-    let meta = { source: 'mobile-api', fromCache: false, changed: null };
-    
-    if (Array.isArray(data)) {
-        events = data;
-        meta.source = 'legacy-array';
-    } else if (data && typeof data === 'object') {
-        if (Array.isArray(data.events)) {
-            events = data.events;
-        }
-        if (data.diff && typeof data.diff === 'object') {
-            diff = {
-                added: Array.isArray(data.diff.added) ? data.diff.added : [],
-                updated: Array.isArray(data.diff.updated) ? data.diff.updated : [],
-                removed: Array.isArray(data.diff.removed) ? data.diff.removed : []
-            };
-        }
-        if (data.meta && typeof data.meta === 'object') {
-            meta = { ...meta, ...data.meta };
-        }
-    }
-    
-    console.log('[ICS Service] Events fetched from API:', events.length, 'changes:', (diff.added.length + diff.updated.length + diff.removed.length));
-    
-    return { events, diff, meta };
-}
-
-/**
- * Récupère les événements ICS pour le web (via API route)
+ * Récupère les événements ICS depuis l'API route
  */
 async function fetchEventsForWeb() {
     console.log('[ICS Service] Fetching from web API route');
@@ -199,14 +132,10 @@ async function fetchEventsForWeb() {
 }
 
 /**
- * Fonction principale : récupère les événements selon la plateforme
+ * Fonction principale : récupère les événements depuis l'API
  */
-export async function fetchICSEvents(isNative, CapacitorHttp) {
-    if (isNative && CapacitorHttp) {
-        return await fetchEventsForMobile(CapacitorHttp);
-    } else {
-        return await fetchEventsForWeb();
-    }
+export async function fetchICSEvents() {
+    return await fetchEventsForWeb();
 }
 
 /**

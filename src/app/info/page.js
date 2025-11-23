@@ -226,6 +226,36 @@ export default function InfoPage() {
                             <span className={styles.infoLabel}>ID Utilisateur</span>
                             <span className={styles.infoValue}>{userInfo.id}</span>
                         </div>
+
+                        {userInfo.lastLogin && (
+                            <div className={styles.infoItem}>
+                                <span className={styles.infoLabel}>Dernière connexion</span>
+                                <span className={styles.infoValue}>
+                                    {new Date(userInfo.lastLogin).toLocaleString('fr-FR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                            </div>
+                        )}
+
+                        {userInfo.createdAt && (
+                            <div className={styles.infoItem}>
+                                <span className={styles.infoLabel}>Date de création</span>
+                                <span className={styles.infoValue}>
+                                    {new Date(userInfo.createdAt).toLocaleString('fr-FR', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     <div className={styles.actions}>

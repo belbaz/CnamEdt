@@ -8,9 +8,8 @@ export default function SettingsMenu({
                                          onOpenChange,
                                          compactMode,
                                          isMobile = false,
-                                         isNative = false,
+                                         isPWAInstalled = false,
                                          currentVersion = null,
-                                         onCheckUpdates = null,
                                          showTimeLabels = true,
                                          onToggleTimeLabels = null,
                                          hide15MinSpacing = false,
@@ -25,14 +24,14 @@ export default function SettingsMenu({
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     const devMode = useDevMode();
-    // Le bouton update reste visible sur mobile/native
-    const showUpdateButton = devMode ? true : (isMobile || isNative);
+    // Le bouton update reste visible sur mobile/PWA
+    const showUpdateButton = devMode ? true : (isMobile || isPWAInstalled);
 
     // Récupérer la version depuis l'API ou utiliser currentVersion
     useEffect(() => {
         if (currentVersion) {
             setVersion(currentVersion);
-        } else if (!isNative && typeof window !== 'undefined') {
+        } else if (!isPWAInstalled && typeof window !== 'undefined') {
             // Pour le web, récupérer depuis l'API (canal unique)
             const apiUrl = `/api/version`;
             fetch(apiUrl)
@@ -46,7 +45,7 @@ export default function SettingsMenu({
                     // En cas d'erreur, garder null
                 });
         }
-    }, [isNative, currentVersion]);
+    }, [isPWAInstalled, currentVersion]);
 
     useEffect(() => {
         if (typeof onOpenChange === 'function') {
@@ -160,22 +159,10 @@ export default function SettingsMenu({
 
                             {/* Canal supprimé: interface épurée */}
 
-                            {(devMode || isNative || isMobile) && (
-                                <div className="setting-item setting-button-item">
-                                    <button
-                                        className="settings-action check-updates-button"
-                                        onClick={() => {
-                                            if (onCheckUpdates) {
-                                                onCheckUpdates();
-                                                setIsOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <span className="button-icon">🔄</span>
-                                        <div className="button-content">
-                                            <span className="button-label">Update</span>
-                                        </div>
-                                    </button>
+                            {version && (
+                                <div className="setting-item">
+                                    <span className="setting-label">Version</span>
+                                    <span className="setting-value">{version}</span>
                                 </div>
                             )}
 

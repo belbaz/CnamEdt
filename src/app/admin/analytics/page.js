@@ -76,19 +76,41 @@ export default function AnalyticsPage() {
             }
 
             const user = await response.json();
+            console.log('[Analytics] Données utilisateur reçues:', {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                roleType: typeof user.role,
+                roleLength: user.role?.length,
+                roleTrimmed: user.role?.trim(),
+                fullUser: user
+            });
+            
             setIsAuthenticated(true);
             
-            // Vérifier le rôle superAdmin
-            if (user.role !== 'superAdmin') {
-                console.warn('[Analytics] Accès refusé - Rôle:', user.role);
+            // Normaliser le rôle pour la comparaison (trim + lowercase)
+            const normalizedRole = user.role?.trim()?.toLowerCase();
+            const expectedRole = 'superadmin';
+            
+            // Vérifier le rôle superAdmin (comparaison insensible à la casse)
+            if (normalizedRole !== expectedRole) {
+                console.warn('[Analytics] Accès refusé - Détails:', {
+                    roleReçu: user.role,
+                    roleNormalisé: normalizedRole,
+                    roleAttendu: expectedRole,
+                    correspondance: normalizedRole === expectedRole,
+                    userId: user.id,
+                    email: user.email
+                });
                 setUnauthorized(true);
-                setError('Accès refusé : vous devez être un admin pour accéder à cette page.');
+                setError(`Accès refusé : vous devez être un superAdmin pour accéder à cette page. Rôle actuel : "${user.role || 'non défini'}"`);
                 setLoading(false);
                 setAuthChecked(true);
                 return;
             }
 
             // Utilisateur autorisé
+            console.log('[Analytics] Accès autorisé pour:', user.email);
             setAuthChecked(true);
         } catch (err) {
             console.error('[Analytics] Erreur vérification auth:', err);

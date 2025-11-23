@@ -1,29 +1,34 @@
 {
-  "name": "EDT EICNAM",
-  "short_name": "EDT",
+  "name": "EDT EICNAM - Emploi du temps",
+  "short_name": "EDT EICNAM",
+  "description": "Consultez votre emploi du temps EICNAM en toute simplicité",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#111827",
   "theme_color": "#111827",
+  "categories": ["education", "productivity"],
+  "lang": "fr-FR",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon/apple-touch-icon.png",
@@ -31,7 +36,20 @@
       "type": "image/png",
       "purpose": "any"
     }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Agenda",
+      "short_name": "Agenda",
+      "description": "Accéder à votre agenda",
+      "url": "/agenda",
+      "icons": [
+        {
+          "src": "/favicon/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
-
-

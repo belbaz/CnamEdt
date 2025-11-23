@@ -14,7 +14,7 @@ export default function VerticalSchedule({
                                              compactMode = 5,
                                              showTimeLabels = true,
                                              hide15MinSpacing = false,
-                                             isNative = false,
+                                             isPWAInstalled = false,
                                              monthFormat = 'long',
                                              courseNotes = null
                                          }) {
@@ -76,7 +76,7 @@ export default function VerticalSchedule({
     useEffect(() => {
         if (typeof window === 'undefined') return;
         // Si c'est une app native, considérer comme mobile
-        if (isNative) {
+        if (isPWAInstalled) {
             setIsMobile(true);
             return;
         }
@@ -85,7 +85,7 @@ export default function VerticalSchedule({
         update(); // Appeler immédiatement pour définir la valeur initiale
         mq.addEventListener('change', update);
         return () => mq.removeEventListener('change', update);
-    }, [isNative]);
+    }, [isPWAInstalled]);
 
     // Charger le timestamp de dernière mise à jour au montage et quand les événements changent
     useEffect(() => {

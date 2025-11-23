@@ -23,6 +23,13 @@ export default function RootLayout({ children }) {
                 <link rel="shortcut icon" href="/favicon/favicon.ico" />
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+                
+                {/* Meta tags iOS pour PWA */}
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-title" content="EDT EICNAM" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="theme-color" content="#111827" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
@@ -62,62 +69,41 @@ export default function RootLayout({ children }) {
                     dangerouslySetInnerHTML={{
                         __html: `
                     (function() {
+                        // Le Service Worker est maintenant géré par PWAUpdateChecker
+                        // Ce script vérifie seulement si le cache doit être désactivé
                         if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                            // Ne pas enregistrer dans Capacitor natif
-                            var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
                             var cacheEnabled = (typeof window.__ACTIVE_CACHE !== 'undefined') ? !!window.__ACTIVE_CACHE : true;
                             
-                            if (!isNative) {
+                            if (!cacheEnabled) {
+                                // Désactiver le cache si demandé
                                 window.addEventListener('load', function() {
-                                    if (!cacheEnabled) {
-                                        navigator.serviceWorker.getRegistrations()
-                                            .then(function(registrations) {
-                                                registrations.forEach(function(registration) {
-                                                    registration.unregister().catch(function(err) {
-                                                        console.warn('[SW] Erreur deregister Service Worker:', err);
-                                                    });
+                                    navigator.serviceWorker.getRegistrations()
+                                        .then(function(registrations) {
+                                            registrations.forEach(function(registration) {
+                                                registration.unregister().catch(function(err) {
+                                                    console.warn('[SW] Erreur deregister Service Worker:', err);
                                                 });
-                                            })
-                                            .catch(function(err) {
-                                                console.warn('[SW] Impossible de récupérer les Service Workers:', err);
                                             });
-                                        
-                                        if ('caches' in window) {
-                                            caches.keys()
-                                                .then(function(names) {
-                                                    return Promise.all(names.map(function(name) { return caches.delete(name); }));
-                                                })
-                                                .catch(function(err) {
-                                                    console.warn('[SW] Suppression des caches impossible:', err);
-                                                });
-                                        }
-                                        
-                                        try {
-                                            localStorage.removeItem('events');
-                                            localStorage.removeItem('subjectColors');
-                                            localStorage.removeItem('lastUpdateTimestamp');
-                                        } catch (e) {}
-                                        return;
-                                    }
-                                    
-                                    navigator.serviceWorker.register('/sw.js')
-                                        .then(function(registration) {
-                                            console.log('[SW] Service Worker enregistré:', registration.scope);
-                                            if (!navigator.serviceWorker.controller && typeof window !== 'undefined') {
-                                                var reloadFlagKey = 'swInitialReloadDone';
-                                                if (!sessionStorage.getItem(reloadFlagKey)) {
-                                                    var reloadOnce = function() {
-                                                        navigator.serviceWorker.removeEventListener('controllerchange', reloadOnce);
-                                                        sessionStorage.setItem(reloadFlagKey, '1');
-                                                        window.location.reload();
-                                                    };
-                                                    navigator.serviceWorker.addEventListener('controllerchange', reloadOnce);
-                                                }
-                                            }
                                         })
                                         .catch(function(err) {
-                                            console.warn('[SW] Erreur enregistrement Service Worker:', err);
+                                            console.warn('[SW] Impossible de récupérer les Service Workers:', err);
                                         });
+                                    
+                                    if ('caches' in window) {
+                                        caches.keys()
+                                            .then(function(names) {
+                                                return Promise.all(names.map(function(name) { return caches.delete(name); }));
+                                            })
+                                            .catch(function(err) {
+                                                console.warn('[SW] Suppression des caches impossible:', err);
+                                            });
+                                    }
+                                    
+                                    try {
+                                        localStorage.removeItem('events');
+                                        localStorage.removeItem('subjectColors');
+                                        localStorage.removeItem('lastUpdateTimestamp');
+                                    } catch (e) {}
                                 });
                             }
                         }

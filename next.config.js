@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Mode web normal - API routes activées
+  // Mode web/PWA - API routes activées
   // Pas de "output: 'export'" pour permettre les API routes serverless
   
   // Optimisation d'images activée

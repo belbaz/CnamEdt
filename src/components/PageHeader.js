@@ -11,9 +11,8 @@ export default function PageHeader({
                                        isMobile = false,
                                        onSettingsOpenChange,
                                        compactMode,
-                                       isNative = false,
+                                       isPWAInstalled = false,
                                        currentVersion = null,
-                                       onCheckUpdates = null,
                                        viewMode = 'horizontal',
                                        onViewModeChange = null,
                                        showTimeLabels = true,
@@ -26,21 +25,12 @@ export default function PageHeader({
                                        historyCount = 0,
                                        onShowHistory = null
                                    }) {
-    const [isDownloading, setIsDownloading] = useState(false);
     const [showEasterEgg, setShowEasterEgg] = useState(false);
     const clickCount = useRef(0);
     const clickTimer = useRef(null);
     const buttonRef = useRef(null);
     const isBlockedRef = useRef(false); // Protection contre les clics juste après activation/désactivation
 
-    const handleDownloadAPK = async () => {
-        setIsDownloading(true);
-        try {
-            window.location.href = '/apk';
-        } finally {
-            setIsDownloading(false);
-        }
-    };
 
     // Gérer les 5 clics rapides sur la lune (uniquement en dark mode)
     const handleThemeToggleClick = (e) => {
@@ -142,29 +132,18 @@ export default function PageHeader({
                         >
                             Bonjour {userInfo.lastName} {userInfo.name || ""}
                             {userInfo.role && (
-                                <span className="userRoleLabel">({userInfo.role})</span>
+                                <span className="userRoleLabel">{userInfo.role}</span>
                             )}
                         </div>
                     )}
                 </div>
                 <div className="header-actions">
-                    {!isNative && (
-                        <button
-                            className="download-apk-button"
-                            onClick={handleDownloadAPK}
-                            disabled={isDownloading}
-                            title="Télécharger l'APK Android"
-                        >
-                            {isDownloading ? '⏳' : '📱'}
-                        </button>
-                    )}
                     <SettingsMenu
                         onOpenChange={onSettingsOpenChange}
                         compactMode={compactMode}
                         isMobile={isMobile}
-                        isNative={isNative}
+                        isPWAInstalled={isPWAInstalled}
                         currentVersion={currentVersion}
-                        onCheckUpdates={onCheckUpdates}
                         showTimeLabels={showTimeLabels}
                         onToggleTimeLabels={onToggleTimeLabels}
                         hide15MinSpacing={hide15MinSpacing}

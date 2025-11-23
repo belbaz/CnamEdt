@@ -2,22 +2,19 @@
 import { useEffect } from 'react';
 
 /**
- * Hook pour le pull-to-refresh natif Android avec Capacitor
+ * Hook pour le pull-to-refresh sur mobile (web)
+ * Fonctionne sur tous les appareils tactiles
  */
-export function usePullToRefresh(isNative, onRefresh) {
+export function usePullToRefresh(onRefresh) {
     useEffect(() => {
-        if (!isNative || typeof window === 'undefined') return;
+        if (typeof window === 'undefined') return;
 
-        // Utiliser le pull-to-refresh natif d'Android via CSS overscroll-behavior
-        // et gérer manuellement le gesture
-        
         let startY = 0;
         let currentY = 0;
         let isPulling = false;
 
-        // Pas d'indicateur visuel - utilise le comportement natif Android
-
         const handleTouchStart = (e) => {
+            // Démarrer le pull uniquement si on est en haut de la page
             if (window.scrollY === 0) {
                 startY = e.touches[0].clientY;
                 isPulling = true;
@@ -26,14 +23,17 @@ export function usePullToRefresh(isNative, onRefresh) {
         };
 
         const handleTouchMove = (e) => {
-            if (!isPulling || window.scrollY > 0) return;
+            if (!isPulling || window.scrollY > 0) {
+                isPulling = false;
+                return;
+            }
 
             currentY = e.touches[0].clientY;
             const diff = currentY - startY;
 
-            // Juste détecter le pull, laisser Android gérer l'UI
+            // Si on tire vers le bas, empêcher le scroll normal
             if (diff > 0) {
-                // Ne rien faire visuellement, Android gère
+                e.preventDefault();
             }
         };
 
@@ -42,8 +42,8 @@ export function usePullToRefresh(isNative, onRefresh) {
 
             const diff = currentY - startY;
 
+            // Si on a tiré assez (120px), déclencher le refresh
             if (diff > 120) {
-                // Trigger refresh
                 onRefresh();
             }
 
@@ -54,13 +54,14 @@ export function usePullToRefresh(isNative, onRefresh) {
         };
 
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        document.addEventListener('touchmove', handleTouchMove, { passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
             document.removeEventListener('touchmove', handleTouchMove);
             document.removeEventListener('touchend', handleTouchEnd);
+            document.body.style.overscrollBehaviorY = 'auto';
         };
-    }, [isNative, onRefresh]);
+    }, [onRefresh]);
 }
