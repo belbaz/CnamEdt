@@ -342,8 +342,8 @@ function FilesContent() {
                                                 )}
                                             </div>
 
-                                            {authenticated && (
-                                                <div className={styles.uploadSection}>
+                                            <div className={styles.uploadSection} style={{ border: '1px dashed var(--border-light)', borderRadius: '12px', padding: '1rem' }}>
+                                                {authenticated ? (
                                                     <label className={styles.uploadButton}>
                                                         <input
                                                             type="file"
@@ -354,8 +354,14 @@ function FilesContent() {
                                                         />
                                                         {uploading ? '⏳ Upload en cours...' : '➕ Ajouter un fichier'}
                                                     </label>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <p className={styles.authMessageText}>
+                                                        <Link href="/login" className={styles.loginLink}>
+                                                            Connectez-vous
+                                                        </Link> pour ajouter et uploader des fichiers
+                                                    </p>
+                                                )}
+                                            </div>
 
                                             {courseFiles.length === 0 ? (
                                                 <div className={styles.emptyState}>
@@ -363,37 +369,60 @@ function FilesContent() {
                                                 </div>
                                             ) : (
                                                 <div className={styles.filesGrid}>
-                                                    {courseFiles.map((file) => (
-                                                        <div key={file.id} className={styles.fileCard}>
-                                                            <a
-                                                                href={file.blob_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className={styles.fileCardLink}
-                                                            >
-                                                                <div className={styles.fileCardIcon}>
-                                                                    {getFileIcon(file.file_type)}
+                                                    {courseFiles.map((file) => {
+                                                        const formatDateTime = (dateString) => {
+                                                            if (!dateString) return '';
+                                                            const date = new Date(dateString);
+                                                            return date.toLocaleDateString('fr-FR', {
+                                                                day: 'numeric',
+                                                                month: 'numeric',
+                                                                year: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            });
+                                                        };
+
+                                                        return (
+                                                            <div key={file.id} className={styles.fileCardWrapper}>
+                                                                <div className={styles.fileCard}>
+                                                                    <a
+                                                                        href={file.blob_url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className={styles.fileCardLink}
+                                                                    >
+                                                                        <div className={styles.fileCardIcon}>
+                                                                            {getFileIcon(file.file_type)}
+                                                                        </div>
+                                                                        <div className={styles.fileCardContent}>
+                                                                            <h3 className={styles.fileCardName}>{file.file_name}</h3>
+                                                                            <div className={styles.fileCardMeta}>
+                                                                                <span>{formatFileSize(file.file_size)}</span>
+                                                                                <span>•</span>
+                                                                                <span>{formatDate(file.uploaded_at)}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </a>
+                                                                    {authenticated && (
+                                                                        <button
+                                                                            className={styles.fileCardDelete}
+                                                                            onClick={() => handleDelete(file.id)}
+                                                                            title="Supprimer"
+                                                                        >
+                                                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
                                                                 </div>
-                                                                <div className={styles.fileCardContent}>
-                                                                    <h3 className={styles.fileCardName}>{file.file_name}</h3>
-                                                                    <div className={styles.fileCardMeta}>
-                                                                        <span>{formatFileSize(file.file_size)}</span>
-                                                                        <span>•</span>
-                                                                        <span>{formatDate(file.uploaded_at)}</span>
+                                                                {file.user_name && file.uploaded_at && (
+                                                                    <div className={styles.fileCardLastPerson}>
+                                                                        {file.user_name} - {formatDateTime(file.uploaded_at)}
                                                                     </div>
-                                                                </div>
-                                                            </a>
-                                                            {authenticated && (
-                                                                <button
-                                                                    className={styles.fileCardDelete}
-                                                                    onClick={() => handleDelete(file.id)}
-                                                                    title="Supprimer"
-                                                                >
-                                                                    🗑️
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </>
@@ -442,37 +471,60 @@ function FilesContent() {
                                                     </button>
                                                 </div>
                                                 <div className={styles.filesGrid}>
-                                                    {courseFiles.map((file) => (
-                                                        <div key={file.id} className={styles.fileCard}>
-                                                            <a
-                                                                href={file.blob_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className={styles.fileCardLink}
-                                                            >
-                                                                <div className={styles.fileCardIcon}>
-                                                                    {getFileIcon(file.file_type)}
+                                                    {courseFiles.map((file) => {
+                                                        const formatDateTime = (dateString) => {
+                                                            if (!dateString) return '';
+                                                            const date = new Date(dateString);
+                                                            return date.toLocaleDateString('fr-FR', {
+                                                                day: 'numeric',
+                                                                month: 'numeric',
+                                                                year: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            });
+                                                        };
+
+                                                        return (
+                                                            <div key={file.id} className={styles.fileCardWrapper}>
+                                                                <div className={styles.fileCard}>
+                                                                    <a
+                                                                        href={file.blob_url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className={styles.fileCardLink}
+                                                                    >
+                                                                        <div className={styles.fileCardIcon}>
+                                                                            {getFileIcon(file.file_type)}
+                                                                        </div>
+                                                                        <div className={styles.fileCardContent}>
+                                                                            <h3 className={styles.fileCardName}>{file.file_name}</h3>
+                                                                            <div className={styles.fileCardMeta}>
+                                                                                <span>{formatFileSize(file.file_size)}</span>
+                                                                                <span>•</span>
+                                                                                <span>{formatDate(file.uploaded_at)}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </a>
+                                                                    {authenticated && (
+                                                                        <button
+                                                                            className={styles.fileCardDelete}
+                                                                            onClick={() => handleDelete(file.id)}
+                                                                            title="Supprimer"
+                                                                        >
+                                                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
                                                                 </div>
-                                                                <div className={styles.fileCardContent}>
-                                                                    <h3 className={styles.fileCardName}>{file.file_name}</h3>
-                                                                    <div className={styles.fileCardMeta}>
-                                                                        <span>{formatFileSize(file.file_size)}</span>
-                                                                        <span>•</span>
-                                                                        <span>{formatDate(file.uploaded_at)}</span>
+                                                                {file.user_name && file.uploaded_at && (
+                                                                    <div className={styles.fileCardLastPerson}>
+                                                                        {file.user_name} - {formatDateTime(file.uploaded_at)}
                                                                     </div>
-                                                                </div>
-                                                            </a>
-                                                            {authenticated && (
-                                                                <button
-                                                                    className={styles.fileCardDelete}
-                                                                    onClick={() => handleDelete(file.id)}
-                                                                    title="Supprimer"
-                                                                >
-                                                                    🗑️
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         );

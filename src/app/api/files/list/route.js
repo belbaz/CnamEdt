@@ -41,10 +41,10 @@ export async function GET(request) {
         let query;
 
         if (userId) {
-            // Utilisateur connecté : récupérer ses fichiers + fichiers publics
+            // Utilisateur connecté : récupérer ses fichiers + fichiers publics avec jointure automatique
             query = supabase
                 .from('edt_course_files')
-                .select('id, file_name, file_size, file_type, blob_url, uploaded_at, user_id')
+                .select('id, file_name, file_size, file_type, blob_url, uploaded_at, user_id, edt_user:user_id(name, last_name)')
                 .eq('course_uid', courseUid)
                 .order('uploaded_at', { ascending: false });
         } else {
@@ -52,7 +52,7 @@ export async function GET(request) {
             // Pour l'instant, on retourne tous les fichiers (on peut ajouter un flag "public" plus tard)
             query = supabase
                 .from('edt_course_files')
-                .select('id, file_name, file_size, file_type, blob_url, uploaded_at, user_id')
+                .select('id, file_name, file_size, file_type, blob_url, uploaded_at, user_id, edt_user:user_id(name, last_name)')
                 .eq('course_uid', courseUid)
                 .order('uploaded_at', { ascending: false });
         }
@@ -67,10 +67,21 @@ export async function GET(request) {
             );
         }
 
+        // Formater les fichiers avec le nom de l'utilisateur (grâce à la jointure automatique)
+        const formattedFiles = (files || []).map(file => {
+            const userInfo = file.edt_user || null;
+            const userName = userInfo ? `${userInfo.name || ''} ${userInfo.last_name || ''}`.trim() : 'Utilisateur inconnu';
+            return {
+                ...file,
+                user_name: userName,
+                uploaded_at: file.uploaded_at
+            };
+        });
+
         return NextResponse.json({
             success: true,
-            files: files || [],
-            count: files?.length || 0
+            files: formattedFiles,
+            count: formattedFiles.length
         });
 
     } catch (error) {

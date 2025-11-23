@@ -81,7 +81,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 0.9rem;
+    padding: 0.65rem 0.9rem;
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -116,7 +116,7 @@
 
 .event-modal-content {
     overflow: auto;
-    padding: 0.85rem 0.9rem 1rem 0.9rem;
+    padding: 0.7rem 0.9rem 0.85rem 0.9rem;
     /* Scrollbar Firefox - Mode clair */
     scrollbar-width: thin;
     scrollbar-color: #718096 rgba(0, 0, 0, 0.05);
@@ -207,7 +207,7 @@
 
 /* Section du modal */
 .modal-section {
-    padding: 1rem 0;
+    padding: 0.65rem 0;
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -225,19 +225,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.75rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
 }
 
 /* Style unifié pour tous les boutons d'action */
 .action-btn {
-    flex: 1 1 0;
-    min-width: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.3rem 1rem;
+    padding: 0.4rem 1rem;
     border-radius: 18px;
     font-size: 0.79rem;
     font-weight: 500;
@@ -246,6 +244,12 @@
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 2.25rem;
+    height: 2.25rem;
+    line-height: 1;
+    box-sizing: border-box;
+    width: auto;
+    max-width: 240px;
 }
 
 .action-btn:hover {
@@ -262,6 +266,10 @@
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    height: 1.1rem;
+    width: auto;
 }
 
 .action-btn-text {
@@ -291,19 +299,32 @@
 .moodle-btn svg {
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
+    display: block;
+    vertical-align: middle;
 }
 
 /* Responsive pour les boutons d'action */
 @media (max-width: 600px) {
     .modal-actions {
-        flex-direction: column;
-        gap: 0.5rem;
+        flex-direction: row;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
     }
 
     .action-btn {
-        flex: none;
-        padding: 0.7rem 1rem;
-        font-size: 0.85rem;
+        width: auto;
+        max-width: 220px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .action-btn-text {
+        font-size: 0.75rem;
+    }
+
+    .action-btn-icon {
+        font-size: 1rem;
     }
 }
 
@@ -350,7 +371,7 @@
     gap: 0.5rem;
     font-size: 0.85rem;
     color: var(--text-secondary);
-    margin: 0.25rem 0;
+    margin: 0.15rem 0;
 }
 
 /* Location row avec badge de site */
@@ -518,7 +539,7 @@
 
 /* Statistiques d'heures compactes dans la modal */
 .hours-stats-compact {
-    padding: 0.5rem 0.65rem;
+    padding: 0.4rem 0.6rem;
     background: linear-gradient(135deg, rgba(66, 153, 225, 0.08) 0%, rgba(96, 165, 250, 0.05) 100%);
     border-radius: 8px;
     border: 1px solid rgba(66, 153, 225, 0.2);
@@ -567,9 +588,9 @@
 .hours-stats-content {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
     border-top: 1px solid rgba(66, 153, 225, 0.15);
 }
 

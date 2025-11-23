@@ -65,7 +65,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 :global(.modal-notes-title) {
@@ -108,17 +108,17 @@
 :global(.modal-notes-list) {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.6rem;
 }
 
 :global(.modal-note-entry) {
     border: 1px solid var(--border-light);
-    border-radius: 10px;
-    padding: 0.35rem;
+    border-radius: 8px;
+    padding: 0.5rem;
     background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.5rem;
 }
 
 :global(.modal-note-header) {
@@ -170,7 +170,7 @@
 :global(.modal-note-view) {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.5rem;
 }
 
 :global(.modal-note-last-person) {
@@ -184,10 +184,10 @@
 }
 
 :global(.modal-note-view-card) {
-    border: 1px solid var(--text-primary);
+    border: 1px solid var(--border-light);
     border-radius: 10px;
-    padding: 0 0.75rem;
-    background: var(--bg-gradient);
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -195,10 +195,31 @@
 
 :global(.modal-note-labels-inline) {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.4rem;
     padding: 0.5rem 0.25rem 0.25rem 0.25rem;
     align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+}
+
+:global(.modal-note-labels-inline::-webkit-scrollbar) {
+    height: 6px;
+}
+
+:global(.modal-note-labels-inline::-webkit-scrollbar-track) {
+    background: transparent;
+}
+
+:global(.modal-note-labels-inline::-webkit-scrollbar-thumb) {
+    background: var(--border-light);
+    border-radius: 3px;
+}
+
+:global(.modal-note-labels-inline::-webkit-scrollbar-thumb:hover) {
+    background: var(--text-secondary);
 }
 
 :global(.modal-label-inline) {
@@ -211,6 +232,8 @@
     font-size: 0.7rem;
     font-weight: 600;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 :global(.modal-note-view-text){
@@ -226,29 +249,85 @@
 }
 
 :global(.modal-notes-empty) {
-    border: 1px dashed var(--text-primary);
-    border-radius: 10px;
-    padding: 0.28rem;
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 8px;
+    padding: 0.6rem;
     text-align: center;
     color: var(--text-secondary);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
+    background: var(--bg-secondary);
 }
 
+:global(.dark-mode .modal-notes-empty),
+:global([data-theme="dark"] .modal-notes-empty),
+:global(.oled-mode .modal-notes-empty) {
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
+:global(.modal-section-empty) {
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 8px;
+    padding: 0.6rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    background: var(--bg-secondary);
+}
+
+:global(.dark-mode .modal-section-empty),
+:global([data-theme="dark"] .modal-section-empty),
+:global(.oled-mode .modal-section-empty) {
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* Style unifié pour TOUS les boutons d'action dans le modal */
+:global(.modal-action-button) {
+    border: 1px solid #2563eb;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1d4ed8;
+    border-radius: 6px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+:global(.modal-action-button:hover:not(:disabled)) {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: #1d4ed8;
+}
+
+:global(.modal-action-button:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+:global(.modal-action-button.secondary) {
+    background: transparent;
+    border-style: dashed;
+}
+
+/* Alias pour compatibilité */
 :global(.modal-note-add) {
     width: fit-content;
     border: 1px solid #2563eb;
     background: rgba(37, 99, 235, 0.1);
     color: #1d4ed8;
-    border-radius: 8px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
+    border-radius: 6px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: .5rem;
+    white-space: nowrap;
+    line-height: 1.2;
 }
 
 :global(.modal-note-add.secondary) {
@@ -263,6 +342,7 @@
 
 :global(.modal-note-add:not(:disabled):hover) {
     background: rgba(37, 99, 235, 0.15);
+    border-color: #1d4ed8;
 }
 
 :global(.modal-notes-actions) {
@@ -454,26 +534,68 @@
 }
 
 .notesUnauthLink {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #2563eb;
     text-decoration: none;
     font-weight: 600;
     padding: 0.3rem 0.6rem;
-    margin: .5rem;
+    margin: 0 0.25rem;
     border-radius: 6px;
     background: rgba(37, 99, 235, 0.1);
     border: 1px solid rgba(37, 99, 235, 0.2);
     transition: all 0.2s;
+    display: inline-block;
 }
 
 .notesUnauthLink:hover {
     background: rgba(37, 99, 235, 0.2);
 }
 
+:global(.modal-auth-message) {
+    margin-bottom: 0.75rem;
+    padding: 0.6rem;
+    text-align: center;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+:global(.dark-mode .modal-auth-message),
+:global([data-theme="dark"] .modal-auth-message),
+:global(.oled-mode .modal-auth-message) {
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
+:global(.modal-auth-message-text) {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+/* Section avec bordure en pointillé pour harmoniser Notes et Fichiers */
+:global(.modal-section-dashed) {
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0;
+}
+
+/* Amélioration de la visibilité des bordures en mode sombre */
+:global(.dark-mode .modal-section-dashed),
+:global([data-theme="dark"] .modal-section-dashed),
+:global(.oled-mode .modal-section-dashed) {
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
 /* Styles pour les labels dans le modal */
 :global(.modal-labels-section) {
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.65rem;
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -481,7 +603,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
 }
 
 :global(.modal-labels-title) {
@@ -493,42 +616,70 @@
 }
 
 :global(.modal-add-label-button) {
-    background: transparent;
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid #2563eb;
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #1d4ed8;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.2;
 }
 
 :global(.modal-add-label-button:hover) {
-    background: var(--bg-primary);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.15);
+    border-color: #1d4ed8;
+    color: #1d4ed8;
+    transform: translateY(-1px);
 }
 
 :global(.modal-labels-list) {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    min-height: 1.5rem;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    min-height: 1.25rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.2rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+}
+
+:global(.modal-labels-list::-webkit-scrollbar) {
+    height: 6px;
+}
+
+:global(.modal-labels-list::-webkit-scrollbar-track) {
+    background: transparent;
+}
+
+:global(.modal-labels-list::-webkit-scrollbar-thumb) {
+    background: var(--border-light);
+    border-radius: 3px;
+}
+
+:global(.modal-labels-list::-webkit-scrollbar-thumb:hover) {
+    background: var(--text-secondary);
 }
 
 :global(.modal-label) {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     background: var(--bg-primary);
     border: 1px solid var(--border-light);
-    border-radius: 20px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
+    border-radius: 16px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 :global(.modal-remove-label-button) {
@@ -536,20 +687,21 @@
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1;
-    padding: 0;
-    width: 18px;
-    height: 18px;
+    padding: 0.15rem;
+    width: 16px;
+    height: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s;
+    margin-left: 0.1rem;
 }
 
 :global(.modal-remove-label-button:hover) {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
 }
 
@@ -562,20 +714,21 @@
 :global(.modal-predefined-labels) {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
 }
 
 :global(.modal-predefined-label-button) {
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s;
+    line-height: 1.2;
 }
 
 :global(.modal-predefined-label-button:hover:not(.modal-predefined-label-button-disabled)) {
@@ -595,8 +748,8 @@
 
 :global(.modal-custom-label-input) {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -604,13 +757,14 @@
 :global(.modal-custom-label-input-field) {
     flex: 1;
     min-width: 150px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.65rem;
     border: 1px solid var(--border-light);
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-family: inherit;
+    line-height: 1.3;
 }
 
 :global(.modal-custom-label-input-field:focus) {
@@ -621,13 +775,14 @@
 
 :global(.modal-custom-label-add-button),
 :global(.modal-custom-label-cancel-button) {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     border: none;
+    line-height: 1.3;
 }
 
 :global(.modal-custom-label-add-button) {

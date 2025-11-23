@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import styles from "./CourseFiles.module.css";
+import pageStyles from "@/app/page.module.css";
 
 /**
  * Composant pour gérer les fichiers d'un cours
@@ -138,12 +139,30 @@ export default function CourseFiles({ courseUid, authenticated }) {
         return '📄';
     };
 
+    const handleDownload = async (file) => {
+        try {
+            const response = await fetch(file.blob_url);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.file_name;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("[CourseFiles] Erreur téléchargement:", err);
+            setError("Erreur lors du téléchargement du fichier");
+        }
+    };
+
     if (!courseUid) {
         return null;
     }
 
     return (
-        <div className="modal-section">
+        <div className="modal-section modal-section-dashed">
             <div className="modal-notes-header">
                 <div className="modal-notes-title">
                     <h3>📄 Fichiers du cours</h3>
@@ -172,33 +191,80 @@ export default function CourseFiles({ courseUid, authenticated }) {
                 <div className={styles.loading}>Chargement...</div>
             ) : files.length === 0 ? (
                 <div className={styles.empty}>
-                    {authenticated ? "Aucun fichier pour ce cours. Ajoutez-en un !" : "Aucun fichier pour ce cours."}
+                    {authenticated ? "Aucun fichier" : "Aucun fichier"}
                 </div>
             ) : (
                 <div className={styles.filesList}>
-                    {files.map((file) => (
-                        <div key={file.id} className={styles.fileItem}>
-                            <a
-                                href={file.blob_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.fileLink}
-                            >
-                                <span className={styles.fileIcon}>{getFileIcon(file.file_type)}</span>
-                                <span className={styles.fileName}>{file.file_name}</span>
-                                <span className={styles.fileSize}>{formatFileSize(file.file_size)}</span>
-                            </a>
-                            {authenticated && (
-                                <button
-                                    className={styles.deleteButton}
-                                    onClick={() => handleDelete(file.id)}
-                                    title="Supprimer"
-                                >
-                                    🗑️
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                    {files.map((file) => {
+                        const formatDateTime = (dateString) => {
+                            if (!dateString) return '';
+                            const date = new Date(dateString);
+                            return date.toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        };
+
+                        return (
+                            <div key={file.id} className={styles.fileItemWrapper}>
+                                <div className={styles.fileItem}>
+                                    <a
+                                        href={file.blob_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.fileLink}
+                                    >
+                                        <span className={styles.fileIcon}>{getFileIcon(file.file_type)}</span>
+                                        <span className={styles.fileName}>{file.file_name}</span>
+                                        <span className={styles.fileSize}>{formatFileSize(file.file_size)}</span>
+                                    </a>
+                                    <button
+                                        className={styles.downloadButton}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleDownload(file);
+                                        }}
+                                        title="Télécharger"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 10.5L4 6.5H6V2H10V6.5H12L8 10.5Z" fill="currentColor"/>
+                                            <path d="M2 12V13H14V12H2Z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                    {authenticated && (
+                                        <button
+                                            className={styles.deleteButton}
+                                            onClick={() => handleDelete(file.id)}
+                                            title="Supprimer"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                                {file.user_name && file.uploaded_at && (
+                                    <div className={styles.fileLastPerson}>
+                                        {file.user_name} - {formatDateTime(file.uploaded_at)}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {!authenticated && (
+                <div className="modal-auth-message" style={{ marginTop: '0.75rem' }}>
+                    <p className="modal-auth-message-text">
+                        <a href="/login" className={pageStyles.notesUnauthLink}>
+                            Connectez-vous
+                        </a>
+                        <span style={{ display: 'block', marginTop: '0.25rem' }}>pour ajouter des fichiers</span>
+                    </p>
                 </div>
             )}
         </div>

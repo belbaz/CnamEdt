@@ -475,11 +475,21 @@ export default function EventModal({
 
                         {/* Section Notes Agenda */}
                         {selectedEvent.uid && (
-                            <div className="modal-section">
+                            <div className="modal-section modal-section-dashed">
                                 <div className="modal-notes-header">
                                     <div className="modal-notes-title">
-                                        <h3>Notes de l&apos;agenda</h3>
+                                        <h3>📋 Notes</h3>
                                     </div>
+                                    {notesAuthenticated && !isModalEditingNotes && savedModalEntries.length > 0 && userRole !== 'visiteur' && (
+                                        <button
+                                            type="button"
+                                            className="modal-note-add"
+                                            onClick={handleStartEditing}
+                                            disabled={savingNote}
+                                        >
+                                            ✏️ Modifier
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 
@@ -489,14 +499,13 @@ export default function EventModal({
                                         {savedModalEntries.length === 0 ? (
                                             <div className="modal-notes-empty">
                                                 <p className="modal-note-view-text">Aucune note disponible</p>
-                                                <p
-                                                    className="modal-note-view-text"
-                                                    style={{ fontSize: '0.9em', color: '#666', marginTop: '0.5em' }}
-                                                >
-                                                    <a href="/login" className={styles.notesUnauthLink}>
-                                                        Connectez-vous
-                                                    </a>pour ajouter des notes
-                                                </p>
+                                                <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                                                    <p className="modal-auth-message-text">
+                                                        <a href="/login" className={styles.notesUnauthLink}>
+                                                            Connectez-vous
+                                                        </a> pour ajouter des notes
+                                                    </p>
+                                                </div>
                                             </div>
                                         ) : (
                                             (() => {
@@ -560,15 +569,13 @@ export default function EventModal({
                                                                 </div>
                                                             );
                                                         })}
-                                                        <p
-                                                            className="modal-note-view-text"
-                                                            style={{ fontSize: '0.9em', color: '#666', marginTop: '1em', fontStyle: 'italic' }}
-                                                        >
-                                                            Connectez-vous pour modifier cette note
-                                                            <a href="/login" className={styles.notesUnauthLink}>
-                                                                Connexion
-                                                            </a>{" "}
-                                                        </p>
+                                                        <div className="modal-auth-message" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                                                            <p className="modal-auth-message-text">
+                                                                <a href="/login" className={styles.notesUnauthLink}>
+                                                                    Connectez-vous
+                                                                </a> pour modifier cette note
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 );
                                             })()
@@ -871,26 +878,6 @@ export default function EventModal({
                                                             : sanitizedModalEntries.length === 0
                                                                 ? "Enregistrer (supprimer)"
                                                                 : "Enregistrer"}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ) : savedModalEntries.length > 0 ? (
-                                            <div className="modal-note-view-actions">
-                                                {userRole === 'visiteur' ? (
-                                                    <div className="modal-visitor-warning">
-                                                        <span className="modal-visitor-warning-icon">ℹ️</span>
-                                                        <span className="modal-visitor-warning-text">
-                                                            En tant que visiteur, vous ne pouvez pas modifier de notes
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        className="modal-note-add"
-                                                        onClick={handleStartEditing}
-                                                        disabled={savingNote}
-                                                    >
-                                                        ✏️ Modifier
                                                     </button>
                                                 )}
                                             </div>
