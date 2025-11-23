@@ -238,8 +238,7 @@
 
 :global(.modal-note-view-text){
     font-size: 15px;
-    padding: .15rem;
-    margin: .25rem .1rem;
+    margin: .1rem .1rem;
 }
 
 :global(.modal-note-view-index) {
@@ -582,7 +581,7 @@
     border: 1px dashed rgba(148, 163, 184, 0.4);
     border-radius: 8px;
     padding: 0.75rem;
-    margin-bottom: 0;
+    margin-bottom: .5rem;
 }
 
 /* Amélioration de la visibilité des bordures en mode sombre */
@@ -722,7 +721,7 @@
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 6px;
-    padding: 0.35rem 0.75rem;
+    padding: 0.20rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-primary);

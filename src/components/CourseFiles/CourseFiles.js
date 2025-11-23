@@ -165,7 +165,7 @@ export default function CourseFiles({ courseUid, authenticated }) {
         <div className="modal-section modal-section-dashed">
             <div className="modal-notes-header">
                 <div className="modal-notes-title">
-                    <h3>📄 Fichiers du cours</h3>
+                    <h3>📄 Fichiers</h3>
                 </div>
                 {authenticated && (
                     <label className={styles.uploadButton}>

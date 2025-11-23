@@ -122,7 +122,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.26rem;
+    padding: 0.16rem;
     background: var(--bg-secondary);
     border-radius: 8px;
     border: 1px solid var(--border-light);
@@ -156,7 +156,8 @@
 }
 
 .fileIcon {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
+    padding: 0.15rem;
     flex-shrink: 0;
 }
 
