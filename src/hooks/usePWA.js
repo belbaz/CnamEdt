@@ -32,12 +32,43 @@ export function usePWA() {
 
         // Écouter l'événement beforeinstallprompt (Chrome/Edge)
         const handleBeforeInstallPrompt = (e) => {
+            console.log('[PWA] beforeinstallprompt déclenché');
             e.preventDefault();
             setDeferredPrompt(e);
             setCanInstall(true);
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // Vérifier périodiquement si l'installation est possible (fallback)
+        // Chrome peut ne pas déclencher beforeinstallprompt dans certains cas
+        const checkInstallability = async () => {
+            try {
+                // Vérifier si le manifest est valide
+                const manifestResponse = await fetch('/manifest.webmanifest');
+                if (manifestResponse.ok) {
+                    const manifest = await manifestResponse.json();
+                    console.log('[PWA] Manifest valide:', manifest.name);
+                    
+                    // Vérifier si le Service Worker est actif
+                    if ('serviceWorker' in navigator) {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        if (registration) {
+                            console.log('[PWA] Service Worker actif');
+                            console.log('[PWA] État installation:', {
+                                isStandalone: checkStandalone(),
+                                userAgent: navigator.userAgent.substring(0, 50)
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn('[PWA] Erreur vérification installabilité:', error);
+            }
+        };
+
+        // Vérifier après un délai
+        setTimeout(checkInstallability, 2000);
 
         // Vérifier si l'app est déjà installée
         window.addEventListener('appinstalled', () => {
