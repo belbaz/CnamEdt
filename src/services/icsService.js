@@ -158,8 +158,11 @@ export function loadEventsFromCache() {
 
 /**
  * Sauvegarde les événements dans le cache localStorage
+ * @param {Array} events - Les événements à sauvegarder
+ * @param {Object} colors - Les couleurs des matières
+ * @param {boolean} updateTimestamp - Si true, met à jour le timestamp (défaut: true)
  */
-export function saveEventsToCache(events, colors) {
+export function saveEventsToCache(events, colors, updateTimestamp = true) {
     if (typeof localStorage === 'undefined') return;
     if (!ACTIVE_CACHE) {
         localStorage.removeItem("events");
@@ -169,6 +172,8 @@ export function saveEventsToCache(events, colors) {
     }
     localStorage.setItem("events", JSON.stringify(events));
     localStorage.setItem("subjectColors", JSON.stringify(colors));
-    // Sauvegarder le timestamp de la dernière mise à jour
-    localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
+    // Sauvegarder le timestamp de la dernière mise à jour UNIQUEMENT si demandé
+    if (updateTimestamp) {
+        localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
+    }
 }

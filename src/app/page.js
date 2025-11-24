@@ -227,22 +227,22 @@ function HomeContent({ searchParams }) {
                 setSelectedWeek(weekToSelect?.monday);
             }
 
-            // Sauvegarder dans le cache
-            saveEventsToCache(eventsData, colorMapping);
-
-            // Historiser les matières détectées si elles ont changé
-            await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
-            
-            // Mettre à jour le timestamp UNIQUEMENT si on a vraiment récupéré de nouvelles données
+            // Vérifier si on doit mettre à jour le timestamp
             // Ne pas mettre à jour si :
             // - Les données viennent du cache (meta.fromCache === true)
             // - Il n'y a eu aucun changement (meta.changed === 0)
-            // Dans ce cas, conserver le timestamp du cache existant
             const isFromCache = meta.fromCache === true || meta.source === 'cache';
             const hasChanges = typeof meta.changed === 'number' ? meta.changed > 0 : false;
             const shouldUpdateTimestamp = !isFromCache && hasChanges;
             
+            // Sauvegarder dans le cache (sans mettre à jour le timestamp si pas de changements)
+            saveEventsToCache(eventsData, colorMapping, shouldUpdateTimestamp);
+
+            // Historiser les matières détectées si elles ont changé
+            await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
+            
             if (shouldUpdateTimestamp) {
+                // Mettre à jour le timestamp dans l'état si on a vraiment récupéré de nouvelles données
                 const newTimestamp = new Date().toISOString();
                 setLastUpdateTimestamp(newTimestamp);
                 console.log('[Page] Timestamp mis à jour avec succès (nouvelles données):', newTimestamp);
