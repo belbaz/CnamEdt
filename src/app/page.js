@@ -125,7 +125,10 @@ function HomeContent({ searchParams }) {
                 console.log('[Page] Restauration du timestamp du cache:', cachedTimestamp);
                 setLastUpdateTimestamp(cachedTimestamp);
             } else {
+                // Si le timestamp n'existe pas, c'est probablement un ancien cache
+                // On ne crée pas de timestamp ici pour éviter d'afficher une date incorrecte
                 console.warn('[Page] Aucun timestamp trouvé dans localStorage lors du chargement du cache');
+                setLastUpdateTimestamp(null);
             }
         }
         
@@ -249,9 +252,17 @@ function HomeContent({ searchParams }) {
             } else {
                 // Conserver le timestamp du cache si on charge depuis le cache ou s'il n'y a pas de changements
                 if (typeof window !== 'undefined') {
-                    const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+                    let cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
                     if (cachedTimestamp) {
                         console.log('[Page] Conservation du timestamp du cache (pas de nouvelles données):', cachedTimestamp);
+                        setLastUpdateTimestamp(cachedTimestamp);
+                    } else {
+                        // Si le timestamp n'existe pas mais qu'on a réussi à récupérer des données (même depuis le cache),
+                        // créer un timestamp pour éviter "Date inconnue" lors des prochains chargements
+                        // Ce cas peut arriver si le cache a été créé avant l'ajout de cette fonctionnalité
+                        console.log('[Page] Aucun timestamp trouvé, création d\'un timestamp (données récupérées avec succès)');
+                        cachedTimestamp = new Date().toISOString();
+                        localStorage.setItem('lastUpdateTimestamp', cachedTimestamp);
                         setLastUpdateTimestamp(cachedTimestamp);
                     }
                 }
@@ -491,7 +502,11 @@ function HomeContent({ searchParams }) {
                     console.log('[Page] Timestamp du cache chargé:', cachedTimestamp);
                     setLastUpdateTimestamp(cachedTimestamp);
                 } else {
-                    console.warn('[Page] Aucun timestamp trouvé dans le cache');
+                    // Si le timestamp n'existe pas, c'est probablement un ancien cache créé avant cette fonctionnalité
+                    // On ne crée pas de timestamp ici pour éviter d'afficher une date incorrecte
+                    // Le timestamp sera créé lors de la prochaine mise à jour réussie
+                    console.warn('[Page] Aucun timestamp trouvé dans le cache (ancien cache probablement)');
+                    setLastUpdateTimestamp(null);
                 }
             }
             
@@ -1029,7 +1044,14 @@ function HomeContent({ searchParams }) {
 
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
-        if (!timestamp) return 'Non disponible';
+        if (!timestamp) {
+            // Si pas de timestamp mais qu'on a des événements en cache, c'est probablement un ancien cache
+            // On affiche un message indiquant que la date n'est pas disponible
+            if (allEvents.length > 0) {
+                return 'Date inconnue (ancien cache)';
+            }
+            return 'Non disponible';
+        }
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) return 'Non disponible';
