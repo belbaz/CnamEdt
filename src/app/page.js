@@ -1227,7 +1227,10 @@ function HomeContent({ searchParams }) {
                         {/* Affichage de la date et heure de dernière sauvegarde */}
                         <div className="last-update-info">
                             <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} />
-                            <span className={hasNetworkError ? styles.offlineTimestamp : ''}>
+                            <span 
+                                className={hasNetworkError ? styles.offlineTimestamp : ''}
+                                style={hasNetworkError ? { color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', padding: '0.25rem 0.5rem', display: 'inline-block' } : {}}
+                            >
                                 EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
                             </span>
                         </div>

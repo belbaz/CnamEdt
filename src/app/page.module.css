@@ -811,17 +811,17 @@
 }
 
 /* Style pour le timestamp en mode hors ligne */
-.offlineTimestamp {
+:global(.last-update-info) .offlineTimestamp {
     color: #dc2626 !important;
-    border: 1px solid #dc2626;
+    border: 1px solid #dc2626 !important;
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     display: inline-block;
 }
 
-.dark-mode .offlineTimestamp,
-[data-theme="dark"] .offlineTimestamp,
-.oled-mode .offlineTimestamp {
+.dark-mode :global(.last-update-info) .offlineTimestamp,
+[data-theme="dark"] :global(.last-update-info) .offlineTimestamp,
+.oled-mode :global(.last-update-info) .offlineTimestamp {
     color: #f87171 !important;
-    border-color: #f87171;
+    border-color: #f87171 !important;
 }
