@@ -118,10 +118,14 @@ function HomeContent({ searchParams }) {
         }
         
         // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
+        // IMPORTANT: Toujours restaurer depuis localStorage pour éviter d'afficher la date actuelle
         if (typeof window !== 'undefined') {
             const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
             if (cachedTimestamp) {
+                console.log('[Page] Restauration du timestamp du cache:', cachedTimestamp);
                 setLastUpdateTimestamp(cachedTimestamp);
+            } else {
+                console.warn('[Page] Aucun timestamp trouvé dans localStorage lors du chargement du cache');
             }
         }
         
@@ -228,8 +232,11 @@ function HomeContent({ searchParams }) {
 
             // Historiser les matières détectées si elles ont changé
             await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
-            // Mettre à jour le timestamp dans l'état
-            setLastUpdateTimestamp(new Date().toISOString());
+            // Mettre à jour le timestamp dans l'état UNIQUEMENT si on a vraiment récupéré de nouvelles données
+            // Ne pas réinitialiser si on charge depuis le cache
+            const newTimestamp = new Date().toISOString();
+            setLastUpdateTimestamp(newTimestamp);
+            console.log('[Page] Timestamp mis à jour avec succès:', newTimestamp);
             // Réinitialiser l'erreur réseau si on a réussi à charger
             setHasNetworkError(false);
 
@@ -457,10 +464,14 @@ function HomeContent({ searchParams }) {
             }
             
             // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
+            // IMPORTANT: Toujours charger depuis localStorage pour avoir la vraie date du cache
             if (typeof window !== 'undefined') {
                 const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
                 if (cachedTimestamp) {
+                    console.log('[Page] Timestamp du cache chargé:', cachedTimestamp);
                     setLastUpdateTimestamp(cachedTimestamp);
+                } else {
+                    console.warn('[Page] Aucun timestamp trouvé dans le cache');
                 }
             }
             
@@ -478,6 +489,14 @@ function HomeContent({ searchParams }) {
                 setHasNetworkError(true);
             } else {
                 setHasNetworkError(true); // Notification hors ligne
+                // S'assurer que le timestamp du cache est bien chargé
+                if (typeof window !== 'undefined') {
+                    const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+                    if (cachedTimestamp && cachedTimestamp !== lastUpdateTimestamp) {
+                        console.log('[Page] Timestamp du cache restauré:', cachedTimestamp);
+                        setLastUpdateTimestamp(cachedTimestamp);
+                    }
+                }
             }
         }
     }, [isOnline]);
@@ -696,17 +715,14 @@ function HomeContent({ searchParams }) {
     }, [todaySpacing, isSmallScreen, viewMode]);
 
     // État pour le timestamp de dernière mise à jour
-    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
-
-    // Charger le timestamp au montage
-    useEffect(() => {
+    // Initialiser directement depuis localStorage pour éviter les problèmes de timing
+    const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(() => {
         if (typeof window !== 'undefined') {
             const timestamp = localStorage.getItem('lastUpdateTimestamp');
-            if (timestamp) {
-                setLastUpdateTimestamp(timestamp);
-            }
+            return timestamp || null;
         }
-    }, []);
+        return null;
+    });
 
     // Appliquer le dark mode immédiatement au chargement (avant React)
     useEffect(() => {
