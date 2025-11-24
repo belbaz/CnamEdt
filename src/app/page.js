@@ -232,11 +232,31 @@ function HomeContent({ searchParams }) {
 
             // Historiser les matières détectées si elles ont changé
             await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
-            // Mettre à jour le timestamp dans l'état UNIQUEMENT si on a vraiment récupéré de nouvelles données
-            // Ne pas réinitialiser si on charge depuis le cache
-            const newTimestamp = new Date().toISOString();
-            setLastUpdateTimestamp(newTimestamp);
-            console.log('[Page] Timestamp mis à jour avec succès:', newTimestamp);
+            
+            // Mettre à jour le timestamp UNIQUEMENT si on a vraiment récupéré de nouvelles données
+            // Ne pas mettre à jour si :
+            // - Les données viennent du cache (meta.fromCache === true)
+            // - Il n'y a eu aucun changement (meta.changed === 0)
+            // Dans ce cas, conserver le timestamp du cache existant
+            const isFromCache = meta.fromCache === true || meta.source === 'cache';
+            const hasChanges = typeof meta.changed === 'number' ? meta.changed > 0 : false;
+            const shouldUpdateTimestamp = !isFromCache && hasChanges;
+            
+            if (shouldUpdateTimestamp) {
+                const newTimestamp = new Date().toISOString();
+                setLastUpdateTimestamp(newTimestamp);
+                console.log('[Page] Timestamp mis à jour avec succès (nouvelles données):', newTimestamp);
+            } else {
+                // Conserver le timestamp du cache si on charge depuis le cache ou s'il n'y a pas de changements
+                if (typeof window !== 'undefined') {
+                    const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+                    if (cachedTimestamp) {
+                        console.log('[Page] Conservation du timestamp du cache (pas de nouvelles données):', cachedTimestamp);
+                        setLastUpdateTimestamp(cachedTimestamp);
+                    }
+                }
+            }
+            
             // Réinitialiser l'erreur réseau si on a réussi à charger
             setHasNetworkError(false);
 
