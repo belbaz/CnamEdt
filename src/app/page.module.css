@@ -809,3 +809,19 @@
     background: var(--bg-primary);
     color: var(--text-primary);
 }
+
+/* Style pour le timestamp en mode hors ligne */
+.offlineTimestamp {
+    color: #dc2626 !important;
+    border: 1px solid #dc2626;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+}
+
+.dark-mode .offlineTimestamp,
+[data-theme="dark"] .offlineTimestamp,
+.oled-mode .offlineTimestamp {
+    color: #f87171 !important;
+    border-color: #f87171;
+}

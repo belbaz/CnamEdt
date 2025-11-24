@@ -455,6 +455,15 @@ function HomeContent({ searchParams }) {
                 const weekToSelect = selectBestWeek(weeks);
                 setSelectedWeek(weekToSelect?.monday);
             }
+            
+            // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
+            if (typeof window !== 'undefined') {
+                const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+                if (cachedTimestamp) {
+                    setLastUpdateTimestamp(cachedTimestamp);
+                }
+            }
+            
             setLoading(false);
         }
 
@@ -1160,7 +1169,9 @@ function HomeContent({ searchParams }) {
                         {/* Affichage de la date et heure de dernière sauvegarde */}
                         <div className="last-update-info">
                             <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} />
-                            <span>EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                            <span className={hasNetworkError ? styles.offlineTimestamp : ''}>
+                                EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                            </span>
                         </div>
                     </div>
                 )}
