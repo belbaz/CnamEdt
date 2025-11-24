@@ -22,6 +22,40 @@
     gap: 0.5rem;
 }
 
+/* Uniformiser la taille et le style de tous les boutons dans header-actions */
+.header-actions > div > button,
+.header-actions .settings-button,
+.header-actions .history-btn,
+.header-actions .dashboard-btn,
+.header-actions .login-btn,
+.header-actions .theme-toggle {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.header-actions > div > button:hover,
+.header-actions .settings-button:hover,
+.header-actions .history-btn:hover,
+.header-actions .dashboard-btn:hover,
+.header-actions .login-btn:hover:not(:disabled),
+.header-actions .theme-toggle:hover {
+    background: var(--bg-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Tooltip - Styles partagés avec Navbar.css */
+
 .page-title {
     font-size: 1.5rem;
     font-weight: 700;
@@ -79,51 +113,9 @@
     border-color: var(--border-color);
 }
 
-/* Login Button */
-.login-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-    flex-shrink: 0;
-    color: var(--text-primary);
-}
+/* Login Button - Styles uniformisés dans .header-actions */
 
-.login-btn:hover {
-    background: var(--bg-primary);
-    border-color: var(--primary-color, #4299e1);
-    color: var(--primary-color, #4299e1);
-    transform: scale(1.05);
-}
-
-/* Theme Toggle */
-.theme-toggle {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 1.3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-    flex-shrink: 0;
-}
-
-.theme-toggle:hover {
-    background: var(--bg-primary);
-    border-color: var(--border-color);
-}
+/* Theme Toggle - Styles uniformisés dans .header-actions */
 
 .theme-toggle.oled-active {
     border-color: #ffffff;
@@ -572,28 +564,7 @@
 }
 
 /* Bouton Dashboard */
-.dashboard-btn {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    padding: 0;
-    flex-shrink: 0;
-    color: var(--text-primary);
-}
-
-.dashboard-btn:hover {
-    background: var(--bg-primary);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    transform: scale(1.05);
-}
+/* Dashboard Button - Styles uniformisés dans .header-actions */
 
 /* Mobile */
 @media (max-width: 768px) {
@@ -613,31 +584,18 @@
         border-radius: 10px;
     }
 
-    .theme-toggle {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-        border-radius: 10px;
+    /* Uniformiser la taille de tous les boutons dans header-actions sur mobile */
+    .header-actions > div > button,
+    .header-actions .settings-button,
+    .header-actions .history-btn,
+    .header-actions .dashboard-btn,
+    .header-actions .login-btn,
+    .header-actions .theme-toggle {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 12px !important;
     }
 
-    .download-apk-button {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-        border-radius: 10px;
-    }
-
-    .login-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-    }
-
-    .dashboard-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-    }
 
     .userInfo {
         display: none;
@@ -670,28 +628,6 @@
         font-size: 1.1rem;
     }
 
-    .theme-toggle {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
-    }
-
-    .download-apk-button {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
-    }
-
-    .login-btn {
-        width: 38px;
-        height: 38px;
-    }
-
-    .dashboard-btn {
-        width: 38px;
-        height: 38px;
-    }
-
     .userInfo {
         display: none;
         visibility: hidden;
@@ -699,4 +635,30 @@
         margin: 0;
     }
 
+}
+
+/* Animation pour le spinner de chargement */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.user-loading-btn {
+    cursor: default !important;
+    opacity: 0.7 !important;
+    pointer-events: none;
+}
+
+.user-loading-btn:hover {
+    background: var(--bg-secondary) !important;
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
 }

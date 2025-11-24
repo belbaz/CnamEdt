@@ -1,6 +1,45 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Tooltip from "./Tooltip";
 import "./WeekPicker.css";
+
+// Hook pour gérer le long press sur mobile
+const useLongPress = (onLongPress, onLongPressEnd, ms = 500) => {
+    const timerRef = useRef(null);
+
+    const start = () => {
+        timerRef.current = setTimeout(() => {
+            onLongPress();
+        }, ms);
+    };
+
+    const stop = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        // Fermer le tooltip après un délai
+        if (onLongPressEnd) {
+            setTimeout(() => {
+                onLongPressEnd();
+            }, 1500);
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
+    }, []);
+
+    return {
+        onTouchStart: start,
+        onTouchEnd: stop,
+        onTouchCancel: stop,
+    };
+};
 
 export default function WeekPicker({
                                         availableWeeks,
@@ -9,6 +48,7 @@ export default function WeekPicker({
                                         onRefresh,
                                         onToday,
                                         showRefreshButton = true,
+                                        showTooltips = true,
                                         isMobile = false,
                                         onToggleAllDays,
                                         allDaysCollapsed = false,
@@ -114,34 +154,116 @@ export default function WeekPicker({
         }
     }, [isDropdownOpen]);
 
+    const [showTooltip, setShowTooltip] = useState({ today: false, previous: false, next: false, weekDisplay: false });
+    const longPressTimersRef = useRef({});
+    
+    const longPressEventsToday = useLongPress(
+        () => setShowTooltip(prev => ({ ...prev, today: true })),
+        () => setShowTooltip(prev => ({ ...prev, today: false })),
+        500
+    );
+    const longPressEventsPrevious = useLongPress(
+        () => setShowTooltip(prev => ({ ...prev, previous: true })),
+        () => setShowTooltip(prev => ({ ...prev, previous: false })),
+        500
+    );
+    const longPressEventsNext = useLongPress(
+        () => setShowTooltip(prev => ({ ...prev, next: true })),
+        () => setShowTooltip(prev => ({ ...prev, next: false })),
+        500
+    );
+    const longPressEventsWeekDisplay = useLongPress(
+        () => setShowTooltip(prev => ({ ...prev, weekDisplay: true })),
+        () => setShowTooltip(prev => ({ ...prev, weekDisplay: false })),
+        500
+    );
+
+    // Masquer le tooltip lors d'un clic
+    const handleClick = (buttonId) => {
+        setShowTooltip(prev => ({ ...prev, [buttonId]: false }));
+    };
+
     return (
         <div className={`controls ${isMobile ? 'mobile' : ''}`}>
 
-            <button className="today-btn" onClick={onToday} title="Retour à la semaine actuelle"
-                    aria-label="Aujourd'hui">
-                📅
-            </button>
+            <Tooltip 
+                text="Retour à la semaine actuelle"
+                show={showTooltip.today}
+                enabled={showTooltips}
+            >
+                <button 
+                    className="today-btn today-btn-desktop" 
+                    onClick={(e) => {
+                        handleClick('today');
+                        onToday();
+                    }} 
+                    aria-label="Retour à la semaine actuelle"
+                    onMouseEnter={() => setShowTooltip(prev => ({ ...prev, today: true }))}
+                    onMouseLeave={() => setShowTooltip(prev => ({ ...prev, today: false }))}
+                    {...longPressEventsToday}
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        <circle cx="12" cy="15" r="1" fill="currentColor"/>
+                    </svg>
+                </button>
+            </Tooltip>
 
             <div className="week-picker">
-                <button
-                    className="week-nav"
-                    onClick={handlePrevious}
-                    disabled={!canGoPrevious}
-                    title="Semaine précédente (Ctrl + ←)"
+                <Tooltip 
+                    text="Semaine précédente (Ctrl + ←)"
+                    show={showTooltip.previous && canGoPrevious}
+                    enabled={showTooltips}
                 >
-                    ←
-                </button>
+                    <button
+                        className="week-nav"
+                        onClick={(e) => {
+                            handleClick('previous');
+                            handlePrevious();
+                        }}
+                        disabled={!canGoPrevious}
+                        aria-label="Semaine précédente"
+                        onMouseEnter={() => canGoPrevious && setShowTooltip(prev => ({ ...prev, previous: true }))}
+                        onMouseLeave={() => setShowTooltip(prev => ({ ...prev, previous: false }))}
+                        {...longPressEventsPrevious}
+                    >
+                        ←
+                    </button>
+                </Tooltip>
 
-                <div 
-                    className="week-display" 
-                    ref={weekDisplayRef}
-                    onClick={handleWeekClick}
-                    style={{ cursor: 'pointer' }}
+                <Tooltip 
+                    text="Afficher les semaines"
+                    show={showTooltip.weekDisplay}
+                    enabled={showTooltips}
                 >
-                    <span className="week-label">Semaine</span>
-                    <span className="week-date">{currentWeekLabel}</span>
-                    <span className="week-arrow">{isDropdownOpen ? '▲' : '▼'}</span>
-                </div>
+                    <div 
+                        className="week-display" 
+                        ref={weekDisplayRef}
+                        onClick={(e) => {
+                            handleClick('weekDisplay');
+                            handleWeekClick();
+                        }}
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => setShowTooltip(prev => ({ ...prev, weekDisplay: true }))}
+                        onMouseLeave={() => setShowTooltip(prev => ({ ...prev, weekDisplay: false }))}
+                        {...longPressEventsWeekDisplay}
+                        role="button"
+                        aria-label="Afficher les semaines"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleClick('weekDisplay');
+                                handleWeekClick();
+                            }
+                        }}
+                    >
+                        <span className="week-label">Semaine</span>
+                        <span className="week-date">{currentWeekLabel}</span>
+                        <span className="week-arrow">{isDropdownOpen ? '▲' : '▼'}</span>
+                    </div>
+                </Tooltip>
 
                 {/* Liste déroulante des semaines */}
                 {isDropdownOpen && (
@@ -164,14 +286,26 @@ export default function WeekPicker({
                     </div>
                 )}
 
-                <button
-                    className="week-nav"
-                    onClick={handleNext}
-                    disabled={!canGoNext}
-                    title="Semaine suivante (Ctrl + →)"
+                <Tooltip 
+                    text="Semaine suivante (Ctrl + →)"
+                    show={showTooltip.next && canGoNext}
+                    enabled={showTooltips}
                 >
-                    →
-                </button>
+                    <button
+                        className="week-nav"
+                        onClick={(e) => {
+                            handleClick('next');
+                            handleNext();
+                        }}
+                        disabled={!canGoNext}
+                        aria-label="Semaine suivante"
+                        onMouseEnter={() => canGoNext && setShowTooltip(prev => ({ ...prev, next: true }))}
+                        onMouseLeave={() => setShowTooltip(prev => ({ ...prev, next: false }))}
+                        {...longPressEventsNext}
+                    >
+                        →
+                    </button>
+                </Tooltip>
             </div>
         </div>
     );

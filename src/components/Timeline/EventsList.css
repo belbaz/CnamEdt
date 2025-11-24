@@ -23,8 +23,8 @@ ul {
     .events-container {
         padding: 0.5rem 0 2.75rem 0;
     }
-    
-    ul {
+
+    .events-container ul {
         min-height: 130px;
     }
 }

@@ -68,6 +68,7 @@ function HomeContent({ searchParams }) {
     const [showTimeLabels, setShowTimeLabels] = useState(true); // Afficher les labels d'heures
     const [hide15MinSpacing, setHide15MinSpacing] = useState(false); // Masquer l'espacement visuel de 15 minutes
     const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
+    const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -85,6 +86,7 @@ function HomeContent({ searchParams }) {
 
     // Infos utilisateur
     const [userInfo, setUserInfo] = useState(null);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
 
 
     // Présence d'un deep-link vers un cours précis
@@ -114,6 +116,15 @@ function HomeContent({ searchParams }) {
             const weekToSelect = selectBestWeek(weeks);
             setSelectedWeek(weekToSelect?.monday);
         }
+        
+        // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
+        if (typeof window !== 'undefined') {
+            const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+            if (cachedTimestamp) {
+                setLastUpdateTimestamp(cachedTimestamp);
+            }
+        }
+        
         setLoading(false);
         setError(null);
         setDebugInfo(null);
@@ -466,13 +477,20 @@ function HomeContent({ searchParams }) {
     useEffect(() => {
         const loadUserInfo = async () => {
             try {
-                const res = await fetch("/api/user", { cache: "no-store" });
+                setIsLoadingUser(true);
+                // Délai minimum pour que le spinner soit visible
+                const [res] = await Promise.all([
+                    fetch("/api/user", { cache: "no-store" }),
+                    new Promise(resolve => setTimeout(resolve, 500)) // Minimum 500ms
+                ]);
                 if (res.ok) {
                     const data = await res.json();
                     setUserInfo(data);
                 }
             } catch (error) {
                 // Ignorer silencieusement si non connecté
+            } finally {
+                setIsLoadingUser(false);
             }
         };
         loadUserInfo();
@@ -738,6 +756,9 @@ function HomeContent({ searchParams }) {
 
         const savedShowTimeRemaining = localStorage.getItem("showTimeRemaining");
         if (savedShowTimeRemaining !== null) setShowTimeRemaining(savedShowTimeRemaining === "true");
+
+        const savedShowTooltips = localStorage.getItem("showTooltips");
+        if (savedShowTooltips !== null) setShowTooltips(savedShowTooltips === "true");
     }, []);
 
     useEffect(() => {
@@ -888,6 +909,7 @@ function HomeContent({ searchParams }) {
     const handleToggleTimeLabels = (enabled) => handlers.handleToggleTimeLabels(enabled, setShowTimeLabels);
     const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
     const handleToggleTimeRemaining = (enabled) => handlers.handleToggleTimeRemaining(enabled, setShowTimeRemaining);
+    const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
     const handleToggleTestMode = () => handlers.handleToggleTestMode(testMode);
@@ -1016,6 +1038,8 @@ function HomeContent({ searchParams }) {
                 onToggle15MinSpacing={handleToggle15MinSpacing}
                 showTimeRemaining={showTimeRemaining}
                 onToggleTimeRemaining={handleToggleTimeRemaining}
+                showTooltips={showTooltips}
+                onToggleTooltips={handleToggleTooltips}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
@@ -1023,6 +1047,7 @@ function HomeContent({ searchParams }) {
                 onShowOnlyExamsChange={setShowOnlyExams}
                 showFilter={!loading && allEvents.length > 0}
                 userInfo={userInfo}
+                isLoadingUser={isLoadingUser}
             />
 
             <main className={styles.container}>

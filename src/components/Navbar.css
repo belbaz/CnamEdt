@@ -39,6 +39,11 @@
     flex-wrap: nowrap;
 }
 
+/* Bouton today sur mobile : caché par défaut, affiché dans navbar-actions-right sur mobile */
+.today-btn-mobile {
+    display: none !important;
+}
+
 .week-picker-container {
     display: flex;
     align-items: center;
@@ -46,14 +51,6 @@
     flex-shrink: 0;
 }
 
-.expand-all-btn-desktop {
-    display: flex;
-    flex-shrink: 0;
-}
-
-.expand-all-btn-mobile {
-    display: none !important;
-}
 
 .auto-scroll-toggle {
     background: var(--bg-secondary);
@@ -151,6 +148,192 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Tooltip */
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+    pointer-events: auto;
+}
+
+.tooltip {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    z-index: 10000;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    pointer-events: none;
+    animation: tooltipFadeIn 0.2s ease-out;
+    max-width: calc(100vw - 2rem);
+    word-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+    min-width: max-content;
+}
+
+.tooltip-top::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--bg-secondary);
+}
+
+.tooltip-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: var(--bg-secondary);
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Uniformiser la taille et le style de tous les boutons dans view-filter-group */
+.view-filter-group > button,
+.view-filter-group .options-menu-toggle {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+
+.view-filter-group .filter-button {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+/* Uniformiser la couleur de fond de tous les boutons dans view-filter-group */
+.view-filter-group .today-btn {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--text-primary) !important;
+}
+
+.view-filter-group .today-btn:hover {
+    background: var(--bg-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+.view-filter-group .filter-button {
+    background: var(--bg-secondary) !important;
+}
+
+.view-filter-group .options-menu-toggle {
+    background: var(--bg-secondary);
+}
+
+/* Uniformiser le hover pour tous les boutons dans view-filter-group */
+.view-filter-group .filter-button:hover {
+    background: var(--bg-primary) !important;
+}
+
+/* Menu déroulant options (tous écrans) */
+.options-menu-container {
+    position: relative;
+}
+
+.options-menu-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.options-menu-toggle:hover {
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.options-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    min-width: 200px;
+    overflow: hidden;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.options-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: left;
+}
+
+.options-menu-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.options-menu-item:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.options-menu-item:last-child {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.options-menu-item svg {
+    flex-shrink: 0;
+}
+
+.options-menu-item span {
+    flex: 1;
 }
 
 /* Bouton DEV - Clear cache */
@@ -256,7 +439,7 @@
 }
 
 /* Mobile */
-@media (max-width: 768px) {
+@media (max-width: 650px) {
     .navbar-container {
         padding: 0.5rem 0;
     }
@@ -272,7 +455,33 @@
 
     .navbar-actions-right {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: flex-start;
+        flex-direction: row;
+        gap: 0.75rem;
+    }
+
+    /* Afficher le bouton today dans view-filter-group sur mobile */
+    .today-btn-mobile {
+        display: flex !important;
+        order: -1; /* Placer en premier dans view-filter-group */
+        flex-shrink: 0;
+    }
+
+    /* Uniformiser la taille de tous les boutons dans view-filter-group sur mobile */
+    .view-filter-group > button,
+    .view-filter-group .options-menu-toggle {
+        width: 44px;
+        height: 44px;
+    }
+
+    .view-filter-group .filter-button {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .dev-buttons-container {
+        order: 1;
+        margin-left: auto;
     }
 
     .week-picker-container {
@@ -282,19 +491,6 @@
         flex: 1;
     }
 
-    .expand-all-btn-desktop {
-        display: none !important;
-    }
-
-    .expand-all-btn-mobile {
-        display: flex !important;
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-        border-radius: 10px;
-        flex-shrink: 0;
-        margin-left: 0;
-    }
 
     .auto-scroll-toggle {
         padding: 0.5rem 0.875rem;
@@ -305,8 +501,9 @@
     }
 
     .dev-buttons-container {
+        display: flex;
+        justify-content: center;
         width: 100%;
-        justify-content: flex-end;
     }
 
     .dev-clear-cache-btn {
@@ -342,11 +539,6 @@
         gap: 0.5rem;
     }
 
-    .expand-all-btn-mobile {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
-    }
 
     .auto-scroll-toggle {
         padding: 0.5rem 0.75rem;

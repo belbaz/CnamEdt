@@ -15,7 +15,9 @@ export default function SettingsMenu({
                                          hide15MinSpacing = false,
                                          onToggle15MinSpacing = null,
                                          showTimeRemaining = true,
-                                         onToggleTimeRemaining = null
+                                         onToggleTimeRemaining = null,
+                                         showTooltips = true,
+                                         onToggleTooltips = null
                                      }) {
     const [isOpen, setIsOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
@@ -105,9 +107,9 @@ export default function SettingsMenu({
     return (
         <>
             <button
-                className="settings-button filter-buttonm"
+                className="settings-button"
                 onClick={() => setIsOpen(!isOpen)}
-                title="Paramètres"
+                aria-label="Paramètres"
             >
                 <img src="/settings.svg" alt="Paramètres" width="22" height="22" aria-hidden="true"/>
             </button>
@@ -157,14 +159,19 @@ export default function SettingsMenu({
                                 </label>
                             </div>
 
-                            {/* Canal supprimé: interface épurée */}
+                            <div className="setting-item">
+                                <label htmlFor="showTooltips-checkbox">
+                                    <input
+                                        id="showTooltips-checkbox"
+                                        type="checkbox"
+                                        checked={showTooltips}
+                                        onChange={(e) => onToggleTooltips && onToggleTooltips(e.target.checked)}
+                                    />
+                                    <span>Afficher les indications des boutons</span>
+                                </label>
+                            </div>
 
-                            {version && (
-                                <div className="setting-item">
-                                    <span className="setting-label">Version</span>
-                                    <span className="setting-value">{version}</span>
-                                </div>
-                            )}
+                            {/* Canal supprimé: interface épurée */}
 
                             <div className="setting-item setting-button-item">
                                 <a
@@ -184,7 +191,7 @@ export default function SettingsMenu({
                                         className="copyright-text"
                                         onClick={handleCopyrightClick}
                                     >
-                                        © {new Date().getFullYear()} EDT CNAM
+                                        © {new Date().getFullYear()} EDT CNAM{version && ` • v${version}`}
                                     </span>
                                 </div>
                             </div>

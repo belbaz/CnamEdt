@@ -220,7 +220,7 @@ export default function EventCard({
                                 onMouseEnter={() => setShowTooltip(true)}
                                 onMouseLeave={() => setShowTooltip(false)}
                             >
-                                <strong>{noteCount > 1 ? `${noteCount} notes` : "Note"}</strong>
+                                <strong>{noteCount > 1 ? `${noteCount} notes` : "note"}</strong>
                                 <ul className="note-tooltip-list">
                                     {previewEntries.map((entry, idx) => (
                                         <li key={idx}>{entry}</li>

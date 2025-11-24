@@ -61,6 +61,11 @@ export function useHomePageHandlers({
         localStorage.setItem('showTimeRemaining', enabled.toString());
     };
 
+    const handleToggleTooltips = (enabled, setShowTooltips) => {
+        setShowTooltips(enabled);
+        localStorage.setItem('showTooltips', enabled.toString());
+    };
+
     const handleToggleDay = (day) => {
         const newCollapsedDays = {
             ...collapsedDays,
@@ -244,6 +249,7 @@ export function useHomePageHandlers({
         handleToggleTimeLabels,
         handleToggle15MinSpacing,
         handleToggleTimeRemaining,
+        handleToggleTooltips,
         handleToggleDay,
         handleToggleAllDays,
         handleToggleTestMode,
