@@ -1198,7 +1198,6 @@ function HomeContent({searchParams}) {
                                     </span>
                                 </div>
                             )
-
                         }
                         {getTimeRemainingText && (
                             <div className={styles.timeRemainingText}>

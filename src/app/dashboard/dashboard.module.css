@@ -1,10 +1,11 @@
 .container {
     min-height: 100dvh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: clamp(1rem, 3vw, 2rem);
+    padding: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 :global(.dark-mode) .container {
@@ -263,7 +264,7 @@
 /* Responsive */
 @media (max-width: 768px) {
     .container {
-        padding: 1rem;
+        padding: 0.75rem;
     }
 
     .pagesGrid {
@@ -285,6 +286,10 @@
 }
 
 @media (max-width: 480px) {
+    .container {
+        padding: 0.5rem;
+    }
+
     .pageCard {
         padding: 1rem;
     }

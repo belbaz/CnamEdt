@@ -676,14 +676,13 @@
 /* Affichage de la dernière mise à jour */
 .last-update-info {
     width: 100%;
-    padding: .5rem 0.75rem 1rem 1rem;
+    padding: .1rem 0.75rem 1rem 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
     color: var(--text-secondary);
     font-size: 0.85rem;
-    margin-top: 1rem;
     flex-wrap: wrap;
 }
 
