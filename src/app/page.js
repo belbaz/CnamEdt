@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect, useRef, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek } from "@/utils/dateUtils";
-import { createSubjectColorMapping, groupEventsByDay, getEventTitle } from "@/utils/eventUtils";
-import { useDevMode } from "@/utils/env";
-import { fetchICSEvents, loadEventsFromCache, saveEventsToCache } from "@/services/icsService";
+import {useState, useEffect, useRef, useMemo, Suspense} from "react";
+import {useSearchParams} from "next/navigation";
+import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
+import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
+import {useDevMode} from "@/utils/env";
+import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
 import {
     addTestCoursesForToday,
     isTestModeEnabled,
@@ -13,11 +13,11 @@ import {
     isTestWeekEnabled,
     setTestWeekMode
 } from "@/services/testDataService";
-import { usePWA } from "@/hooks/usePWA";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { useCourseNotes } from "@/hooks/useCourseNotes";
-import { useHomePageHandlers } from "@/hooks/useHomePageHandlers";
+import {usePWA} from "@/hooks/usePWA";
+import {useNetworkStatus} from "@/hooks/useNetworkStatus";
+import {usePullToRefresh} from "@/hooks/usePullToRefresh";
+import {useCourseNotes} from "@/hooks/useCourseNotes";
+import {useHomePageHandlers} from "@/hooks/useHomePageHandlers";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import DayBlock from "@/components/DayBlock";
@@ -34,11 +34,11 @@ import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
-import { saveSnapshotIfChanged } from "@/utils/historyService";
-import { parseStoredNoteValue } from "@/utils/noteEntries";
-import { generateEventKey } from "@/utils/eventModalUtils";
+import {saveSnapshotIfChanged} from "@/utils/historyService";
+import {parseStoredNoteValue} from "@/utils/noteEntries";
+import {generateEventKey} from "@/utils/eventModalUtils";
 
-function HomeContent({ searchParams }) {
+function HomeContent({searchParams}) {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -82,7 +82,7 @@ function HomeContent({ searchParams }) {
     const [supabaseSource, setSupabaseSource] = useState(null);
 
     // Notes des cours
-    const { notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes } = useCourseNotes();
+    const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
 
     // Infos utilisateur
     const [userInfo, setUserInfo] = useState(null);
@@ -93,8 +93,8 @@ function HomeContent({ searchParams }) {
     const eventKeyParam = searchParams?.get('eventKey');
 
     // Hook PWA pour détecter l'installation
-    const { isInstalled, isStandalone } = usePWA();
-    const { isOnline } = useNetworkStatus();
+    const {isInstalled, isStandalone} = usePWA();
+    const {isOnline} = useNetworkStatus();
     const devMode = useDevMode();
 
     // Pull-to-refresh sur mobile/web
@@ -193,7 +193,7 @@ function HomeContent({ searchParams }) {
                     : [];
 
             const meta = response?.meta || {};
-            const diff = response?.diff || { added: [], updated: [], removed: [] };
+            const diff = response?.diff || {added: [], updated: [], removed: []};
             const shouldSkipHistory = typeof meta.changed === 'number' ? meta.changed === 0 : false;
 
             // Vérifier si les données viennent de Supabase
@@ -230,8 +230,29 @@ function HomeContent({ searchParams }) {
                 setSelectedWeek(weekToSelect?.monday);
             }
 
-            // Vérifier si on est hors ligne
-            const isReallyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+            // Vérifier si on est vraiment en ligne (pas juste le navigateur, mais le serveur accessible)
+            let isReallyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+            // Si le navigateur se dit en ligne, on vérifie si on peut vraiment contacter le serveur
+            // pour éviter de considérer le cache du SW comme une réponse "en ligne"
+            if (!isReallyOffline) {
+                try {
+                    const controller = new AbortController();
+                    // Timeout court (2s) pour ne pas bloquer l'UI trop longtemps
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                    // Utiliser un paramètre aléatoire pour contourner le cache SW
+                    await fetch('/api/version?t=' + Date.now(), {
+                        method: 'HEAD',
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                } catch (e) {
+                    console.log('[Page] Navigateur en ligne mais serveur inaccessible (SW cache probable) -> Mode hors ligne forcé');
+                    isReallyOffline = true;
+                }
+            }
 
             if (!isReallyOffline) {
                 // En ligne : on considère que les données sont fraîches
@@ -260,7 +281,7 @@ function HomeContent({ searchParams }) {
             }
 
             // Historiser les matières détectées si elles ont changé
-            await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
+            await saveSnapshotIfChanged(eventsData, {skip: shouldSkipHistory});
 
             // Afficher une notification de debug en mode dev
             if (devMode) {
@@ -354,7 +375,7 @@ function HomeContent({ searchParams }) {
         return Array.from(new Set(
             allEvents
                 .map(event => {
-                    const { matiere } = getEventTitle(event);
+                    const {matiere} = getEventTitle(event);
                     return matiere && matiere !== ":" ? matiere : null;
                 })
                 .filter(Boolean)
@@ -406,7 +427,7 @@ function HomeContent({ searchParams }) {
         // Filtrer par matières sélectionnées si des filtres sont actifs
         if (selectedSubjects.length > 0) {
             filtered = filtered.filter((e) => {
-                const { matiere } = getEventTitle(e);
+                const {matiere} = getEventTitle(e);
                 return matiere && selectedSubjects.includes(matiere);
             });
         }
@@ -534,7 +555,7 @@ function HomeContent({ searchParams }) {
                 setIsLoadingUser(true);
                 // Délai minimum pour que le spinner soit visible
                 const [res] = await Promise.all([
-                    fetch("/api/user", { cache: "no-store" }),
+                    fetch("/api/user", {cache: "no-store"}),
                     new Promise(resolve => setTimeout(resolve, 500)) // Minimum 500ms
                 ]);
                 if (res.ok) {
@@ -694,8 +715,8 @@ function HomeContent({ searchParams }) {
         };
 
         // Ajouter les listeners sur le document
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
-        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchstart', handleTouchStart, {passive: true});
+        document.addEventListener('touchend', handleTouchEnd, {passive: true});
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
@@ -857,7 +878,7 @@ function HomeContent({ searchParams }) {
         setTimeout(() => {
             const today = new Date();
             const todayDateString = today.toDateString();
-            const newCollapsedDays = { ...collapsedDays };
+            const newCollapsedDays = {...collapsedDays};
             let todayDayKey = null;
 
             // Fermer tous les jours de la semaine actuelle
@@ -1062,13 +1083,13 @@ function HomeContent({ searchParams }) {
     return (
         <div className={styles.pageWrapper}>
             {/* Vérification des mises à jour PWA */}
-            <PWAUpdateChecker />
+            <PWAUpdateChecker/>
 
             {/* Prompt d'installation PWA */}
-            <PWAInstallPrompt />
+            <PWAInstallPrompt/>
 
             {/* Bouton de scroll to top */}
-            <ScrollToTop />
+            <ScrollToTop/>
 
             <Navbar
                 darkMode={darkMode}
@@ -1133,7 +1154,7 @@ function HomeContent({ searchParams }) {
                                     <div><strong>URL:</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
                                         <>
-                                            <hr className={styles.debugHr} />
+                                            <hr className={styles.debugHr}/>
                                             <div><strong>Erreur Fetch:</strong> {debugInfo.fetchError}</div>
                                         </>
                                     )}
@@ -1148,7 +1169,7 @@ function HomeContent({ searchParams }) {
                     </div>
                 )}
 
-                {loading && events.length === 0 && <LoadingSpinner />}
+                {loading && events.length === 0 && <LoadingSpinner/>}
 
                 {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
                     <div className={styles.noCoursesMessage}>
@@ -1168,6 +1189,17 @@ function HomeContent({ searchParams }) {
                                     : '')
                         }
                     >
+                        {/* Affichage de la date et heure de dernière sauvegarde */}
+                        {
+                            hasNetworkError && (
+                                <div className="last-update-info">
+                                    <span className={styles.offlineTimestamp}>
+                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                                    </span>
+                                </div>
+                            )
+
+                        }
                         {getTimeRemainingText && (
                             <div className={styles.timeRemainingText}>
                                 {getTimeRemainingText}
@@ -1216,15 +1248,14 @@ function HomeContent({ searchParams }) {
                             })
                         )}
                         {/* Affichage de la date et heure de dernière sauvegarde */}
-                        <div className="last-update-info">
-                            <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} />
-                            <span
-                                className={hasNetworkError ? styles.offlineTimestamp : ''}
-                                style={hasNetworkError ? { color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', padding: '0.25rem 0.5rem', display: 'inline-block' } : {}}
-                            >
-                                EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
-                            </span>
-                        </div>
+                        {
+                            !hasNetworkError && (
+                                <div className="last-update-info">
+                                    <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
+                                    <span>EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                                </div>
+                            )
+                        }
                     </div>
                 )}
             </main>
@@ -1236,9 +1267,9 @@ function HomeContent({ searchParams }) {
                 onToggleTestWeek={handleToggleTestWeek}
             />
 
-            <ScrollToTop />
+            <ScrollToTop/>
 
-            <OfflineNotification forceShow={hasNetworkError} />
+            <OfflineNotification forceShow={hasNetworkError}/>
 
             <SupabaseNotification
                 show={showSupabaseNotification}
@@ -1269,20 +1300,20 @@ function HomeContent({ searchParams }) {
             />
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}
-            <DevToolsButton />
+            <DevToolsButton/>
         </div>
     );
 }
 
 export default function Home() {
     return (
-        <Suspense fallback={<LoadingSpinner />}>
-            <HomeContentWrapper />
+        <Suspense fallback={<LoadingSpinner/>}>
+            <HomeContentWrapper/>
         </Suspense>
     );
 }
 
 function HomeContentWrapper() {
     const searchParams = useSearchParams();
-    return <HomeContent searchParams={searchParams} />;
+    return <HomeContent searchParams={searchParams}/>;
 }
