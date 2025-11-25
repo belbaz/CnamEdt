@@ -469,7 +469,8 @@
 
     /* Uniformiser la taille de tous les boutons dans view-filter-group sur mobile */
     .view-filter-group > button,
-    .view-filter-group .options-menu-toggle {
+    .view-filter-group .options-menu-toggle,
+    .view-filter-group .history-btn {
         width: 44px;
         height: 44px;
     }
@@ -516,6 +517,13 @@
         height: 40px;
     }
 
+    /* Le history-btn dans view-filter-group garde la taille uniforme (44px) */
+    .view-filter-group .history-btn {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Les autres history-btn (hors view-filter-group) gardent 40px */
     .history-btn {
         width: 40px;
         height: 40px;
@@ -568,6 +576,13 @@
         height: 38px;
     }
 
+    /* Le history-btn dans view-filter-group garde la taille uniforme (44px) */
+    .view-filter-group .history-btn {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Les autres history-btn (hors view-filter-group) gardent 38px */
     .history-btn {
         width: 38px;
         height: 38px;

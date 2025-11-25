@@ -676,7 +676,7 @@
 /* Affichage de la dernière mise à jour */
 .last-update-info {
     width: 100%;
-    padding: 2.5rem 0.75rem 1rem 1rem;
+    padding: .5rem 0.75rem 1rem 1rem;
     display: flex;
     align-items: center;
     justify-content: center;

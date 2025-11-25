@@ -116,7 +116,7 @@ function HomeContent({ searchParams }) {
             const weekToSelect = selectBestWeek(weeks);
             setSelectedWeek(weekToSelect?.monday);
         }
-        
+
         // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
         // IMPORTANT: Toujours restaurer depuis localStorage pour éviter d'afficher la date actuelle
         if (typeof window !== 'undefined') {
@@ -131,7 +131,7 @@ function HomeContent({ searchParams }) {
                 setLastUpdateTimestamp(null);
             }
         }
-        
+
         setLoading(false);
         setError(null);
         setDebugInfo(null);
@@ -230,46 +230,37 @@ function HomeContent({ searchParams }) {
                 setSelectedWeek(weekToSelect?.monday);
             }
 
-            // Vérifier si on doit mettre à jour le timestamp
-            // Ne pas mettre à jour si :
-            // - Les données viennent du cache (meta.fromCache === true)
-            // - Il n'y a eu aucun changement (meta.changed === 0)
-            const isFromCache = meta.fromCache === true || meta.source === 'cache';
-            const hasChanges = typeof meta.changed === 'number' ? meta.changed > 0 : false;
-            const shouldUpdateTimestamp = !isFromCache && hasChanges;
-            
-            // Sauvegarder dans le cache (sans mettre à jour le timestamp si pas de changements)
-            saveEventsToCache(eventsData, colorMapping, shouldUpdateTimestamp);
+            // Vérifier si on est hors ligne
+            const isReallyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+            if (!isReallyOffline) {
+                // En ligne : on considère que les données sont fraîches
+                // Sauvegarder dans le cache (met à jour le timestamp)
+                saveEventsToCache(eventsData, colorMapping);
+
+                // Afficher la date actuelle
+                const newTimestamp = new Date().toISOString();
+                setLastUpdateTimestamp(newTimestamp);
+                console.log('[Page] En ligne - Date actuelle:', newTimestamp);
+                setHasNetworkError(false);
+            } else {
+                // Hors ligne : on ne met PAS à jour le cache pour ne pas écraser le timestamp
+                // On affiche le timestamp existant dans le cache
+                if (typeof window !== 'undefined') {
+                    const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
+                    if (cachedTimestamp) {
+                        setLastUpdateTimestamp(cachedTimestamp);
+                        console.log('[Page] Hors ligne - Date du cache conservée:', cachedTimestamp);
+                    } else {
+                        // Fallback si pas de timestamp
+                        setLastUpdateTimestamp(null);
+                    }
+                }
+                setHasNetworkError(true);
+            }
 
             // Historiser les matières détectées si elles ont changé
             await saveSnapshotIfChanged(eventsData, { skip: shouldSkipHistory });
-            
-            if (shouldUpdateTimestamp) {
-                // Mettre à jour le timestamp dans l'état si on a vraiment récupéré de nouvelles données
-                const newTimestamp = new Date().toISOString();
-                setLastUpdateTimestamp(newTimestamp);
-                console.log('[Page] Timestamp mis à jour avec succès (nouvelles données):', newTimestamp);
-            } else {
-                // Conserver le timestamp du cache si on charge depuis le cache ou s'il n'y a pas de changements
-                if (typeof window !== 'undefined') {
-                    let cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
-                    if (cachedTimestamp) {
-                        console.log('[Page] Conservation du timestamp du cache (pas de nouvelles données):', cachedTimestamp);
-                        setLastUpdateTimestamp(cachedTimestamp);
-                    } else {
-                        // Si le timestamp n'existe pas mais qu'on a réussi à récupérer des données (même depuis le cache),
-                        // créer un timestamp pour éviter "Date inconnue" lors des prochains chargements
-                        // Ce cas peut arriver si le cache a été créé avant l'ajout de cette fonctionnalité
-                        console.log('[Page] Aucun timestamp trouvé, création d\'un timestamp (données récupérées avec succès)');
-                        cachedTimestamp = new Date().toISOString();
-                        localStorage.setItem('lastUpdateTimestamp', cachedTimestamp);
-                        setLastUpdateTimestamp(cachedTimestamp);
-                    }
-                }
-            }
-            
-            // Réinitialiser l'erreur réseau si on a réussi à charger
-            setHasNetworkError(false);
 
             // Afficher une notification de debug en mode dev
             if (devMode) {
@@ -493,7 +484,7 @@ function HomeContent({ searchParams }) {
                 const weekToSelect = selectBestWeek(weeks);
                 setSelectedWeek(weekToSelect?.monday);
             }
-            
+
             // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
             // IMPORTANT: Toujours charger depuis localStorage pour avoir la vraie date du cache
             if (typeof window !== 'undefined') {
@@ -509,7 +500,7 @@ function HomeContent({ searchParams }) {
                     setLastUpdateTimestamp(null);
                 }
             }
-            
+
             setLoading(false);
         }
 
@@ -1072,7 +1063,7 @@ function HomeContent({ searchParams }) {
         <div className={styles.pageWrapper}>
             {/* Vérification des mises à jour PWA */}
             <PWAUpdateChecker />
-            
+
             {/* Prompt d'installation PWA */}
             <PWAInstallPrompt />
 
@@ -1227,7 +1218,7 @@ function HomeContent({ searchParams }) {
                         {/* Affichage de la date et heure de dernière sauvegarde */}
                         <div className="last-update-info">
                             <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} />
-                            <span 
+                            <span
                                 className={hasNetworkError ? styles.offlineTimestamp : ''}
                                 style={hasNetworkError ? { color: '#dc2626', border: '1px solid #dc2626', borderRadius: '4px', padding: '0.25rem 0.5rem', display: 'inline-block' } : {}}
                             >
