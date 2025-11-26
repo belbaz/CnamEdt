@@ -16,7 +16,8 @@ export default function EventCard({
     stylePos,
     subjectColors,
     onOpenEventDetails,
-    noteEntries = []
+    noteEntries = [],
+    fileCount: propsFileCount
 }) {
     const { matiere, prof, description, splitGroup } = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -26,17 +27,22 @@ export default function EventCard({
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipStyle, setTooltipStyle] = useState({});
     const [isMounted, setIsMounted] = useState(false);
-    const [fileCount, setFileCount] = useState(0);
+    const [internalFileCount, setInternalFileCount] = useState(0);
     const devMode = useDevMode();
+
+    // Utiliser le prop fileCount s'il est fourni, sinon utiliser l'état interne
+    const effectiveFileCount = typeof propsFileCount === 'number' ? propsFileCount : internalFileCount;
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    // Charger le nombre de fichiers pour ce cours
+    // Charger le nombre de fichiers pour ce cours SEULEMENT si pas fourni en prop
     useEffect(() => {
-        if (!event?.uid) {
-            setFileCount(0);
+        if (!event?.uid || typeof propsFileCount === 'number') {
+            if (typeof propsFileCount !== 'number') {
+                setInternalFileCount(0);
+            }
             return;
         }
 
@@ -45,16 +51,16 @@ export default function EventCard({
                 const response = await fetch(`/api/files/list?course_uid=${encodeURIComponent(event.uid)}`);
                 const data = await response.json();
                 if (data.success) {
-                    setFileCount(data.files?.length || 0);
+                    setInternalFileCount(data.files?.length || 0);
                 }
             } catch (err) {
                 console.error("[EventCard] Erreur chargement fichiers:", err);
-                setFileCount(0);
+                setInternalFileCount(0);
             }
         };
 
         loadFileCount();
-    }, [event?.uid]);
+    }, [event?.uid, propsFileCount]);
 
     const updateTooltipPosition = useCallback(() => {
         if (!badgeRef.current || !tooltipRef.current || !showTooltip) return;
@@ -112,7 +118,7 @@ export default function EventCard({
         const handleUpdate = () => updateTooltipPosition();
         window.addEventListener("scroll", handleUpdate, true);
         window.addEventListener("resize", handleUpdate);
-        
+
         return () => {
             window.removeEventListener("scroll", handleUpdate, true);
             window.removeEventListener("resize", handleUpdate);
@@ -189,13 +195,13 @@ export default function EventCard({
             {(() => {
                 const cleanedEntries = sanitizeNoteEntries(noteEntries);
                 const noteCount = cleanedEntries.length;
-                const totalCount = noteCount + fileCount;
-                
+                const totalCount = noteCount + effectiveFileCount;
+
                 // Afficher le badge seulement s'il y a des notes OU des fichiers
                 if (totalCount === 0) {
                     return null;
                 }
-                
+
                 const previewEntries = cleanedEntries.slice(0, 3);
                 const remaining = noteCount - previewEntries.length;
                 return (
@@ -203,7 +209,7 @@ export default function EventCard({
                         <div
                             ref={badgeRef}
                             className="note-badge-card"
-                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''}${fileCount > 0 ? ` et ${fileCount} fichier${fileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
+                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
                             onFocus={() => setShowTooltip(true)}
@@ -231,11 +237,11 @@ export default function EventCard({
                                         </li>
                                     )}
                                 </ul>
-                                {fileCount > 0 && (
+                                {effectiveFileCount > 0 && (
                                     <div className="note-tooltip-files">
                                         <span className="note-tooltip-files-icon">📄</span>
                                         <span className="note-tooltip-files-text">
-                                            {fileCount} fichier{fileCount > 1 ? 's' : ''}
+                                            {effectiveFileCount} fichier{effectiveFileCount > 1 ? 's' : ''}
                                         </span>
                                     </div>
                                 )}

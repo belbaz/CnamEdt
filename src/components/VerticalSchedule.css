@@ -20,6 +20,8 @@
     /*padding: .75rem;*/
     background: var(--bg-secondary);
     box-shadow: var(--shadow-sm);
+    overflow-x: scroll;
+    overflow-y: hidden;
 }
 
 /* Force le scroll horizontal sur mobile uniquement */
@@ -129,7 +131,7 @@
 .vertical-schedule-header {
     display: grid;
     justify-items: center;
-    grid-template-columns: 35px repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 35px repeat(var(--days-count, 7), minmax(180px, 1fr));
     border-radius: .5rem .5rem .5rem 0;
     gap: 0.3rem;
     margin-bottom: 0.5rem;
@@ -143,7 +145,7 @@
 }
 
 .vertical-schedule-header.no-time-column {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(var(--days-count, 7), minmax(180px, 1fr));
 }
 
 .vertical-day-header {
@@ -182,13 +184,13 @@
 /* Corps du planning */
 .vertical-schedule-body {
     display: grid;
-    grid-template-columns: 35px repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: 35px repeat(var(--days-count, 7), minmax(180px, 1fr));
     gap: 0.3rem;
     position: relative;
 }
 
 .vertical-schedule-body.no-time-column {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(var(--days-count, 7), minmax(180px, 1fr));
 }
 
 /* Colonne des heures */

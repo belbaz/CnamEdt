@@ -473,7 +473,8 @@
 
 .userInfo {
     text-align: center;
-    padding: 0.5rem 1rem;
+    margin-left: .5rem;
+    padding: 0.65rem .65rem;
     font-size: .95rem;
     color: var(--text-primary);
     background: var(--bg-secondary);

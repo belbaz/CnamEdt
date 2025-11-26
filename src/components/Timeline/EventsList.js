@@ -1,23 +1,23 @@
 "use client";
-import {useEffect, useRef, useState} from "react";
+import { useEffect, useRef, useState } from "react";
 import EventCard from "./EventCard";
-import {getEventPosition, getEventPositionVertical} from "@/utils/timelineUtils";
-import {getCompactModeValues} from "@/utils/compactModeUtils";
+import { getEventPosition, getEventPositionVertical } from "@/utils/timelineUtils";
+import { getCompactModeValues } from "@/utils/compactModeUtils";
 import { parseStoredNoteValue } from "@/utils/noteEntries";
 import "./EventsList.css";
 
 export default function EventsList({
-    events, 
-    startMinutes, 
-    endMinutes, 
-    totalMinutes, 
-    subjectColors, 
+    events,
+    startMinutes,
+    endMinutes,
+    totalMinutes,
+    subjectColors,
     onOpenEventDetails,
     compactMode = 5,
     hide15MinSpacing = false,
     courseNotes = null
 }) {
-    const {dayHeightFactor, cardTopPadding, eventsContainerPadding} = getCompactModeValues(compactMode);
+    const { dayHeightFactor, cardTopPadding, eventsContainerPadding } = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
     const isTabletOrDesktop = typeof window !== 'undefined' && window.innerWidth > 650;
     const containerRef = useRef(null);
@@ -37,7 +37,7 @@ export default function EventsList({
                 setIsCalculating(false);
                 return;
             }
-            
+
             const cards = containerRef.current.querySelectorAll('.event-card');
             if (cards.length === 0) {
                 setIsCalculating(false);
@@ -79,8 +79,44 @@ export default function EventsList({
         };
     }, [events, isTabletOrDesktop, dayHeightFactor, cardTopPadding, eventsContainerPadding]);
 
-    const containerStyle = isMobile 
-        ? {height: `${totalMinutes}px`}
+    // Charger les compteurs de fichiers en batch
+    const [fileCounts, setFileCounts] = useState({});
+
+    useEffect(() => {
+        if (!events || events.length === 0) {
+            setFileCounts({});
+            return;
+        }
+
+        const fetchFileCounts = async () => {
+            try {
+                // Récupérer les UIDs uniques
+                const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
+
+                if (uids.length === 0) return;
+
+                const response = await fetch('/api/files/batch-counts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ course_uids: uids })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    setFileCounts(data.counts || {});
+                }
+            } catch (err) {
+                console.error("[EventsList] Erreur chargement compteurs fichiers:", err);
+            }
+        };
+
+        fetchFileCounts();
+    }, [events]);
+
+    const containerStyle = isMobile
+        ? { height: `${totalMinutes}px` }
         : {
             minHeight: `${calculatedHeight}px`,
             padding: `${eventsContainerPadding}rem 0`,
@@ -88,7 +124,7 @@ export default function EventsList({
             transition: 'opacity 0.15s ease-in-out'
         };
 
-    const ulStyle = isMobile ? {height: '100%'} : {};
+    const ulStyle = isMobile ? { height: '100%' } : {};
 
     return (
         <div
@@ -106,7 +142,7 @@ export default function EventsList({
                         const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
                         const nextEvent = idx < sortedEvents.length - 1 ? sortedEvents[idx + 1] : null;
                         const nextEventStart = nextEvent ? nextEvent.start : null;
-                        
+
                         let stylePos;
                         if (isMobile) {
                             const pos = getEventPositionVertical(ev.start, ev.end_time || ev.end, startMinutes, endMinutes, previousEventEnd, nextEventStart, hide15MinSpacing);
@@ -119,7 +155,7 @@ export default function EventsList({
                             };
                         } else {
                             const pos = getEventPosition(ev.start, ev.end_time || ev.end, startMinutes, endMinutes, previousEventEnd, nextEventStart, hide15MinSpacing);
-                            stylePos = {left: pos.left, width: pos.width};
+                            stylePos = { left: pos.left, width: pos.width };
                         }
                         const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
                         const noteEntries = courseNote
@@ -135,6 +171,7 @@ export default function EventsList({
                                 subjectColors={subjectColors}
                                 onOpenEventDetails={onOpenEventDetails}
                                 noteEntries={noteEntries}
+                                fileCount={fileCounts[ev.uid] || 0}
                             />
                         );
                     });

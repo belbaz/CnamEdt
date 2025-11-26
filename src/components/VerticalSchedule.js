@@ -1,23 +1,23 @@
 "use client";
-import {useMemo, useEffect, useState, useRef} from "react";
-import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
-import {groupEventsByDay} from "@/utils/eventUtils";
-import {isToday} from "@/utils/dateUtils";
+import { useMemo, useEffect, useState, useRef } from "react";
+import { getDayTimeRange, generateTimeMarkers, getCurrentTimePosition } from "@/utils/timelineUtils";
+import { groupEventsByDay } from "@/utils/eventUtils";
+import { isToday } from "@/utils/dateUtils";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue } from "@/utils/noteEntries";
 
 export default function VerticalSchedule({
-                                             events,
-                                             subjectColors,
-                                             onOpenEventDetails,
-                                             compactMode = 5,
-                                             showTimeLabels = true,
-                                             hide15MinSpacing = false,
-                                             isPWAInstalled = false,
-                                             monthFormat = 'long',
-                                             courseNotes = null
-                                         }) {
+    events,
+    subjectColors,
+    onOpenEventDetails,
+    compactMode = 5,
+    showTimeLabels = true,
+    hide15MinSpacing = false,
+    isPWAInstalled = false,
+    monthFormat = 'long',
+    courseNotes = null
+}) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat), [events, monthFormat]);
 
@@ -38,7 +38,7 @@ export default function VerticalSchedule({
         const MIN_END = 18 * 60; // 18h00
 
         if (events.length === 0) {
-            return {startMinutes: MIN_START, endMinutes: MIN_END};
+            return { startMinutes: MIN_START, endMinutes: MIN_END };
         }
 
         let minTime = Infinity, maxTime = -Infinity;
@@ -57,10 +57,10 @@ export default function VerticalSchedule({
         startMinutes = Math.min(startMinutes, MIN_START);
         endMinutes = Math.max(endMinutes, MIN_END);
 
-        return {startMinutes, endMinutes};
+        return { startMinutes, endMinutes };
     }, [events]);
 
-    const {startMinutes, endMinutes} = globalTimeRange;
+    const { startMinutes, endMinutes } = globalTimeRange;
     const totalMinutes = endMinutes - startMinutes;
     const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
 
@@ -116,6 +116,42 @@ export default function VerticalSchedule({
                 setLastUpdateTimestamp(timestamp);
             }
         }
+    }, [events]);
+
+    // Charger les compteurs de fichiers en batch
+    const [fileCounts, setFileCounts] = useState({});
+
+    useEffect(() => {
+        if (!events || events.length === 0) {
+            setFileCounts({});
+            return;
+        }
+
+        const fetchFileCounts = async () => {
+            try {
+                // Récupérer les UIDs uniques
+                const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
+
+                if (uids.length === 0) return;
+
+                const response = await fetch('/api/files/batch-counts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ course_uids: uids })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    setFileCounts(data.counts || {});
+                }
+            } catch (err) {
+                console.error("[VerticalSchedule] Erreur chargement compteurs fichiers:", err);
+            }
+        };
+
+        fetchFileCounts();
     }, [events]);
 
     useEffect(() => {
@@ -345,7 +381,7 @@ export default function VerticalSchedule({
                                     {currentPos !== null && (
                                         <div
                                             className="vertical-current-time-indicator"
-                                            style={{top: `${currentPos}%`}}
+                                            style={{ top: `${currentPos}%` }}
                                         >
                                             <div className="vertical-current-time-line"></div>
                                             <div className="vertical-current-time-dot"></div>
@@ -356,14 +392,14 @@ export default function VerticalSchedule({
                                     {currentPos !== null && (
                                         <div
                                             className="vertical-time-passed-overlay"
-                                            style={{height: `${currentPos}%`}}
+                                            style={{ height: `${currentPos}%` }}
                                         />
                                     )}
 
                                     {/* Marqueurs de temps */}
                                     <div
                                         className="vertical-time-markers"
-                                        style={{height: `${totalMinutes}px`}}
+                                        style={{ height: `${totalMinutes}px` }}
                                     >
                                         {timeMarkers.map((marker, idx) => (
                                             <div
@@ -379,7 +415,7 @@ export default function VerticalSchedule({
                                     {/* Événements */}
                                     <div
                                         className="vertical-events-container"
-                                        style={{height: `${totalMinutes}px`}}
+                                        style={{ height: `${totalMinutes}px` }}
                                     >
                                         {(() => {
                                             // Trier les événements une seule fois par heure de début
@@ -414,6 +450,7 @@ export default function VerticalSchedule({
                                                         subjectColors={subjectColors}
                                                         onOpenEventDetails={onOpenEventDetails}
                                                         noteEntries={noteEntries}
+                                                        fileCount={fileCounts[ev.uid] || 0}
                                                     />
                                                 );
                                             });

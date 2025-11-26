@@ -61,38 +61,38 @@ export default function DashboardPage() {
         const basePages = [
             {
                 title: "📅 Emploi du temps",
-                description: "Consultez votre emploi du temps hebdomadaire",
+                description: "Consultez l'emploi du temps",
                 path: "/",
                 icon: "📅",
                 color: "#3b82f6"
             },
             {
                 title: "📋 Agenda",
-                description: "Votre agenda personnel avec tous vos cours",
+                description: "Consultez l'agenda avec tous vos cours",
                 path: "/agenda",
                 icon: "📋",
                 color: "#10b981"
             },
             {
+                title: "📄 Fichiers de cours",
+                description: "Gérez les fichiers uploadés par cours",
+                path: "/files",
+                icon: "📄",
+                color: "#ec4899"
+            },
+            {
                 title: "📜 Historique",
-                description: "Historique des modifications de l'EDT",
+                description: "Historique des modifications de l'emploi du temps",
                 path: "/histo",
                 icon: "📜",
                 color: "#8b5cf6"
             },
             {
                 title: "ℹ️ Mes informations",
-                description: "Consultez et gérez vos informations de compte",
+                description: "Consultez vos informations de compte",
                 path: "/info",
                 icon: "ℹ️",
                 color: "#f59e0b"
-            },
-            {
-                title: "📄 Mes fichiers",
-                description: "Gérez tous vos fichiers uploadés par cours",
-                path: "/files",
-                icon: "📄",
-                color: "#ec4899"
             }
         ];
 
