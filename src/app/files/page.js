@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
@@ -234,9 +235,7 @@ function FilesContent() {
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <Link href="/" className={styles.backIconButton} title="Retour à l'EDT">
-                            ←
-                        </Link>
+                        <BackButton href="/" title="Retour à l'EDT" />
                         <div className={styles.headerTitle}>
                             <h1>📄 Mes fichiers</h1>
                             <p className={styles.subtitle}>

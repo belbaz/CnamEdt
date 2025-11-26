@@ -2,6 +2,7 @@
 import React, { useState, useEffect, Suspense, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
@@ -1284,14 +1285,7 @@ function AgendaContent() {
             <div className={styles.container}>
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <button
-                            type="button"
-                            className={styles.backIconButton}
-                            onClick={() => router.push("/")}
-                            aria-label="Retour à l'emploi du temps"
-                        >
-                            ←
-                        </button>
+                        <BackButton href="/" label="" title="Retour à l'emploi du temps" />
                         <div className={styles.userBar}>
                             {userInfo && (
                                 <button

@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
+import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function HistoPage() {
@@ -124,21 +125,9 @@ export default function HistoPage() {
     return (
         <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
             <div style={{ marginBottom: "0.75rem" }}>
-                <button
-                    onClick={() => router.push('/')}
-                    style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        borderRadius: 8,
-                        padding: '.5rem .75rem',
-                        cursor: 'pointer',
-                        marginBottom: '0.75rem'
-                    }}
-                    title="Retour au menu"
-                >
-                    ← Retour
-                </button>
+                <div style={{ marginBottom: "0.75rem" }}>
+                    <BackButton href="/" title="Retour au menu" />
+                </div>
                 <h1 style={{marginBottom: 0}}>Historique des cours ajoutés</h1>
             </div>
             <div style={{

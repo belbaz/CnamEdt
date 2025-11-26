@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 import styles from "./CourseFiles.module.css";
 import pageStyles from "@/app/page.module.css";
 
@@ -7,7 +7,7 @@ import pageStyles from "@/app/page.module.css";
  * Composant pour gérer les fichiers d'un cours
  * Affiche la liste des fichiers et permet l'upload
  */
-export default function CourseFiles({ courseUid, authenticated }) {
+export default function CourseFiles({courseUid, authenticated}) {
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -173,7 +173,7 @@ export default function CourseFiles({ courseUid, authenticated }) {
                             type="file"
                             onChange={handleFileSelect}
                             disabled={uploading}
-                            style={{ display: 'none' }}
+                            style={{display: 'none'}}
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                         />
                         {uploading ? '⏳ Upload...' : '➕ Ajouter'}
@@ -188,7 +188,9 @@ export default function CourseFiles({ courseUid, authenticated }) {
             )}
 
             {loading ? (
-                <div className={styles.loading}>Chargement...</div>
+                <div className={styles.empty}>
+                    <div className={styles.loading} style={{padding: 0}}>Chargement...</div>
+                </div>
             ) : files.length === 0 ? (
                 <div className={styles.empty}>
                     {authenticated ? "Aucun fichier" : "Aucun fichier"}
@@ -229,7 +231,8 @@ export default function CourseFiles({ courseUid, authenticated }) {
                                         }}
                                         title="Télécharger"
                                     >
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
                                             <path d="M8 10.5L4 6.5H6V2H10V6.5H12L8 10.5Z" fill="currentColor"/>
                                             <path d="M2 12V13H14V12H2Z" fill="currentColor"/>
                                         </svg>
@@ -240,8 +243,10 @@ export default function CourseFiles({ courseUid, authenticated }) {
                                             onClick={() => handleDelete(file.id)}
                                             title="Supprimer"
                                         >
-                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2"
+                                                      strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                         </button>
                                     )}
@@ -258,12 +263,12 @@ export default function CourseFiles({ courseUid, authenticated }) {
             )}
 
             {!authenticated && (
-                <div className="modal-auth-message" style={{ marginTop: '0.75rem' }}>
+                <div className="modal-auth-message" style={{marginTop: '0.75rem'}}>
                     <p className="modal-auth-message-text">
                         <a href="/login" className={pageStyles.notesUnauthLink}>
                             Connectez-vous
                         </a>
-                        <span style={{ display: 'block', marginTop: '0.25rem' }}>pour ajouter des fichiers</span>
+                        <span style={{display: 'block', marginTop: '0.25rem'}}>pour ajouter des fichiers</span>
                     </p>
                 </div>
             )}

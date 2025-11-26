@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
@@ -113,6 +114,13 @@ export default function DashboardPage() {
         if (userInfo?.role === 'superAdmin') {
             adminPages.push(
                 {
+                    title: "👥 Gestion des utilisateurs",
+                    description: "Gérer les utilisateurs de l'application",
+                    path: "/admin/users",
+                    icon: "👥",
+                    color: "#8b5cf6"
+                },
+                {
                     title: "🗺️ Room Mapper",
                     description: "Mapper les salles sur le plan SVG",
                     path: "/admin/room-mapper",
@@ -152,16 +160,7 @@ export default function DashboardPage() {
     return (
         <div className={styles.container}>
             <div className={styles.content}>
-                <button
-                    onClick={() => router.push('/')}
-                    className={styles.backButton}
-                    title="Retour à l'EDT"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 12H5M5 12l6-6M5 12l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Retour
-                </button>
+                <BackButton href="/" title="Retour à l'EDT" />
                 <header className={styles.header}>
                     <h1>Tableau de bord</h1>
                     <p className={styles.welcomeText}>

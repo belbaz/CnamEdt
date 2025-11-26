@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import BackButton from "@/components/BackButton";
 import './analytics.css';
 
 const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
@@ -21,7 +22,7 @@ export default function AnalyticsPage() {
     const [authChecked, setAuthChecked] = useState(false);
     const [unauthorized, setUnauthorized] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    
+
     // Filtres
     const [filters, setFilters] = useState({
         search: '',
@@ -54,7 +55,7 @@ export default function AnalyticsPage() {
     const checkAuth = async () => {
         try {
             const response = await fetch('/api/user');
-            
+
             if (!response.ok) {
                 if (response.status === 401) {
                     setIsAuthenticated(false);
@@ -85,13 +86,13 @@ export default function AnalyticsPage() {
                 roleTrimmed: user.role?.trim(),
                 fullUser: user
             });
-            
+
             setIsAuthenticated(true);
-            
+
             // Normaliser le rôle pour la comparaison (trim + lowercase)
             const normalizedRole = user.role?.trim()?.toLowerCase();
             const expectedRole = 'superadmin';
-            
+
             // Vérifier le rôle superAdmin (comparaison insensible à la casse)
             if (normalizedRole !== expectedRole) {
                 console.warn('[Analytics] Accès refusé - Détails:', {
@@ -136,7 +137,7 @@ export default function AnalyticsPage() {
             });
 
             const response = await fetch(`/api/analytics/data?${params}`);
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 if (response.status === 401) {
@@ -188,7 +189,7 @@ export default function AnalyticsPage() {
         try {
             const param = sessionId ? `session_id=${sessionId}` : `ip_address=${ipAddress}`;
             const response = await fetch(`/api/analytics/user?${param}`);
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 setError(`Erreur: ${errorData.error || 'Impossible de récupérer les stats utilisateur'}`);
@@ -247,7 +248,7 @@ export default function AnalyticsPage() {
 
         if (filters.search) {
             const search = filters.search.toLowerCase();
-            filtered = filtered.filter(item => 
+            filtered = filtered.filter(item =>
                 item.session_id?.toLowerCase().includes(search) ||
                 item.ip_address?.toLowerCase().includes(search) ||
                 item.device_name?.toLowerCase().includes(search) ||
@@ -369,7 +370,7 @@ export default function AnalyticsPage() {
                     <h2>🚫 Accès Refusé</h2>
                     <p className="error-message">{error || 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.'}</p>
                     <div className="error-actions">
-                        <button onClick={() => window.location.href = '/'}>Retour à l'accueil</button>
+                        <BackButton href="/" label="Retour à l'accueil" title="Retour à l'accueil" />
                         {/* Afficher le bouton "Se connecter" seulement si l'utilisateur n'est pas déjà connecté */}
                         {!isAuthenticated && (
                             <button onClick={() => window.location.href = `/login?redirect=${currentPath}`}>
@@ -461,32 +462,32 @@ export default function AnalyticsPage() {
             </header>
 
             <div className="analytics-tabs">
-                <button 
+                <button
                     className={selectedTab === 'overview' ? 'active' : ''}
                     onClick={() => setSelectedTab('overview')}
                 >
                     📈 Vue d'ensemble
                 </button>
-                <button 
+                <button
                     className={selectedTab === 'sessions' ? 'active' : ''}
                     onClick={() => setSelectedTab('sessions')}
                 >
                     👥 Sessions ({totalCount})
                 </button>
-                <button 
+                <button
                     className={selectedTab === 'devices' ? 'active' : ''}
                     onClick={() => setSelectedTab('devices')}
                 >
                     📱 Appareils
                 </button>
-                <button 
+                <button
                     className={selectedTab === 'versions' ? 'active' : ''}
                     onClick={() => setSelectedTab('versions')}
                 >
                     🔄 Versions
                 </button>
                 {selectedUser && (
-                    <button 
+                    <button
                         className={selectedTab === 'user' ? 'active' : ''}
                         onClick={() => setSelectedTab('user')}
                     >
@@ -759,7 +760,7 @@ export default function AnalyticsPage() {
                     <div className="sessions-controls">
                         <div className="controls-left">
                             <label>
-                                Limite: 
+                                Limite:
                                 <select value={limit} onChange={(e) => { setLimit(parseInt(e.target.value)); setOffset(0); }}>
                                     <option value={50}>50</option>
                                     <option value={100}>100</option>
@@ -768,7 +769,7 @@ export default function AnalyticsPage() {
                                 </select>
                             </label>
                             <label>
-                                Trier par: 
+                                Trier par:
                                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                                     <option value="created_at">Date de création</option>
                                     <option value="last_visit_at">Dernière visite</option>
@@ -778,7 +779,7 @@ export default function AnalyticsPage() {
                                 </select>
                             </label>
                             <label>
-                                Ordre: 
+                                Ordre:
                                 <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
                                     <option value="desc">Décroissant</option>
                                     <option value="asc">Croissant</option>
@@ -791,7 +792,7 @@ export default function AnalyticsPage() {
                             )}
                         </div>
                         <div className="pagination">
-                            <button 
+                            <button
                                 disabled={offset === 0}
                                 onClick={() => setOffset(Math.max(0, offset - limit))}
                                 title="Page précédente"
@@ -799,7 +800,7 @@ export default function AnalyticsPage() {
                                 ← Précédent
                             </button>
                             <span>Page {Math.floor(offset / limit) + 1} ({(offset + 1)}-{Math.min(offset + limit, totalCount)} sur {totalCount})</span>
-                            <button 
+                            <button
                                 disabled={offset + limit >= totalCount}
                                 onClick={() => setOffset(offset + limit)}
                                 title="Page suivante"
@@ -827,9 +828,9 @@ export default function AnalyticsPage() {
                             </thead>
                             <tbody>
                                 {filteredData.map((session, idx) => (
-                                    <tr 
-                                        key={idx} 
-                                        className="session-row" 
+                                    <tr
+                                        key={idx}
+                                        className="session-row"
                                         onClick={() => handleUserClick(session)}
                                         title="Cliquer pour voir les détails de cette session"
                                     >
@@ -844,7 +845,7 @@ export default function AnalyticsPage() {
                                             </div>
                                         </td>
                                         <td>
-                                            {session.os_name || 'unknown'} 
+                                            {session.os_name || 'unknown'}
                                             {session.os_version && ` ${session.os_version}`}
                                         </td>
                                         <td>
@@ -945,9 +946,11 @@ export default function AnalyticsPage() {
             {selectedTab === 'user' && selectedUser && (
                 <div className="analytics-user-detail">
                     <div className="user-detail-header">
-                        <button onClick={() => { setSelectedUser(null); setUserStats(null); setSelectedTab('sessions'); }}>
-                            ← Retour à la liste
-                        </button>
+                        <BackButton 
+                            onClick={() => { setSelectedUser(null); setUserStats(null); setSelectedTab('sessions'); }}
+                            label="Retour à la liste"
+                            title="Retour à la liste"
+                        />
                         <h2>Détails de l'utilisateur</h2>
                     </div>
 

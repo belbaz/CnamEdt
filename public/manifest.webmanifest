@@ -50,6 +50,18 @@
           "sizes": "192x192"
         }
       ]
+    },
+    {
+      "name": "Prochain cours",
+      "short_name": "Prochain cours",
+      "description": "Voir le prochain cours avec date, prof, heure et salle",
+      "url": "/widget",
+      "icons": [
+        {
+          "src": "/favicon/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

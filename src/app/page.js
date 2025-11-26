@@ -142,6 +142,9 @@ function HomeContent({searchParams}) {
 
     const fetchEvents = async () => {
         try {
+            // Mémoriser si on avait déjà des événements (pour éviter de recharger au premier chargement)
+            const hadEventsBefore = allEvents.length > 0;
+            
             // Ne pas remettre loading à true si on a déjà des données à afficher
             if (allEvents.length === 0) {
                 setLoading(true);
@@ -283,9 +286,26 @@ function HomeContent({searchParams}) {
             // Historiser les matières détectées si elles ont changé
             await saveSnapshotIfChanged(eventsData, {skip: shouldSkipHistory});
 
+            // Vérifier s'il y a des changements et recharger la page si nécessaire
+            const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
+            
+            // Recharger automatiquement si des changements sont détectés ET qu'on avait déjà des événements
+            // (pour éviter de recharger au premier chargement)
+            if (totalChanges > 0 && hadEventsBefore && !isReallyOffline) {
+                console.log(`[Page] Changements détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
+                console.log('[Page] Rechargement automatique de la page dans 2 secondes...');
+                
+                // Attendre 2 secondes pour laisser le temps à l'utilisateur de voir les changements
+                setTimeout(() => {
+                    if (typeof window !== 'undefined') {
+                        console.log('[Page] Rechargement de la page...');
+                        window.location.reload();
+                    }
+                }, 2000);
+            }
+
             // Afficher une notification de debug en mode dev
             if (devMode) {
-                const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
 
                 // Compter les champs modifiés
                 const fieldChanges = {};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import styles from "./info.module.css";
 
 export default function InfoPage() {
@@ -11,6 +12,15 @@ export default function InfoPage() {
     const [error, setError] = useState(null);
     const [loggingOut, setLoggingOut] = useState(false);
     const [emailCopied, setEmailCopied] = useState(false);
+    
+    // Changement de mot de passe
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState(null);
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
 
     // Appliquer le dark mode au chargement
     useEffect(() => {
@@ -131,6 +141,81 @@ export default function InfoPage() {
         return roleConfig[role] || { label: role, className: "default" };
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        setPasswordError(null);
+        setPasswordSuccess(false);
+
+        // Validation
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            setPasswordError("Tous les champs sont requis");
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            setPasswordError("Le nouveau mot de passe doit contenir au moins 8 caractères");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError("Les nouveaux mots de passe ne correspondent pas");
+            return;
+        }
+
+        if (oldPassword === newPassword) {
+            setPasswordError("Le nouveau mot de passe doit être différent de l'ancien");
+            return;
+        }
+
+        try {
+            setChangingPassword(true);
+
+            const response = await fetch("/api/user/change-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    oldPassword,
+                    newPassword
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Erreur lors du changement de mot de passe");
+            }
+
+            // Succès
+            setPasswordSuccess(true);
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            
+            // Masquer le formulaire après 2 secondes
+            setTimeout(() => {
+                setShowPasswordForm(false);
+                setPasswordSuccess(false);
+            }, 2000);
+
+        } catch (err) {
+            console.error("[Info] Erreur changement mot de passe:", err);
+            setPasswordError(err.message || "Erreur lors du changement de mot de passe");
+        } finally {
+            setChangingPassword(false);
+        }
+    };
+
+    const handleCancelPasswordChange = () => {
+        setShowPasswordForm(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordError(null);
+        setPasswordSuccess(false);
+    };
+
     if (loading) {
         return (
             <div className={styles.container}>
@@ -169,13 +254,7 @@ export default function InfoPage() {
         <div className={styles.container}>
             <div className={styles.content}>
                 <header className={styles.header}>
-                    <button 
-                        className={styles.backButton}
-                        onClick={() => router.back()}
-                        title="Retour"
-                    >
-                        ← Retour
-                    </button>
+                    <BackButton />
                     <h1>Informations du compte</h1>
                 </header>
 
@@ -258,6 +337,16 @@ export default function InfoPage() {
                         )}
                     </div>
 
+                    {/* Section changement de mot de passe */}
+                    <div className={styles.passwordSection}>
+                        <button
+                            className={styles.changePasswordButton}
+                            onClick={() => setShowPasswordForm(true)}
+                        >
+                            🔒 Changer mon mot de passe
+                        </button>
+                    </div>
+
                     <div className={styles.actions}>
                         <button 
                             className={styles.logoutButton}
@@ -270,9 +359,105 @@ export default function InfoPage() {
                 </div>
 
                 <div className={styles.footer}>
-                    <p>EDT CNAM EICNAM © 2025</p>
+                    <p>EDT CNAM © 2025</p>
                 </div>
             </div>
+
+            {/* Modal changement de mot de passe */}
+            {showPasswordForm && (
+                <div className={styles.modalOverlay} onClick={handleCancelPasswordChange}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2 className={styles.modalTitle}>Changer mon mot de passe</h2>
+                            <button
+                                className={styles.modalCloseButton}
+                                onClick={handleCancelPasswordChange}
+                                disabled={changingPassword}
+                                aria-label="Fermer"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePassword} className={styles.passwordForm}>
+                            {passwordError && (
+                                <div className={styles.passwordError}>
+                                    {passwordError}
+                                </div>
+                            )}
+                            
+                            {passwordSuccess && (
+                                <div className={styles.passwordSuccess}>
+                                    ✓ Mot de passe modifié avec succès !
+                                </div>
+                            )}
+
+                            <div className={styles.passwordField}>
+                                <label htmlFor="oldPassword">Ancien mot de passe</label>
+                                <input
+                                    type="password"
+                                    id="oldPassword"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
+                                    placeholder="Entrez votre ancien mot de passe"
+                                    required
+                                    disabled={changingPassword}
+                                    className={styles.passwordInput}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className={styles.passwordField}>
+                                <label htmlFor="newPassword">Nouveau mot de passe</label>
+                                <input
+                                    type="password"
+                                    id="newPassword"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Au moins 8 caractères"
+                                    required
+                                    minLength={8}
+                                    disabled={changingPassword}
+                                    className={styles.passwordInput}
+                                />
+                            </div>
+
+                            <div className={styles.passwordField}>
+                                <label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</label>
+                                <input
+                                    type="password"
+                                    id="confirmPassword"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Répétez le nouveau mot de passe"
+                                    required
+                                    minLength={8}
+                                    disabled={changingPassword}
+                                    className={styles.passwordInput}
+                                />
+                            </div>
+
+                            <div className={styles.passwordFormActions}>
+                                <button
+                                    type="submit"
+                                    disabled={changingPassword}
+                                    className={styles.savePasswordButton}
+                                >
+                                    {changingPassword ? "Modification..." : "✓ Enregistrer"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCancelPasswordChange}
+                                    disabled={changingPassword}
+                                    className={styles.cancelPasswordButton}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import BackButton from "@/components/BackButton";
 
 export default function MonitoringPage() {
     const [testData, setTestData] = useState(null);
@@ -10,12 +11,12 @@ export default function MonitoringPage() {
     const fetchStatus = async () => {
         setLoading(true);
         setError(null);
-        
+
         try {
             // Appeler l'API de test
             const response = await fetch('/api/test-update');
             const data = await response.json();
-            
+
             if (response.ok) {
                 setTestData(data);
             } else {
@@ -30,10 +31,10 @@ export default function MonitoringPage() {
 
     useEffect(() => {
         fetchStatus();
-        
+
         // Rafraîchir toutes les 30 secondes
         const interval = setInterval(fetchStatus, 30000);
-        
+
         return () => clearInterval(interval);
     }, []);
 
@@ -142,8 +143,8 @@ export default function MonitoringPage() {
                                 <div style={{ fontSize: '48px', marginBottom: '10px' }}>
                                     {testData.success ? '✅' : '❌'}
                                 </div>
-                                <div style={{ 
-                                    fontSize: '24px', 
+                                <div style={{
+                                    fontSize: '24px',
                                     fontWeight: '600',
                                     color: testData.success ? '#2e7d32' : '#c62828'
                                 }}>
@@ -164,24 +165,24 @@ export default function MonitoringPage() {
                                     borderRadius: '12px',
                                     padding: '20px'
                                 }}>
-                                    <div style={{ 
-                                        fontSize: '14px', 
-                                        color: '#666', 
+                                    <div style={{
+                                        fontSize: '14px',
+                                        color: '#666',
                                         marginBottom: '8px',
                                         fontWeight: '600',
                                         textTransform: 'uppercase'
                                     }}>
                                         📅 Dernière vérification
                                     </div>
-                                    <div style={{ 
-                                        fontSize: '16px', 
+                                    <div style={{
+                                        fontSize: '16px',
                                         color: '#333',
                                         fontWeight: '500'
                                     }}>
                                         {testData.timestamp ? formatDate(testData.timestamp) : 'N/A'}
                                     </div>
-                                    <div style={{ 
-                                        fontSize: '14px', 
+                                    <div style={{
+                                        fontSize: '14px',
                                         color: '#999',
                                         marginTop: '5px'
                                     }}>
@@ -195,24 +196,24 @@ export default function MonitoringPage() {
                                     borderRadius: '12px',
                                     padding: '20px'
                                 }}>
-                                    <div style={{ 
-                                        fontSize: '14px', 
-                                        color: '#666', 
+                                    <div style={{
+                                        fontSize: '14px',
+                                        color: '#666',
                                         marginBottom: '8px',
                                         fontWeight: '600',
                                         textTransform: 'uppercase'
                                     }}>
                                         ⚙️ Action effectuée
                                     </div>
-                                    <div style={{ 
-                                        fontSize: '18px', 
+                                    <div style={{
+                                        fontSize: '18px',
                                         color: '#333',
                                         fontWeight: '500'
                                     }}>
                                         {testData.action === 'created' ? 'Création' : 'Mise à jour'}
                                     </div>
-                                    <div style={{ 
-                                        fontSize: '14px', 
+                                    <div style={{
+                                        fontSize: '14px',
                                         color: '#999',
                                         marginTop: '5px'
                                     }}>
@@ -263,27 +264,8 @@ export default function MonitoringPage() {
                                 >
                                     {loading ? '⏳ Chargement...' : '🔄 Rafraîchir'}
                                 </button>
-                                
-                                <button
-                                    onClick={() => window.location.href = '/'}
-                                    style={{
-                                        flex: '1',
-                                        minWidth: '150px',
-                                        padding: '15px 25px',
-                                        background: 'white',
-                                        color: '#667eea',
-                                        border: '2px solid #667eea',
-                                        borderRadius: '8px',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'transform 0.2s',
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                                >
-                                    🏠 Retour à l'accueil
-                                </button>
+
+                                <BackButton href="/" label="Retour à l'accueil" title="Retour à l'accueil" />
                             </div>
                         </>
                     )}
