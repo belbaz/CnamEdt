@@ -180,8 +180,17 @@ export default function EventCard({
             style={stylePos}
             data-index={getColorIndexForSubject(matiere || description, subjectColors)}
             ref={cardRef}
-            onClick={() => {
-                onOpenEventDetails && onOpenEventDetails(event);
+            onClick={(e) => {
+                if (onOpenEventDetails && cardRef.current) {
+                    const rect = cardRef.current.getBoundingClientRect();
+                    const clickPosition = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2,
+                        width: rect.width,
+                        height: rect.height
+                    };
+                    onOpenEventDetails(event, clickPosition);
+                }
             }}
         >
             {devMode && hoursLabel && (

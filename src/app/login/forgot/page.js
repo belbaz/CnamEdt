@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import styles from "../login.module.css";
 
 export default function ForgotPage() {
@@ -53,6 +54,7 @@ export default function ForgotPage() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
+                <BackButton href="/login" title="Retour à la connexion" />
                 <div className={styles.notice}>
                     <h1>Mot de passe oublié</h1>
                     <p>Indiquez votre adresse @lecnam.net pour recevoir un lien de réinitialisation.</p>
@@ -105,9 +107,7 @@ export default function ForgotPage() {
                         )}
 
                         <div className={styles.backLink}>
-                            <Link href="/login" className={styles.ghostLink}>
-                                ← Retourner à la connexion
-                            </Link>
+                            <BackButton href="/login" label="Retourner à la connexion" title="Retourner à la connexion" />
                         </div>
                     </div>
                 </section>

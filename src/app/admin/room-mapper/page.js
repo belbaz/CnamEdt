@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 import "./room-mapper.css";
 
 /**
@@ -271,7 +273,7 @@ export default function RoomMapperPage() {
     if (loading) {
         return (
             <div className="room-mapper-loading">
-                <div className="spinner"></div>
+                <Spinner size="large" variant="border" />
                 <p>Chargement et analyse du plan SVG...</p>
             </div>
         );
@@ -285,12 +287,7 @@ export default function RoomMapperPage() {
                     <p>Identifiez et enregistrez les positions des numéros de salles sur le plan</p>
                 </div>
                 <div className="header-actions">
-                    <button 
-                        onClick={() => window.location.href = '/'}
-                        className="btn-secondary"
-                    >
-                        ← Retour
-                    </button>
+                    <BackButton href="/dashboard" title="Retour au dashboard" />
                 </div>
             </header>
 

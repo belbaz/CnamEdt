@@ -492,12 +492,23 @@
     background: var(--bg-tertiary);
 }
 
+/* Loading state pour userInfo */
+.userInfoLoading {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.userInfoLoading:hover {
+    background: var(--bg-secondary);
+}
+
 .userRoleLabel {
     font-size: 0.7rem;
-    color: white;
+    color: var(--bg-tertiary);
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.2rem 0.5rem;
+    background: var(--text-secondary);
+    padding: 0.2rem 0.3rem;
     border-radius: 6px;
     backdrop-filter: blur(4px);
 }
@@ -636,16 +647,6 @@
 
 }
 
-/* Animation pour le spinner de chargement */
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 .user-loading-btn {
     cursor: default !important;
     opacity: 0.7 !important;
@@ -656,8 +657,4 @@
     background: var(--bg-secondary) !important;
     transform: none !important;
     box-shadow: var(--shadow-sm) !important;
-}
-
-.loading-spinner {
-    animation: spin 1s linear infinite;
 }

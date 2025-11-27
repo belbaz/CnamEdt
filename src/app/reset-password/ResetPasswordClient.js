@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
 
 export default function ResetPasswordClient() {
@@ -139,6 +140,7 @@ function ResetPasswordForm() {
         return (
             <div className={styles.page}>
                 <div className={styles.wrapper}>
+                    <BackButton href="/" title="Retour à l'accueil" />
                     <div className={styles.formCard}>
                         <header className={styles.cardHeader}>
                             <div>
@@ -154,9 +156,7 @@ function ResetPasswordForm() {
                                 </Link>
                             </p>
                             <p style={{ marginTop: "0.5rem" }}>
-                                <Link href="/login" className={styles.footerLink}>
-                                    Retour à la connexion
-                                </Link>
+                                <BackButton href="/login" label="Retour à la connexion" title="Retour à la connexion" />
                             </p>
                         </div>
                     </div>
@@ -168,6 +168,7 @@ function ResetPasswordForm() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
+                <BackButton href="/" title="Retour à l'accueil" />
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
                         <div>
@@ -226,9 +227,7 @@ function ResetPasswordForm() {
 
                     <div className={styles.formFooter}>
                         <p>
-                            <Link href="/login" className={styles.footerLink}>
-                                Retour à la connexion
-                            </Link>
+                            <BackButton href="/login" label="Retour à la connexion" title="Retour à la connexion" />
                         </p>
                     </div>
                 </div>

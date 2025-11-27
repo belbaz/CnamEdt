@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 import styles from "./info.module.css";
 
 export default function InfoPage() {
@@ -220,7 +221,7 @@ export default function InfoPage() {
         return (
             <div className={styles.container}>
                 <div className={styles.loadingContainer}>
-                    <div className={styles.spinner}></div>
+                    <Spinner size="large" variant="border" />
                     <p>Chargement de vos informations...</p>
                 </div>
             </div>
@@ -233,12 +234,7 @@ export default function InfoPage() {
                 <div className={styles.errorContainer}>
                     <h2>⚠️ Erreur</h2>
                     <p>{error}</p>
-                    <button 
-                        className={styles.homeButton}
-                        onClick={() => router.push("/")}
-                    >
-                        Retour à l'accueil
-                    </button>
+                    <BackButton href="/dashboard" title="Retour au dashboard" />
                 </div>
             </div>
         );
@@ -254,7 +250,7 @@ export default function InfoPage() {
         <div className={styles.container}>
             <div className={styles.content}>
                 <header className={styles.header}>
-                    <BackButton />
+                    <BackButton href="/dashboard" title="Retour au dashboard" />
                     <h1>Informations du compte</h1>
                 </header>
 

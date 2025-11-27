@@ -1,0 +1,106 @@
+/* ============================================
+   SPINNER - Composant réutilisable
+   ============================================ */
+
+.spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary, #1f2937);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/* Variante circulaire SVG */
+.circular svg {
+    animation: spin 1s linear infinite;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Variante border CSS */
+.border {
+    position: relative;
+    box-sizing: border-box;
+}
+
+.borderSpinner {
+    border: 3px solid var(--border-color, #e5e7eb);
+    border-top: 3px solid var(--primary-color, #4299e1);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    transform-origin: center center;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Tailles */
+.sizeSmall {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.sizeSmall .borderSpinner {
+    border-width: 2px;
+}
+
+.sizeMedium {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.sizeMedium .borderSpinner {
+    border-width: 3px;
+}
+
+.sizeLarge {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+}
+
+.sizeLarge .borderSpinner {
+    border-width: 4px;
+}
+
+/* Animation */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Dark mode */
+.dark-mode .spinner {
+    color: var(--text-primary, #f9fafb);
+}
+
+.dark-mode .borderSpinner {
+    border-color: var(--border-color, #374151);
+    border-top-color: var(--primary-color, #4299e1);
+}
+
+/* OLED mode */
+.oled-mode .spinner {
+    color: #ffffff;
+}
+
+.oled-mode .borderSpinner {
+    border-color: #333333;
+    border-top-color: #ffffff;
+}
+

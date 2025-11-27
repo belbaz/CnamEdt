@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 import './analytics.css';
 
 const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
@@ -354,7 +355,7 @@ export default function AnalyticsPage() {
         return (
             <div className="analytics-container">
                 <div className="analytics-loading">
-                    <div className="loading-spinner"></div>
+                    <Spinner size="large" variant="border" />
                     <p>{authChecked ? 'Chargement des données analytics...' : 'Vérification des permissions...'}</p>
                 </div>
             </div>
@@ -370,7 +371,7 @@ export default function AnalyticsPage() {
                     <h2>🚫 Accès Refusé</h2>
                     <p className="error-message">{error || 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.'}</p>
                     <div className="error-actions">
-                        <BackButton href="/" label="Retour à l'accueil" title="Retour à l'accueil" />
+                        <BackButton href="/dashboard" label="Retour au dashboard" title="Retour au dashboard" />
                         {/* Afficher le bouton "Se connecter" seulement si l'utilisateur n'est pas déjà connecté */}
                         {!isAuthenticated && (
                             <button onClick={() => window.location.href = `/login?redirect=${currentPath}`}>
@@ -445,6 +446,9 @@ export default function AnalyticsPage() {
 
     return (
         <div className="analytics-container">
+            <div className="analytics-back-button">
+                <BackButton href="/dashboard" title="Retour au dashboard" />
+            </div>
             <header className="analytics-header">
                 <div>
                     <h1>📊 Analytics du Site</h1>
@@ -646,7 +650,7 @@ export default function AnalyticsPage() {
                 <div className="analytics-sessions">
                     {loading && data.length > 0 && (
                         <div className="loading-overlay">
-                            <div className="loading-spinner"></div>
+                            <Spinner size="large" variant="border" />
                         </div>
                     )}
                     <div className="filters-panel">

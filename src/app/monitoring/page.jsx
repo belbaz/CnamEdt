@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 
 export default function MonitoringPage() {
     const [testData, setTestData] = useState(null);
@@ -97,22 +98,8 @@ export default function MonitoringPage() {
                 <div style={{ padding: '30px' }}>
                     {loading && !testData && (
                         <div style={{ textAlign: 'center', padding: '40px' }}>
-                            <div style={{
-                                border: '4px solid #f3f3f3',
-                                borderTop: '4px solid #667eea',
-                                borderRadius: '50%',
-                                width: '50px',
-                                height: '50px',
-                                animation: 'spin 1s linear infinite',
-                                margin: '0 auto'
-                            }}></div>
+                            <Spinner size="large" variant="border" />
                             <p style={{ marginTop: '20px', color: '#666' }}>Chargement...</p>
-                            <style jsx>{`
-                                @keyframes spin {
-                                    0% { transform: rotate(0deg); }
-                                    100% { transform: rotate(360deg); }
-                                }
-                            `}</style>
                         </div>
                     )}
 
@@ -265,7 +252,7 @@ export default function MonitoringPage() {
                                     {loading ? '⏳ Chargement...' : '🔄 Rafraîchir'}
                                 </button>
 
-                                <BackButton href="/" label="Retour à l'accueil" title="Retour à l'accueil" />
+                                <BackButton href="/dashboard" label="Retour au dashboard" title="Retour au dashboard" />
                             </div>
                         </>
                     )}

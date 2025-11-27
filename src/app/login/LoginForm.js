@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import styles from "./login.module.css";
 
 const LOG_PREFIX = "[LoginForm]";
@@ -95,7 +96,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                 // Récupérer l'URL de redirection depuis les paramètres de l'URL
                 const redirectTo = searchParams.get('redirect');
                 // Décoder l'URL et valider qu'elle est relative (sécurité)
-                let targetPath = "/"; // Par défaut vers l'EDT (page principale)
+                let targetPath = "/dashboard"; // Par défaut vers le dashboard
                 
                 if (redirectTo) {
                     try {
@@ -131,7 +132,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                             <div className={styles.loadingState} style={{ justifyContent: "center", marginBottom: "1rem" }}>
                                 <div className={styles.loader}></div>
                             </div>
-                            <p style={{ color: "var(--text-secondary)" }}>Vérification de votre session...</p>
+                            <p style={{ color: "var(--text-secondary)" }}>Chargement de la session...</p>
                         </div>
                     </div>
                 </div>
@@ -263,11 +264,12 @@ export default function LoginForm({ onSuccess, embedded = false }) {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
+                <BackButton href="/" title="Retour à l'accueil" />
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
                         <div>
                             <h2>Connexion</h2>
-                            <p className={styles.cardSubhead}> </p>
+                            <p className={styles.cardSubhead}> </p>
                         </div>
                     </header>
                     {formContent}

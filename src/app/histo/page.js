@@ -126,7 +126,7 @@ export default function HistoPage() {
         <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
             <div style={{ marginBottom: "0.75rem" }}>
                 <div style={{ marginBottom: "0.75rem" }}>
-                    <BackButton href="/" title="Retour au menu" />
+                    <BackButton href="/dashboard" title="Retour au dashboard" />
                 </div>
                 <h1 style={{marginBottom: 0}}>Historique des cours ajoutés</h1>
             </div>

@@ -2,6 +2,7 @@
 
 import {useState} from "react";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 import styles from "./signup.module.css";
 
 const LOG_PREFIX = "[SignupForm]";
@@ -68,6 +69,7 @@ export default function SignupForm() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
+                <BackButton href="/" title="Retour à l'accueil" />
                 <div className={styles.notice}>
                     <h1>Accès réservé aux comptes Cnam</h1>
                     <p>Créer un compte pour ajouter des cours dans l&apos;agenda</p>

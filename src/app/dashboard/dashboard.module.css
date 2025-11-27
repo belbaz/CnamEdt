@@ -160,10 +160,13 @@
     align-items: center;
     justify-content: center;
     transition: transform 0.3s ease;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 .pageCard:hover .cardIcon {
-    transform: scale(1.1) rotate(5deg);
+    transform: translateZ(0) scale(1.1) rotate(5deg);
 }
 
 .cardContent {
@@ -200,8 +203,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.5rem;
     color: white;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.loadingContainer p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .spinner {

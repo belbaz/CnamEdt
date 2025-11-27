@@ -57,6 +57,7 @@ function HomeContent({searchParams}) {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [eventClickPosition, setEventClickPosition] = useState(null);
     const [showMap, setShowMap] = useState(false);
     const [hasNetworkError, setHasNetworkError] = useState(false);
     const [testMode, setTestModeState] = useState(false);
@@ -573,14 +574,20 @@ function HomeContent({searchParams}) {
         const loadUserInfo = async () => {
             try {
                 setIsLoadingUser(true);
-                // Délai minimum pour que le spinner soit visible
+                // Délai minimum pour que le spinner soit visible (200ms minimum)
+                const startTime = Date.now();
                 const [res] = await Promise.all([
                     fetch("/api/user", {cache: "no-store"}),
-                    new Promise(resolve => setTimeout(resolve, 500)) // Minimum 500ms
+                    new Promise(resolve => setTimeout(resolve, 200)) // Minimum 200ms
                 ]);
                 if (res.ok) {
                     const data = await res.json();
                     setUserInfo(data);
+                }
+                // S'assurer que le délai minimum de 200ms est respecté
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 200) {
+                    await new Promise(resolve => setTimeout(resolve, 200 - elapsed));
                 }
             } catch (error) {
                 // Ignorer silencieusement si non connecté
@@ -1228,7 +1235,10 @@ function HomeContent({searchParams}) {
                             <VerticalSchedule
                                 events={events}
                                 subjectColors={subjectColors}
-                                onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                onOpenEventDetails={(ev, position) => {
+                                    setEventClickPosition(position);
+                                    setSelectedEvent(ev);
+                                }}
                                 compactMode={compactMode}
                                 showTimeLabels={showTimeLabels}
                                 hide15MinSpacing={hide15MinSpacing}
@@ -1250,7 +1260,10 @@ function HomeContent({searchParams}) {
                                             subjectColors={subjectColors}
                                             isCollapsed={collapsedDays[day] || false}
                                             onToggle={() => handleToggleDay(day)}
-                                            onOpenEventDetails={(ev) => setSelectedEvent(ev)}
+                                            onOpenEventDetails={(ev, position) => {
+                                    setEventClickPosition(position);
+                                    setSelectedEvent(ev);
+                                }}
                                             compactMode={compactMode}
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}
@@ -1305,7 +1318,11 @@ function HomeContent({searchParams}) {
 
             <EventModal
                 selectedEvent={selectedEvent}
-                onClose={() => setSelectedEvent(null)}
+                clickPosition={eventClickPosition}
+                onClose={() => {
+                    setSelectedEvent(null);
+                    setEventClickPosition(null);
+                }}
                 onShowMap={setShowMap}
                 showMap={showMap}
                 allEvents={allEvents}

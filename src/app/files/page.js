@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import {useState, useEffect, useMemo, Suspense} from "react";
+import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Link from "next/link";
+import Spinner from "@/components/Spinner";
 import styles from "./page.module.css";
-import { getEventTitle } from "@/utils/eventUtils";
+import {getEventTitle} from "@/utils/eventUtils";
 
 function FilesContent() {
     const router = useRouter();
@@ -35,8 +36,8 @@ function FilesContent() {
             setError(null);
 
             const [userRes, eventsRes] = await Promise.all([
-                fetch("/api/user", { cache: "no-store" }),
-                fetch("/api/fetch-ics", { cache: "no-store" }),
+                fetch("/api/user", {cache: "no-store"}),
+                fetch("/api/fetch-ics", {cache: "no-store"}),
             ]);
 
             // Gérer l'authentification
@@ -73,7 +74,7 @@ function FilesContent() {
     const loadFiles = async () => {
         try {
             setError(null);
-            const url = selectedCourseUid 
+            const url = selectedCourseUid
                 ? `/api/files/all?course_uid=${encodeURIComponent(selectedCourseUid)}`
                 : '/api/files/all';
 
@@ -221,7 +222,7 @@ function FilesContent() {
             <div className={styles.page}>
                 <div className={styles.container}>
                     <div className={styles.loadingContainer}>
-                        <div className={styles.spinner}></div>
+                        <Spinner size="large" variant="border" />
                         <p>Chargement...</p>
                     </div>
                 </div>
@@ -235,11 +236,11 @@ function FilesContent() {
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <BackButton href="/" title="Retour à l'EDT" />
+                        <BackButton href="/dashboard" title="Retour au dashboard"/>
                         <div className={styles.headerTitle}>
                             <h1>📄 Mes fichiers</h1>
                             <p className={styles.subtitle}>
-                                {files.length > 0 
+                                {files.length > 0
                                     ? `${files.length} fichier${files.length > 1 ? 's' : ''} au total`
                                     : "Aucun fichier uploadé"}
                             </p>
@@ -253,7 +254,7 @@ function FilesContent() {
                                     className={styles.logoutButton}
                                     onClick={async () => {
                                         try {
-                                            await fetch("/api/logout", { method: "POST" });
+                                            await fetch("/api/logout", {method: "POST"});
                                             window.location.href = "/";
                                         } catch (error) {
                                             console.error("[Files] Erreur déconnexion:", error);
@@ -295,8 +296,8 @@ function FilesContent() {
                                     className={styles.filterSelect}
                                 >
                                     <option value="">Tous les cours</option>
-                                    {coursesWithFiles.map(({ courseUid, event }) => {
-                                        const { matiere } = event ? getEventTitle(event) : {};
+                                    {coursesWithFiles.map(({courseUid, event}) => {
+                                        const {matiere} = event ? getEventTitle(event) : {};
                                         const courseName = matiere || event?.summary || courseUid.substring(0, 20);
                                         const fileCount = filesByCourse[courseUid].files.length;
                                         return (
@@ -316,7 +317,7 @@ function FilesContent() {
                                 {(() => {
                                     const courseData = filesByCourse[selectedCourseUid];
                                     const event = courseData?.event;
-                                    const { matiere } = event ? getEventTitle(event) : {};
+                                    const {matiere} = event ? getEventTitle(event) : {};
                                     const courseName = matiere || event?.summary || selectedCourseUid;
                                     const courseFiles = courseData?.files || [];
 
@@ -341,14 +342,18 @@ function FilesContent() {
                                                 )}
                                             </div>
 
-                                            <div className={styles.uploadSection} style={{ border: '1px dashed var(--border-light)', borderRadius: '12px', padding: '1rem' }}>
+                                            <div className={styles.uploadSection} style={{
+                                                border: '1px dashed var(--border-light)',
+                                                borderRadius: '12px',
+                                                padding: '1rem'
+                                            }}>
                                                 {authenticated ? (
                                                     <label className={styles.uploadButton}>
                                                         <input
                                                             type="file"
                                                             onChange={handleFileSelect}
                                                             disabled={uploading}
-                                                            style={{ display: 'none' }}
+                                                            style={{display: 'none'}}
                                                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                                                         />
                                                         {uploading ? '⏳ Upload en cours...' : '➕ Ajouter un fichier'}
@@ -408,8 +413,14 @@ function FilesContent() {
                                                                             onClick={() => handleDelete(file.id)}
                                                                             title="Supprimer"
                                                                         >
-                                                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            <svg width="16" height="16"
+                                                                                 viewBox="0 0 16 16" fill="none"
+                                                                                 xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 4L4 12M4 4L12 12"
+                                                                                      stroke="currentColor"
+                                                                                      strokeWidth="2"
+                                                                                      strokeLinecap="round"
+                                                                                      strokeLinejoin="round"/>
                                                                             </svg>
                                                                         </button>
                                                                     )}
@@ -439,10 +450,10 @@ function FilesContent() {
                                         </p>
                                     </div>
                                 ) : (
-                                    coursesWithFiles.map(({ courseUid, event, files: courseFiles }) => {
-                                        const { matiere } = event ? getEventTitle(event) : {};
+                                    coursesWithFiles.map(({courseUid, event, files: courseFiles}) => {
+                                        const {matiere} = event ? getEventTitle(event) : {};
                                         const courseName = matiere || event?.summary || courseUid.substring(0, 30);
-                                        
+
                                         return (
                                             <div key={courseUid} className={styles.courseCard}>
                                                 <div className={styles.courseCardHeader}>
@@ -510,8 +521,14 @@ function FilesContent() {
                                                                             onClick={() => handleDelete(file.id)}
                                                                             title="Supprimer"
                                                                         >
-                                                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                            <svg width="16" height="16"
+                                                                                 viewBox="0 0 16 16" fill="none"
+                                                                                 xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M12 4L4 12M4 4L12 12"
+                                                                                      stroke="currentColor"
+                                                                                      strokeWidth="2"
+                                                                                      strokeLinecap="round"
+                                                                                      strokeLinejoin="round"/>
                                                                             </svg>
                                                                         </button>
                                                                     )}
@@ -544,13 +561,13 @@ export default function FilesPage() {
             <div className={styles.page}>
                 <div className={styles.container}>
                     <div className={styles.loadingContainer}>
-                        <div className={styles.spinner}></div>
+                        <Spinner size="large" variant="border" />
                         <p>Chargement...</p>
                     </div>
                 </div>
             </div>
         }>
-            <FilesContent />
+            <FilesContent/>
         </Suspense>
     );
 }

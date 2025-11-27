@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Spinner from "@/components/Spinner";
 import styles from './page.module.css';
 
 /**
@@ -185,7 +186,7 @@ export default function RawICSPage() {
         return (
             <div className={styles.container}>
                 <div className={styles.loading}>
-                    <div className={styles.spinner}></div>
+                    <Spinner size="large" variant="border" />
                     <p>Chargement du fichier ICS...</p>
                 </div>
             </div>

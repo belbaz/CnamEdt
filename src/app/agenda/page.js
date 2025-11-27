@@ -1285,7 +1285,7 @@ function AgendaContent() {
             <div className={styles.container}>
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <BackButton href="/" label="" title="Retour à l'emploi du temps" />
+                        <BackButton href="/dashboard" title="Retour au dashboard" />
                         <div className={styles.userBar}>
                             {userInfo && (
                                 <button

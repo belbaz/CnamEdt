@@ -17,6 +17,7 @@ import styles from "@/app/page.module.css";
 
 export default function EventModal({
     selectedEvent,
+    clickPosition = null,
     onClose,
     onShowMap,
     showMap,
@@ -281,7 +282,15 @@ export default function EventModal({
             )}
             <div className="event-modal-layer" aria-modal="true" role="dialog">
                 <div className="event-modal-overlay" onClick={onClose} />
-                <div className="event-modal">
+                <div 
+                    className={`event-modal ${clickPosition ? 'event-modal-expanding' : ''}`}
+                    style={clickPosition ? {
+                        '--origin-x': `${clickPosition.x}px`,
+                        '--origin-y': `${clickPosition.y}px`,
+                        '--origin-width': `${clickPosition.width}px`,
+                        '--origin-height': `${clickPosition.height}px`
+                    } : {}}
+                >
                     <div className="event-modal-header">
                         <div className="event-modal-title">
                             {selectedEvent.summary || selectedEvent.description || 'Cours'}
@@ -423,7 +432,7 @@ export default function EventModal({
                         {/* Section Progression */}
                         {hoursStats && hoursStats.total > 0 && (() => {
                             const progressionKey = selectedEvent?.uid || 'default';
-                            const isExpanded = progressionExpanded.get(progressionKey) || false;
+                            const isExpanded = progressionExpanded.get(progressionKey) || true;
 
                             const toggleExpanded = () => {
                                 const newMap = new Map(progressionExpanded);
@@ -498,7 +507,7 @@ export default function EventModal({
                                     <div className="modal-note-view">
                                         {savedModalEntries.length === 0 ? (
                                             <div className="modal-notes-empty">
-                                                <p className="modal-note-view-text">Aucune note disponible</p>
+                                                <p className="modal-note-view-text">Aucune note</p>
                                                 <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
                                                     <p className="modal-auth-message-text">
                                                         <a href="/login" className={styles.notesUnauthLink}>

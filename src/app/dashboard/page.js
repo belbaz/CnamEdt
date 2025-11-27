@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
@@ -144,7 +145,7 @@ export default function DashboardPage() {
         return (
             <div className={styles.container}>
                 <div className={styles.loadingContainer}>
-                    <div className={styles.spinner}></div>
+                    <Spinner size="large" variant="border" />
                     <p>Chargement...</p>
                 </div>
             </div>

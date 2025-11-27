@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import SettingsMenu from "./SettingsMenu";
 import Tooltip from "./Tooltip";
+import Spinner from "./Spinner";
 import "./PageHeader.css";
 
 export default function PageHeader({
@@ -175,7 +176,11 @@ export default function PageHeader({
                     </h1>
 
                     {/* Salutation utilisateur avec menu */}
-                    {userInfo && userInfo.name && (
+                    {isLoadingUser ? (
+                        <div className="userInfo userInfoLoading">
+                            <Spinner size="small" ariaLabel="Chargement de l'utilisateur..." />
+                        </div>
+                    ) : userInfo && userInfo.name ? (
                         <div 
                             ref={userMenuRef}
                             className="userInfo"
@@ -239,7 +244,7 @@ export default function PageHeader({
                                 </div>
                             )}
                         </div>
-                    )}
+                    ) : null}
                 </div>
                 <div className="header-actions">
                     <Tooltip 
@@ -277,36 +282,7 @@ export default function PageHeader({
                             disabled
                             aria-label="Chargement..."
                         >
-                            <svg 
-                                className="loading-spinner" 
-                                width="20" 
-                                height="20" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                aria-hidden="true"
-                            >
-                                <circle 
-                                    cx="12" 
-                                    cy="12" 
-                                    r="10" 
-                                    stroke="currentColor" 
-                                    strokeWidth="2" 
-                                    strokeDasharray="31.416" 
-                                    strokeDashoffset="31.416" 
-                                    opacity="0.3"
-                                />
-                                <circle 
-                                    cx="12" 
-                                    cy="12" 
-                                    r="10" 
-                                    stroke="currentColor" 
-                                    strokeWidth="2" 
-                                    strokeDasharray="31.416" 
-                                    strokeDashoffset="15.708" 
-                                    strokeLinecap="round"
-                                />
-                            </svg>
+                            <Spinner size="medium" ariaLabel="Chargement..." />
                         </button>
                     ) : userInfo ? (
                         <Tooltip 

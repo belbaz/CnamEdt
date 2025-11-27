@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BackButton from "@/components/BackButton";
+import Spinner from "@/components/Spinner";
 import './users.css';
 
 export default function UsersManagementPage() {
@@ -236,7 +237,7 @@ export default function UsersManagementPage() {
         return (
             <div className="users-container">
                 <div className="loading-container">
-                    <div className="spinner"></div>
+                    <Spinner size="large" variant="border" />
                     <p>Vérification des permissions...</p>
                 </div>
             </div>
@@ -258,16 +259,7 @@ export default function UsersManagementPage() {
     return (
         <div className="users-container">
             <div className="users-header">
-                <button
-                    onClick={() => router.push('/dashboard')}
-                    className="back-button"
-                    title="Retour au dashboard"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 12H5M5 12l6-6M5 12l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Retour
-                </button>
+                <BackButton href="/dashboard" title="Retour au dashboard" />
                 <h1>Gestion des utilisateurs</h1>
                 <p className="subtitle">Gérez les utilisateurs de l'application</p>
             </div>
@@ -312,7 +304,7 @@ export default function UsersManagementPage() {
             <div className="table-container">
                 {loading ? (
                     <div className="loading-container">
-                        <div className="spinner"></div>
+                        <Spinner size="large" variant="border" />
                         <p>Chargement des utilisateurs...</p>
                     </div>
                 ) : users.length === 0 ? (
