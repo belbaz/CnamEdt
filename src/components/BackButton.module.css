@@ -20,6 +20,7 @@
     line-height: 1;
     min-width: 44px;
     min-height: 44px;
+    max-width: 80px;
 }
 
 .backButton:hover {
@@ -74,7 +75,7 @@
     }
     100% {
         transform: translateX(0);
-    }
+}
 }
 
 

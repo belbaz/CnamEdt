@@ -75,7 +75,7 @@ export default function SignupForm() {
                     <p>Créer un compte pour ajouter des cours dans l&apos;agenda</p>
                 </div>
 
-                <div className={`${styles.formCard} ${styles.accentCard}`}>
+                <div className={[styles.formCard, styles.accentCard].filter(Boolean).join(' ')}>
                     <header className={styles.cardHeader}>
                         <div>
                             <h2>Créer un compte</h2>
@@ -129,7 +129,7 @@ export default function SignupForm() {
                             </div>
                         </div>
 
-                        <button type="submit" className={`${styles.submitButton} ${styles.accentButton}`}
+                        <button type="submit" className={[styles.submitButton, styles.accentButton].filter(Boolean).join(' ')}
                                 disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <span className={styles.loadingState}>

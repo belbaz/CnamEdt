@@ -57,7 +57,6 @@ export default function ForgotPage() {
                 <BackButton href="/login" title="Retour à la connexion" />
                 <div className={styles.notice}>
                     <h1>Mot de passe oublié</h1>
-                    <p>Indiquez votre adresse @lecnam.net pour recevoir un lien de réinitialisation.</p>
                 </div>
 
                 <section className={styles.formsPanel}>
@@ -105,10 +104,6 @@ export default function ForgotPage() {
                                 </a>
                             </div>
                         )}
-
-                        <div className={styles.backLink}>
-                            <BackButton href="/login" label="Retourner à la connexion" title="Retourner à la connexion" />
-                        </div>
                     </div>
                 </section>
             </div>

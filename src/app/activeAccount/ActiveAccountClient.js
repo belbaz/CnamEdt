@@ -115,7 +115,7 @@ export default function ActiveAccountClient() {
     };
 
     const renderStatusBanner = () => (
-        <div className={`${styles.statusBanner} ${styles[status.type]}`}>
+        <div className={[styles.statusBanner, styles[status.type]].filter(Boolean).join(' ')}>
             {isCheckingToken ? (
                 <span className={styles.bannerLoader}>
                     <span className={styles.loader} aria-hidden="true" />

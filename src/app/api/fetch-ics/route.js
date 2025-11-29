@@ -153,6 +153,171 @@ function compareEvents(oldEvent, newEvent) {
     return changes;
 }
 
+/**
+ * Migre automatiquement les notes orphelines vers le nouveau course_uid
+ * si seule la salle (location) a changé.
+ * 
+ * Règles de migration :
+ * - Même date/heure de début (start)
+ * - Même titre (summary) - normalisé
+ * - Salle différente (location)
+ * 
+ * Si le titre ou la date change, la note n'est PAS migrée (considérée invalide).
+ */
+async function migrateOrphanNotes(supabase, currentEvents) {
+    try {
+        // Créer un Map des events actuels par (date+summary) pour recherche rapide
+        const eventsByDateAndTitle = new Map();
+        const currentUids = new Set();
+        
+        for (const event of currentEvents) {
+            if (!event.start || !event.summary) continue;
+            
+            const startISO = toISOStringSafe(event.start);
+            const summaryNormalized = sanitizeText(event.summary).toLowerCase();
+            const key = `${startISO}|${summaryNormalized}`;
+            
+            if (!eventsByDateAndTitle.has(key)) {
+                eventsByDateAndTitle.set(key, []);
+            }
+            eventsByDateAndTitle.get(key).push(event);
+            currentUids.add(event.uid);
+        }
+        
+        // Récupérer toutes les notes de l'agenda
+        const { data: allNotes, error: notesError } = await supabase
+            .from('edt_agenda')
+            .select('id, course_uid, user_id, notes, created_at, updated_at, labels, entry_labels, modification_history');
+        
+        if (notesError) {
+            console.warn('[API fetch-ics] Erreur récupération notes pour migration:', notesError.message);
+            return;
+        }
+        
+        if (!allNotes || allNotes.length === 0) {
+            return; // Aucune note à migrer
+        }
+        
+        // Identifier les notes orphelines (course_uid qui n'existe plus dans les events actuels)
+        const orphanNotes = allNotes.filter(note => 
+            note.course_uid && !currentUids.has(note.course_uid)
+        );
+        
+        if (orphanNotes.length === 0) {
+            return; // Aucune note orpheline
+        }
+        
+        console.log(`[API fetch-ics] Migration: ${orphanNotes.length} note(s) orpheline(s) détectée(s)`);
+        
+        // Récupérer les anciennes versions des cours pour comparer
+        const orphanUids = orphanNotes.map(n => n.course_uid);
+        const { data: oldEvents, error: oldEventsError } = await supabase
+            .from('events_versions')
+            .select('uid, summary, start, location')
+            .in('uid', orphanUids)
+            .order('version_no', { ascending: false });
+        
+        if (oldEventsError) {
+            console.warn('[API fetch-ics] Erreur récupération anciens events pour migration:', oldEventsError.message);
+            return;
+        }
+        
+        // Créer un Map des anciens events par uid
+        const oldEventsMap = new Map();
+        for (const oldEvent of oldEvents || []) {
+            if (!oldEventsMap.has(oldEvent.uid)) {
+                oldEventsMap.set(oldEvent.uid, oldEvent);
+            }
+        }
+        
+        let migratedCount = 0;
+        let skippedCount = 0;
+        
+        // Pour chaque note orpheline, chercher un event correspondant
+        for (const note of orphanNotes) {
+            const oldEvent = oldEventsMap.get(note.course_uid);
+            if (!oldEvent || !oldEvent.start || !oldEvent.summary) {
+                skippedCount++;
+                continue; // Pas d'info sur l'ancien event, on ne peut pas migrer
+            }
+            
+            const oldStartISO = toISOStringSafe(oldEvent.start);
+            const oldSummaryNormalized = sanitizeText(oldEvent.summary).toLowerCase();
+            const oldLocationNormalized = sanitizeText(oldEvent.location || '').toLowerCase();
+            
+            // Chercher un event avec même date/heure et même titre
+            const searchKey = `${oldStartISO}|${oldSummaryNormalized}`;
+            const candidates = eventsByDateAndTitle.get(searchKey) || [];
+            
+            // Filtrer pour trouver un event avec une salle différente
+            const matchingEvent = candidates.find(event => {
+                const newLocationNormalized = sanitizeText(event.location || '').toLowerCase();
+                // Même date/heure + même titre + salle différente = migration possible
+                return newLocationNormalized !== oldLocationNormalized;
+            });
+            
+            if (matchingEvent) {
+                // Migration possible : seule la salle a changé
+                const newCourseUid = matchingEvent.uid;
+                
+                // Vérifier qu'il n'existe pas déjà une note pour ce nouveau course_uid et cet utilisateur
+                const { data: existingNote, error: checkError } = await supabase
+                    .from('edt_agenda')
+                    .select('id')
+                    .eq('user_id', note.user_id)
+                    .eq('course_uid', newCourseUid)
+                    .maybeSingle();
+                
+                if (checkError) {
+                    console.warn(`[API fetch-ics] Erreur vérification note existante pour migration (user: ${note.user_id}, new_uid: ${newCourseUid}):`, checkError.message);
+                    skippedCount++;
+                    continue;
+                }
+                
+                if (existingNote) {
+                    // Une note existe déjà pour ce nouveau course_uid
+                    // On supprime l'ancienne note orpheline
+                    const { error: deleteError } = await supabase
+                        .from('edt_agenda')
+                        .delete()
+                        .eq('id', note.id);
+                    
+                    if (deleteError) {
+                        console.warn(`[API fetch-ics] Erreur suppression note orpheline (id: ${note.id}):`, deleteError.message);
+                    } else {
+                        console.log(`[API fetch-ics] Migration: Note orpheline supprimée (id: ${note.id}, old_uid: ${note.course_uid}) - note existe déjà pour new_uid: ${newCourseUid}`);
+                        migratedCount++;
+                    }
+                } else {
+                    // Migrer la note vers le nouveau course_uid
+                    const { error: updateError } = await supabase
+                        .from('edt_agenda')
+                        .update({ course_uid: newCourseUid })
+                        .eq('id', note.id);
+                    
+                    if (updateError) {
+                        console.warn(`[API fetch-ics] Erreur migration note (id: ${note.id}, old_uid: ${note.course_uid} → new_uid: ${newCourseUid}):`, updateError.message);
+                        skippedCount++;
+                    } else {
+                        console.log(`[API fetch-ics] Migration: Note migrée (id: ${note.id}, old_uid: ${note.course_uid} → new_uid: ${newCourseUid}, salle: "${oldEvent.location}" → "${matchingEvent.location}")`);
+                        migratedCount++;
+                    }
+                }
+            } else {
+                // Pas de correspondance : le titre ou la date a changé, la note n'est plus valide
+                skippedCount++;
+            }
+        }
+        
+        if (migratedCount > 0 || skippedCount > 0) {
+            console.log(`[API fetch-ics] Migration terminée: ${migratedCount} migrée(s), ${skippedCount} ignorée(s) (titre/date changé ou pas de correspondance)`);
+        }
+    } catch (error) {
+        console.error('[API fetch-ics] Erreur lors de la migration des notes:', error);
+        throw error;
+    }
+}
+
 async function loadLatestEventMap(supabase) {
     try {
         // Récupérer TOUS les événements avec pagination si nécessaire
@@ -559,6 +724,13 @@ export async function GET(request) {
                             }
                         } else {
                             console.log('[API fetch-ics] No changes detected, no DB writes needed');
+                        }
+                        
+                        // 4) Migration automatique des notes orphelines (si seule la salle a changé)
+                        try {
+                            await migrateOrphanNotes(supabaseClient, events);
+                        } catch (migErr) {
+                            console.warn('[API fetch-ics] Note migration skipped:', migErr.message);
                         }
                         
                         // Return immediately after computing diff

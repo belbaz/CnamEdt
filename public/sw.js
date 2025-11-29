@@ -1,7 +1,8 @@
 // Service Worker pour PWA EDT EICNAM
 // Gère le cache offline et les mises à jour
+// NOTE: CACHE_VERSION est injecté automatiquement par le script pre-build.js avec la version de package.json
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = '2.1.0'; // Sera remplacé automatiquement par pre-build.js
 const CACHE_NAME = `edt-pwa-${CACHE_VERSION}`;
 const DATA_CACHE_NAME = `edt-data-${CACHE_VERSION}`;
 

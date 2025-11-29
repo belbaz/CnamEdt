@@ -237,7 +237,7 @@
 }
 
 :global(.modal-note-view-text){
-    font-size: 15px;
+    font-size: 14px;
     margin: .1rem .1rem;
 }
 
@@ -248,9 +248,7 @@
 }
 
 :global(.modal-notes-empty) {
-    border: 1px dashed rgba(148, 163, 184, 0.4);
     border-radius: 8px;
-    padding: 0.6rem;
     text-align: center;
     color: var(--text-secondary);
     display: flex;
@@ -551,12 +549,10 @@
 }
 
 :global(.modal-auth-message) {
-    margin-bottom: 0.75rem;
-    padding: 0.6rem;
     text-align: center;
     background: var(--bg-secondary);
     border-radius: 8px;
-    border: 1px dashed rgba(148, 163, 184, 0.4);
+    /*border: 1px dashed rgba(148, 163, 184, 0.4);*/
 }
 
 :global(.dark-mode .modal-auth-message),
@@ -570,7 +566,7 @@
     font-size: 0.875rem;
     color: var(--text-secondary);
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
     flex-wrap: wrap;
     gap: 0.25rem;

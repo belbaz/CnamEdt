@@ -19,9 +19,11 @@ export default function Spinner({
     const variantClass = styles[variant];
 
     if (variant === 'circular') {
+        const spinnerClassName = [styles.spinner, sizeClass, variantClass, className].filter(Boolean).join(' ');
+        
         return (
             <div 
-                className={`${styles.spinner} ${sizeClass} ${variantClass} ${className}`}
+                className={spinnerClassName}
                 role="status"
                 aria-label={ariaLabel}
             >
@@ -57,9 +59,11 @@ export default function Spinner({
     }
 
     // Variant 'border' - spinner avec bordure CSS
+    const borderSpinnerClassName = [styles.spinner, styles.border, sizeClass, className].filter(Boolean).join(' ');
+    
     return (
         <div 
-            className={`${styles.spinner} ${styles.border} ${sizeClass} ${className}`}
+            className={borderSpinnerClassName}
             role="status"
             aria-label={ariaLabel}
         >

@@ -28,6 +28,9 @@ export default function PWAUpdateChecker() {
             return;
         }
 
+        // Version locale stockée
+        const localVersion = window.__APP_VERSION || null;
+
         // Enregistrer le Service Worker
         navigator.serviceWorker
             .register('/sw.js', { 
@@ -36,6 +39,30 @@ export default function PWAUpdateChecker() {
             .then((reg) => {
                 setRegistration(reg);
                 console.log('[PWAUpdateChecker] Service Worker enregistré');
+
+                // Fonction pour vérifier la version serveur et forcer une mise à jour si nécessaire
+                const checkVersionUpdate = async () => {
+                    try {
+                        const response = await fetch('/api/version?t=' + Date.now(), {
+                            cache: 'no-store'
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            const serverVersion = data.version;
+                            
+                            // Si la version serveur est différente de la version locale, forcer une mise à jour
+                            if (localVersion && serverVersion && localVersion !== serverVersion) {
+                                console.log(`[PWAUpdateChecker] Nouvelle version détectée: ${localVersion} → ${serverVersion}`);
+                                // Forcer la mise à jour du Service Worker
+                                reg.update().catch((err) => {
+                                    console.debug('[PWAUpdateChecker] Erreur lors de la mise à jour forcée:', err);
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.debug('[PWAUpdateChecker] Erreur vérification version:', err);
+                    }
+                };
 
                 // Vérifier périodiquement les mises à jour (toutes les heures)
                 const checkForUpdates = () => {
@@ -46,9 +73,14 @@ export default function PWAUpdateChecker() {
 
                 // Vérifier immédiatement
                 checkForUpdates();
+                // Vérifier aussi la version immédiatement
+                checkVersionUpdate();
 
                 // Vérifier toutes les heures
-                const updateInterval = setInterval(checkForUpdates, 60 * 60 * 1000);
+                const updateInterval = setInterval(() => {
+                    checkForUpdates();
+                    checkVersionUpdate();
+                }, 60 * 60 * 1000);
 
                 // Vérifier si un nouveau Service Worker est en attente
                 if (reg.waiting) {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import MapViewer from "@/components/MapViewer/MapViewer";
 import CourseFiles from "@/components/CourseFiles/CourseFiles";
+import courseFilesStyles from "@/components/CourseFiles/CourseFiles.module.css";
 import {
     formatDurationHM,
     getSubjectHoursStats,
@@ -141,6 +142,17 @@ export default function EventModal({
         setIsModalEditingNotes(false);
         setShowLabelInputForEntry(null);
         setNewLabelValue("");
+    };
+
+    const handleAddNoteButton = () => {
+        if (userRole === 'visiteur' || !notesAuthenticated) {
+            return;
+        }
+        if (isModalEditingNotes) {
+            handleAddEntry();
+        } else {
+            handleStartEditing();
+        }
     };
 
     // Labels prédéfinis avec leurs couleurs
@@ -432,7 +444,7 @@ export default function EventModal({
                         {/* Section Progression */}
                         {hoursStats && hoursStats.total > 0 && (() => {
                             const progressionKey = selectedEvent?.uid || 'default';
-                            const isExpanded = progressionExpanded.get(progressionKey) || true;
+                            const isExpanded = progressionExpanded.get(progressionKey) ?? true;
 
                             const toggleExpanded = () => {
                                 const newMap = new Map(progressionExpanded);
@@ -489,14 +501,15 @@ export default function EventModal({
                                     <div className="modal-notes-title">
                                         <h3>📋 Notes</h3>
                                     </div>
-                                    {notesAuthenticated && !isModalEditingNotes && savedModalEntries.length > 0 && userRole !== 'visiteur' && (
+                                    {notesAuthenticated && (
                                         <button
                                             type="button"
-                                            className="modal-note-add"
-                                            onClick={handleStartEditing}
-                                            disabled={savingNote}
+                                            className={courseFilesStyles.uploadButton}
+                                            onClick={handleAddNoteButton}
+                                            disabled={savingNote || userRole === 'visiteur'}
+                                            title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                         >
-                                            ✏️ Modifier
+                                            Créer une note
                                         </button>
                                     )}
                                 </div>
@@ -512,7 +525,7 @@ export default function EventModal({
                                                     <p className="modal-auth-message-text">
                                                         <a href="/login" className={styles.notesUnauthLink}>
                                                             Connectez-vous
-                                                        </a> pour ajouter des notes
+                                                        </a> pour créer une note
                                                     </p>
                                                 </div>
                                             </div>
@@ -594,38 +607,13 @@ export default function EventModal({
                                     // Utilisateur connecté, aucune note
                                     <div className="modal-notes-empty">
                                         <p className="modal-note-view-text">Aucune note</p>
-                                        <button
-                                            type="button"
-                                            className="modal-note-add"
-                                            onClick={() => {
-                                                if (userRole === 'visiteur') {
-                                                    alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
-                                                    return;
-                                                }
-                                                setIsModalEditingNotes(true);
-                                                setEditingNoteEntries([""]);
-                                            }}
-                                            disabled={savingNote || userRole === 'visiteur'}
-                                            title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
-                                        >
-                                            + Ajouter une note
-                                        </button>
                                     </div>
                                 ) : isModalEditingNotes ? (
                                     // Mode édition pour utilisateurs connectés
                                     <div className="modal-notes-list">
                                         {editingNoteEntries.length === 0 ? (
                                             <div className="modal-notes-empty">
-                                                <p>Aucune note en cours d'édition.</p>
-                                                <button
-                                                    type="button"
-                                                    className="modal-note-add"
-                                                    onClick={handleAddEntry}
-                                                    disabled={savingNote || userRole === 'visiteur'}
-                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
-                                                >
-                                                    + Ajouter une note
-                                                </button>
+                                                <p>Aucune note</p>
                                             </div>
                                         ) : (
                                             <>
@@ -667,7 +655,7 @@ export default function EventModal({
                                                                         title="Créer un label personnalisé"
                                                                         disabled={userRole === 'visiteur'}
                                                                     >
-                                                                        + Nouveau
+                                                                        Créer un label
                                                                     </button>
                                                                 </div>
                                                                 
@@ -782,15 +770,6 @@ export default function EventModal({
                                                         </div>
                                                     );
                                                 })}
-                                                <button
-                                                    type="button"
-                                                    className="modal-note-add secondary"
-                                                    onClick={handleAddEntry}
-                                                    disabled={savingNote || userRole === 'visiteur'}
-                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
-                                                >
-                                                    + Ajouter une note
-                                                </button>
                                             </>
                                         )}
                                     </div>

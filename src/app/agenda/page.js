@@ -263,9 +263,13 @@ function AgendaContent() {
         return publicNotes
             .map((note) => {
                 const relatedEvent = note?.course_uid ? eventsByUid.get(note.course_uid) : null;
+                // Si le cours n'est pas trouvé dans les events actuels, utiliser les infos orphelines
+                const orphanEventInfo = !relatedEvent && note?.orphan_event_info ? note.orphan_event_info : null;
+                const eventToUse = relatedEvent || orphanEventInfo;
+                
                 const entries = sanitizeNoteEntries(note?.entries);
-                const displayDate = relatedEvent?.start || note?.updated_at || note?.created_at || null;
-                const eventDate = relatedEvent?.start ? new Date(relatedEvent.start) : null;
+                const displayDate = eventToUse?.start || note?.updated_at || note?.created_at || null;
+                const eventDate = eventToUse?.start ? new Date(eventToUse.start) : null;
                 if (eventDate) {
                     eventDate.setHours(0, 0, 0, 0);
                 }
@@ -274,10 +278,11 @@ function AgendaContent() {
                 return {
                     ...note,
                     entries,
-                    event: relatedEvent,
+                    event: eventToUse, // Utiliser eventToUse au lieu de relatedEvent
                     displayDate,
                     isFuture,
                     eventDate: eventDate || new Date(displayDate || 0),
+                    isOrphan: !relatedEvent && !!orphanEventInfo, // Flag pour indiquer que c'est un cours orphelin
                 };
             })
             .sort((a, b) => {
@@ -1099,7 +1104,7 @@ function AgendaContent() {
                                                         type="button"
                                                         onClick={() => handleAddLabel(index, labelObj.name)}
                                                         disabled={entryLabelsForIndex.includes(labelObj.name) || userRole === 'visiteur'}
-                                                        className={`${styles.predefinedLabelButton} ${entryLabelsForIndex.includes(labelObj.name) ? styles.predefinedLabelButtonDisabled : ""}`}
+                                                        className={[styles.predefinedLabelButton, entryLabelsForIndex.includes(labelObj.name) && styles.predefinedLabelButtonDisabled].filter(Boolean).join(' ')}
                                                         style={!entryLabelsForIndex.includes(labelObj.name) ? {
                                                             borderColor: labelObj.color,
                                                             color: labelObj.color
@@ -1286,18 +1291,6 @@ function AgendaContent() {
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
                         <BackButton href="/dashboard" title="Retour au dashboard" />
-                        <div className={styles.userBar}>
-                            {userInfo && (
-                                <button
-                                    onClick={handleLogout}
-                                    className={styles.logoutButton}
-                                >
-                                    Se déconnecter
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    <div>
                         <h1>Agenda</h1>
                     </div>
                 </div>
@@ -1324,7 +1317,7 @@ function AgendaContent() {
                     <div className={styles.tabNavigation}>
                         <button
                             type="button"
-                            className={`${styles.tabButton} ${activeTab === "public" ? styles.tabButtonActive : ""}`}
+                            className={[styles.tabButton, activeTab === "public" && styles.tabButtonActive].filter(Boolean).join(' ')}
                             onClick={() => setActiveTab("public")}
                             aria-pressed={activeTab === "public"}
                         >
@@ -1333,7 +1326,7 @@ function AgendaContent() {
                         </button>
                         <button
                             type="button"
-                            className={`${styles.tabButton} ${activeTab === "private" ? styles.tabButtonActive : ""}`}
+                            className={[styles.tabButton, activeTab === "private" && styles.tabButtonActive].filter(Boolean).join(' ')}
                             onClick={() => setActiveTab("private")}
                             aria-pressed={activeTab === "private"}
                         >
@@ -1381,7 +1374,7 @@ function AgendaContent() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelectedLabelFilter(null)}
-                                                        className={`${styles.labelFilterButton} ${!selectedLabelFilter ? styles.labelFilterButtonActive : ""}`}
+                                                        className={[styles.labelFilterButton, !selectedLabelFilter && styles.labelFilterButtonActive].filter(Boolean).join(' ')}
                                                     >
                                                         Tous
                                                     </button>
@@ -1392,7 +1385,7 @@ function AgendaContent() {
                                                                 key={label}
                                                                 type="button"
                                                                 onClick={() => setSelectedLabelFilter(selectedLabelFilter === label ? null : label)}
-                                                                className={`${styles.labelFilterButton} ${selectedLabelFilter === label ? styles.labelFilterButtonActive : ""}`}
+                                                                className={[styles.labelFilterButton, selectedLabelFilter === label && styles.labelFilterButtonActive].filter(Boolean).join(' ')}
                                                                 style={selectedLabelFilter === label ? {
                                                                     backgroundColor: labelColor,
                                                                     borderColor: labelColor,
@@ -1428,9 +1421,9 @@ function AgendaContent() {
                                 ) : (
                                     <div className={styles.publicNotesGrid}>
                                         {publicNotesList.map((note, index) => {
-                                            const relatedEvent = note.event;
-                                            const { matiere, prof } = relatedEvent
-                                                ? getEventTitle(relatedEvent)
+                                            const event = note.event; // Peut être relatedEvent ou orphanEventInfo
+                                            const { matiere, prof } = event
+                                                ? getEventTitle(event)
                                                 : { matiere: null, prof: null };
                                             
                                             // Détecter la transition entre notes passées et futures
@@ -1457,25 +1450,37 @@ function AgendaContent() {
                                                         </div>
                                                     )}
                                                     <article 
-                                                        className={`${styles.publicNoteCard} ${!note.isFuture ? styles.publicNoteCardPast : ""}`}
+                                                        className={[styles.publicNoteCard, !note.isFuture && styles.publicNoteCardPast].filter(Boolean).join(' ')}
                                                     >
                                                         <div className={styles.publicNoteHeader}>
                                                             <div>
-                                                                <h3>{matiere || relatedEvent?.summary || "Cours à identifier"}</h3>
+                                                                <h3>
+                                                                    {matiere || event?.summary || "Cours à identifier"}
+                                                                    {note.isOrphan && (
+                                                                        <span style={{ 
+                                                                            fontSize: '0.75rem', 
+                                                                            fontWeight: 'normal', 
+                                                                            color: '#666',
+                                                                            marginLeft: '0.5rem'
+                                                                        }}>
+                                                                            (cours modifié)
+                                                                        </span>
+                                                                    )}
+                                                                </h3>
                                                                 <span className={styles.publicNoteDate}>
-                                                                    {formatDate(relatedEvent?.start || note.displayDate)}
+                                                                    {formatDate(event?.start || note.displayDate)}
                                                                 </span>
                                                             </div>
-                                                            {relatedEvent?.location && (
+                                                            {event?.location && (
                                                                 <span className={styles.publicNoteLocation}>
-                                                                    📍 {relatedEvent.location}
+                                                                    📍 {event.location}
                                                                 </span>
                                                             )}
                                                         </div>
                                                         <div className={styles.publicNoteMeta}>
-                                                            {relatedEvent?.start && relatedEvent?.end && (
+                                                            {event?.start && (event?.end || event?.end_time) && (
                                                                 <span>
-                                                                    {formatTime(relatedEvent.start)} - {formatTime(relatedEvent.end)}
+                                                                    {formatTime(event.start)} - {formatTime(event.end || event.end_time)}
                                                                 </span>
                                                             )}
                                                             {prof && <span>{prof}</span>}
@@ -1592,11 +1597,7 @@ function AgendaContent() {
                                                                     return (
                                                                         <button
                                                                             key={`${wIndex}-${dayIndex}`}
-                                                                            className={`${styles.calendarDay} 
-                                                                                ${dayObj.isToday ? styles.calendarDayToday : ""} 
-                                                                                ${dayObj.isSelected ? styles.calendarDaySelected : ""} 
-                                                                                ${!dayObj.isCurrentMonth ? styles.calendarDayMuted : ""}
-                                                                                ${dayObj.hasNotes ? styles.calendarDayHasNotes : ""}`}
+                                                                            className={[styles.calendarDay, dayObj.isToday && styles.calendarDayToday, dayObj.isSelected && styles.calendarDaySelected, !dayObj.isCurrentMonth && styles.calendarDayMuted, dayObj.hasNotes && styles.calendarDayHasNotes].filter(Boolean).join(' ')}
                                                                             onClick={() => handleCalendarDaySelect(dayObj.dateString)}
                                                                         >
                                                                             <span className={styles.calendarDayNumber}>{dayObj.label}</span>
@@ -1614,13 +1615,13 @@ function AgendaContent() {
                                                         <div className={styles.calendarFooter}>
                                                             <div className={styles.calendarFilter}>
                                                                 <button
-                                                                    className={`${styles.calendarFilterButton} ${showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
+                                                                    className={[styles.calendarFilterButton, showOnlyCourseDays && styles.calendarFilterButtonActive].filter(Boolean).join(' ')}
                                                                     onClick={() => setShowOnlyCourseDays(true)}
                                                                 >
                                                                     Jours de cours
                                                                 </button>
                                                                 <button
-                                                                    className={`${styles.calendarFilterButton} ${!showOnlyCourseDays ? styles.calendarFilterButtonActive : ""}`}
+                                                                    className={[styles.calendarFilterButton, !showOnlyCourseDays && styles.calendarFilterButtonActive].filter(Boolean).join(' ')}
                                                                     onClick={() => setShowOnlyCourseDays(false)}
                                                                 >
                                                                     Tous les jours
@@ -1657,9 +1658,9 @@ function AgendaContent() {
                                                         const hasNote = (courseNote && extractNoteEntries(courseNote).some(e => e && e.trim())) ||
                                                                         (publicNote && extractNoteEntries(publicNote).some(e => e && e.trim()));
                                                         return (
-                                                            <div key={course.uid} className={`${styles.courseButtonWrapper} ${isMobile && isSelected ? styles.courseButtonWrapperExpanded : ""}`}>
+                                                            <div key={course.uid} className={[styles.courseButtonWrapper, isMobile && isSelected && styles.courseButtonWrapperExpanded].filter(Boolean).join(' ')}>
                                                                 <button
-                                                                    className={`${styles.courseButton} ${isSelected ? styles.courseButtonSelected : ""} ${hasNote ? styles.courseButtonHasNote : ""} ${isMobile && isSelected ? styles.courseButtonExpanded : ""}`}
+                                                                    className={[styles.courseButton, isSelected && styles.courseButtonSelected, hasNote && styles.courseButtonHasNote, isMobile && isSelected && styles.courseButtonExpanded].filter(Boolean).join(' ')}
                                                                     onClick={() => handleCourseSelect(course.uid)}
                                                                 >
                                                                     <div className={styles.courseButtonContent}>

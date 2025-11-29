@@ -74,7 +74,7 @@ function FilesContent() {
     const loadFiles = async () => {
         try {
             setError(null);
-            const url = selectedCourseUid
+            const url = selectedCourseUid 
                 ? `/api/files/all?course_uid=${encodeURIComponent(selectedCourseUid)}`
                 : '/api/files/all';
 
@@ -238,9 +238,9 @@ function FilesContent() {
                     <div className={styles.headerTop}>
                         <BackButton href="/dashboard" title="Retour au dashboard"/>
                         <div className={styles.headerTitle}>
-                            <h1>📄 Mes fichiers</h1>
+                            <h1>Mes fichiers</h1>
                             <p className={styles.subtitle}>
-                                {files.length > 0
+                                {files.length > 0 
                                     ? `${files.length} fichier${files.length > 1 ? 's' : ''} au total`
                                     : "Aucun fichier uploadé"}
                             </p>
@@ -453,7 +453,7 @@ function FilesContent() {
                                     coursesWithFiles.map(({courseUid, event, files: courseFiles}) => {
                                         const {matiere} = event ? getEventTitle(event) : {};
                                         const courseName = matiere || event?.summary || courseUid.substring(0, 30);
-
+                                        
                                         return (
                                             <div key={courseUid} className={styles.courseCard}>
                                                 <div className={styles.courseCardHeader}>

@@ -12,7 +12,7 @@ import styles from "./BackButton.module.css";
  * @param {function} onClick - Fonction onClick personnalisée (optionnel, remplace href si fourni)
  */
 export default function BackButton({ 
-    href = null,
+    href = null, 
     className = "",
     title = "Retour",
     onClick = null
@@ -39,9 +39,11 @@ export default function BackButton({
         }
     };
 
+    const buttonClassName = [styles.backButton, isAnimating && styles.animating, className].filter(Boolean).join(' ');
+
     return (
         <button
-            className={`${styles.backButton} ${isAnimating ? styles.animating : ''} ${className}`}
+            className={buttonClassName}
             onClick={handleClick}
             title={title}
             aria-label={title}

@@ -133,7 +133,7 @@ NEXT_PUBLIC_APP_VERSION=1.0.0`;
                             {testResults && (
                                 <section className={styles.section}>
                                     <h3>📊 Résultat</h3>
-                                    <div className={`${styles.testResult} ${testResults.success ? styles.success : styles.error}`}>
+                                    <div className={[styles.testResult, testResults.success ? styles.success : styles.error].filter(Boolean).join(' ')}>
                                         <div className={styles.testHeader}>
                                             <span>{testResults.success ? '✅' : '❌'} {testResults.status}</span>
                                         </div>

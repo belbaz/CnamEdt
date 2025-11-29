@@ -33,6 +33,7 @@ function formatAgendaRow(row) {
         user_name_last: userInfo?.last_name || null,
         labels: Array.isArray(row.labels) ? row.labels : (row.labels ? [row.labels] : []), // Garder pour compatibilité
         entry_labels: entryLabels, // Nouveau : labels par paragraphe
+        orphan_event_info: row.orphan_event_info || null, // Infos du cours depuis events_versions si orphelin
     };
 }
 
@@ -170,14 +171,46 @@ export async function GET(request) {
             }));
         };
 
-        // Formater les données avec les informations utilisateur
+        // Récupérer les infos des cours depuis events_versions pour les notes orphelines
+        const courseUids = processedData.map(note => note.course_uid).filter(Boolean);
+        let orphanEventInfoMap = {};
+        
+        if (courseUids.length > 0) {
+            // Récupérer la dernière version de chaque course_uid depuis events_versions
+            // On récupère toutes les versions et on garde la plus récente par uid
+            const { data: eventVersions, error: versionsError } = await supabase
+                .from('events_versions')
+                .select('uid, summary, start, end_time, location, version_no')
+                .in('uid', courseUids)
+                .order('uid', { ascending: true })
+                .order('version_no', { ascending: false });
+            
+            if (!versionsError && eventVersions) {
+                // Créer un Map avec la dernière version de chaque uid
+                const versionMap = new Map();
+                for (const version of eventVersions) {
+                    if (!versionMap.has(version.uid)) {
+                        versionMap.set(version.uid, version);
+                    }
+                }
+                orphanEventInfoMap = Object.fromEntries(versionMap);
+            }
+        }
+
+        // Formater les données avec les informations utilisateur et les infos de cours orphelins
         const formattedData = processedData.map(row => {
             const userInfo = userInfoMap[row.user_id] || null;
             const enrichedHistory = enrichHistory(row.modification_history);
+            
+            // Si le course_uid existe dans events_versions mais pas dans les events actuels,
+            // on enrichit avec les infos de la dernière version connue
+            const orphanEventInfo = orphanEventInfoMap[row.course_uid] || null;
+            
             return formatAgendaRow({ 
                 ...row, 
                 edt_user: userInfo,
-                modification_history: enrichedHistory
+                modification_history: enrichedHistory,
+                orphan_event_info: orphanEventInfo // Infos du cours depuis events_versions si orphelin
             });
         });
 

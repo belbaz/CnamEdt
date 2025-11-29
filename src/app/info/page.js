@@ -262,18 +262,18 @@ export default function InfoPage() {
                         <h2 className={styles.userName}>
                             {userInfo.name} {userInfo.lastName}
                         </h2>
-                        <span className={`${styles.roleBadge} ${styles[roleBadge.className]}`}>
+                        <span className={[styles.roleBadge, styles[roleBadge.className]].filter(Boolean).join(' ')}>
                             {roleBadge.label}
                         </span>
                     </div>
 
                     <div className={styles.infoSection}>
-                        <div className={`${styles.infoItem} ${styles.emailItem}`}>
+                        <div className={[styles.infoItem, styles.emailItem].filter(Boolean).join(' ')}>
                             <span className={styles.infoLabel}>Email</span>
                             <div style={{ position: 'relative' }}>
                                 <span className={styles.infoValue} title={userInfo.email}>{userInfo.email}</span>
                                 <button
-                                    className={`${styles.copyEmailButton} ${emailCopied ? styles.copied : ''}`}
+                                    className={[styles.copyEmailButton, emailCopied && styles.copied].filter(Boolean).join(' ')}
                                     onClick={handleCopyEmail}
                                     title={emailCopied ? "Copié !" : "Copier l'email"}
                                 >

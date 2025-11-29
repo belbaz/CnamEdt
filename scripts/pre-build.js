@@ -68,4 +68,31 @@ if (!fs.existsSync(apiDir) && fs.existsSync(backupDir)) {
   // Ne pas faire échouer le build, juste avertir (peut être normal si pas encore créé)
 }
 
+// Injecter la version dans le Service Worker
+console.log('[pre-build] Injection de la version dans le Service Worker...');
+try {
+  const packageJsonPath = path.join(__dirname, '..', 'package.json');
+  const swPath = path.join(__dirname, '..', 'public', 'sw.js');
+  
+  if (fs.existsSync(packageJsonPath) && fs.existsSync(swPath)) {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const version = packageJson.version || '1.0.0';
+    const swContent = fs.readFileSync(swPath, 'utf8');
+    
+    // Remplacer CACHE_VERSION par la version du package.json
+    const updatedSwContent = swContent.replace(
+      /const CACHE_VERSION = ['"][^'"]*['"];?/,
+      `const CACHE_VERSION = '${version}';`
+    );
+    
+    fs.writeFileSync(swPath, updatedSwContent, 'utf8');
+    console.log(`[pre-build] ✓ Version ${version} injectée dans sw.js`);
+  } else {
+    console.warn('[pre-build] ⚠️  Impossible d\'injecter la version (fichiers manquants)');
+  }
+} catch (e) {
+  console.error('[pre-build] Erreur lors de l\'injection de la version:', e.message);
+  // Ne pas faire échouer le build
+}
+
 console.log('[pre-build] Pre-build terminé avec succès');
