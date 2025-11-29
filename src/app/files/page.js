@@ -233,7 +233,6 @@ function FilesContent() {
     return (
         <div className={styles.page}>
             <div className={styles.container}>
-
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
