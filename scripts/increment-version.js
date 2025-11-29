@@ -2,7 +2,7 @@
 
 /**
  * Script pour incrémenter la version dans package.json de 0.0.1
- * Utilisé par le hook Git pre-push
+ * Utilisé par le hook Git pre-commit
  */
 
 const fs = require('fs');
