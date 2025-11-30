@@ -61,10 +61,17 @@
     }
 }
 
+.parentHeader{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
 .header {
+    display: flex;
+    flex-direction: column;
     text-align: center;
-    margin-bottom: clamp(2rem, 5vw, 3rem);
-    margin-top: 3.5rem;
+    margin: 3.5rem auto clamp(2rem, 5vw, 3rem);
     color: white;
 }
 
@@ -238,22 +245,70 @@
 }
 
 .logoutButton {
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
     color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
+    padding: 0.875rem 1.75rem;
+    border-radius: 20px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(12px);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 
+                0 0 0 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.logoutButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s ease;
+}
+
+.logoutButton:hover::before {
+    left: 100%;
 }
 
 .logoutButton:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 
+                0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.logoutButton:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.logoutIcon {
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.logoutButton:hover .logoutIcon {
+    transform: translateX(3px);
+}
+
+.logoutButton span {
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.01em;
 }
 
 /* Mode sombre */

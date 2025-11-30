@@ -6,6 +6,7 @@ import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
+import { generateEventKey } from "@/utils/eventModalUtils";
 import LoginForm from "@/app/login/LoginForm";
 
 function AgendaContent() {
@@ -775,6 +776,22 @@ function AgendaContent() {
         setSelectedCourse(courseUid);
     };
 
+    // Fonction pour ouvrir une note dans l'EDT
+    const handleNoteClick = (note) => {
+        const event = note.event; // Peut être relatedEvent ou orphanEventInfo
+        if (!event || !event.start) {
+            // Si pas d'événement associé (note orpheline), on ne peut pas naviguer
+            return;
+        }
+        
+        // Générer l'eventKey à partir de l'événement
+        const eventKey = generateEventKey(event);
+        const encodedKey = encodeURIComponent(eventKey);
+        
+        // Naviguer vers l'EDT avec le paramètre eventKey
+        router.push(`/?eventKey=${encodedKey}`);
+    };
+
     const handleLogout = async () => {
         try {
             const res = await fetch("/api/logout", {
@@ -1450,7 +1467,9 @@ function AgendaContent() {
                                                         </div>
                                                     )}
                                                     <article 
-                                                        className={[styles.publicNoteCard, !note.isFuture && styles.publicNoteCardPast].filter(Boolean).join(' ')}
+                                                        className={[styles.publicNoteCard, !note.isFuture && styles.publicNoteCardPast, note.event && note.event.start && styles.publicNoteCardClickable].filter(Boolean).join(' ')}
+                                                        onClick={() => handleNoteClick(note)}
+                                                        title={note.event && note.event.start ? "Cliquer pour ouvrir dans l'EDT" : ""}
                                                     >
                                                         <div className={styles.publicNoteHeader}>
                                                             <div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import {useState, useEffect} from "react";
+import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import styles from "./dashboard.module.css";
@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
     const loadUserInfo = async () => {
         try {
-            const response = await fetch("/api/user", { cache: "no-store" });
+            const response = await fetch("/api/user", {cache: "no-store"});
             if (response.ok) {
                 const data = await response.json();
                 setUserInfo(data);
@@ -62,35 +62,35 @@ export default function DashboardPage() {
     const getAvailablePages = () => {
         const basePages = [
             {
-                title: "📅 Emploi du temps",
+                title: "Emploi du temps",
                 description: "Consultez l'emploi du temps",
                 path: "/",
                 icon: "📅",
                 color: "#3b82f6"
             },
             {
-                title: "📋 Agenda",
+                title: "Agenda",
                 description: "Consultez l'agenda avec tous vos cours",
                 path: "/agenda",
                 icon: "📋",
                 color: "#10b981"
             },
             {
-                title: "📄 Fichiers de cours",
+                title: "Fichiers de cours",
                 description: "Gérez les fichiers uploadés par cours",
                 path: "/files",
                 icon: "📄",
                 color: "#ec4899"
             },
             {
-                title: "📜 Historique",
+                title: "Historique",
                 description: "Historique des modifications de l'emploi du temps",
                 path: "/histo",
                 icon: "📜",
                 color: "#8b5cf6"
             },
             {
-                title: "ℹ️ Mes informations",
+                title: "Mes informations",
                 description: "Consultez vos informations de compte",
                 path: "/info",
                 icon: "ℹ️",
@@ -99,11 +99,11 @@ export default function DashboardPage() {
         ];
 
         const adminPages = [];
-        
+
         if (userInfo?.role === 'superAdmin' || userInfo?.role === 'admin') {
             adminPages.push(
                 {
-                    title: "📊 Analytics",
+                    title: "Analytics",
                     description: "Statistiques et analyses de l'application",
                     path: "/admin/analytics",
                     icon: "📊",
@@ -115,25 +115,18 @@ export default function DashboardPage() {
         if (userInfo?.role === 'superAdmin') {
             adminPages.push(
                 {
-                    title: "👥 Gestion des utilisateurs",
+                    title: "Gestion des utilisateurs",
                     description: "Gérer les utilisateurs de l'application",
                     path: "/admin/users",
                     icon: "👥",
                     color: "#8b5cf6"
                 },
                 {
-                    title: "🗺️ Room Mapper",
+                    title: "Room Mapper",
                     description: "Mapper les salles sur le plan SVG",
                     path: "/admin/room-mapper",
                     icon: "🗺️",
                     color: "#06b6d4"
-                },
-                {
-                    title: "🔍 Monitoring",
-                    description: "Suivi de l'automatisation des mises à jour",
-                    path: "/monitoring",
-                    icon: "🔍",
-                    color: "#6366f1"
                 }
             );
         }
@@ -145,7 +138,7 @@ export default function DashboardPage() {
         return (
             <div className={styles.container}>
                 <div className={styles.loadingContainer}>
-                    <Spinner size="large" variant="border" />
+                    <Spinner size="large" variant="border"/>
                     <p>Chargement...</p>
                 </div>
             </div>
@@ -161,15 +154,17 @@ export default function DashboardPage() {
     return (
         <div className={styles.container}>
             <div className={styles.content}>
-                <BackButton href="/" title="Retour à l'EDT" />
-                <header className={styles.header}>
-                    <h1>Tableau de bord</h1>
-                    <p className={styles.welcomeText}>
-                        Bonjour <strong>{userInfo.name} {userInfo.lastName}</strong>
-                        {userInfo.role && (
-                            <span className={styles.roleBadge}>{userInfo.role}</span>
-                        )}
-                    </p>
+                <header className={styles.parentHeader}>
+                    <BackButton href="/" title="Retour à l'EDT"/>
+                    <div className={styles.header}>
+                        <h1>Tableau de bord</h1>
+                        <p className={styles.welcomeText}>
+                            Bonjour<strong>{userInfo.name} {userInfo.lastName}</strong>
+                            {userInfo.role && (
+                                <span className={styles.roleBadge}>{userInfo.role}</span>
+                            )}
+                        </p>
+                    </div>
                 </header>
 
                 <div className={styles.pagesGrid}>
@@ -178,18 +173,20 @@ export default function DashboardPage() {
                             key={index}
                             className={styles.pageCard}
                             onClick={() => router.push(page.path)}
-                            style={{ '--card-color': page.color }}
+                            style={{'--card-color': page.color}}
                         >
-                            <div className={styles.cardIcon} style={{ backgroundColor: `${page.color}15` }}>
-                                <span style={{ fontSize: '2rem' }}>{page.icon}</span>
+                            <div className={styles.cardIcon} style={{backgroundColor: `${page.color}15`}}>
+                                <span style={{fontSize: '2rem'}}>{page.icon}</span>
                             </div>
                             <div className={styles.cardContent}>
                                 <h3 className={styles.cardTitle}>{page.title}</h3>
                                 <p className={styles.cardDescription}>{page.description}</p>
                             </div>
                             <div className={styles.cardArrow}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                                          strokeLinejoin="round"/>
                                 </svg>
                             </div>
                         </div>
@@ -197,18 +194,34 @@ export default function DashboardPage() {
                 </div>
 
                 <div className={styles.footer}>
-                    <button 
+                    <button
                         className={styles.logoutButton}
                         onClick={async () => {
                             try {
-                                await fetch("/api/logout", { method: "POST" });
+                                await fetch("/api/logout", {method: "POST"});
                                 window.location.href = "/";
                             } catch (error) {
                                 console.error("[Dashboard] Erreur déconnexion:", error);
                             }
                         }}
                     >
-                        🚪 Se déconnecter
+                        <svg 
+                            width="18" 
+                            height="18" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                            className={styles.logoutIcon}
+                        >
+                            <path 
+                                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" 
+                                stroke="currentColor" 
+                                strokeWidth="2" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                        <span>Se déconnecter</span>
                     </button>
                 </div>
             </div>

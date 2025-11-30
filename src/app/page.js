@@ -1,6 +1,6 @@
 "use client";
 import {useState, useEffect, useRef, useMemo, Suspense} from "react";
-import {useSearchParams} from "next/navigation";
+import {useSearchParams, useRouter} from "next/navigation";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
 import {useDevMode} from "@/utils/env";
@@ -39,6 +39,7 @@ import {parseStoredNoteValue} from "@/utils/noteEntries";
 import {generateEventKey} from "@/utils/eventModalUtils";
 
 function HomeContent({searchParams}) {
+    const router = useRouter();
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [error, setError] = useState(null);
@@ -145,7 +146,7 @@ function HomeContent({searchParams}) {
         try {
             // Mémoriser si on avait déjà des événements (pour éviter de recharger au premier chargement)
             const hadEventsBefore = allEvents.length > 0;
-            
+
             // Ne pas remettre loading à true si on a déjà des données à afficher
             if (allEvents.length === 0) {
                 setLoading(true);
@@ -289,13 +290,13 @@ function HomeContent({searchParams}) {
 
             // Vérifier s'il y a des changements et recharger la page si nécessaire
             const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
-            
+
             // Recharger automatiquement si des changements sont détectés ET qu'on avait déjà des événements
             // (pour éviter de recharger au premier chargement)
             if (totalChanges > 0 && hadEventsBefore && !isReallyOffline) {
                 console.log(`[Page] Changements détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
                 console.log('[Page] Rechargement automatique de la page dans 2 secondes...');
-                
+
                 // Attendre 2 secondes pour laisser le temps à l'utilisateur de voir les changements
                 setTimeout(() => {
                     if (typeof window !== 'undefined') {
@@ -1001,7 +1002,14 @@ function HomeContent({searchParams}) {
     });
 
     const handleRefresh = handlers.handleRefresh;
-    const handleToday = handlers.handleToday;
+    // Wrapper pour handleToday qui supprime le paramètre eventKey de l'URL
+    const handleToday = () => {
+        handlers.handleToday();
+        // Supprimer le paramètre eventKey de l'URL si présent
+        if (searchParams?.get('eventKey')) {
+            router.replace('/');
+        }
+    };
     const handleWeekChange = handlers.handleWeekChange;
     const handleToggleAutoScroll = (enabled) => handlers.handleToggleAutoScroll(enabled, setAutoScrollToday);
     const handleViewModeChange = (mode) => handlers.handleViewModeChange(mode, setViewMode);
@@ -1216,16 +1224,6 @@ function HomeContent({searchParams}) {
                                     : '')
                         }
                     >
-                        {/* Affichage de la date et heure de dernière sauvegarde */}
-                        {
-                            hasNetworkError && (
-                                <div className="last-update-info">
-                                    <span className={styles.offlineTimestamp}>
-                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
-                                    </span>
-                                </div>
-                            )
-                        }
                         {getTimeRemainingText && (
                             <div className={styles.timeRemainingText}>
                                 {getTimeRemainingText}
@@ -1288,6 +1286,16 @@ function HomeContent({searchParams}) {
                                 </div>
                             )
                         }
+                        {/* Affichage de la date et heure de dernière sauvegarde */}
+                        {
+                            hasNetworkError && (
+                                <div className="last-update-info">
+                                    <span className={styles.offlineTimestamp}>
+                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                                    </span>
+                                </div>
+                            )
+                        }
                     </div>
                 )}
             </main>
@@ -1301,7 +1309,7 @@ function HomeContent({searchParams}) {
 
             <ScrollToTop/>
 
-            <OfflineNotification forceShow={hasNetworkError}/>
+            <OfflineNotification forceShow={hasNetworkError} lastUpdateTimestamp={lastUpdateTimestamp}/>
 
             <SupabaseNotification
                 show={showSupabaseNotification}

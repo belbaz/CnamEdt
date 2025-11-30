@@ -184,14 +184,20 @@
 }
 
 :global(.modal-note-view-card) {
+    background: rgba(221, 241, 250, 0.93);
     border: 1px solid var(--border-light);
     border-radius: 10px;
     padding: 0.25rem 0.75rem;
-    background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
     gap: 0;
 }
+
+:global(.dark-mode .modal-note-view-card) {
+    background: rgba(231, 246, 253, 0.93);
+    color: black;
+}
+
 
 :global(.modal-note-labels-inline) {
     display: flex;

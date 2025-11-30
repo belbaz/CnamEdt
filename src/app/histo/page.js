@@ -9,7 +9,21 @@ export default function HistoPage() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedGroups, setExpandedGroups] = useState(new Set());
+    // Par défaut true (ouvert) pour éviter les erreurs d'hydratation
+    const [isAutoCheckExpanded, setIsAutoCheckExpanded] = useState(true);
     const router = useRouter();
+
+    // Charger l'état depuis localStorage après le montage pour éviter les erreurs d'hydratation
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('histo-auto-check-expanded');
+            if (saved !== null) {
+                setIsAutoCheckExpanded(saved === 'true');
+            }
+        } catch (e) {
+            // Erreur silencieuse si localStorage n'est pas disponible
+        }
+    }, []);
 
     // S'assurer que le dark mode est appliqué au chargement
     useEffect(() => {
@@ -134,7 +148,6 @@ export default function HistoPage() {
                 background: "linear-gradient(135deg, rgba(66, 153, 225, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%)",
                 border: "2px solid var(--primary-color)",
                 borderRadius: 20,
-                padding: "1.75rem",
                 marginBottom: "1.5rem",
                 boxShadow: "0 4px 12px rgba(37, 99, 235, 0.15)",
                 position: "relative",
@@ -152,54 +165,87 @@ export default function HistoPage() {
                 }}/>
 
                 <div style={{position: "relative", zIndex: 1}}>
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                        marginBottom: "1rem"
-                    }}>
+                    <button
+                        onClick={() => {
+                            const newState = !isAutoCheckExpanded;
+                            setIsAutoCheckExpanded(newState);
+                            // Sauvegarder dans localStorage
+                            try {
+                                localStorage.setItem('histo-auto-check-expanded', newState.toString());
+                            } catch (e) {
+                                // Erreur silencieuse si localStorage n'est pas disponible
+                            }
+                        }}
+                        style={{
+                            width: "100%",
+                            background: "transparent",
+                            border: "none",
+                            padding: "0.9rem",
+                            cursor: "pointer",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            color: "var(--text-primary)",
+                            textAlign: "left"
+                        }}
+                    >
                         <div style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "12px",
-                            background: "linear-gradient(135deg, #4299e1, #2563eb)",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            boxShadow: "0 4px 8px rgba(37, 99, 235, 0.3)"
+                            gap: "0.75rem"
                         }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white"
-                                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
+                            <div style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "12px",
+                                background: "linear-gradient(135deg, #4299e1, #2563eb)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                boxShadow: "0 4px 8px rgba(37, 99, 235, 0.3)"
+                            }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white"
+                                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </div>
+                            <h2 style={{
+                                color: "var(--text-primary)",
+                                fontSize: "1rem",
+                                fontWeight: 700,
+                                margin: 0,
+                                letterSpacing: "-0.02em"
+                            }}>
+                                Vérification automatique
+                            </h2>
                         </div>
-                        <h2 style={{
-                            color: "var(--text-primary)",
-                            fontSize: "1.25rem",
-                            fontWeight: 700,
-                            margin: 0,
-                            letterSpacing: "-0.02em"
+                        <span style={{
+                            fontSize: "1.2rem",
+                            transition: "transform 0.2s ease",
+                            transform: isAutoCheckExpanded ? "rotate(90deg)" : "rotate(0deg)"
                         }}>
-                            Vérification automatique
-                        </h2>
-                    </div>
+                            ▶
+                        </span>
+                    </button>
 
-                    <p style={{
-                        color: "var(--text-secondary)",
-                        fontSize: "0.95rem",
-                        margin: "0 0 1.25rem 0",
-                        lineHeight: "1.5"
-                    }}>
-                        Les modifications de l'emploi du temps sont détectées automatiquement :
-                    </p>
+                    {isAutoCheckExpanded && (
+                        <div style={{padding: "0 1.75rem 1.75rem 1.75rem"}}>
+                            <p style={{
+                                color: "var(--text-secondary)",
+                                fontSize: "0.95rem",
+                                margin: "1rem 0 1.25rem 0",
+                                lineHeight: "1.5"
+                            }}>
+                                Les modifications de l'emploi du temps sont détectées automatiquement grace à un bot:
+                            </p>
 
-                    <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.875rem"
-                    }}>
+                            <div style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "0.875rem"
+                            }}>
                         {/* Période 9h-19h */}
                         <div style={{
                             display: "flex",
@@ -338,12 +384,10 @@ export default function HistoPage() {
                             </div>
                         </div>
                     </div>
+                        </div>
+                    )}
                 </div>
             </div>
-            <p style={{color: "var(--text-secondary)", marginBottom: "1rem"}}>
-                Chaque cours apparaît au moment où il est vu pour la première fois dans l'edt. Cliquez sur un cours pour
-                l'afficher dans l'EDT.
-            </p>
 
             {loading && <LoadingSpinner/>}
 

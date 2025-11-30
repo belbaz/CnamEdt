@@ -72,7 +72,6 @@ NEXT_PUBLIC_APP_VERSION=1.0.0`;
     };
 
     const devPages = [
-        { name: '📊 Monitoring', path: '/monitoring' },
         { name: '📅 ICS Brut', path: '/raw-ics' },
         { name: '📜 Historique', path: '/histo' },
         { name: '🔐 Debug Hash', path: '/debug-hash' }

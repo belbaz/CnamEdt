@@ -422,6 +422,11 @@
     filter: grayscale(0.1);
 }
 
+/* Style pour les notes cliquables */
+.publicNoteCardClickable {
+    cursor: pointer;
+}
+
 /* Séparateur entre notes passées et futures */
 .publicNotesSeparator {
     grid-column: 1 / -1;
