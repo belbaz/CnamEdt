@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 console.log('[pre-build] Démarrage du script pre-build...');
 
@@ -93,6 +94,37 @@ try {
 } catch (e) {
   console.error('[pre-build] Erreur lors de l\'injection de la version:', e.message);
   // Ne pas faire échouer le build
+}
+
+// Générer un fichier build-info.js avec la date du dernier commit Git
+console.log('[pre-build] Génération de src/build-info.js avec la date du dernier commit Git...');
+try {
+  let commitDate = null;
+  try {
+    // %cI = date ISO 8601 du dernier commit (auteur)
+    commitDate = execSync('git log -1 --format=%cI', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    console.log('[pre-build] Dernier commit Git trouvé avec la date =', commitDate);
+  } catch (e) {
+    console.warn('[pre-build] Impossible de récupérer la date du dernier commit via git:', e.message);
+  }
+
+  const targetPath = path.join(__dirname, '..', 'src', 'build-info.js');
+  const content =
+    `// Fichier généré automatiquement par scripts/pre-build.js\n` +
+    `// Date ISO du dernier commit Git déployé (ou null si inconnue)\n` +
+    `export const buildCommitTimestamp = ${commitDate ? `'${commitDate}'` : 'null'};\n`;
+
+  fs.writeFileSync(targetPath, content, 'utf8');
+  console.log(
+    '[pre-build] ✓ Fichier build-info.js généré avec la date du dernier commit =',
+    commitDate || 'null'
+  );
+} catch (e) {
+  console.error('[pre-build] Erreur lors de la génération de build-info.js:', e.message);
+  // Ne pas faire échouer le build pour cette fonctionnalité
 }
 
 console.log('[pre-build] Pre-build terminé avec succès');
