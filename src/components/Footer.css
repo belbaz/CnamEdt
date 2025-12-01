@@ -127,7 +127,7 @@
 /* Mobile */
 @media (max-width: 768px) {
     .app-footer {
-        margin-top: 1.5rem;
+        margin-top: .5rem;
         padding: 1.25rem 1rem;
     }
 

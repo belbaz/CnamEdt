@@ -9,7 +9,6 @@
 .vertical-schedule-container {
     width: 100%;
     max-width: 100%;
-    margin-bottom: 2rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) var(--bg-secondary);
@@ -677,7 +676,7 @@
 /* Affichage de la dernière mise à jour */
 .last-update-info {
     width: 100%;
-    padding: .1rem 0.75rem 1rem 1rem;
+    padding: 2rem 0 1rem 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -695,6 +694,6 @@
 @media (max-width: 768px) {
     .last-update-info {
         font-size: 0.75rem;
-        padding: 0.6rem 0.75rem;
+        padding: 1.6rem .75rem 0 0;
     }
 }

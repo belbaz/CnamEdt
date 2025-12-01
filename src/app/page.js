@@ -82,6 +82,8 @@ function HomeContent({searchParams}) {
     // Notification Supabase
     const [showSupabaseNotification, setShowSupabaseNotification] = useState(false);
     const [supabaseSource, setSupabaseSource] = useState(null);
+    // Timestamp du dernier build (proxy pour la date du dernier commit déployé)
+    const [buildTimestamp, setBuildTimestamp] = useState(null);
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -599,6 +601,25 @@ function HomeContent({searchParams}) {
         loadUserInfo();
     }, []);
 
+    // Charger la date du dernier build uniquement pour les superAdmin
+    useEffect(() => {
+        if (!userInfo || userInfo.role !== 'superAdmin') return;
+
+        const fetchBuildInfo = async () => {
+            try {
+                const res = await fetch('/api/build-id', {cache: 'no-store'});
+                if (!res.ok) return;
+                const data = await res.json();
+                // On enregistre même si timestamp est null pour pouvoir afficher "Non disponible"
+                setBuildTimestamp(data?.timestamp ?? null);
+            } catch (e) {
+                // En cas d'erreur, on n'affiche simplement pas l'info commit
+            }
+        };
+
+        fetchBuildInfo();
+    }, [userInfo]);
+
 
     useEffect(() => {
         const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -1095,7 +1116,7 @@ function HomeContent({searchParams}) {
             // Si pas de timestamp mais qu'on a des événements en cache, c'est probablement un ancien cache
             // On affiche un message indiquant que la date n'est pas disponible
             if (allEvents.length > 0) {
-                return 'Date inconnue (ancien cache)';
+                return 'Date inconnue';
             }
             return 'Non disponible';
         }
@@ -1259,9 +1280,9 @@ function HomeContent({searchParams}) {
                                             isCollapsed={collapsedDays[day] || false}
                                             onToggle={() => handleToggleDay(day)}
                                             onOpenEventDetails={(ev, position) => {
-                                    setEventClickPosition(position);
-                                    setSelectedEvent(ev);
-                                }}
+                                                setEventClickPosition(position);
+                                                setSelectedEvent(ev);
+                                            }}
                                             compactMode={compactMode}
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}
@@ -1296,6 +1317,15 @@ function HomeContent({searchParams}) {
                                 </div>
                             )
                         }
+                        {(userInfo?.role === 'superAdmin') && (
+                            <div className={styles.timeRemainingText}>
+                                {userInfo?.role === 'superAdmin' && (
+                                    <div className={styles.superAdminBuildInfo}>
+                                        Dernier commit déployé : {formatLastUpdate(buildTimestamp)}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </main>

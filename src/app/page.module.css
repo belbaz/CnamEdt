@@ -507,6 +507,16 @@
     opacity: 0.8;
 }
 
+/* Info commit pour les superAdmin (au-dessus du temps restant) */
+.superAdminBuildInfo {
+    font-style: italic;
+    font-size: 0.78rem;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 0.1rem;
+    color: var(--text-secondary);
+}
+
 /* Spacer pour le jour actuel */
 .todaySpacer {
     height: 0px;

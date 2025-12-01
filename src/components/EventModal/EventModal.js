@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MapViewer from "@/components/MapViewer/MapViewer";
 import CourseFiles from "@/components/CourseFiles/CourseFiles";
 import courseFilesStyles from "@/components/CourseFiles/CourseFiles.module.css";
@@ -13,7 +13,7 @@ import {
     getAcademicYearParts
 } from "@/utils/eventModalUtils";
 import { getEventTitle } from "@/utils/eventUtils";
-import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
+import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
 import styles from "@/app/page.module.css";
 
 export default function EventModal({
@@ -52,8 +52,12 @@ export default function EventModal({
         if (selectedEvent && selectedEvent.uid) {
             const courseNote = courseNotes ? courseNotes.get(selectedEvent.uid) : null;
             const entries = extractNoteEntries(courseNote);
-            setEditingNoteEntries(entries.length ? [...entries] : []);
-            setOriginalNoteEntries(entries);
+            // Pour l'édition, remplacer le placeholder invisible par une chaîne vide
+            const editableEntries = entries.map((entry) =>
+                entry === HIDDEN_LABEL_PLACEHOLDER ? "" : entry
+            );
+            setEditingNoteEntries(editableEntries.length ? [...editableEntries] : []);
+            setOriginalNoteEntries(editableEntries);
             setIsModalEditingNotes(false);
             
             // Charger les labels par note
@@ -83,9 +87,105 @@ export default function EventModal({
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [selectedEvent, onClose]);
 
+    const handleSaveNote = useCallback(async () => {
+        if (!selectedEvent || !selectedEvent.uid) return;
+
+        if (userRole === 'visiteur') {
+            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
+
+        try {
+            setSavingNote(true);
+
+            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
+                buildPersistableNotesAndLabels(editingNoteEntries, entryLabels);
+
+            const res = await fetch("/api/agenda", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    course_uid: selectedEvent.uid,
+                    notes: entriesToPersist,
+                    entry_labels: normalizedEntryLabels,
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Erreur lors de la sauvegarde");
+            }
+
+            const data = await res.json();
+            // Normaliser les entrées retournées pour l'édition (remplacer le placeholder)
+            const serverEntries = Array.isArray(data.note?.entries)
+                ? data.note.entries
+                : parseStoredNoteValue(data.note?.notes);
+            const editableEntries = serverEntries.map((entry) =>
+                entry === HIDDEN_LABEL_PLACEHOLDER ? "" : entry
+            );
+
+            setOriginalNoteEntries(editableEntries);
+            setEditingNoteEntries(editableEntries);
+
+            const entryLabelsData = data.note?.entry_labels || {};
+            setOriginalEntryLabels(entryLabelsData);
+            setEntryLabels(entryLabelsData);
+            setIsModalEditingNotes(false);
+            if (refreshNotes) {
+                refreshNotes();
+            }
+        } catch (err) {
+            console.error("[EventModal] Erreur sauvegarde note:", err);
+            alert("Erreur lors de la sauvegarde : " + err.message);
+        } finally {
+            setSavingNote(false);
+        }
+    }, [selectedEvent, userRole, editingNoteEntries, entryLabels, refreshNotes]);
+
+    // Raccourci global Ctrl+Entrée pour enregistrer/supprimer la note (texte ou label)
+    useEffect(() => {
+        const handleGlobalCtrlEnter = (event) => {
+            // Ne rien faire si la modale n'est pas en mode édition ou si on est déjà en sauvegarde
+            if (!isModalEditingNotes || savingNote || userRole === 'visiteur') return;
+            if (!event.ctrlKey || event.key !== 'Enter') return;
+
+            // On laisse le handler spécifique des textarea gérer leur propre Ctrl+Entrée
+            if (event.target && event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            event.preventDefault();
+            // Utiliser toujours la version la plus récente de handleSaveNote
+            handleSaveNote();
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('keydown', handleGlobalCtrlEnter);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('keydown', handleGlobalCtrlEnter);
+            }
+        };
+    }, [isModalEditingNotes, savingNote, userRole, handleSaveNote]);
+
     if (!selectedEvent) return null;
 
     const selectedEventLocationMeta = parseLocationMeta(selectedEvent.location);
+    const courseNoteForEvent = selectedEvent.uid && courseNotes ? courseNotes.get(selectedEvent.uid) : null;
+    const hasDistancielLabel = courseNoteForEvent && courseNoteForEvent.entry_labels
+        ? Object.values(courseNoteForEvent.entry_labels).some((labelsArray) =>
+            Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
+        )
+        : false;
+    // Cours considéré comme distanciel si :
+    // - la localisation ICS contient "visio"
+    // - OU un label "Distanciel" a été ajouté dans les notes
+    const isDistancielCourse = Boolean(selectedEventLocationMeta?.isVisio || hasDistancielLabel);
     const { matiere, splitGroup } = getEventTitle(selectedEvent) || {};
     const hoursStats = getSubjectHoursStats(matiere, allEvents, selectedEvent);
 
@@ -101,6 +201,11 @@ export default function EventModal({
     
     const sanitizedModalEntries = sanitizeNoteEntries(editingNoteEntries);
     const savedModalEntries = sanitizeNoteEntries(originalNoteEntries);
+    const hasAnyLabelForModal = Object.values(entryLabels || {}).some(
+        (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
+    );
+    // Cas spécifique : on est en train de transformer une note existante en note vide
+    const isDeletingNote = savedModalEntries.length > 0 && sanitizedModalEntries.length === 0;
 
     const handleEntryChange = (index, value) => {
         setEditingNoteEntries((prev) => {
@@ -159,9 +264,10 @@ export default function EventModal({
     const predefinedLabels = [
         { name: "Contrôle", color: "#ef4444" }, // Rouge
         { name: "Devoir", color: "#f59e0b" }, // Orange
-        { name: "Examens", color: "#a855f7" }, // Violet
+        { name: "Examen", color: "#a855f7" }, // Violet
         { name: "Lien", color: "#3b82f6" }, // Bleu
         { name: "Information", color: "#10b981" }, // Vert
+        { name: "Distanciel", color: "#06b6d4" }, // Cyan
     ];
 
     // Fonction pour générer une couleur à partir d'un label
@@ -237,50 +343,6 @@ export default function EventModal({
             handleAddLabel(entryIndex, newLabelValue.trim());
             setNewLabelValue("");
             setShowLabelInputForEntry(null);
-        }
-    };
-
-    const handleSaveNote = async () => {
-        if (!selectedEvent || !selectedEvent.uid) return;
-
-        if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
-            return;
-        }
-
-        try {
-            setSavingNote(true);
-            const res = await fetch("/api/agenda", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    course_uid: selectedEvent.uid,
-                    notes: sanitizedModalEntries,
-                    entry_labels: entryLabels,
-                }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || "Erreur lors de la sauvegarde");
-            }
-
-            const data = await res.json();
-            setOriginalNoteEntries(sanitizedModalEntries);
-            const entryLabelsData = data.note?.entry_labels || {};
-            setOriginalEntryLabels(entryLabelsData);
-            setEntryLabels(entryLabelsData);
-            setIsModalEditingNotes(false);
-            if (refreshNotes) {
-                refreshNotes();
-            }
-        } catch (err) {
-            console.error("[EventModal] Erreur sauvegarde note:", err);
-            alert("Erreur lors de la sauvegarde : " + err.message);
-        } finally {
-            setSavingNote(false);
         }
     };
 
@@ -363,16 +425,16 @@ export default function EventModal({
                                 );
                             })()}
                             <div className="pop-row location-row">
-                                <span>{selectedEventLocationMeta?.isVisio ? '🎥' : '🚪'}</span>
+                                <span>{isDistancielCourse ? '🎥' : '🚪'}</span>
                                 <span>
-                                    {selectedEventLocationMeta?.isVisio
-                                        ? selectedEventLocationMeta.display
+                                    {isDistancielCourse
+                                        ? 'Cours en distanciel'
                                         : splitGroup
                                             ? `Salle${splitGroup.rooms.length > 1 ? 's' : ''} : ${splitGroup.rooms.join(' / ')}`
                                             : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
                                 </span>
-                                {selectedEventLocationMeta?.isVisio ? (
-                                    <span className="site-badge visio-badge">VISIO</span>
+                                {isDistancielCourse ? (
+                                    <span className="site-badge distanciel-badge">DISTANCIEL</span>
                                 ) : splitGroup ? (
                                     (() => {
                                         // Détecter le site pour chaque salle du demi-groupe
@@ -509,7 +571,11 @@ export default function EventModal({
                                             disabled={savingNote || userRole === 'visiteur'}
                                             title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                         >
-                                            Créer une note
+                                            {isModalEditingNotes
+                                                ? "Ajouter un paragraphe"
+                                                : ((savedModalEntries.length > 0 || hasAnyLabelForModal)
+                                                    ? "✏️ Modifier la note"
+                                                    : "Créer une note")}
                                         </button>
                                     )}
                                 </div>
@@ -518,99 +584,219 @@ export default function EventModal({
                                 {!notesAuthenticated ? (
                                     // Mode lecture seule pour utilisateurs non connectés
                                     <div className="modal-note-view">
-                                        {savedModalEntries.length === 0 ? (
-                                            <div className="modal-notes-empty">
-                                                <p className="modal-note-view-text">Aucune note</p>
-                                                <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                                                    <p className="modal-auth-message-text">
-                                                        <a href="/login" className={styles.notesUnauthLink}>
-                                                            Connectez-vous
-                                                        </a> pour créer une note
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            (() => {
-                                                const courseNote = courseNotes?.get(selectedEvent.uid);
-                                                const modificationHistory = courseNote?.modification_history || [];
+                                        {(() => {
+                                            const courseNote = courseNotes?.get(selectedEvent.uid);
+                                            const entryLabelsMap = courseNote?.entry_labels || {};
+                                            const hasAnyLabel = Object.values(entryLabelsMap).some(
+                                                (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
+                                            );
+                                            const hasAnyContent = savedModalEntries.length > 0 || hasAnyLabel;
 
-                                                // Récupérer la dernière personne (modification ou création)
-                                                const lastPerson = modificationHistory.length > 0
-                                                    ? modificationHistory[modificationHistory.length - 1]
-                                                    : null;
-
-                                                const formatDateTime = (dateString) => {
-                                                    if (!dateString) return '';
-                                                    const date = new Date(dateString);
-                                                    return date.toLocaleDateString('fr-FR', {
-                                                        day: 'numeric',
-                                                        month: 'numeric',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    });
-                                                };
-
+                                            if (!hasAnyContent) {
                                                 return (
-                                                    <div>
-                                                        {savedModalEntries.map((entry, index) => {
-                                                            const courseNote = courseNotes?.get(selectedEvent.uid);
-                                                            const entryLabelsForIndex = (courseNote?.entry_labels && courseNote.entry_labels[String(index)]) || [];
-                                                            return (
-                                                                <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                                    {/* Labels pour cette note */}
-                                                                    {entryLabelsForIndex.length > 0 && (
-                                                                        <div className="modal-note-labels-inline">
-                                                                            {entryLabelsForIndex.map((label, idx) => {
-                                                                                const labelColor = getLabelColor(label);
-                                                                                return (
-                                                                                    <span 
-                                                                                        key={idx} 
-                                                                                        className="modal-label-inline"
-                                                                                        style={{ 
-                                                                                            backgroundColor: `${labelColor}15`,
-                                                                                            borderColor: labelColor,
-                                                                                            color: labelColor
-                                                                                        }}
-                                                                                    >
-                                                                                        {label}
-                                                                                    </span>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="modal-note-view-card">
-                                                                        <p className="modal-note-view-text">{entry}</p>
-                                                                    </div>
-                                                                    {lastPerson && (
-                                                                        <div className="modal-note-last-person">
-                                                                            {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                            {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                        <div className="modal-auth-message" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                                                    <div className="modal-notes-empty">
+                                                        <p className="modal-note-view-text">Aucune note</p>
+                                                        <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
                                                             <p className="modal-auth-message-text">
                                                                 <a href="/login" className={styles.notesUnauthLink}>
                                                                     Connectez-vous
-                                                                </a> pour modifier cette note
+                                                                </a> pour créer une note
                                                             </p>
                                                         </div>
                                                     </div>
                                                 );
-                                            })()
-                                        )}
+                                            }
+
+                                            const modificationHistory = courseNote?.modification_history || [];
+                                            const lastPerson = modificationHistory.length > 0
+                                                ? modificationHistory[modificationHistory.length - 1]
+                                                : null;
+
+                                            const formatDateTime = (dateString) => {
+                                                if (!dateString) return '';
+                                                const date = new Date(dateString);
+                                                return date.toLocaleDateString('fr-FR', {
+                                                    day: 'numeric',
+                                                    month: 'numeric',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                });
+                                            };
+
+                                            // Si pas de texte mais des labels, générer des entrées vides pour l'affichage
+                                            const indexes =
+                                                savedModalEntries.length > 0
+                                                    ? savedModalEntries.map((_, i) => i)
+                                                    : Object.keys(entryLabelsMap)
+                                                        .map((k) => parseInt(k, 10))
+                                                        .filter((n) => !Number.isNaN(n))
+                                                        .sort((a, b) => a - b);
+
+                                            const displayEntries =
+                                                savedModalEntries.length > 0
+                                                    ? savedModalEntries
+                                                    : indexes.map(() => "");
+
+                                            return (
+                                                <div>
+                                                    {displayEntries.map((entry, index) => {
+                                                        const entryLabelsForIndex =
+                                                            (entryLabelsMap && entryLabelsMap[String(index)]) || [];
+                                                        const isLabelOnly =
+                                                            entry === HIDDEN_LABEL_PLACEHOLDER ||
+                                                            (!entry && entryLabelsForIndex.length > 0);
+                                                        return (
+                                                            <div key={`${selectedEvent.uid}-view-${index}`}>
+                                                                {/* Labels pour cette note */}
+                                                                {entryLabelsForIndex.length > 0 && (
+                                                                    <div className="modal-note-labels-inline">
+                                                                        {entryLabelsForIndex.map((label, idx) => {
+                                                                            const labelColor = getLabelColor(label);
+                                                                            return (
+                                                                                <span
+                                                                                    key={idx}
+                                                                                    className="modal-label-inline"
+                                                                                    style={{
+                                                                                        backgroundColor: `${labelColor}15`,
+                                                                                        borderColor: labelColor,
+                                                                                        color: labelColor
+                                                                                    }}
+                                                                                >
+                                                                                    {label}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                {!isLabelOnly && (
+                                                                    <div className="modal-note-view-card">
+                                                                        <p className="modal-note-view-text">{entry}</p>
+                                                                    </div>
+                                                                )}
+                                                                {lastPerson && (
+                                                                    <div className="modal-note-last-person">
+                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    <div className="modal-auth-message" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
+                                                        <p className="modal-auth-message-text">
+                                                            <a href="/login" className={styles.notesUnauthLink}>
+                                                                Connectez-vous
+                                                            </a> pour modifier cette note
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 ) : !isModalEditingNotes && savedModalEntries.length === 0 ? (
-                                    // Utilisateur connecté, aucune note
-                                    <div className="modal-notes-empty">
-                                        <p className="modal-note-view-text">Aucune note</p>
-                                    </div>
+                                    (() => {
+                                        const courseNote = courseNotes?.get(selectedEvent.uid);
+                                        const entryLabelsMap = courseNote?.entry_labels || {};
+                                        const hasAnyLabel = Object.values(entryLabelsMap).some(
+                                            (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
+                                        );
+                                        if (!hasAnyLabel) {
+                                            // Utilisateur connecté, aucune note ni label
+                                            return (
+                                                <div className="modal-notes-empty">
+                                                    <p className="modal-note-view-text">Aucune note</p>
+                                                </div>
+                                            );
+                                        }
+                                        // Il y a au moins un label : on bascule vers le bloc "vue" ci-dessous
+                                        return (
+                                            <div className="modal-note-view">
+                                                {(() => {
+                                                    const modificationHistory = courseNote?.modification_history || [];
+                                                    const lastPerson = modificationHistory.length > 0
+                                                        ? modificationHistory[modificationHistory.length - 1]
+                                                        : null;
+
+                                                    const formatDateTime = (dateString) => {
+                                                        if (!dateString) return '';
+                                                        const date = new Date(dateString);
+                                                        return date.toLocaleDateString('fr-FR', {
+                                                            day: 'numeric',
+                                                            month: 'numeric',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        });
+                                                    };
+
+                                                    const indexes = Object.keys(entryLabelsMap)
+                                                        .map((k) => parseInt(k, 10))
+                                                        .filter((n) => !Number.isNaN(n))
+                                                        .sort((a, b) => a - b);
+
+                                                    return (
+                                                        <div>
+                                                            {indexes.map((index) => {
+                                                                const entry = savedModalEntries[index] || "";
+                                                                const entryLabelsForIndex =
+                                                                    (entryLabelsMap && entryLabelsMap[String(index)]) || [];
+                                                                const isLabelOnly =
+                                                                    entry === HIDDEN_LABEL_PLACEHOLDER ||
+                                                                    (!entry && entryLabelsForIndex.length > 0);
+                                                                return (
+                                                                    <div key={`${selectedEvent.uid}-view-${index}`}>
+                                                                        {entryLabelsForIndex.length > 0 && (
+                                                                            <div className="modal-note-labels-inline">
+                                                                                {entryLabelsForIndex.map((label, idx) => {
+                                                                                    const labelColor = getLabelColor(label);
+                                                                                    return (
+                                                                                        <span
+                                                                                            key={idx}
+                                                                                            className="modal-label-inline"
+                                                                                            style={{
+                                                                                                backgroundColor: `${labelColor}15`,
+                                                                                                borderColor: labelColor,
+                                                                                                color: labelColor
+                                                                                            }}
+                                                                                        >
+                                                                                            {label}
+                                                                                        </span>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
+                                                                        {!isLabelOnly && (
+                                                                            <div className="modal-note-view-card">
+                                                                                <p className="modal-note-view-text">{entry}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        {lastPerson && (
+                                                                            <div className="modal-note-last-person">
+                                                                                {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                                {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        );
+                                    })()
                                 ) : isModalEditingNotes ? (
                                     // Mode édition pour utilisateurs connectés
-                                    <div className="modal-notes-list">
+                                    <div
+                                        className="modal-notes-list"
+                                        onKeyDown={(e) => {
+                                            if (e.ctrlKey && e.key === 'Enter' && !savingNote && userRole !== 'visiteur' && e.target.tagName !== 'TEXTAREA') {
+                                                e.preventDefault();
+                                                handleSaveNote();
+                                            }
+                                        }}
+                                    >
                                         {editingNoteEntries.length === 0 ? (
                                             <div className="modal-notes-empty">
                                                 <p>Aucune note</p>
@@ -762,6 +948,12 @@ export default function EventModal({
                                                             <textarea
                                                                 value={entry}
                                                                 onChange={(e) => handleEntryChange(index, e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.ctrlKey && e.key === 'Enter' && !savingNote && userRole !== 'visiteur') {
+                                                                        e.preventDefault();
+                                                                        handleSaveNote();
+                                                                    }
+                                                                }}
                                                                 className="modal-note-textarea"
                                                                 placeholder={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : "Ajoutez vos notes..."}
                                                                 rows={3}
@@ -801,6 +993,7 @@ export default function EventModal({
                                                 <div>
                                                     {savedModalEntries.map((entry, index) => {
                                                         const entryLabelsForIndex = (courseNote?.entry_labels && courseNote.entry_labels[String(index)]) || [];
+                                                        const isLabelOnly = entry === HIDDEN_LABEL_PLACEHOLDER || (!entry && entryLabelsForIndex.length > 0);
                                                         return (
                                                             <div key={`${selectedEvent.uid}-view-${index}`}>
                                                                 {/* Labels pour cette note */}
@@ -824,9 +1017,11 @@ export default function EventModal({
                                                                         })}
                                                                     </div>
                                                                 )}
-                                                                <div className="modal-note-view-card">
-                                                                    <p className="modal-note-view-text">{entry}</p>
-                                                                </div>
+                                                                {!isLabelOnly && (
+                                                                    <div className="modal-note-view-card">
+                                                                        <p className="modal-note-view-text">{entry}</p>
+                                                                    </div>
+                                                                )}
                                                                 {lastPerson && (
                                                                     <div className="modal-note-last-person">
                                                                         {lastPerson.user_name || 'Utilisateur inconnu'}
@@ -863,7 +1058,7 @@ export default function EventModal({
                                                     >
                                                         {savingNote
                                                             ? "Enregistrement..."
-                                                            : sanitizedModalEntries.length === 0
+                                                            : isDeletingNote
                                                                 ? "Enregistrer (supprimer)"
                                                                 : "Enregistrer"}
                                                     </button>

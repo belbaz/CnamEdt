@@ -17,7 +17,9 @@ export default function EventCard({
     subjectColors,
     onOpenEventDetails,
     noteEntries = [],
-    fileCount: propsFileCount
+    fileCount: propsFileCount,
+    isDistanciel = false,
+    notePreviewItems = []
 }) {
     const { matiere, prof, description, splitGroup } = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -168,7 +170,8 @@ export default function EventCard({
     };
 
     const visioLocation = isVisioLocation(location);
-    const locationLabel = visioLocation ? 'Cours en visio' : (location || "?");
+    // Si la localisation contient "visio", on considère désormais que le cours est en distanciel
+    const locationLabel = visioLocation ? 'Cours en distanciel' : (location || "?");
     const siteInfo = (!visioLocation && location) ? getCnamSite(location) : null;
 
     // Détecter si la description contient "EXAMEN"
@@ -202,14 +205,20 @@ export default function EventCard({
                 </div>
             )}
             {(() => {
-                const cleanedEntries = sanitizeNoteEntries(noteEntries);
+                // On ne considère pour la tooltip / le badge que les entrées texte (notePreviewItems),
+                // jamais les placeholders utilisés pour les notes "labels uniquement".
+                const baseEntries = Array.isArray(notePreviewItems) ? notePreviewItems : [];
+                const cleanedEntries = sanitizeNoteEntries(baseEntries);
                 const noteCount = cleanedEntries.length;
                 const totalCount = noteCount + effectiveFileCount;
 
-                // Afficher le badge seulement s'il y a des notes OU des fichiers
+                // Afficher le badge seulement s'il y a des notes texte OU des fichiers
+                // -> si on a uniquement des labels, totalCount sera 0 et le badge ne sera pas affiché.
                 if (totalCount === 0) {
                     return null;
                 }
+
+                const hasTooltipContent = noteCount > 0 || effectiveFileCount > 0;
 
                 const previewEntries = cleanedEntries.slice(0, 3);
                 const remaining = noteCount - previewEntries.length;
@@ -219,15 +228,16 @@ export default function EventCard({
                             ref={badgeRef}
                             className="note-badge-card"
                             aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
-                            onMouseEnter={() => setShowTooltip(true)}
-                            onMouseLeave={() => setShowTooltip(false)}
-                            onFocus={() => setShowTooltip(true)}
-                            onBlur={() => setShowTooltip(false)}
+                            onMouseEnter={hasTooltipContent ? () => setShowTooltip(true) : undefined}
+                            onMouseLeave={hasTooltipContent ? () => setShowTooltip(false) : undefined}
+                            onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
+                            onBlur={hasTooltipContent ? () => setShowTooltip(false) : undefined}
                         >
                             <span className="note-icon">📋</span>
                             <span className="note-count-badge">{totalCount}</span>
                         </div>
-                        {isMounted && showTooltip && createPortal(
+                        {/* Afficher la tooltip seulement s'il y a du contenu (texte ou fichiers) */}
+                        {isMounted && showTooltip && hasTooltipContent && createPortal(
                             <div
                                 ref={tooltipRef}
                                 className="note-tooltip"
@@ -275,6 +285,18 @@ export default function EventCard({
                     <div className="location split-group-location">
                         <span className="location-text">{splitGroup.rooms.join(" / ")}</span>
                         {(() => {
+                            // Si le cours est marqué distanciel via un label, on n'affiche pas les sites physiques
+                            if (isDistanciel && !visioLocation) {
+                                return (
+                                    <span
+                                        className="site-badge-card distanciel-badge"
+                                        title="Cours en distanciel"
+                                    >
+                                        DISTANCIEL
+                                    </span>
+                                );
+                            }
+
                             // Détecter le site pour chaque salle
                             const sites = splitGroup.rooms.map(room => getCnamSite(room)).filter(Boolean);
 
@@ -307,14 +329,23 @@ export default function EventCard({
                     </div>
                 ) : (
                     // Affichage normal: salle unique
-                    <div className={`location ${visioLocation ? 'visio-location' : ''}`}>
-                        <span className="location-text">{locationLabel}</span>
+                    <div className={`location ${visioLocation || isDistanciel ? 'visio-location' : ''}`}>
+                        <span className="location-text">
+                            {isDistanciel && !visioLocation ? 'Cours en distanciel' : locationLabel}
+                        </span>
                         {visioLocation ? (
                             <span
                                 className="site-badge-card visio-badge"
-                                title="Cours en visio"
+                                title="Cours en distanciel"
                             >
-                                VISIO
+                                DISTANCIEL
+                            </span>
+                        ) : isDistanciel ? (
+                            <span
+                                className="site-badge-card distanciel-badge"
+                                title="Cours en distanciel"
+                            >
+                                DISTANCIEL
                             </span>
                         ) : siteInfo && (
                             <span

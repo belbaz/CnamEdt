@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
-import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries } from "@/utils/noteEntries";
+import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
 import { generateEventKey } from "@/utils/eventModalUtils";
 import LoginForm from "@/app/login/LoginForm";
 
@@ -34,6 +34,7 @@ function AgendaContent() {
     const [originalNoteEntries, setOriginalNoteEntries] = useState([]); // Pour détecter les modifications
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [entryLabels, setEntryLabels] = useState({}); // Labels par note : { "0": ["Contrôle"], "1": ["Devoir"] }
     const [originalEntryLabels, setOriginalEntryLabels] = useState({}); // Labels originaux pour détecter les modifications
     const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
@@ -47,6 +48,31 @@ function AgendaContent() {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [showOnlyCourseDays, setShowOnlyCourseDays] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+
+    // Raccourci global Ctrl+Entrée pour enregistrer la note en cours d'édition (texte ou labels)
+    useEffect(() => {
+        const handleGlobalCtrlEnter = (event) => {
+            if (!isEditingNotes || saving || userRole === 'visiteur') return;
+            if (!event.ctrlKey || event.key !== 'Enter') return;
+
+            // On laisse la gestion spécifique des textarea faire le travail (déjà géré)
+            if (event.target && event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            event.preventDefault();
+            saveNote();
+        };
+
+        if (typeof window !== 'undefined') {
+            document.addEventListener('keydown', handleGlobalCtrlEnter);
+        }
+        return () => {
+            if (typeof window !== 'undefined') {
+                document.removeEventListener('keydown', handleGlobalCtrlEnter);
+            }
+        };
+    }, [isEditingNotes, saving, userRole, saveNote]);
 
     const refreshPublicNotes = useCallback(async ({ existingResponse = null, silent = false } = {}) => {
         try {
@@ -200,7 +226,11 @@ function AgendaContent() {
         if (selectedCourse) {
             const courseNote = notes.get(selectedCourse);
             const entries = extractNoteEntries(courseNote);
-            setNoteEntries(entries.length ? [...entries] : []);
+            // Pour l'édition, on remplace le placeholder invisible par une chaîne vide
+            const editableEntries = entries.map((entry) =>
+                entry === HIDDEN_LABEL_PLACEHOLDER ? "" : entry
+            );
+            setNoteEntries(editableEntries.length ? [...editableEntries] : []);
             setOriginalNoteEntries(entries);
             setIsEditingNotes(false);
             
@@ -417,9 +447,10 @@ function AgendaContent() {
     const predefinedLabels = [
         { name: "Contrôle", color: "#ef4444" }, // Rouge
         { name: "Devoir", color: "#f59e0b" }, // Orange
-        { name: "Examens", color: "#a855f7" }, // Violet
+        { name: "Examen", color: "#a855f7" }, // Violet
         { name: "Lien", color: "#3b82f6" }, // Bleu
         { name: "Information", color: "#10b981" }, // Vert
+        { name: "Distanciel", color: "#06b6d4" }, // Cyan
     ];
 
     // Fonction pour générer une couleur à partir d'un label
@@ -822,7 +853,9 @@ function AgendaContent() {
         try {
             setSaving(true);
             setError(null);
-            const entriesToPersist = sanitizeNoteEntries(noteEntries);
+
+            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
+                buildPersistableNotesAndLabels(noteEntries, entryLabels);
 
             const res = await fetch("/api/agenda", {
                 method: "POST",
@@ -832,7 +865,7 @@ function AgendaContent() {
                 body: JSON.stringify({
                     course_uid: selectedCourse,
                     notes: entriesToPersist,
-                    entry_labels: entryLabels,
+                    entry_labels: normalizedEntryLabels,
                 }),
             });
 
@@ -895,7 +928,7 @@ function AgendaContent() {
         }
 
         try {
-            setSaving(true);
+            setDeleting(true);
             setError(null);
 
             const res = await fetch(`/api/agenda?course_uid=${encodeURIComponent(selectedCourse)}`, {
@@ -993,7 +1026,7 @@ function AgendaContent() {
             <div className={styles.pageCentered}>
                 <div className={styles.loadingContainer}>
                     <div className={styles.loader}></div>
-                    <p>Chargement de votre agenda...</p>
+                    <p>Chargement de l'agenda</p>
                 </div>
             </div>
         );
@@ -1013,6 +1046,10 @@ function AgendaContent() {
                 </div>
             );
         }
+
+        const hasAnyLabel = Object.values(entryLabels || {}).some(
+            (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
+        );
 
         return (
             <>
@@ -1035,7 +1072,15 @@ function AgendaContent() {
 
                 {isEditingNotes ? (
                     <>
-                        <div className={styles.noteEntriesList}>
+                        <div
+                            className={styles.noteEntriesList}
+                            onKeyDown={(e) => {
+                                if (e.ctrlKey && e.key === "Enter" && !saving && userRole !== "visiteur" && e.target.tagName !== "TEXTAREA") {
+                                    e.preventDefault();
+                                    saveNote();
+                                }
+                            }}
+                        >
                             {noteEntries.map((entry, index) => {
                                 const entryLabelsForIndex = entryLabels[String(index)] || [];
                                 
@@ -1181,6 +1226,12 @@ function AgendaContent() {
                                             className={styles.noteEntryTextarea}
                                             value={entry}
                                             onChange={(e) => handleEntryChange(index, e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.ctrlKey && e.key === "Enter" && !saving && userRole !== "visiteur") {
+                                                    e.preventDefault();
+                                                    saveNote();
+                                                }
+                                            }}
                                             disabled={userRole === 'visiteur'}
                                             placeholder={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : "Écrivez votre note ici..."}
                                         />
@@ -1216,7 +1267,7 @@ function AgendaContent() {
                     </>
                 ) : (
                     <>
-                        {noteEntries.length === 0 ? (
+                        {noteEntries.length === 0 && !hasAnyLabel ? (
                             <div className={styles.notePlaceholder}>
                                 <p>Aucune note pour ce cours.</p>
                                 <button 
@@ -1230,35 +1281,54 @@ function AgendaContent() {
                             </div>
                         ) : (
                             <div className={styles.noteEntriesList}>
-                                {noteEntries.map((entry, idx) => {
-                                    const entryLabelsForIndex = entryLabels[String(idx)] || [];
-                                    return (
-                                        <div key={idx} className={styles.noteDisplayCard}>
-                                            {/* Labels pour cette note */}
-                                            {entryLabelsForIndex.length > 0 && (
-                                                <div className={styles.noteLabelsList} style={{ marginBottom: '0.5rem' }}>
-                                                    {entryLabelsForIndex.map((label, labelIdx) => {
-                                                        const labelColor = getLabelColor(label);
-                                                        return (
-                                                            <span 
-                                                                key={labelIdx} 
-                                                                className={styles.noteLabel}
-                                                                style={{ 
-                                                                    backgroundColor: `${labelColor}15`,
-                                                                    borderColor: labelColor,
-                                                                    color: labelColor
-                                                                }}
-                                                            >
-                                                                {label}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                            {entry}
-                                        </div>
-                                    );
-                                })}
+                                {(() => {
+                                    // Si pas d'entries texte mais des labels, on génère des "slots" à partir des index de labels
+                                    const indexes =
+                                        noteEntries.length > 0
+                                            ? noteEntries.map((_, i) => i)
+                                            : Object.keys(entryLabels)
+                                                .map((k) => parseInt(k, 10))
+                                                .filter((n) => !Number.isNaN(n))
+                                                .sort((a, b) => a - b);
+
+                                    return indexes.map((idx) => {
+                                        const entry = noteEntries[idx] || "";
+                                        const entryLabelsForIndex = entryLabels[String(idx)] || [];
+                                        const isLabelOnly =
+                                            entry === HIDDEN_LABEL_PLACEHOLDER ||
+                                            (!entry && entryLabelsForIndex.length > 0);
+                                        return (
+                                            <div key={idx} className={styles.noteDisplayCard}>
+                                                {/* Labels pour cette note */}
+                                                {entryLabelsForIndex.length > 0 && (
+                                                    <div
+                                                        className={styles.noteLabelsList}
+                                                        style={{ marginBottom: isLabelOnly ? 0 : "0.5rem" }}
+                                                    >
+                                                        {entryLabelsForIndex.map((label, labelIdx) => {
+                                                            const labelColor = getLabelColor(label);
+                                                            return (
+                                                                <span
+                                                                    key={labelIdx}
+                                                                    className={styles.noteLabel}
+                                                                    style={{
+                                                                        backgroundColor: `${labelColor}15`,
+                                                                        borderColor: labelColor,
+                                                                        color: labelColor,
+                                                                    }}
+                                                                >
+                                                                    {label}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                {/* Afficher le texte seulement s'il n'est pas vide et pas un placeholder */}
+                                                {!isLabelOnly && entry}
+                                            </div>
+                                        );
+                                    });
+                                })()}
 
                                 {notes.get(selectedCourse)?.user_name && (
                                     <div className={styles.noteLastPerson}>
@@ -1288,8 +1358,9 @@ function AgendaContent() {
                                             <button 
                                                 onClick={deleteNote} 
                                                 className={styles.deleteButton}
+                                                disabled={deleting}
                                             >
-                                                🗑️ Supprimer
+                                                {deleting ? "Suppression..." : "🗑️ Supprimer"}
                                             </button>
                                         </>
                                     )}
@@ -1348,7 +1419,7 @@ function AgendaContent() {
                             aria-pressed={activeTab === "private"}
                         >
                             <strong>Ajout / modification</strong>
-                            <span>{authenticated ? "Gérer mes notes" : "Connexion requise"}</span>
+                            <span>{authenticated ? "Gérer les notes" : "Connexion requise"}</span>
                         </button>
                     </div>
 
@@ -1510,11 +1581,12 @@ function AgendaContent() {
                                                     <div className={styles.publicNoteEntries}>
                                                         {note.entries.map((entry, idx) => {
                                                             const entryLabelsForIndex = (note.entry_labels && note.entry_labels[String(idx)]) || [];
+                                                            const isLabelOnly = entry === HIDDEN_LABEL_PLACEHOLDER || (!entry && entryLabelsForIndex.length > 0);
                                                             return (
                                                                 <div key={idx}>
                                                                     {/* Labels pour cette note */}
                                                                     {entryLabelsForIndex.length > 0 && (
-                                                                        <div className={styles.publicNoteLabels} style={{ marginBottom: '0.5rem' }}>
+                                                                        <div className={styles.publicNoteLabels} style={{ marginBottom: isLabelOnly ? 0 : '0.5rem' }}>
                                                                             {entryLabelsForIndex.map((label, labelIdx) => {
                                                                                 const labelColor = getLabelColor(label);
                                                                                 return (
@@ -1533,9 +1605,11 @@ function AgendaContent() {
                                                                             })}
                                                                         </div>
                                                                     )}
-                                                                    <p className={styles.publicNoteEntry}>
-                                                                        {entry}
-                                                                    </p>
+                                                                    {!isLabelOnly && (
+                                                                        <p className={styles.publicNoteEntry}>
+                                                                            {entry}
+                                                                        </p>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}

@@ -521,7 +521,9 @@
     text-overflow: ellipsis;
 }
 
-.site-badge.visio-badge {
+/* Badge Distanciel / Visio dans la modale (même style rouge pour tous les distanciels) */
+.site-badge.visio-badge,
+.site-badge.distanciel-badge {
     background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
     color: #fff !important;
 }
@@ -580,7 +582,9 @@
     text-overflow: ellipsis;
 }
 
-.site-badge-card.visio-badge {
+/* Badge Distanciel / Visio dans les cartes événements (même style rouge pour tous les distanciels) */
+.site-badge-card.visio-badge,
+.site-badge-card.distanciel-badge {
     background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
     color: #fff;
 }

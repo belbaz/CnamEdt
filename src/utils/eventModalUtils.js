@@ -161,8 +161,9 @@ export function parseLocationMeta(location) {
     const siteInfo = !visio && raw ? getCnamSite(raw) : null;
     const hasPhysical = Boolean(!visio && cleaned);
     return {
+        // Si la localisation contient "visio", on affiche désormais un libellé distanciel
         display: visio
-            ? 'Cours en visio'
+            ? 'Cours en distanciel'
             : (cleaned || (raw ? raw.trim() : '?')),
         isVisio: visio,
         siteInfo,

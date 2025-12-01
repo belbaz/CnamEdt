@@ -5,7 +5,7 @@ import { groupEventsByDay } from "@/utils/eventUtils";
 import { isToday } from "@/utils/dateUtils";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
-import { parseStoredNoteValue } from "@/utils/noteEntries";
+import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
 
 export default function VerticalSchedule({
     events,
@@ -436,6 +436,21 @@ export default function VerticalSchedule({
                                                         ? courseNote.entries
                                                         : parseStoredNoteValue(courseNote.notes))
                                                     : [];
+
+                                                // Déterminer si ce cours est marqué comme distanciel via un label
+                                                const hasDistancielLabel = courseNote && courseNote.entry_labels
+                                                    ? Object.values(courseNote.entry_labels).some((labelsArray) =>
+                                                        Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
+                                                    )
+                                                    : false;
+
+                                                // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
+                                                const notePreviewItems = noteEntries.filter(
+                                                    (entry) =>
+                                                        typeof entry === "string" &&
+                                                        entry !== HIDDEN_LABEL_PLACEHOLDER &&
+                                                        entry.trim().length > 0
+                                                );
                                                 return (
                                                     <EventCard
                                                         key={evIdx}
@@ -451,6 +466,8 @@ export default function VerticalSchedule({
                                                         onOpenEventDetails={onOpenEventDetails}
                                                         noteEntries={noteEntries}
                                                         fileCount={fileCounts[ev.uid] || 0}
+                                                        notePreviewItems={notePreviewItems}
+                                                        isDistanciel={hasDistancielLabel}
                                                     />
                                                 );
                                             });

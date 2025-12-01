@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import EventCard from "./EventCard";
 import { getEventPosition, getEventPositionVertical } from "@/utils/timelineUtils";
 import { getCompactModeValues } from "@/utils/compactModeUtils";
-import { parseStoredNoteValue } from "@/utils/noteEntries";
+import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
 import "./EventsList.css";
 
 export default function EventsList({
@@ -163,6 +163,22 @@ export default function EventsList({
                                 ? courseNote.entries
                                 : parseStoredNoteValue(courseNote.notes))
                             : [];
+
+                        // Déterminer si ce cours est marqué comme distanciel via un label
+                        const hasDistancielLabel = courseNote && courseNote.entry_labels
+                            ? Object.values(courseNote.entry_labels).some((labelsArray) =>
+                                Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
+                            )
+                            : false;
+
+                        // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
+                        // On ignore explicitement le placeholder réservé aux notes "label uniquement"
+                        const notePreviewItems = noteEntries.filter(
+                            (entry) =>
+                                typeof entry === "string" &&
+                                entry !== HIDDEN_LABEL_PLACEHOLDER &&
+                                entry.trim().length > 0
+                        );
                         return (
                             <EventCard
                                 key={idx}
@@ -172,6 +188,8 @@ export default function EventsList({
                                 onOpenEventDetails={onOpenEventDetails}
                                 noteEntries={noteEntries}
                                 fileCount={fileCounts[ev.uid] || 0}
+                                isDistanciel={hasDistancielLabel}
+                                notePreviewItems={notePreviewItems}
                             />
                         );
                     });
