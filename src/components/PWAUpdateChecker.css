@@ -31,8 +31,15 @@
 }
 
 .pwa-update-icon {
-    font-size: 1.5rem;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pwa-update-icon svg {
+    display: block;
+    transform-origin: 50% 50%;
     animation: rotate 2s linear infinite;
 }
 
