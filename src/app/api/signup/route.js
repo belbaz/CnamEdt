@@ -130,7 +130,7 @@ export async function POST(request) {
 
         const { data: existingUser, error: existingError } = await supabase
             .from("edt_user")
-            .select("id")
+            .select("id, is_active")
             .eq("email", email)
             .maybeSingle();
 
@@ -143,10 +143,28 @@ export async function POST(request) {
         }
 
         if (existingUser) {
-            return NextResponse.json(
-                { error: "Cette adresse dispose déjà d'un compte actif." },
-                { status: 409 },
-            );
+            // Si le compte existe et est actif, on refuse
+            if (existingUser.is_active) {
+                return NextResponse.json(
+                    { error: "Cette adresse dispose déjà d'un compte actif." },
+                    { status: 409 },
+                );
+            }
+            // Si le compte existe mais n'est pas actif, on supprime l'ancien compte
+            // pour permettre la recréation avec un nouveau mot de passe
+            console.log(`${LOG_PREFIX} Suppression du compte non activé pour ${email}`);
+            const { error: deleteError } = await supabase
+                .from("edt_user")
+                .delete()
+                .eq("id", existingUser.id);
+
+            if (deleteError) {
+                console.error(`${LOG_PREFIX} Erreur suppression compte non activé`, deleteError);
+                return NextResponse.json(
+                    { error: "Impossible de réinitialiser le compte. Contactez un administrateur." },
+                    { status: 500 },
+                );
+            }
         }
 
         const pepper = process.env.JWT_SECRET;
