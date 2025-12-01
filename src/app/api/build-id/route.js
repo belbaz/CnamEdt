@@ -26,6 +26,11 @@ export async function GET() {
         process.env.BUILD_TIMESTAMP ||
         null; // surtout PAS new Date() pour ne pas afficher l'heure actuelle
 
+    // Logs de debug pour vérifier les valeurs réellement fournies par Vercel en production
+    console.log('[build-id] VERCEL_GIT_COMMIT_TIMESTAMP =', process.env.VERCEL_GIT_COMMIT_TIMESTAMP);
+    console.log('[build-id] BUILD_TIMESTAMP =', process.env.BUILD_TIMESTAMP);
+    console.log('[build-id] commitTimestamp (utilisé par l\'API) =', commitTimestamp);
+
     return NextResponse.json({
         buildId: buildId.substring(0, 12), // Raccourcir pour faciliter la comparaison
         // timestamp = date du dernier push GitHub déployé (ou null si non disponible)
