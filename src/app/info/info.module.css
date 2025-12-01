@@ -1,12 +1,18 @@
 .container {
     min-height: 100vh;
     background: var(--bg-primary);
-    padding: 2rem 1rem;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.3s ease;
     box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding: 2rem 1rem;
+    }
 }
 
 .content {
@@ -584,7 +590,7 @@
 /* Responsive */
 @media (max-width: 768px) {
     .container {
-        padding: 0.75rem;
+        padding: 0;
     }
 
     .header h1 {
@@ -673,7 +679,7 @@
 
 @media (max-width: 480px) {
     .container {
-        padding: 0.5rem;
+        padding: 0;
     }
 
     .card {

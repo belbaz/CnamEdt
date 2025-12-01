@@ -118,8 +118,8 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
             <button
                 className="subject-hours-info-button"
                 onClick={() => setIsOpen(!isOpen)}
-                title="Voir les heures par matière"
-                aria-label="Voir les heures par matière"
+                title="Voir la progression par matière"
+                aria-label="Voir la progression par matière"
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
@@ -132,7 +132,7 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
                     <div className="subject-hours-overlay" onClick={() => setIsOpen(false)}/>
                     <div className="subject-hours-panel" ref={panelRef}>
                         <div className="subject-hours-header">
-                            <h3>Heures par matière</h3>
+                            <h3>Progression des matières</h3>
                             <button 
                                 className="subject-hours-close" 
                                 onClick={() => setIsOpen(false)}

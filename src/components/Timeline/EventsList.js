@@ -171,6 +171,19 @@ export default function EventsList({
                             )
                             : false;
 
+                        // Extraire tous les labels non-Distanciel pour affichage dans le tooltip (dédupliqués)
+                        const nonDistancielLabels = courseNote && courseNote.entry_labels
+                            ? [...new Set(
+                                Object.values(courseNote.entry_labels)
+                                    .flat()
+                                    .filter((label) => 
+                                        typeof label === "string" && 
+                                        label.trim() !== "" && 
+                                        label !== "Distanciel"
+                                    )
+                            )]
+                            : [];
+
                         // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
                         // On ignore explicitement le placeholder réservé aux notes "label uniquement"
                         const notePreviewItems = noteEntries.filter(
@@ -190,6 +203,7 @@ export default function EventsList({
                                 fileCount={fileCounts[ev.uid] || 0}
                                 isDistanciel={hasDistancielLabel}
                                 notePreviewItems={notePreviewItems}
+                                nonDistancielLabels={nonDistancielLabels}
                             />
                         );
                     });

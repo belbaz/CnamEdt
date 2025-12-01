@@ -19,7 +19,8 @@ export default function EventCard({
     noteEntries = [],
     fileCount: propsFileCount,
     isDistanciel = false,
-    notePreviewItems = []
+    notePreviewItems = [],
+    nonDistancielLabels = []
 }) {
     const { matiere, prof, description, splitGroup } = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -210,24 +211,52 @@ export default function EventCard({
                 const baseEntries = Array.isArray(notePreviewItems) ? notePreviewItems : [];
                 const cleanedEntries = sanitizeNoteEntries(baseEntries);
                 const noteCount = cleanedEntries.length;
-                const totalCount = noteCount + effectiveFileCount;
+                
+                // Extraire les labels non-Distanciel valides
+                const validLabels = Array.isArray(nonDistancielLabels) 
+                    ? nonDistancielLabels.filter(label => typeof label === "string" && label.trim() !== "")
+                    : [];
+                
+                // Ne pas afficher le badge si seulement "Distanciel" sans note texte et sans autres labels
+                const hasOnlyDistanciel = isDistanciel && noteCount === 0 && validLabels.length === 0;
+                if (hasOnlyDistanciel) {
+                    return null;
+                }
+                
+                // Si il y a des notes texte, on affiche seulement les notes (pas les labels)
+                // Sinon, on affiche les labels
+                const totalNoteCount = noteCount > 0 ? noteCount : validLabels.length;
+                const totalCount = totalNoteCount + effectiveFileCount;
 
-                // Afficher le badge seulement s'il y a des notes texte OU des fichiers
-                // -> si on a uniquement des labels, totalCount sera 0 et le badge ne sera pas affiché.
+                // Afficher le badge seulement s'il y a des notes texte, des labels non-Distanciel OU des fichiers
                 if (totalCount === 0) {
                     return null;
                 }
 
-                const hasTooltipContent = noteCount > 0 || effectiveFileCount > 0;
+                const hasTooltipContent = noteCount > 0 || validLabels.length > 0 || effectiveFileCount > 0;
 
-                const previewEntries = cleanedEntries.slice(0, 3);
-                const remaining = noteCount - previewEntries.length;
+                // Si il y a des notes texte, afficher seulement les notes (pas les labels)
+                // Sinon, afficher les labels
+                const maxPreviewItems = 3;
+                let tooltipItems = [];
+                let totalRemaining = 0;
+                
+                if (noteCount > 0) {
+                    // Afficher seulement les notes texte
+                    tooltipItems = cleanedEntries.slice(0, maxPreviewItems);
+                    totalRemaining = noteCount - tooltipItems.length;
+                } else {
+                    // Afficher les labels
+                    tooltipItems = validLabels.slice(0, maxPreviewItems);
+                    totalRemaining = validLabels.length - tooltipItems.length;
+                }
+                
                 return (
                     <>
                         <div
                             ref={badgeRef}
                             className="note-badge-card"
-                            aria-label={`${noteCount} note${noteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
+                            aria-label={`${totalNoteCount} note${totalNoteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
                             onMouseEnter={hasTooltipContent ? () => setShowTooltip(true) : undefined}
                             onMouseLeave={hasTooltipContent ? () => setShowTooltip(false) : undefined}
                             onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
@@ -236,7 +265,7 @@ export default function EventCard({
                             <span className="note-icon">📋</span>
                             <span className="note-count-badge">{totalCount}</span>
                         </div>
-                        {/* Afficher la tooltip seulement s'il y a du contenu (texte ou fichiers) */}
+                        {/* Afficher la tooltip seulement s'il y a du contenu (texte, labels ou fichiers) */}
                         {isMounted && showTooltip && hasTooltipContent && createPortal(
                             <div
                                 ref={tooltipRef}
@@ -245,14 +274,14 @@ export default function EventCard({
                                 onMouseEnter={() => setShowTooltip(true)}
                                 onMouseLeave={() => setShowTooltip(false)}
                             >
-                                <strong>{noteCount > 1 ? `${noteCount} notes` : "note"}</strong>
+                                <strong>{totalNoteCount > 1 ? `${totalNoteCount} notes` : "note"}</strong>
                                 <ul className="note-tooltip-list">
-                                    {previewEntries.map((entry, idx) => (
-                                        <li key={idx}>{entry}</li>
+                                    {tooltipItems.map((item, idx) => (
+                                        <li key={idx}>{item}</li>
                                     ))}
-                                    {remaining > 0 && (
+                                    {totalRemaining > 0 && (
                                         <li className="note-tooltip-more">
-                                            +{remaining} autre{remaining > 1 ? "s" : ""}
+                                            +{totalRemaining} autre{totalRemaining > 1 ? "s" : ""}
                                         </li>
                                     )}
                                 </ul>

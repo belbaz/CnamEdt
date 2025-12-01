@@ -3,6 +3,7 @@ import {NextResponse} from "next/server";
 import ical from "node-ical";
 import { createHash } from "crypto";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
+import { parseStoredNoteValue, normalizeIncomingNotes } from "@/utils/noteEntries";
 
 // Note: Les routes API ne fonctionnent pas avec output: 'export'
 // Le dossier API doit être renommé avant le build (voir scripts de build ou package.json)
@@ -154,6 +155,110 @@ function compareEvents(oldEvent, newEvent) {
 }
 
 /**
+ * Archive une note dans la table d'archive avant suppression/fusion
+ * Retourne true si l'archivage a réussi, false sinon (ne bloque pas le processus)
+ */
+async function archiveNote(supabase, note, reason, metadata = {}) {
+    try {
+        const { error: archiveError } = await supabase
+            .from('edt_agenda_archive')
+            .insert({
+                original_id: note.id,
+                user_id: note.user_id,
+                course_uid: note.course_uid,
+                notes: note.notes || '',
+                labels: note.labels || [],
+                entry_labels: note.entry_labels || {},
+                modification_history: note.modification_history || [],
+                archive_reason: reason,
+                new_course_uid: metadata.new_course_uid || null,
+                metadata: metadata
+            });
+
+        if (archiveError) {
+            // Si la table n'existe pas encore, on log un warning mais on continue
+            if (archiveError.code === '42P01' || archiveError.message?.includes('does not exist')) {
+                console.warn(`[API fetch-ics] Table edt_agenda_archive n'existe pas encore. Exécutez le script create_agenda_archive_table.sql dans Supabase.`);
+            } else {
+                console.warn(`[API fetch-ics] Erreur archivage note (id: ${note.id}):`, archiveError.message);
+            }
+            return false;
+        }
+        console.log(`[API fetch-ics] Note archivée (id: ${note.id}, raison: ${reason})`);
+        return true;
+    } catch (error) {
+        // Ne pas bloquer le processus si l'archivage échoue
+        console.warn(`[API fetch-ics] Erreur archivage note (id: ${note.id}):`, error.message);
+        return false;
+    }
+}
+
+/**
+ * Fusionne deux notes en combinant leurs contenus et labels
+ * Retourne un objet avec les notes fusionnées, labels fusionnés, et entry_labels fusionnés
+ */
+function mergeNotes(oldNote, newNote) {
+    // Parser les notes des deux sources
+    const oldEntries = parseStoredNoteValue(oldNote.notes || '');
+    const newEntries = parseStoredNoteValue(newNote.notes || '');
+
+    // Fusionner les entrées : anciennes d'abord, puis nouvelles (éviter les doublons exacts)
+    const mergedEntries = [...oldEntries];
+    for (const entry of newEntries) {
+        // Ajouter seulement si ce n'est pas un doublon exact
+        if (!mergedEntries.includes(entry)) {
+            mergedEntries.push(entry);
+        }
+    }
+
+    // Fusionner les labels (ancien système)
+    const oldLabels = Array.isArray(oldNote.labels) ? oldNote.labels : [];
+    const newLabels = Array.isArray(newNote.labels) ? newNote.labels : [];
+    const mergedLabels = [...new Set([...oldLabels, ...newLabels])]; // Union sans doublons
+
+    // Fusionner les entry_labels (nouveau système par paragraphe)
+    const oldEntryLabels = oldNote.entry_labels && typeof oldNote.entry_labels === 'object' 
+        ? oldNote.entry_labels 
+        : {};
+    const newEntryLabels = newNote.entry_labels && typeof newNote.entry_labels === 'object'
+        ? newNote.entry_labels
+        : {};
+
+    // Calculer les décalages d'index pour les entry_labels de l'ancienne note
+    const oldEntriesCount = oldEntries.length;
+    const mergedEntryLabels = { ...oldEntryLabels };
+
+    // Ajouter les entry_labels de la nouvelle note avec décalage d'index
+    for (const [indexStr, labels] of Object.entries(newEntryLabels)) {
+        const newIndex = parseInt(indexStr, 10);
+        if (!isNaN(newIndex) && Array.isArray(labels) && labels.length > 0) {
+            const mergedIndex = oldEntriesCount + newIndex;
+            // Si l'index existe déjà, fusionner les labels
+            if (mergedEntryLabels[String(mergedIndex)]) {
+                const existingLabels = Array.isArray(mergedEntryLabels[String(mergedIndex)])
+                    ? mergedEntryLabels[String(mergedIndex)]
+                    : [];
+                mergedEntryLabels[String(mergedIndex)] = [...new Set([...existingLabels, ...labels])];
+            } else {
+                mergedEntryLabels[String(mergedIndex)] = labels;
+            }
+        }
+    }
+
+    // Fusionner l'historique des modifications
+    const oldHistory = Array.isArray(oldNote.modification_history) ? oldNote.modification_history : [];
+    const newHistory = Array.isArray(newNote.modification_history) ? newNote.modification_history : [];
+    const mergedHistory = [...oldHistory, ...newHistory];
+
+    return {
+        notes: JSON.stringify(mergedEntries),
+        labels: mergedLabels,
+        entry_labels: mergedEntryLabels,
+        modification_history: mergedHistory
+    };
+}
+
+/**
  * Migre automatiquement les notes orphelines vers le nouveau course_uid
  * si seule la salle (location) a changé.
  * 
@@ -163,6 +268,8 @@ function compareEvents(oldEvent, newEvent) {
  * - Salle différente (location)
  * 
  * Si le titre ou la date change, la note n'est PAS migrée (considérée invalide).
+ * 
+ * NOUVELLE LOGIQUE : Fusionne les notes au lieu de les supprimer.
  */
 async function migrateOrphanNotes(supabase, currentEvents) {
     try {
@@ -263,7 +370,7 @@ async function migrateOrphanNotes(supabase, currentEvents) {
                 // Vérifier qu'il n'existe pas déjà une note pour ce nouveau course_uid et cet utilisateur
                 const { data: existingNote, error: checkError } = await supabase
                     .from('edt_agenda')
-                    .select('id')
+                    .select('id, notes, labels, entry_labels, modification_history')
                     .eq('user_id', note.user_id)
                     .eq('course_uid', newCourseUid)
                     .maybeSingle();
@@ -276,20 +383,57 @@ async function migrateOrphanNotes(supabase, currentEvents) {
                 
                 if (existingNote) {
                     // Une note existe déjà pour ce nouveau course_uid
-                    // On supprime l'ancienne note orpheline
-                    const { error: deleteError } = await supabase
-                        .from('edt_agenda')
-                        .delete()
-                        .eq('id', note.id);
+                    // NOUVELLE LOGIQUE : Fusionner les notes au lieu de supprimer
                     
-                    if (deleteError) {
-                        console.warn(`[API fetch-ics] Erreur suppression note orpheline (id: ${note.id}):`, deleteError.message);
+                    // Archiver l'ancienne note orpheline avant fusion
+                    await archiveNote(supabase, note, 'merged', {
+                        new_course_uid: newCourseUid,
+                        reason: 'Note orpheline fusionnée avec note existante lors de la migration',
+                        old_location: oldEvent.location,
+                        new_location: matchingEvent.location
+                    });
+
+                    // Fusionner les notes
+                    const merged = mergeNotes(note, existingNote);
+
+                    // Mettre à jour la note existante avec le contenu fusionné
+                    const { error: updateError } = await supabase
+                        .from('edt_agenda')
+                        .update({
+                            notes: merged.notes,
+                            labels: merged.labels,
+                            entry_labels: merged.entry_labels,
+                            modification_history: merged.modification_history
+                        })
+                        .eq('id', existingNote.id);
+
+                    if (updateError) {
+                        console.warn(`[API fetch-ics] Erreur fusion note (id: ${note.id} → ${existingNote.id}):`, updateError.message);
+                        skippedCount++;
                     } else {
-                        console.log(`[API fetch-ics] Migration: Note orpheline supprimée (id: ${note.id}, old_uid: ${note.course_uid}) - note existe déjà pour new_uid: ${newCourseUid}`);
+                        // Supprimer l'ancienne note orpheline après fusion réussie
+                        const { error: deleteError } = await supabase
+                            .from('edt_agenda')
+                            .delete()
+                            .eq('id', note.id);
+
+                        if (deleteError) {
+                            console.warn(`[API fetch-ics] Erreur suppression note orpheline après fusion (id: ${note.id}):`, deleteError.message);
+                        }
+
+                        console.log(`[API fetch-ics] Migration: Note orpheline fusionnée (id: ${note.id}, old_uid: ${note.course_uid}) avec note existante (id: ${existingNote.id}, new_uid: ${newCourseUid})`);
                         migratedCount++;
                     }
                 } else {
                     // Migrer la note vers le nouveau course_uid
+                    // Archiver l'ancienne version avant migration
+                    await archiveNote(supabase, note, 'orphan_migration', {
+                        new_course_uid: newCourseUid,
+                        reason: 'Note orpheline migrée vers nouveau course_uid (changement de salle)',
+                        old_location: oldEvent.location,
+                        new_location: matchingEvent.location
+                    });
+
                     const { error: updateError } = await supabase
                         .from('edt_agenda')
                         .update({ course_uid: newCourseUid })

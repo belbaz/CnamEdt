@@ -49,6 +49,102 @@ function AgendaContent() {
     const [showOnlyCourseDays, setShowOnlyCourseDays] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
 
+    const refreshPublicNotes = useCallback(async ({ existingResponse = null, silent = false } = {}) => {
+        try {
+            const response = existingResponse || await fetch("/api/agenda?mode=public", {
+                cache: "no-store",
+            });
+
+            if (!response.ok) {
+                throw new Error("Erreur lors de la récupération des notes publiques");
+            }
+
+            const data = await response.json();
+            const noteList = Array.isArray(data.notes) ? data.notes : [];
+            setPublicNotes(noteList);
+            return noteList;
+        } catch (err) {
+            console.error("[Agenda] Erreur notes publiques:", err);
+            if (!silent) {
+                throw err;
+            }
+            return [];
+        }
+    }, []);
+
+    const saveNote = useCallback(async () => {
+        if (!selectedCourse) return;
+
+        if (userRole === 'visiteur') {
+            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setError(null);
+
+            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
+                buildPersistableNotesAndLabels(noteEntries, entryLabels);
+
+            const res = await fetch("/api/agenda", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    course_uid: selectedCourse,
+                    notes: entriesToPersist,
+                    entry_labels: normalizedEntryLabels,
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({ error: "Erreur inconnue" }));
+                const errorMessage = data.error || `Erreur ${res.status}: ${res.statusText}`;
+                throw new Error(errorMessage);
+            }
+
+            const data = await res.json();
+
+            // Mettre à jour la Map des notes
+            const newNotes = new Map(notes);
+            if (data.note) {
+                const normalizedNote = {
+                    ...data.note,
+                    entries: Array.isArray(data.note?.entries)
+                        ? data.note.entries
+                        : parseStoredNoteValue(data.note?.notes),
+                    entry_labels: data.note?.entry_labels || {},
+                };
+                newNotes.set(selectedCourse, normalizedNote);
+                setNoteEntries(normalizedNote.entries);
+                setOriginalNoteEntries(normalizedNote.entries);
+                setEntryLabels(normalizedNote.entry_labels || {});
+                setOriginalEntryLabels(normalizedNote.entry_labels || {});
+            } else {
+                newNotes.delete(selectedCourse);
+                setNoteEntries([]);
+                setOriginalNoteEntries([]);
+            }
+            setNotes(newNotes);
+            setIsEditingNotes(false);
+            await refreshPublicNotes({ silent: true }).catch(() => { });
+        } catch (err) {
+            console.error("[Agenda] Erreur sauvegarde:", err);
+            // Afficher un message d'erreur explicite
+            const errorMessage = err.message || "Une erreur inattendue s'est produite lors de la sauvegarde";
+            setError(errorMessage);
+            
+            // Garder l'erreur visible pendant au moins 5 secondes
+            setTimeout(() => {
+                setError(null);
+            }, 5000);
+        } finally {
+            setSaving(false);
+        }
+    }, [selectedCourse, userRole, noteEntries, entryLabels, notes, refreshPublicNotes]);
+
     // Raccourci global Ctrl+Entrée pour enregistrer la note en cours d'édition (texte ou labels)
     useEffect(() => {
         const handleGlobalCtrlEnter = (event) => {
@@ -73,29 +169,6 @@ function AgendaContent() {
             }
         };
     }, [isEditingNotes, saving, userRole, saveNote]);
-
-    const refreshPublicNotes = useCallback(async ({ existingResponse = null, silent = false } = {}) => {
-        try {
-            const response = existingResponse || await fetch("/api/agenda?mode=public", {
-                cache: "no-store",
-            });
-
-            if (!response.ok) {
-                throw new Error("Erreur lors de la récupération des notes publiques");
-            }
-
-            const data = await response.json();
-            const noteList = Array.isArray(data.notes) ? data.notes : [];
-            setPublicNotes(noteList);
-            return noteList;
-        } catch (err) {
-            console.error("[Agenda] Erreur notes publiques:", err);
-            if (!silent) {
-                throw err;
-            }
-            return [];
-        }
-    }, []);
 
     const loadData = useCallback(async () => {
         try {
@@ -445,12 +518,13 @@ function AgendaContent() {
 
     // Labels prédéfinis avec leurs couleurs
     const predefinedLabels = [
-        { name: "Contrôle", color: "#ef4444" }, // Rouge
-        { name: "Devoir", color: "#f59e0b" }, // Orange
-        { name: "Examen", color: "#a855f7" }, // Violet
-        { name: "Lien", color: "#3b82f6" }, // Bleu
-        { name: "Information", color: "#10b981" }, // Vert
-        { name: "Distanciel", color: "#06b6d4" }, // Cyan
+        { name: "Contrôle",       color: "#ef4444" }, // Rouge
+        { name: "TP noté",        color: "#10b981" }, // Vert
+        { name: "Devoir",         color: "#f59e0b" }, // Orange
+        { name: "Examen",         color: "#a855f7" }, // Violet
+        { name: "Lien",           color: "#3b82f6" }, // Bleu
+        { name: "Information",   color: "#fde047" }, // Jaune
+        { name: "Distanciel",    color: "#06b6d4" }, // Cyan
     ];
 
     // Fonction pour générer une couleur à partir d'un label
@@ -842,78 +916,6 @@ function AgendaContent() {
         }
     };
 
-    const saveNote = async () => {
-        if (!selectedCourse) return;
-
-        if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
-            return;
-        }
-
-        try {
-            setSaving(true);
-            setError(null);
-
-            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
-                buildPersistableNotesAndLabels(noteEntries, entryLabels);
-
-            const res = await fetch("/api/agenda", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    course_uid: selectedCourse,
-                    notes: entriesToPersist,
-                    entry_labels: normalizedEntryLabels,
-                }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({ error: "Erreur inconnue" }));
-                const errorMessage = data.error || `Erreur ${res.status}: ${res.statusText}`;
-                throw new Error(errorMessage);
-            }
-
-            const data = await res.json();
-
-            // Mettre à jour la Map des notes
-            const newNotes = new Map(notes);
-            if (data.note) {
-                const normalizedNote = {
-                    ...data.note,
-                    entries: Array.isArray(data.note?.entries)
-                        ? data.note.entries
-                        : parseStoredNoteValue(data.note?.notes),
-                    entry_labels: data.note?.entry_labels || {},
-                };
-                newNotes.set(selectedCourse, normalizedNote);
-                setNoteEntries(normalizedNote.entries);
-                setOriginalNoteEntries(normalizedNote.entries);
-                setEntryLabels(normalizedNote.entry_labels || {});
-                setOriginalEntryLabels(normalizedNote.entry_labels || {});
-            } else {
-                newNotes.delete(selectedCourse);
-                setNoteEntries([]);
-                setOriginalNoteEntries([]);
-            }
-            setNotes(newNotes);
-            setIsEditingNotes(false);
-            await refreshPublicNotes({ silent: true }).catch(() => { });
-        } catch (err) {
-            console.error("[Agenda] Erreur sauvegarde:", err);
-            // Afficher un message d'erreur explicite
-            const errorMessage = err.message || "Une erreur inattendue s'est produite lors de la sauvegarde";
-            setError(errorMessage);
-            
-            // Garder l'erreur visible pendant au moins 5 secondes
-            setTimeout(() => {
-                setError(null);
-            }, 5000);
-        } finally {
-            setSaving(false);
-        }
-    };
 
     const deleteNote = async () => {
         if (!selectedCourse) return;

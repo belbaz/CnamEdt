@@ -84,6 +84,7 @@ function HomeContent({searchParams}) {
     const [supabaseSource, setSupabaseSource] = useState(null);
     // Timestamp du dernier build (proxy pour la date du dernier commit déployé)
     const [buildTimestamp, setBuildTimestamp] = useState(null);
+    const [isLoadingBuildTimestamp, setIsLoadingBuildTimestamp] = useState(false);
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -606,6 +607,7 @@ function HomeContent({searchParams}) {
         if (!userInfo || userInfo.role !== 'superAdmin') return;
 
         const fetchBuildInfo = async () => {
+            setIsLoadingBuildTimestamp(true);
             try {
                 const res = await fetch('/api/build-id', {cache: 'no-store'});
                 if (!res.ok) return;
@@ -614,6 +616,8 @@ function HomeContent({searchParams}) {
                 setBuildTimestamp(data?.timestamp ?? null);
             } catch (e) {
                 // En cas d'erreur, on n'affiche simplement pas l'info commit
+            } finally {
+                setIsLoadingBuildTimestamp(false);
             }
         };
 
@@ -1321,7 +1325,11 @@ function HomeContent({searchParams}) {
                             <div className={styles.timeRemainingText}>
                                 {userInfo?.role === 'superAdmin' && (
                                     <div className={styles.superAdminBuildInfo}>
-                                        Dernier commit déployé : {formatLastUpdate(buildTimestamp)}
+                                        Dernier commit déployé : {isLoadingBuildTimestamp ? (
+                                            <span style={{ opacity: 0.6 }}>Chargement...</span>
+                                        ) : (
+                                            formatLastUpdate(buildTimestamp)
+                                        )}
                                     </div>
                                 )}
                             </div>

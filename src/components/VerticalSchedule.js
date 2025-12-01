@@ -444,6 +444,19 @@ export default function VerticalSchedule({
                                                     )
                                                     : false;
 
+                                                // Extraire tous les labels non-Distanciel pour affichage dans le tooltip (dédupliqués)
+                                                const nonDistancielLabels = courseNote && courseNote.entry_labels
+                                                    ? [...new Set(
+                                                        Object.values(courseNote.entry_labels)
+                                                            .flat()
+                                                            .filter((label) => 
+                                                                typeof label === "string" && 
+                                                                label.trim() !== "" && 
+                                                                label !== "Distanciel"
+                                                            )
+                                                    )]
+                                                    : [];
+
                                                 // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
                                                 const notePreviewItems = noteEntries.filter(
                                                     (entry) =>
@@ -468,6 +481,7 @@ export default function VerticalSchedule({
                                                         fileCount={fileCounts[ev.uid] || 0}
                                                         notePreviewItems={notePreviewItems}
                                                         isDistanciel={hasDistancielLabel}
+                                                        nonDistancielLabels={nonDistancielLabels}
                                                     />
                                                 );
                                             });

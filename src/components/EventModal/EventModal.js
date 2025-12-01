@@ -262,12 +262,13 @@ export default function EventModal({
 
     // Labels prédéfinis avec leurs couleurs
     const predefinedLabels = [
-        { name: "Contrôle", color: "#ef4444" }, // Rouge
-        { name: "Devoir", color: "#f59e0b" }, // Orange
-        { name: "Examen", color: "#a855f7" }, // Violet
-        { name: "Lien", color: "#3b82f6" }, // Bleu
-        { name: "Information", color: "#10b981" }, // Vert
-        { name: "Distanciel", color: "#06b6d4" }, // Cyan
+        { name: "Contrôle",       color: "#ef4444" }, // Rouge
+        { name: "TP noté",        color: "#10b981" }, // Vert
+        { name: "Devoir",         color: "#f59e0b" }, // Orange
+        { name: "Examen",         color: "#a855f7" }, // Violet
+        { name: "Lien",           color: "#3b82f6" }, // Bleu
+        { name: "Information",   color: "#fde047" }, // Jaune
+        { name: "Distanciel",    color: "#06b6d4" }, // Cyan
     ];
 
     // Fonction pour générer une couleur à partir d'un label
