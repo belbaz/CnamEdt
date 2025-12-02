@@ -75,6 +75,38 @@ export default function EventModal({
         setNewLabelValue("");
     }, [selectedEvent, courseNotes]);
 
+    // Bloquer le scroll du body quand la modal est ouverte
+    useEffect(() => {
+        if (selectedEvent) {
+            // Sauvegarder la position actuelle du scroll
+            const scrollY = window.scrollY;
+            
+            // Ajouter la classe modal-open pour le CSS
+            document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open');
+            
+            // Bloquer le scroll sans position fixed pour éviter les problèmes de background
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+            // Préserver la position du scroll en utilisant padding-top au lieu de position fixed
+            document.body.style.paddingTop = `${scrollY}px`;
+            
+            return () => {
+                // Retirer la classe modal-open
+                document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('modal-open');
+                
+                // Restaurer le scroll
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+                document.body.style.paddingTop = '';
+                
+                // Restaurer la position du scroll
+                window.scrollTo(0, scrollY);
+            };
+        }
+    }, [selectedEvent]);
+
     // Fermer la modale avec la touche Échap
     useEffect(() => {
         if (!selectedEvent) return;

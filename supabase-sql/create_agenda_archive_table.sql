@@ -29,3 +29,9 @@ COMMENT ON COLUMN edt_agenda_archive.original_id IS 'ID de la note originale dan
 COMMENT ON COLUMN edt_agenda_archive.archive_reason IS 'Raison de l''archivage : merged, deleted, orphan_migration, etc.';
 COMMENT ON COLUMN edt_agenda_archive.new_course_uid IS 'Nouveau course_uid si la note a été migrée/fusionnée';
 
+
+
+
+
+
+

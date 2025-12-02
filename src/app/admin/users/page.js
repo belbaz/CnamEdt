@@ -286,7 +286,8 @@ export default function UsersManagementPage() {
                     <label>Rôle</label>
                     <select value={roleFilter} onChange={handleRoleFilter} className="filter-select">
                         <option value="">Tous</option>
-                        <option value="user">User</option>
+                        <option value="visiteur">Visiteur</option>
+                        <option value="editeur">Editeur</option>
                         <option value="admin">Admin</option>
                         <option value="superAdmin">SuperAdmin</option>
                     </select>

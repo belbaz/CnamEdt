@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import './MapViewer.css';
 
 /**
@@ -77,26 +77,36 @@ const BUILDING_COORDINATES = {
 };
 
 /**
- * Composant pour afficher la carte SVG avec itinéraire
+ * Composant pour afficher la carte SVG avec pan/zoom moderne
  */
 export default function MapViewer({ location, onClose }) {
     const [buildingNumber, setBuildingNumber] = useState(null);
     const [fullRoomNumber, setFullRoomNumber] = useState(null);
     const [buildingCoords, setBuildingCoords] = useState(null);
-    const [debugMode, setDebugMode] = useState(false); // Mode debug pour afficher toutes les salles
-    const [zoomLevel, setZoomLevel] = useState(1);
-    const svgRef = useRef(null);
+    const [debugMode, setDebugMode] = useState(false);
+    
+    // État pour le pan/zoom avec transform
+    const [scale, setScale] = useState(1);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    
     const containerRef = useRef(null);
-    const svgContainerRef = useRef(null);
-    const lastTouchDistance = useRef(null);
+    const svgWrapperRef = useRef(null);
+    const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0 });
+    const lastTouchDistanceRef = useRef(null);
+    const lastTouchCenterRef = useRef(null);
+    const isInitializedRef = useRef(false);
+
+    // Dimensions du SVG (viewBox: 0 0 528.976 504.69)
+    const SVG_WIDTH = 528.976;
+    const SVG_HEIGHT = 504.69;
+    const SVG_DISPLAY_WIDTH = 700; // Largeur d'affichage de base
 
     useEffect(() => {
         if (location) {
-            // Extraire le numéro complet pour l'affichage
             const fullRoom = extractFullRoomNumber(location);
             setFullRoomNumber(fullRoom);
             
-            // Extraire uniquement le numéro de bâtiment pour trouver les coordonnées
             const building = extractBuildingNumber(location);
             setBuildingNumber(building);
             
@@ -108,138 +118,277 @@ export default function MapViewer({ location, onClose }) {
         }
     }, [location]);
 
-    // Fermer avec la touche Escape (sans fermer la modale du cours)
+    // Fermer avec Escape
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
-                e.stopImmediatePropagation(); // Empêcher les autres listeners
+                e.stopImmediatePropagation();
                 onClose();
             }
         };
-
-        // Utiliser capture: true pour intercepter l'événement en premier
         window.addEventListener('keydown', handleKeyDown, true);
         return () => window.removeEventListener('keydown', handleKeyDown, true);
     }, [onClose]);
 
-    // Centrer la carte au milieu au chargement
+    /**
+     * Centrer le plan sur la salle
+     */
+    const centerOnRoom = useCallback(() => {
+        if (!buildingCoords || !containerRef.current) return;
+        
+        const container = containerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+        
+        // Calculer la position de la salle en pixels
+        const scaleX = SVG_DISPLAY_WIDTH / SVG_WIDTH;
+        const roomX = buildingCoords.x * scaleX;
+        const roomY = buildingCoords.y * scaleX; // Même ratio pour Y
+        
+        // Calculer la position pour centrer la salle
+        const newX = (containerWidth / 2) - (roomX * scale);
+        const newY = (containerHeight / 2) - (roomY * scale);
+        
+        setPosition({ x: newX, y: newY });
+        setScale(1.5); // Zoom automatique pour mieux voir la salle
+    }, [buildingCoords, scale]);
+
+    /**
+     * Centrer le plan au chargement
+     */
     useEffect(() => {
-        if (svgContainerRef.current && svgRef.current) {
-            const container = svgContainerRef.current;
-            const svg = svgRef.current;
+        if (!isInitializedRef.current && containerRef.current && svgWrapperRef.current) {
+            const container = containerRef.current;
+            const containerRect = container.getBoundingClientRect();
             
-            // Centrer la carte immédiatement (sans animation)
-            const centerX = (svg.scrollWidth - container.clientWidth) / 2;
-            const centerY = (svg.scrollHeight - container.clientHeight) / 2;
+            // Centrer le plan au milieu
+            const centerX = (containerRect.width / 2) - (SVG_DISPLAY_WIDTH / 2);
+            const centerY = (containerRect.height / 2) - (SVG_DISPLAY_WIDTH * (SVG_HEIGHT / SVG_WIDTH) / 2);
             
-            container.scrollTo({
-                left: Math.max(0, centerX),
-                top: Math.max(0, centerY),
-                behavior: 'auto'
-            });
+            setPosition({ x: centerX, y: centerY });
+            isInitializedRef.current = true;
+            
+            // Centrer sur la salle après un court délai si disponible
+            if (buildingCoords) {
+                setTimeout(() => {
+                    centerOnRoom();
+                }, 800);
+            }
         }
+    }, [buildingCoords, centerOnRoom]);
+
+    /**
+     * Gestion du zoom avec molette de souris
+     */
+    const handleWheel = useCallback((e) => {
+        e.preventDefault();
+        
+        if (!containerRef.current) return;
+        
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        
+        // Position de la souris relative au conteneur
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Position de la souris dans le SVG (avant zoom)
+        const svgX = (mouseX - position.x) / scale;
+        const svgY = (mouseY - position.y) / scale;
+        
+        // Nouveau niveau de zoom
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newScale = Math.min(Math.max(scale * delta, 0.5), 4);
+        
+        // Ajuster la position pour zoomer sur le point de la souris
+        const newX = mouseX - (svgX * newScale);
+        const newY = mouseY - (svgY * newScale);
+        
+        setScale(newScale);
+        setPosition({ x: newX, y: newY });
+    }, [scale, position]);
+
+    /**
+     * Gestion du drag avec la souris
+     */
+    const handleMouseMove = useCallback((e) => {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - dragStartRef.current.startX;
+        const deltaY = e.clientY - dragStartRef.current.startY;
+        
+        setPosition({
+            x: dragStartRef.current.x + deltaX,
+            y: dragStartRef.current.y + deltaY
+        });
+    }, [isDragging]);
+
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
     }, []);
 
-    // Puis centrer automatiquement sur la salle après un court délai
-    useEffect(() => {
-        if (buildingCoords && svgContainerRef.current && svgRef.current) {
-            // Attendre 600ms pour que l'utilisateur voie d'abord la carte centrée normalement
-            const timer = setTimeout(() => {
-                const container = svgContainerRef.current;
-                const svg = svgRef.current;
-                
-                if (!container || !svg) return;
-
-                // Dimensions du SVG (viewBox: 0 0 528.976 504.69)
-                const svgWidth = 528.976;
-                const svgHeight = 504.69;
-                
-                // Dimensions réelles du SVG affiché (700px de largeur + margins)
-                const displayedSvgWidth = 700;
-                const displayedSvgHeight = (svgHeight / svgWidth) * displayedSvgWidth;
-                
-                // Ratio entre les coordonnées SVG et les pixels affichés
-                const scaleX = displayedSvgWidth / svgWidth;
-                const scaleY = displayedSvgHeight / svgHeight;
-                
-                // Position du cercle en pixels affichés
-                const circlePxX = buildingCoords.x * scaleX;
-                const circlePxY = buildingCoords.y * scaleY;
-                
-                // Centrer le scroll sur le cercle
-                const scrollLeft = circlePxX - (container.clientWidth / 2);
-                const scrollTop = circlePxY - (container.clientHeight / 2);
-                
-                container.scrollTo({
-                    left: Math.max(0, scrollLeft),
-                    top: Math.max(0, scrollTop),
-                    behavior: 'smooth'
-                });
-            }, 600);
-
-            return () => clearTimeout(timer);
+    const handleMouseDown = (e) => {
+        // Ne pas démarrer le drag sur les boutons
+        if (e.target.closest('button') || e.target.closest('.map-controls')) {
+            return;
         }
-    }, [buildingCoords]);
+        
+        setIsDragging(true);
+        dragStartRef.current = {
+            x: position.x,
+            y: position.y,
+            startX: e.clientX,
+            startY: e.clientY
+        };
+        e.preventDefault();
+    };
+
+    // Gestion globale du drag
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging, handleMouseMove, handleMouseUp]);
 
     /**
-     * Contrôles de zoom - ULTRA SIMPLE
-     */
-    const zoomIn = () => {
-        setZoomLevel(prev => Math.min(prev + 0.5, 3));
-    };
-
-    const zoomOut = () => {
-        setZoomLevel(prev => Math.max(prev - 0.5, 0.5));
-    };
-
-    const resetZoom = () => {
-        setZoomLevel(1);
-    };
-
-    /**
-     * Gestion du pinch-to-zoom sur mobile
+     * Gestion du touch (mobile)
      */
     const handleTouchStart = (e) => {
-        if (e.touches.length === 2) {
-            // Calculer la distance entre les deux doigts
+        if (e.touches.length === 1) {
+            // Pan avec un doigt
+            const touch = e.touches[0];
+            dragStartRef.current = {
+                x: position.x,
+                y: position.y,
+                startX: touch.clientX,
+                startY: touch.clientY
+            };
+            setIsDragging(true);
+        } else if (e.touches.length === 2) {
+            // Pinch-to-zoom avec deux doigts
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.hypot(
                 touch2.clientX - touch1.clientX,
                 touch2.clientY - touch1.clientY
             );
-            lastTouchDistance.current = distance;
+            const centerX = (touch1.clientX + touch2.clientX) / 2;
+            const centerY = (touch1.clientY + touch2.clientY) / 2;
+            
+            lastTouchDistanceRef.current = distance;
+            lastTouchCenterRef.current = { x: centerX, y: centerY };
+            setIsDragging(false);
         }
     };
 
     const handleTouchMove = (e) => {
-        if (e.touches.length === 2 && lastTouchDistance.current) {
-            e.preventDefault(); // Empêcher le zoom natif du navigateur
+        if (e.touches.length === 1 && isDragging) {
+            // Pan avec un doigt
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - dragStartRef.current.startX;
+            const deltaY = touch.clientY - dragStartRef.current.startY;
             
-            // Calculer la nouvelle distance
+            setPosition({
+                x: dragStartRef.current.x + deltaX,
+                y: dragStartRef.current.y + deltaY
+            });
+        } else if (e.touches.length === 2 && lastTouchDistanceRef.current && lastTouchCenterRef.current) {
+            // Pinch-to-zoom avec deux doigts
+            e.preventDefault();
+            
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.hypot(
                 touch2.clientX - touch1.clientX,
                 touch2.clientY - touch1.clientY
             );
-
-            // Calculer le ratio de zoom
-            const ratio = distance / lastTouchDistance.current;
             
-            // Appliquer le zoom (sensibilité ajustée)
-            setZoomLevel(prev => {
-                const newZoom = prev * ratio;
-                return Math.min(Math.max(newZoom, 0.5), 3);
-            });
-
-            lastTouchDistance.current = distance;
+            const ratio = distance / lastTouchDistanceRef.current;
+            const newScale = Math.min(Math.max(scale * ratio, 0.5), 4);
+            
+            // Centrer le zoom sur le point entre les deux doigts
+            if (containerRef.current) {
+                const container = containerRef.current;
+                const rect = container.getBoundingClientRect();
+                const centerX = (touch1.clientX + touch2.clientX) / 2 - rect.left;
+                const centerY = (touch1.clientY + touch2.clientY) / 2 - rect.top;
+                
+                const svgX = (centerX - position.x) / scale;
+                const svgY = (centerY - position.y) / scale;
+                
+                const newX = centerX - (svgX * newScale);
+                const newY = centerY - (svgY * newScale);
+                
+                setScale(newScale);
+                setPosition({ x: newX, y: newY });
+            }
+            
+            lastTouchDistanceRef.current = distance;
         }
     };
 
     const handleTouchEnd = () => {
-        lastTouchDistance.current = null;
+        lastTouchDistanceRef.current = null;
+        lastTouchCenterRef.current = null;
+        setIsDragging(false);
+    };
+
+    /**
+     * Contrôles de zoom
+     */
+    const zoomIn = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const svgX = (centerX - position.x) / scale;
+        const svgY = (centerY - position.y) / scale;
+        const newScale = Math.min(scale + 0.3, 4);
+        
+        const newX = centerX - (svgX * newScale);
+        const newY = centerY - (svgY * newScale);
+        
+        setScale(newScale);
+        setPosition({ x: newX, y: newY });
+    };
+
+    const zoomOut = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const svgX = (centerX - position.x) / scale;
+        const svgY = (centerY - position.y) / scale;
+        const newScale = Math.max(scale - 0.3, 0.5);
+        
+        const newX = centerX - (svgX * newScale);
+        const newY = centerY - (svgY * newScale);
+        
+        setScale(newScale);
+        setPosition({ x: newX, y: newY });
+    };
+
+    const resetView = () => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        
+        const centerX = (rect.width / 2) - (SVG_DISPLAY_WIDTH / 2);
+        const centerY = (rect.height / 2) - (SVG_DISPLAY_WIDTH * (SVG_HEIGHT / SVG_WIDTH) / 2);
+        
+        setScale(1);
+        setPosition({ x: centerX, y: centerY });
     };
 
     return (
@@ -249,23 +398,25 @@ export default function MapViewer({ location, onClose }) {
                     <h2 className="map-viewer-title">
                         {fullRoomNumber ? `Salle ${fullRoomNumber}` : buildingNumber ? `Bâtiment ${buildingNumber}` : 'Plan du bâtiment'}
                     </h2>
-                    <button 
-                        className="map-viewer-debug-toggle"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setDebugMode(!debugMode);
-                        }}
-                        title={debugMode ? "Masquer toutes les salles" : "Afficher toutes les salles"}
-                    >
-                        {debugMode ? '👁️' : '🔍'}
-                    </button>
-                    <button 
-                        className="map-viewer-close" 
-                        onClick={onClose}
-                        aria-label="Fermer"
-                    >
-                        ✕
-                    </button>
+                    <div className="map-viewer-header-actions">
+                        <button 
+                            className="map-viewer-debug-toggle"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setDebugMode(!debugMode);
+                            }}
+                            title={debugMode ? "Masquer toutes les salles" : "Afficher toutes les salles"}
+                        >
+                            {debugMode ? '👁️' : '🔍'}
+                        </button>
+                        <button 
+                            className="map-viewer-close" 
+                            onClick={onClose}
+                            aria-label="Fermer"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
                 <div className="map-viewer-content">
                     {!buildingCoords && buildingNumber && !debugMode && (
@@ -275,99 +426,107 @@ export default function MapViewer({ location, onClose }) {
                         </div>
                     )}
                     {debugMode && (
-                        <div className="map-viewer-info" style={{ marginBottom: '1rem' }}>
+                        <div className="map-viewer-info">
                             <p className="map-viewer-info-text">
-                                🔍 <strong>Mode Debug</strong> : Toutes les salles configurées sont affichées
+                                🔍 Toutes les salles configurées sont affichées
                             </p>
                         </div>
                     )}
                     <div 
-                        className="map-viewer-svg-container" 
-                        ref={svgContainerRef}
+                        className={`map-viewer-canvas ${isDragging ? 'dragging' : ''}`}
+                        onMouseDown={handleMouseDown}
+                        onWheel={handleWheel}
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
                     >
-                        {/* Contrôles de zoom */}
-                        <div className="map-zoom-controls">
-                            <button onClick={zoomOut} className="zoom-btn" title="Dézoomer">
-                                -
+                        <div 
+                            className="map-svg-container"
+                            ref={svgWrapperRef}
+                            style={{
+                                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                                transformOrigin: '0 0'
+                            }}
+                        >
+                            <img
+                                src="/plan.svg"
+                                alt="Plan du bâtiment"
+                                className="map-viewer-svg"
+                                style={{ width: `${SVG_DISPLAY_WIDTH}px` }}
+                            />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                xmlnsXlink="http://www.w3.org/1999/xlink"
+                                viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+                                className="map-viewer-overlay-svg"
+                                style={{ width: `${SVG_DISPLAY_WIDTH}px`, height: `${SVG_DISPLAY_WIDTH * (SVG_HEIGHT / SVG_WIDTH)}px` }}
+                            >
+                                {debugMode ? (
+                                    Object.entries(BUILDING_COORDINATES).map(([roomNumber, coords]) => (
+                                        <g key={roomNumber}>
+                                            <text
+                                                x={coords.x}
+                                                y={coords.y + 3}
+                                                className="map-room-label"
+                                                textAnchor="middle"
+                                            >
+                                                {roomNumber}
+                                            </text>
+                                            <circle
+                                                cx={coords.x}
+                                                cy={coords.y}
+                                                r="12"
+                                                className="map-room-marker-debug"
+                                                strokeWidth="2"
+                                            />
+                                        </g>
+                                    ))
+                                ) : (
+                                    buildingCoords && (
+                                        <>
+                                            <circle
+                                                cx={buildingCoords.x}
+                                                cy={buildingCoords.y}
+                                                r="15"
+                                                className="map-room-marker-pulse"
+                                                strokeWidth="2.5"
+                                            />
+                                            <circle
+                                                cx={buildingCoords.x}
+                                                cy={buildingCoords.y}
+                                                r="15"
+                                                className="map-room-marker"
+                                                strokeWidth="2.5"
+                                            />
+                                        </>
+                                    )
+                                )}
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    {/* Contrôles flottants */}
+                    <div className="map-controls">
+                        {buildingCoords && (
+                            <button 
+                                className="map-control-btn map-center-btn"
+                                onClick={centerOnRoom}
+                                title="Centrer sur la salle"
+                            >
+                                📍
                             </button>
-                            <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
-                            <button onClick={zoomIn} className="zoom-btn" title="Zoomer">
+                        )}
+                        <div className="map-zoom-controls">
+                            <button onClick={zoomOut} className="map-control-btn" title="Dézoomer">
+                                −
+                            </button>
+                            <span className="zoom-level">{Math.round(scale * 100)}%</span>
+                            <button onClick={zoomIn} className="map-control-btn" title="Zoomer">
                                 +
                             </button>
-                            <button onClick={resetZoom} className="zoom-reset" title="Réinitialiser">
+                            <button onClick={resetView} className="map-control-btn" title="Réinitialiser">
                                 ↺
                             </button>
-                        </div>
-
-                        <div 
-                            className="map-svg-wrapper"
-                            style={{ transform: `scale(${zoomLevel})` }}
-                        >
-                            <div className="map-svg-wrapper-inner">
-                                <img
-                                    src="/plan.svg"
-                                    alt="Plan du bâtiment"
-                                    className="map-viewer-svg"
-                                    ref={svgRef}
-                                />
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                                    viewBox="0 0 528.976 504.69"
-                                    className="map-viewer-overlay-svg"
-                                    preserveAspectRatio="xMidYMid meet"
-                                >
-                                    {debugMode ? (
-                                        // Mode debug : afficher TOUTES les salles
-                                        Object.entries(BUILDING_COORDINATES).map(([roomNumber, coords]) => (
-                                            <g key={roomNumber}>
-                                                {/* Numéro de la salle */}
-                                                <text
-                                                    x={coords.x}
-                                                    y={coords.y + 3}
-                                                    className="map-room-label"
-                                                    textAnchor="middle"
-                                                >
-                                                    {roomNumber}
-                                                </text>
-                                                {/* Cercle rouge autour du numéro */}
-                                                <circle
-                                                    cx={coords.x}
-                                                    cy={coords.y}
-                                                    r="12"
-                                                    className="map-room-marker-debug"
-                                                    strokeWidth="2"
-                                                />
-                                            </g>
-                                        ))
-                                    ) : (
-                                        // Mode normal : afficher uniquement la salle sélectionnée
-                                        buildingCoords && (
-                                            <>
-                                                {/* Cercle qui pulse (plus grand, transparent) */}
-                                                <circle
-                                                    cx={buildingCoords.x}
-                                                    cy={buildingCoords.y}
-                                                    r="15"
-                                                    className="map-room-marker-pulse"
-                                                    strokeWidth="2.5"
-                                                />
-                                                {/* Cercle fixe principal */}
-                                                <circle
-                                                    cx={buildingCoords.x}
-                                                    cy={buildingCoords.y}
-                                                    r="15"
-                                                    className="map-room-marker"
-                                                    strokeWidth="2.5"
-                                                />
-                                            </>
-                                        )
-                                    )}
-                                </svg>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -375,4 +534,3 @@ export default function MapViewer({ location, onClose }) {
         </div>
     );
 }
-
