@@ -35,6 +35,16 @@
     font-weight: 600;
 }
 
+.app-footer-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.app-footer-link:hover {
+    text-decoration: underline;
+}
+
 .footer-update-btn {
     margin-top: 1rem;
     padding: 0.6rem 1.2rem;

@@ -127,6 +127,18 @@
     margin-bottom: 2rem;
 }
 
+/* Grille équilibrée pour les éditeurs et visiteurs (3 colonnes = 2 lignes de 3) */
+.pagesGrid.balancedGrid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Sur tablette, passer à 2 colonnes pour la grille équilibrée */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .pagesGrid.balancedGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .pageCard {
     background: var(--bg-secondary);
     border-radius: 20px;

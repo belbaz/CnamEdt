@@ -1325,11 +1325,37 @@ function HomeContent({searchParams}) {
                             <div className={styles.timeRemainingText}>
                                 {userInfo?.role === 'superAdmin' && (
                                     <div className={styles.superAdminBuildInfo}>
-                                        Dernier commit déployé : {isLoadingBuildTimestamp ? (
-                                            <span style={{ opacity: 0.6 }}>Chargement...</span>
-                                        ) : (
-                                            formatLastUpdate(buildTimestamp)
-                                        )}
+                                        {(() => {
+                                            if (isLoadingBuildTimestamp) {
+                                                return <span style={{ opacity: 0.6 }}>Last deployment : Chargement...</span>;
+                                            }
+
+                                            const formatted = formatLastUpdate(buildTimestamp);
+
+                                            // Calculer si la date dépasse 1 mois et demi (~45 jours)
+                                            let isTooOld = false;
+                                            if (buildTimestamp) {
+                                                const buildDate = new Date(buildTimestamp);
+                                                if (!isNaN(buildDate.getTime())) {
+                                                    const now = new Date();
+                                                    const diffMs = now.getTime() - buildDate.getTime();
+                                                    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+                                                    if (diffDays > 45) {
+                                                        isTooOld = true;
+                                                    }
+                                                }
+                                            }
+
+                                            const style = isTooOld
+                                                ? { color: '#dc2626', fontSize: '0.9rem', fontWeight: 600 }
+                                                : {};
+
+                                            return (
+                                                <span style={style}>
+                                                    Last deployment : {formatted}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </div>

@@ -1,0 +1,115 @@
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    color: var(--text-secondary);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.intro {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    color: var(--text-secondary);
+    max-width: 800px;
+}
+
+.section {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.sectionTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sectionContent {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.list {
+    margin-top: 1rem;
+    padding-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.list li {
+    position: relative;
+}
+
+.list li::marker {
+    color: var(--primary-color);
+}
+
+.contactLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    background: rgba(66, 153, 225, 0.1);
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    margin-top: 0.5rem;
+}
+
+.contactLink:hover {
+    background: rgba(66, 153, 225, 0.2);
+}
+
+.footer {
+    margin-top: 3rem;
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-light);
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 1.5rem 1rem 3rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .section {
+        padding: 1.5rem;
+    }
+}

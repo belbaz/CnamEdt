@@ -95,6 +95,13 @@ export default function DashboardPage() {
                 path: "/info",
                 icon: "ℹ️",
                 color: "#f59e0b"
+            },
+            {
+                title: "Politique de confidentialité",
+                description: "Informations sur la protection de vos données",
+                path: "/politique-confidentialite",
+                icon: "🔒",
+                color: "#6366f1"
             }
         ];
 
@@ -167,12 +174,19 @@ export default function DashboardPage() {
                     </div>
                 </header>
 
-                <div className={styles.pagesGrid}>
-                    {availablePages.map((page, index) => (
+                <div className={`${styles.pagesGrid} ${userInfo?.role !== 'superAdmin' ? styles.balancedGrid : ''}`}>
+                    {availablePages.map((page, index) => {
+                        // Si on clique sur l'historique ou la politique de confidentialité depuis le dashboard,
+                        // on ajoute un paramètre pour que la page sache revenir ici
+                        const targetPath = (page.path === "/histo" || page.path === "/politique-confidentialite") 
+                            ? `${page.path}?from=dashboard` 
+                            : page.path;
+
+                        return (
                         <div
                             key={index}
                             className={styles.pageCard}
-                            onClick={() => router.push(page.path)}
+                            onClick={() => router.push(targetPath)}
                             style={{'--card-color': page.color}}
                         >
                             <div className={styles.cardIcon} style={{backgroundColor: `${page.color}15`}}>
@@ -189,8 +203,8 @@ export default function DashboardPage() {
                                           strokeLinejoin="round"/>
                                 </svg>
                             </div>
-                        </div>
-                    ))}
+                        </div>);
+                    })}
                 </div>
 
                 <div className={styles.footer}>

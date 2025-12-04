@@ -262,9 +262,6 @@ export default function InfoPage() {
                         <h2 className={styles.userName}>
                             {userInfo.name} {userInfo.lastName}
                         </h2>
-                        <span className={[styles.roleBadge, styles[roleBadge.className]].filter(Boolean).join(' ')}>
-                            {roleBadge.label}
-                        </span>
                     </div>
 
                     <div className={styles.infoSection}>

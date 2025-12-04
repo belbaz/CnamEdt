@@ -41,6 +41,7 @@
     display: block;
     transform-origin: 50% 50%;
     animation: rotate 2s linear infinite;
+    will-change: transform;
 }
 
 @keyframes rotate {

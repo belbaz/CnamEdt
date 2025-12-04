@@ -1,5 +1,6 @@
 import "./global.css";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
+import CookieConsent from "@/components/CookieConsent";
 
 const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
 const IS_CACHE_ENABLED = String(activeCacheEnv).toLowerCase() !== 'false';
@@ -23,6 +24,26 @@ export default function RootLayout({ children }) {
                 <link rel="shortcut icon" href="/favicon/favicon.ico" />
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+                <meta name="screen-orientation" content="portrait" />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                    (function() {
+                        // Verrouiller l'orientation en mode portrait sur mobile
+                        if (typeof window !== 'undefined' && 'screen' in window && 'orientation' in window.screen) {
+                            try {
+                                if (window.screen.orientation && window.screen.orientation.lock) {
+                                    window.screen.orientation.lock('portrait').catch(function(err) {
+                                        // Ignorer les erreurs (certains navigateurs ne supportent pas)
+                                    });
+                                }
+                            } catch (e) {
+                                // API non disponible, ignorer
+                            }
+                        }
+                    })();
+                `}}
+                />
                 
                 {/* Meta tags iOS pour PWA */}
                 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -113,6 +134,7 @@ export default function RootLayout({ children }) {
             </head>
             <body>
                 <AnalyticsCollector />
+                <CookieConsent />
                 {children}
             </body>
         </html>

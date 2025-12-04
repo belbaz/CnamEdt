@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 
 /**
  * Hook pour le pull-to-refresh sur mobile (web)
- * Fonctionne sur tous les appareils tactiles
+ * Fonctionne sur tous les appareils tactiles et sur toutes les divs
  */
 export function usePullToRefresh(onRefresh) {
     useEffect(() => {
@@ -14,7 +14,8 @@ export function usePullToRefresh(onRefresh) {
         let currentY = 0;
         let currentX = 0;
         let isPulling = false;
-        let isScrollableChild = false;
+        let touchTarget = null;
+        let touchStartScrollTop = 0;
 
         // Fonction pour vérifier si un élément ou ses parents sont scrollables verticalement
         const getScrollParent = (node) => {
@@ -36,67 +37,93 @@ export function usePullToRefresh(onRefresh) {
             return getScrollParent(node.parentNode);
         };
 
-        const handleTouchStart = (e) => {
-            // Réinitialiser l'état
-            isPulling = false;
-            isScrollableChild = false;
-
-            // Vérifier si on touche un élément scrollable qui n'est pas en haut
-            let target = e.target;
-            let scrollParent = getScrollParent(target);
-
-            // Si on est dans un conteneur scrollable et qu'il n'est pas tout en haut,
-            // on ne doit jamais déclencher le pull-to-refresh
-            if (scrollParent && scrollParent.scrollTop > 0) {
-                isScrollableChild = true;
-                return;
+        // Vérifier si on peut déclencher le pull-to-refresh depuis cette position
+        const canPullToRefresh = (target) => {
+            // Vérifier le scroll de la page principale
+            if (window.scrollY > 10) {
+                return false;
             }
 
-            // Démarrer le pull uniquement si on est en haut de la page
-            if (window.scrollY === 0) {
-                startY = e.touches[0].clientY;
-                startX = e.touches[0].clientX;
-                isPulling = true;
-                // On ne bloque pas encore le scroll, on attend de voir la direction du geste
+            // Vérifier si on est dans un conteneur scrollable
+            const scrollParent = getScrollParent(target);
+            if (scrollParent) {
+                // Permettre le pull-to-refresh seulement si le conteneur est en haut
+                return scrollParent.scrollTop <= 10;
             }
+
+            return true;
         };
 
-        const handleTouchMove = (e) => {
-            if (!isPulling || window.scrollY > 0 || isScrollableChild) {
+        const handleTouchStart = (e) => {
+            touchTarget = e.target;
+            const touch = e.touches[0];
+            
+            // Vérifier si on peut déclencher le pull-to-refresh
+            if (!canPullToRefresh(touchTarget)) {
                 isPulling = false;
                 return;
             }
 
-            currentY = e.touches[0].clientY;
-            currentX = e.touches[0].clientX;
+            // Enregistrer la position de départ et le scroll actuel
+            startY = touch.clientY;
+            startX = touch.clientX;
+            
+            const scrollParent = getScrollParent(touchTarget);
+            touchStartScrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
+            
+            isPulling = true;
+        };
+
+        const handleTouchMove = (e) => {
+            if (!isPulling) return;
+
+            const touch = e.touches[0];
+            currentY = touch.clientY;
+            currentX = touch.clientX;
 
             const diffY = currentY - startY;
             const diffX = currentX - startX;
 
-            // Si le mouvement est plus horizontal que vertical, ce n'est pas un pull-to-refresh
-            // C'est probablement un swipe ou un scroll horizontal
-            if (Math.abs(diffX) > Math.abs(diffY)) {
+            // Vérifier qu'on n'a pas scrollé pendant le geste
+            const scrollParent = getScrollParent(touchTarget);
+            const currentScrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
+            
+            if (Math.abs(currentScrollTop - touchStartScrollTop) > 5) {
+                // L'utilisateur a scrollé, annuler le pull-to-refresh
                 isPulling = false;
                 return;
             }
 
-            // Si on tire vers le bas, empêcher le scroll normal
-            if (diffY > 0) {
-                // Ajouter une résistance pour l'effet visuel (optionnel, ici on bloque juste)
-                if (e.cancelable) {
-                    e.preventDefault();
+            // Si le mouvement est plus horizontal que vertical, ce n'est pas un pull-to-refresh
+            if (Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                isPulling = false;
+                return;
+            }
+
+            // Si on tire vers le bas et qu'on est bien en haut, empêcher le scroll normal
+            if (diffY > 10) {
+                // Vérifier qu'on est toujours en haut
+                if (canPullToRefresh(touchTarget)) {
+                    if (e.cancelable) {
+                        e.preventDefault();
+                    }
+                    document.body.style.overscrollBehaviorY = 'contain';
+                } else {
+                    isPulling = false;
                 }
-                document.body.style.overscrollBehaviorY = 'contain';
             }
         };
 
         const handleTouchEnd = (e) => {
-            if (!isPulling) return;
+            if (!isPulling) {
+                document.body.style.overscrollBehaviorY = 'auto';
+                return;
+            }
 
             const diffY = currentY - startY;
 
-            // Si on a tiré assez (120px), déclencher le refresh
-            if (diffY > 120) {
+            // Si on a tiré assez (100px), déclencher le refresh
+            if (diffY > 100 && canPullToRefresh(touchTarget)) {
                 onRefresh();
             }
 
@@ -106,17 +133,21 @@ export function usePullToRefresh(onRefresh) {
             startX = 0;
             currentY = 0;
             currentX = 0;
+            touchTarget = null;
+            touchStartScrollTop = 0;
         };
 
         // Utiliser { passive: false } pour touchmove pour pouvoir faire preventDefault
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
         return () => {
             document.removeEventListener('touchstart', handleTouchStart);
             document.removeEventListener('touchmove', handleTouchMove);
             document.removeEventListener('touchend', handleTouchEnd);
+            document.removeEventListener('touchcancel', handleTouchEnd);
             document.body.style.overscrollBehaviorY = 'auto';
         };
     }, [onRefresh]);

@@ -336,7 +336,11 @@ export default function PageHeader({
                         </Tooltip>
                     )}
                     <Tooltip 
-                        text={darkMode ? (oledMode ? "Mode OLED actif" : "Mode sombre") : "Mode sombre"}
+                        text={
+                            darkMode
+                                ? (oledMode ? "Mode OLED actif" : "Mode sombre")
+                                : "Mode clair"
+                        }
                         show={showTooltip.theme}
                         enabled={showTooltips}
                     >
@@ -348,7 +352,11 @@ export default function PageHeader({
                                     handleClick('theme');
                                     handleThemeToggleClick(e);
                                 }}
-                                aria-label={darkMode ? (oledMode ? "Mode OLED actif" : "Mode sombre") : "Mode sombre"}
+                                aria-label={
+                                    darkMode
+                                        ? (oledMode ? "Mode OLED actif" : "Mode sombre")
+                                        : "Mode clair"
+                                }
                                 onMouseEnter={() => setShowTooltip(prev => ({ ...prev, theme: true }))}
                                 onMouseLeave={() => setShowTooltip(prev => ({ ...prev, theme: false }))}
                                 onTouchStart={() => handleLongPressStart('theme')}

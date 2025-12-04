@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -12,6 +12,34 @@ export default function HistoPage() {
     // Par défaut true (ouvert) pour éviter les erreurs d'hydratation
     const [isAutoCheckExpanded, setIsAutoCheckExpanded] = useState(true);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const [backHref, setBackHref] = useState("/dashboard");
+
+    // Déterminer dynamiquement la page de retour :
+    // - si on vient de la page d'accueil ("/"), retour vers "/"
+    // - sinon, fallback vers le dashboard
+    useEffect(() => {
+        // 1) Cas explicite : on vient du dashboard avec un paramètre d'URL
+        const from = searchParams?.get("from");
+        if (from === "dashboard") {
+            setBackHref("/dashboard");
+            return;
+        }
+
+        // 2) Fallback : si le referrer est la page d'accueil, retour vers "/"
+        if (typeof document === "undefined") return;
+        try {
+            const referrer = document.referrer;
+            if (!referrer) return;
+
+            const url = new URL(referrer);
+            if (url.pathname === "/") {
+                setBackHref("/");
+            }
+        } catch (e) {
+            // Erreur silencieuse si l'URL du referrer n'est pas valide
+        }
+    }, [searchParams]);
 
     // Charger l'état depuis localStorage après le montage pour éviter les erreurs d'hydratation
     useEffect(() => {
@@ -140,7 +168,7 @@ export default function HistoPage() {
         <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
             <div style={{marginBottom: "0.75rem"}}>
                 <div style={{display: "flex", alignItems: "center", marginBottom: "0.75rem"}}>
-                    <BackButton href="/dashboard" title="Retour au dashboard"/>
+                    <BackButton href={backHref} title="Retour au dashboard"/>
                     <h1 style={{paddingLeft: "1rem"}}>Historique des cours ajoutés</h1>
                 </div>
             </div>

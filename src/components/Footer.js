@@ -1,6 +1,7 @@
 "use client";
 import './Footer.css';
 import {useState, useEffect} from 'react';
+import Link from 'next/link';
 import {useDevMode} from '../utils/env';
 
 export default function Footer({
@@ -49,6 +50,10 @@ export default function Footer({
                         <span className="app-footer-dev">MODE DEV</span>
                     </>
                 )}
+                <span className="app-footer-separator">•</span>
+                <Link href="/politique-confidentialite" className="app-footer-link">
+                    Politique de confidentialité
+                </Link>
             </div>
             
             {devMode && (
