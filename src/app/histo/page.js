@@ -1,11 +1,12 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useState, Suspense} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-export default function HistoPage() {
+// Composant interne qui utilise useSearchParams (doit être dans Suspense)
+function HistoContent() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedGroups, setExpandedGroups] = useState(new Set());
@@ -586,6 +587,19 @@ export default function HistoPage() {
                 </div>
             )}
         </main>
+    );
+}
+
+// Composant principal qui enveloppe HistoContent dans Suspense
+export default function HistoPage() {
+    return (
+        <Suspense fallback={
+            <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
+                <LoadingSpinner/>
+            </main>
+        }>
+            <HistoContent/>
+        </Suspense>
     );
 }
 
