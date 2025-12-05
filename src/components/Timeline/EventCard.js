@@ -1,10 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { getEventTitle, getColorIndexForSubject } from "@/utils/eventUtils";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {createPortal} from "react-dom";
+import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
 import "./EventCard.css";
-import { useDevMode } from "../../utils/env";
-import { sanitizeNoteEntries } from "@/utils/noteEntries";
+import Image from "next/image";
+import {useDevMode} from "../../utils/env";
+import {sanitizeNoteEntries} from "@/utils/noteEntries";
 
 const isVisioLocation = (location) => {
     if (!location || typeof location !== 'string') return false;
@@ -22,7 +23,7 @@ export default function EventCard({
     notePreviewItems = [],
     nonDistancielLabels = []
 }) {
-    const { matiere, prof, description, splitGroup } = getEventTitle(event);
+    const {matiere, prof, description, splitGroup} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
     const badgeRef = useRef(null);
@@ -103,7 +104,7 @@ export default function EventCard({
             left = window.innerWidth - tooltipRect.width - margin;
         }
 
-        setTooltipStyle({ top: `${top}px`, left: `${left}px` });
+        setTooltipStyle({top: `${top}px`, left: `${left}px`});
     }, [showTooltip]);
 
     useEffect(() => {
@@ -128,7 +129,7 @@ export default function EventCard({
         };
     }, [showTooltip, updateTooltipPosition]);
 
-    const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const formatTime = (d) => new Date(d).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"});
     const formatDurationHours = (start, end) => {
         if (!start || !end) return null;
         const s = new Date(start);
@@ -160,11 +161,11 @@ export default function EventCard({
         const saintMartinNumbers = ['1', '2', '3', '4', '5', '6', '7', '9', '10', '11', '12', '13', '14', '15', '16', '17', '21', '23', '27'];
 
         if (conteNumbers.includes(streetNumber)) {
-            return { site: 'Conté', fullName: 'Conté', color: '#10b981' };
+            return {site: 'Conté', fullName: 'Conté', color: '#10b981'};
         }
 
         if (saintMartinNumbers.includes(streetNumber) || (streetNumber === '9' && isBis)) {
-            return { site: 'St-Martin', fullName: 'Saint-Martin', color: '#f59e0b' };
+            return {site: 'St-Martin', fullName: 'Saint-Martin', color: '#f59e0b'};
         }
 
         return null;
@@ -262,7 +263,14 @@ export default function EventCard({
                             onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
                             onBlur={hasTooltipContent ? () => setShowTooltip(false) : undefined}
                         >
-                            <span className="note-icon">📋</span>
+                            <span className="note-icon">
+                                <Image
+                                    src="/note.svg"
+                                    alt="Notes"
+                                    fill
+                                    sizes="20px"
+                                />
+                            </span>
                             <span className="note-count-badge">{totalCount}</span>
                         </div>
                         {/* Afficher la tooltip seulement s'il y a du contenu (texte, labels ou fichiers) */}
@@ -334,7 +342,7 @@ export default function EventCard({
                                 return (
                                     <span
                                         className="site-badge-card"
-                                        style={{ backgroundColor: sites[0].color }}
+                                        style={{backgroundColor: sites[0].color}}
                                         title={sites[0].fullName}
                                     >
                                         {sites[0].site}
@@ -348,7 +356,7 @@ export default function EventCard({
                                 <span
                                     key={idx}
                                     className="site-badge-card"
-                                    style={{ backgroundColor: siteInfo.color }}
+                                    style={{backgroundColor: siteInfo.color}}
                                     title={siteInfo.fullName}
                                 >
                                     {siteInfo.site}
@@ -379,7 +387,7 @@ export default function EventCard({
                         ) : siteInfo && (
                             <span
                                 className="site-badge-card"
-                                style={{ backgroundColor: siteInfo.color }}
+                                style={{backgroundColor: siteInfo.color}}
                                 title={siteInfo.fullName}
                             >
                                 {siteInfo.site}
