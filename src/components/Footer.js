@@ -5,11 +5,11 @@ import Link from 'next/link';
 import {useDevMode} from '../utils/env';
 
 export default function Footer({
-    testMode = false,
-    onToggleTestMode = null,
-    testWeekMode = false,
-    onToggleTestWeek = null
-}) {
+                                   testMode = false,
+                                   onToggleTestMode = null,
+                                   testWeekMode = false,
+                                   onToggleTestWeek = null
+                               }) {
     const [version, setVersion] = useState(null);
     const devMode = useDevMode();
 
@@ -37,25 +37,26 @@ export default function Footer({
     return (
         <footer className="app-footer">
             <div className="app-footer-content">
-                <span className="app-footer-text">EDT EICNAM</span>
-                {version && (
-                    <>
-                        <span className="app-footer-separator">•</span>
-                        <span className="app-footer-version">Version {version}</span>
-                    </>
-                )}
-                {process.env.NEXT_PUBLIC_ENV === "DEV" && (
-                    <>
-                        <span className="app-footer-separator">•</span>
-                        <span className="app-footer-dev">MODE DEV</span>
-                    </>
-                )}
-                <span className="app-footer-separator">•</span>
                 <Link href="/politique-confidentialite" className="app-footer-link">
                     Politique de confidentialité
                 </Link>
+                <div className="app-footer-content-first">
+                    <span className="app-footer-text">EDT EICNAM</span>
+                    {version && (
+                        <>
+                            <span className="app-footer-separator">•</span>
+                            <span className="app-footer-version">Version {version}</span>
+                        </>
+                    )}
+                    {process.env.NEXT_PUBLIC_ENV === "DEV" && (
+                        <>
+                            <span className="app-footer-separator">•</span>
+                            <span className="app-footer-dev">MODE DEV</span>
+                        </>
+                    )}
+                </div>
             </div>
-            
+
             {devMode && (
                 <div className="app-footer-dev-buttons">
                     <button

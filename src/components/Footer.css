@@ -8,6 +8,17 @@
 
 .app-footer-content {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.app-footer-content-first{
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
