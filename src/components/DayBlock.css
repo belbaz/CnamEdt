@@ -5,17 +5,27 @@
     margin-bottom: .5rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+    /* Transitions optimisées : seulement les propriétés nécessaires */
+    transition: padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s ease;
     padding: 0  1.1rem .6rem 1.1rem;
     box-sizing: border-box;
     width: 100%;
     max-width: 100%;
+    /* Optimisation pour les animations */
+    will-change: padding-bottom, margin-bottom;
+    /* Forcer l'accélération matérielle */
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 /* Day Block avec État collapsed */
 .day-block.collapsed {
     padding-bottom: 0;
     margin-bottom: .8rem;
+    /* Réinitialiser will-change quand collapsed pour économiser les ressources */
+    will-change: auto;
 }
 
 /* Highlight pour le jour actuel */
@@ -32,7 +42,8 @@
     min-height: 30px;
     cursor: pointer;
     user-select: none;
-    transition: all 0.2s ease;
+    /* Transition optimisée : seulement opacity */
+    transition: opacity 0.2s ease;
 }
 
 .day-header:hover {
@@ -62,11 +73,16 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    /* Transitions optimisées : seulement les propriétés nécessaires */
+    transition: background-color 0.2s ease,
+                transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-primary);
     padding: 0;
     line-height: 0;
     box-sizing: border-box;
+    /* Optimisation pour les animations */
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 .collapse-toggle:hover {

@@ -233,6 +233,52 @@
     box-shadow: var(--shadow-md) !important;
 }
 
+.view-filter-group .today-btn.active {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.view-filter-group .today-btn.active:hover {
+    background: var(--primary-color-dark, var(--primary-color)) !important;
+    opacity: 0.9;
+}
+
+/* Style pour le bouton "Voir toute l'année scolaire" */
+.view-filter-group-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--text-primary) !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.view-filter-group-btn:hover {
+    background: var(--bg-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+.view-filter-group-btn.active {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.view-filter-group-btn.active:hover {
+    background: var(--primary-color-dark, var(--primary-color)) !important;
+    opacity: 0.9;
+}
+
 .view-filter-group .filter-button {
     background: var(--bg-secondary) !important;
 }

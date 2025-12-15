@@ -1,4 +1,5 @@
 "use client";
+import { useMemo } from "react";
 import TimeMarkers from "./TimeMarkers";
 import TimePassedOverlay from "./TimePassedOverlay";
 import CurrentTimeIndicator from "./CurrentTimeIndicator";
@@ -19,7 +20,10 @@ export default function TimelineWrapper({
     hide15MinSpacing = false,
     courseNotes = null
 }) {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
+    // Mémoriser le calcul isMobile pour éviter les recalculs inutiles
+    const isMobile = useMemo(() => {
+        return typeof window !== 'undefined' && window.innerWidth <= 650;
+    }, []);
 
     return (
         <div

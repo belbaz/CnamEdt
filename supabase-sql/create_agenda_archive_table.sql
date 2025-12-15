@@ -44,3 +44,13 @@ COMMENT ON COLUMN edt_agenda_archive.new_course_uid IS 'Nouveau course_uid si la
 
 
 
+
+
+
+
+
+
+
+
+
+

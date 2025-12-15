@@ -6,6 +6,7 @@ import FilterPanel from "./FilterPanel";
 import Tooltip from "./Tooltip";
 import "./Navbar.css";
 import {useDevMode} from "../utils/env";
+import {getSchoolYearLabel} from "../utils/dateUtils";
 
 export default function Navbar({
                                    darkMode,
@@ -42,14 +43,20 @@ export default function Navbar({
                                    onShowOnlyExamsChange = null,
                                    showFilter = false,
                                    userInfo = null,
-                                   isLoadingUser = false
+                                   isLoadingUser = false,
+                                   showFullYear = false,
+                                   onToggleFullYear = null
                                }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [newHistoryCount, setNewHistoryCount] = useState(0);
     const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
-    const [showTooltip, setShowTooltip] = useState({ today: false, filter: false, options: false, history: false });
+    const [showTooltip, setShowTooltip] = useState({ today: false, filter: false, options: false, history: false, fullYear: false });
     const [longPressTimer, setLongPressTimer] = useState(null);
     const devMode = useDevMode();
+    
+    // Calculer l'année scolaire pour l'afficher dans l'icône
+    const schoolYear = getSchoolYearLabel();
+    const [startYearShort, endYearShort] = schoolYear.split('-').map(y => y.slice(-2));
 
     // Vérifier les nouvelles modifications dans l'historique
     useEffect(() => {
@@ -228,21 +235,50 @@ export default function Navbar({
                 />
 
                 <div className="navbar-controls">
-                    <div className="week-picker-container">
-                        <WeekPicker
-                            availableWeeks={availableWeeks}
-                            selectedWeek={selectedWeek}
-                            onWeekChange={onWeekChange}
-                            onRefresh={onRefresh}
-                            onToday={onToday}
-                            showTooltips={showTooltips}
-                            showRefreshButton={showRefreshButton}
-                            isMobile={isMobile}
-                            onToggleAllDays={onToggleAllDays}
-                            allDaysCollapsed={allDaysCollapsed}
-                            isOnline={typeof navigator !== 'undefined' ? navigator.onLine : true}
-                        />
-                    </div>
+                    {!showFullYear && (
+                        <div className="week-picker-container">
+                            <WeekPicker
+                                availableWeeks={availableWeeks}
+                                selectedWeek={selectedWeek}
+                                onWeekChange={onWeekChange}
+                                onRefresh={onRefresh}
+                                onToday={onToday}
+                                showTooltips={showTooltips}
+                                showRefreshButton={showRefreshButton}
+                                isMobile={isMobile}
+                                onToggleAllDays={onToggleAllDays}
+                                allDaysCollapsed={allDaysCollapsed}
+                                isOnline={typeof navigator !== 'undefined' ? navigator.onLine : true}
+                            />
+                        </div>
+                    )}
+                    {showFullYear && (
+                        <div className="week-picker-container">
+                            <button
+                                onClick={onToggleFullYear}
+                                style={{ 
+                                    padding: '0.625rem 1rem', 
+                                    background: 'var(--primary-color)', 
+                                    borderRadius: '12px', 
+                                    border: '1px solid var(--primary-color)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    cursor: 'pointer',
+                                    boxShadow: 'var(--shadow-md)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                                aria-label="Désactiver la vue année scolaire"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                                </svg>
+                                Année scolaire complète
+                            </button>
+                        </div>
+                    )}
                     <div className="navbar-actions-right">
                         <div className="dev-buttons-container">
                             <div className="view-filter-group">
@@ -270,6 +306,39 @@ export default function Navbar({
                                         </svg>
                                     </button>
                                 </Tooltip>
+                                {onToggleFullYear && (
+                                    <Tooltip 
+                                        text={showFullYear ? "Voir la semaine" : "Voir toute l'année scolaire"}
+                                        show={showTooltip.fullYear}
+                                        enabled={showTooltips}
+                                    >
+                                        <button 
+                                            className={`view-filter-group-btn ${showFullYear ? 'active' : ''}`}
+                                            onClick={(e) => {
+                                                handleClick('fullYear');
+                                                onToggleFullYear();
+                                            }} 
+                                            aria-label={showFullYear ? "Voir la semaine" : "Voir toute l'année scolaire"}
+                                            onMouseEnter={() => setShowTooltip(prev => ({ ...prev, fullYear: true }))}
+                                            onMouseLeave={() => setShowTooltip(prev => ({ ...prev, fullYear: false }))}
+                                            onTouchStart={() => handleLongPressStart('fullYear')}
+                                            onTouchEnd={() => handleLongPressEnd('fullYear')}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                                <line x1="16" y1="2" x2="16" y2="6" />
+                                                <line x1="8" y1="2" x2="8" y2="6" />
+                                                <line x1="3" y1="10" x2="21" y2="10" />
+                                                <path d="M7 14h.01" />
+                                                <path d="M12 14h.01" />
+                                                <path d="M17 14h.01" />
+                                                <path d="M7 18h.01" />
+                                                <path d="M12 18h.01" />
+                                                <path d="M17 18h.01" />
+                                            </svg>
+                                        </button>
+                                    </Tooltip>
+                                )}
                                 {showFilter && (
                                     <Tooltip 
                                         text="Filtrer les cours"

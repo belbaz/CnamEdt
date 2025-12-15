@@ -1,5 +1,5 @@
 "use client";
-import {forwardRef} from "react";
+import {forwardRef, useMemo} from "react";
 import {isToday} from "@/utils/dateUtils";
 import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
 import {getCompactModeValues} from "@/utils/compactModeUtils";
@@ -18,12 +18,30 @@ const DayBlock = forwardRef(({
     hide15MinSpacing = false,
     courseNotes = null
 }, ref) => {
-    const dayDate = events[0] ? new Date(events[0].start) : new Date();
-    const todayCheck = isToday(dayDate);
-    const {startMinutes, endMinutes} = getDayTimeRange(events);
-    const timeMarkers = generateTimeMarkers(startMinutes, endMinutes);
-    const currentPos = todayCheck ? getCurrentTimePosition(dayDate, startMinutes, endMinutes) : null;
-    const totalMinutes = endMinutes - startMinutes;
+    // Mémoriser les calculs pour éviter de les refaire à chaque rendu
+    const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
+    const todayCheck = useMemo(() => isToday(dayDate), [dayDate]);
+    
+    // Mémoriser les calculs de timeline uniquement si le jour n'est pas collapsed
+    // Cela évite les calculs inutiles quand le jour est fermé
+    const timeRange = useMemo(() => {
+        if (isCollapsed) return {startMinutes: 0, endMinutes: 0};
+        return getDayTimeRange(events);
+    }, [events, isCollapsed]);
+    
+    const {startMinutes, endMinutes} = timeRange;
+    
+    const timeMarkers = useMemo(() => {
+        if (isCollapsed) return [];
+        return generateTimeMarkers(startMinutes, endMinutes);
+    }, [startMinutes, endMinutes, isCollapsed]);
+    
+    const currentPos = useMemo(() => {
+        if (isCollapsed || !todayCheck) return null;
+        return getCurrentTimePosition(dayDate, startMinutes, endMinutes);
+    }, [todayCheck, dayDate, startMinutes, endMinutes, isCollapsed]);
+    
+    const totalMinutes = useMemo(() => endMinutes - startMinutes, [startMinutes, endMinutes]);
 
     return (
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}

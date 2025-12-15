@@ -58,20 +58,25 @@ export default function EventsList({
             setIsCalculating(false);
         };
 
-        // Utiliser requestAnimationFrame pour calculer immédiatement après le rendu
-        let rafId = null;
-        const rafCallback = () => {
-            // Vérifier à nouveau que containerRef existe avant de calculer
-            if (containerRef.current) {
-                calculateMaxCardHeight();
-            }
-        };
-        rafId = requestAnimationFrame(rafCallback);
-
         // Recalculer si la fenêtre est redimensionnée
         window.addEventListener('resize', calculateMaxCardHeight);
 
+        // Différer légèrement le calcul pour laisser l'animation d'ouverture se terminer
+        // Cela évite le lag lors de l'ouverture d'un jour
+        let rafId = null;
+        const timeoutId = setTimeout(() => {
+            // Utiliser requestAnimationFrame pour calculer immédiatement après le rendu
+            const rafCallback = () => {
+                // Vérifier à nouveau que containerRef existe avant de calculer
+                if (containerRef.current) {
+                    calculateMaxCardHeight();
+                }
+            };
+            rafId = requestAnimationFrame(rafCallback);
+        }, 50); // Petit délai pour laisser l'animation commencer
+
         return () => {
+            clearTimeout(timeoutId);
             if (rafId !== null) {
                 cancelAnimationFrame(rafId);
             }
@@ -80,6 +85,7 @@ export default function EventsList({
     }, [events, isTabletOrDesktop, dayHeightFactor, cardTopPadding, eventsContainerPadding]);
 
     // Charger les compteurs de fichiers en batch
+    // Différer le chargement pour éviter le lag lors de l'ouverture d'un jour
     const [fileCounts, setFileCounts] = useState({});
 
     useEffect(() => {
@@ -88,31 +94,37 @@ export default function EventsList({
             return;
         }
 
-        const fetchFileCounts = async () => {
-            try {
-                // Récupérer les UIDs uniques
-                const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
+        // Différer le chargement des compteurs de fichiers pour laisser l'animation se terminer
+        // Cela évite le lag lors de l'ouverture d'un jour
+        const timeoutId = setTimeout(() => {
+            const fetchFileCounts = async () => {
+                try {
+                    // Récupérer les UIDs uniques
+                    const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
 
-                if (uids.length === 0) return;
+                    if (uids.length === 0) return;
 
-                const response = await fetch('/api/files/batch-counts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ course_uids: uids })
-                });
+                    const response = await fetch('/api/files/batch-counts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ course_uids: uids })
+                    });
 
-                const data = await response.json();
-                if (data.success) {
-                    setFileCounts(data.counts || {});
+                    const data = await response.json();
+                    if (data.success) {
+                        setFileCounts(data.counts || {});
+                    }
+                } catch (err) {
+                    console.error("[EventsList] Erreur chargement compteurs fichiers:", err);
                 }
-            } catch (err) {
-                console.error("[EventsList] Erreur chargement compteurs fichiers:", err);
-            }
-        };
+            };
 
-        fetchFileCounts();
+            fetchFileCounts();
+        }, 350); // Attendre la fin de l'animation (300ms + 50ms de marge)
+
+        return () => clearTimeout(timeoutId);
     }, [events]);
 
     const containerStyle = isMobile

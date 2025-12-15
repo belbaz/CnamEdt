@@ -66,6 +66,11 @@ export function useHomePageHandlers({
         localStorage.setItem('showTooltips', enabled.toString());
     };
 
+    const handleToggleFullYear = (enabled, setShowFullYear) => {
+        setShowFullYear(enabled);
+        localStorage.setItem('showFullYear', enabled.toString());
+    };
+
     const handleToggleDay = (day) => {
         const newCollapsedDays = {
             ...collapsedDays,
@@ -250,6 +255,7 @@ export function useHomePageHandlers({
         handleToggle15MinSpacing,
         handleToggleTimeRemaining,
         handleToggleTooltips,
+        handleToggleFullYear,
         handleToggleDay,
         handleToggleAllDays,
         handleToggleTestMode,

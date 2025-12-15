@@ -5,6 +5,23 @@
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+    /* Animation d'ouverture fluide */
+    animation: timelineExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Optimisation pour les animations */
+    will-change: opacity, transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+@keyframes timelineExpand {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @media (max-width: 650px) {

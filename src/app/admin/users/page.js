@@ -136,7 +136,7 @@ export default function UsersManagementPage() {
         setEditingUser(user.id);
         setEditForm({
             email: user.email || '',
-            role: user.role || 'user',
+            role: user.role || 'editeur',
             is_active: user.is_active !== undefined ? user.is_active : true,
             name: user.name || '',
             last_name: user.last_name || ''
@@ -373,7 +373,8 @@ export default function UsersManagementPage() {
                                                     onChange={(e) => setEditForm({...editForm, role: e.target.value})}
                                                     className="edit-select"
                                                 >
-                                                    <option value="user">User</option>
+                                                    <option value="visiteur">Visiteur</option>
+                                                    <option value="editeur">Editeur</option>
                                                     <option value="admin">Admin</option>
                                                     <option value="superAdmin">SuperAdmin</option>
                                                 </select>

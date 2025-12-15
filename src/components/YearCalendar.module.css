@@ -1,0 +1,440 @@
+.year-calendar-container {
+    padding: 0.5rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* En-tête partagé */
+.year-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+    max-width: 1400px; /* Aligné avec le contenu */
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.year-title {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Bouton de bascule de vue - Style harmonisé avec Navbar */
+.view-toggle-button {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.view-toggle-button:hover {
+    background: var(--bg-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* =========================================
+   STYLE 1 : GRID VIEW (Calendrier mensuel)
+   ========================================= */
+
+.months-grid {
+    display: grid;
+    /* Réduction de la largeur min pour des mois plus compacts */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.month-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.1); 
+    display: flex;
+    flex-direction: column;
+}
+
+.month-title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-transform: capitalize;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.day-name {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding-bottom: 4px;
+    font-weight: 600;
+}
+
+.day-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: default;
+    transition: all 0.1s ease;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.05);
+    max-width: 36px; /* Limite la largeur pour éviter les jours énormes */
+    margin: 0 auto; /* Centre la cellule */
+    width: 100%;
+}
+
+.day-cell:not(.empty):hover {
+    transform: scale(1.15);
+    z-index: 5;
+    background-color: var(--hover-bg);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.day-cell.empty {
+    background-color: transparent;
+    cursor: default;
+    border: none;
+}
+
+.day-cell.has-course {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2); 
+}
+
+.day-cell.is-today {
+    border: 2px solid #ef4444; /* Rouge vif */
+    font-weight: bold;
+    z-index: 3;
+}
+
+/* =========================================
+   STYLE 2 : PLANNER VIEW (Planning mural)
+   ========================================= */
+
+.planner-container-wrapper {
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+    align-items: center; /* Centre le planning */
+}
+
+.planner-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    /* Limite la largeur pour éviter que les cellules soient trop larges */
+    max-width: 1400px; 
+    flex-grow: 1;
+    overflow-y: auto; /* Scroll vertical */
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    min-height: 50vh;
+}
+
+.planner-header-row {
+    display: grid;
+    /* Colonnes équilibrées mais limitées */
+    grid-template-columns: 30px repeat(12, 1fr);
+    background-color: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.corner-cell {
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+}
+
+.header-month-cell {
+    padding: 4px 2px;
+    text-align: center;
+    font-weight: bold;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    overflow: hidden; /* Évite que le texte dépasse */
+}
+
+.header-month-cell:last-child {
+    border-right: none;
+}
+
+.month-initial {
+    font-size: 0.85rem;
+    font-weight: 600;
+    /* text-transform: uppercase; retiré */
+}
+
+.month-year {
+    font-size: 0.55rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    margin-top: 1px;
+}
+
+.planner-day-row {
+    display: grid;
+    grid-template-columns: 30px repeat(12, 1fr);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    height: 24px;
+}
+
+.planner-day-row:last-child {
+    border-bottom: none;
+}
+
+.day-number-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    position: sticky;
+    left: 0;
+    z-index: 5;
+}
+
+.planner-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    border-right: 1px solid rgba(0,0,0,0.05);
+    cursor: default;
+    position: relative;
+    color: var(--text-secondary);
+    transition: all 0.1s;
+}
+
+.planner-cell:last-child {
+    border-right: none;
+}
+
+.cell-day-initial {
+    opacity: 0.5;
+}
+
+.cell-invalid {
+    background-color: rgba(0,0,0,0.03);
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.05) 2px,
+        rgba(0,0,0,0.05) 4px
+    );
+}
+
+.cell-weekend {
+    background-color: rgba(0,0,0,0.04);
+    font-weight: bold;
+}
+
+.cell-weekend .cell-day-initial {
+    opacity: 0.8;
+}
+
+.cell-has-course {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.cell-has-course .cell-day-initial {
+    opacity: 1;
+}
+
+.cell-has-course:hover {
+    filter: brightness(110%);
+    transform: scale(1.1);
+    z-index: 2;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+.cell-today {
+    box-shadow: inset 0 0 0 2px #ef4444 !important; /* Rouge vif pour entourer le jour actuel */
+    z-index: 3; /* Au-dessus des autres états */
+    position: relative;
+}
+
+/* Tooltips partagés */
+.day-tooltip {
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.day-cell:hover .day-tooltip {
+    opacity: 1;
+}
+
+/* Dark Mode Adjustments */
+:global(.dark-mode) .month-container {
+    background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+:global(.dark-mode) .day-cell {
+    background-color: #2a2a2a;
+    color: #888;
+    border: 1px solid rgba(255,255,255,0.1); 
+}
+
+:global(.dark-mode) .day-cell.has-course {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+:global(.dark-mode) .day-cell:not(.empty):hover {
+    background-color: #3a3a3a;
+    border-color: white;
+}
+
+:global(.dark-mode) .planner-grid {
+    border-color: #333;
+    background: #1e1e1e;
+}
+
+:global(.dark-mode) .planner-header-row,
+:global(.dark-mode) .corner-cell,
+:global(.dark-mode) .day-number-cell {
+    background-color: #252525;
+    border-color: #333;
+}
+
+:global(.dark-mode) .header-month-cell {
+    border-color: #333;
+    color: #eee;
+}
+
+:global(.dark-mode) .planner-day-row,
+:global(.dark-mode) .planner-cell {
+    border-color: rgba(255,255,255,0.05);
+    gap: .1rem;
+}
+
+:global(.dark-mode) .cell-invalid {
+    background-color: rgba(255,255,255,0.02);
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.03) 2px,
+        rgba(255,255,255,0.03) 4px
+    );
+}
+
+:global(.dark-mode) .cell-weekend {
+    background-color: rgba(255,255,255,0.05);
+}
+
+:global(.dark-mode) .cell-has-course {
+    color: white;
+}
+
+/* Responsive Grid View */
+@media (min-width: 1400px) {
+    .months-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+@media (max-width: 1399px) and (min-width: 1100px) {
+    .months-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 1099px) and (min-width: 600px) {
+    .months-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 599px) {
+    .months-grid {
+        grid-template-columns: 1fr;
+    }
+    .day-cell {
+        font-size: 0.7rem;
+    }
+}
+
+/* Responsive Planner View */
+@media (max-width: 768px) {
+    .planner-grid {
+        display: block;
+        overflow-x: auto;
+    }
+    .planner-header-row,
+    .planner-day-row {
+        width: 600px;
+    }
+    .planner-day-row {
+        height: 28px;
+    }
+}

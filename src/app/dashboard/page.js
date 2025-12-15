@@ -60,96 +60,78 @@ export default function DashboardPage() {
 
     // Pages disponibles selon le rôle
     const getAvailablePages = () => {
-        const basePages = [
-            {
-                title: "Emploi du temps",
-                description: "Consultez l'emploi du temps",
-                path: "/",
-                icon: "📅",
-                color: "#3b82f6"
-            },
-            {
-                title: "Agenda",
-                description: "Consultez l'agenda avec tous vos cours",
-                path: "/agenda",
-                icon: "📋",
-                color: "#10b981"
-            },
-            {
-                title: "Fichiers de cours",
-                description: "Gérez les fichiers uploadés par cours",
-                path: "/files",
-                icon: "📄",
-                color: "#ec4899"
-            },
-            {
-                title: "Historique",
-                description: "Historique des modifications de l'emploi du temps",
-                path: "/histo",
-                icon: "📜",
-                color: "#8b5cf6"
-            },
-            {
-                title: "Mes informations",
-                description: "Consultez vos informations de compte",
-                path: "/info",
-                icon: "ℹ️",
-                color: "#f59e0b"
-            },
-            {
+        const basePages = [{
+            title: "Emploi du temps", description: "Consultez l'emploi du temps", path: "/", icon: "📅", color: "#3b82f6"
+        }, {
+            title: "Agenda",
+            description: "Consultez l'agenda avec tous vos cours",
+            path: "/agenda",
+            icon: "📋",
+            color: "#10b981"
+        }, {
+            title: "Fichiers de cours",
+            description: "Gérez les fichiers uploadés par cours",
+            path: "/files",
+            icon: "📄",
+            color: "#ec4899"
+        }, {
+            title: "Historique",
+            description: "Historique des modifications de l'emploi du temps",
+            path: "/histo",
+            icon: "📜",
+            color: "#8b5cf6"
+        }, {
+            title: "Mes informations",
+            description: "Consultez vos informations de compte",
+            path: "/info",
+            icon: "ℹ️",
+            color: "#f59e0b"
+        }];
+
+        const adminPages = [];
+
+        if (userInfo?.role !== 'superAdmin') {
+            adminPages.push({
                 title: "Politique de confidentialité",
                 description: "Informations sur la protection de vos données",
                 path: "/politique-confidentialite",
                 icon: "🔒",
                 color: "#6366f1"
-            }
-        ];
-
-        const adminPages = [];
-
-        if (userInfo?.role === 'superAdmin' || userInfo?.role === 'admin') {
-            adminPages.push(
-                {
-                    title: "Analytics",
-                    description: "Statistiques et analyses de l'application",
-                    path: "/admin/analytics",
-                    icon: "📊",
-                    color: "#ef4444"
-                }
-            );
+            });
         }
 
         if (userInfo?.role === 'superAdmin') {
-            adminPages.push(
-                {
-                    title: "Gestion des utilisateurs",
-                    description: "Gérer les utilisateurs de l'application",
-                    path: "/admin/users",
-                    icon: "👥",
-                    color: "#8b5cf6"
-                },
-                {
-                    title: "Room Mapper",
-                    description: "Mapper les salles sur le plan SVG",
-                    path: "/admin/room-mapper",
-                    icon: "🗺️",
-                    color: "#06b6d4"
-                }
-            );
+            adminPages.push({
+                title: "Analytics",
+                description: "Statistiques et analyses de l'application",
+                path: "/admin/analytics",
+                icon: "📊",
+                color: "#ef4444"
+            }, {
+                title: "Gestion des utilisateurs",
+                description: "Gérer les utilisateurs de l'application",
+                path: "/admin/users",
+                icon: "👥",
+                color: "#8b5cf6"
+            }, {
+                title: "Room Mapper",
+                description: "Mapper les salles sur le plan SVG",
+                path: "/admin/room-mapper",
+                icon: "🗺️",
+                color: "#06b6d4"
+            });
         }
 
         return [...basePages, ...adminPages];
     };
 
     if (loading) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.loadingContainer}>
-                    <Spinner size="large" variant="border"/>
-                    <p>Chargement...</p>
-                </div>
+        return (<div className={styles.container}>
+            <div className={styles.loadingContainer}>
+                <Spinner size="large" variant="border"/>
+                <p>Chargement...</p>
             </div>
-        );
+        </div>);
     }
 
     if (!userInfo) {
@@ -158,88 +140,82 @@ export default function DashboardPage() {
 
     const availablePages = getAvailablePages();
 
-    return (
-        <div className={styles.container}>
-            <div className={styles.content}>
-                <header className={styles.parentHeader}>
-                    <BackButton href="/" title="Retour à l'EDT"/>
-                    <div className={styles.header}>
-                        <h1>Tableau de bord</h1>
-                        <p className={styles.welcomeText}>
-                            Bonjour<strong>{userInfo.name} {userInfo.lastName}</strong>
-                            {userInfo.role && (
-                                <span className={styles.roleBadge}>{userInfo.role}</span>
-                            )}
-                        </p>
-                    </div>
-                </header>
-
-                <div className={`${styles.pagesGrid} ${userInfo?.role !== 'superAdmin' ? styles.balancedGrid : ''}`}>
-                    {availablePages.map((page, index) => {
-                        // Si on clique sur l'historique ou la politique de confidentialité depuis le dashboard,
-                        // on ajoute un paramètre pour que la page sache revenir ici
-                        const targetPath = (page.path === "/histo" || page.path === "/politique-confidentialite") 
-                            ? `${page.path}?from=dashboard` 
-                            : page.path;
-
-                        return (
-                        <div
-                            key={index}
-                            className={styles.pageCard}
-                            onClick={() => router.push(targetPath)}
-                            style={{'--card-color': page.color}}
-                        >
-                            <div className={styles.cardIcon} style={{backgroundColor: `${page.color}15`}}>
-                                <span style={{fontSize: '2rem'}}>{page.icon}</span>
-                            </div>
-                            <div className={styles.cardContent}>
-                                <h3 className={styles.cardTitle}>{page.title}</h3>
-                                <p className={styles.cardDescription}>{page.description}</p>
-                            </div>
-                            <div className={styles.cardArrow}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                                          strokeLinejoin="round"/>
-                                </svg>
-                            </div>
-                        </div>);
-                    })}
+    return (<div className={styles.container}>
+        <div className={styles.content}>
+            <header className={styles.parentHeader}>
+                <BackButton href="/" title="Retour à l'EDT"/>
+                <div className={styles.header}>
+                    <h1>Tableau de bord</h1>
+                    <p className={styles.welcomeText}>
+                        Bonjour<strong>{userInfo.name} {userInfo.lastName}</strong>
+                        {userInfo.role && (<span className={styles.roleBadge}>{userInfo.role}</span>)}
+                    </p>
                 </div>
+            </header>
 
-                <div className={styles.footer}>
-                    <button
-                        className={styles.logoutButton}
-                        onClick={async () => {
-                            try {
-                                await fetch("/api/logout", {method: "POST"});
-                                window.location.href = "/";
-                            } catch (error) {
-                                console.error("[Dashboard] Erreur déconnexion:", error);
-                            }
-                        }}
+            <div className={`${styles.pagesGrid} ${userInfo?.role !== 'superAdmin' ? styles.balancedGrid : ''}`}>
+                {availablePages.map((page, index) => {
+                    // Si on clique sur l'historique ou la politique de confidentialité depuis le dashboard,
+                    // on ajoute un paramètre pour que la page sache revenir ici
+                    const targetPath = (page.path === "/histo" || page.path === "/politique-confidentialite") ? `${page.path}?from=dashboard` : page.path;
+
+                    return (<div
+                        key={index}
+                        className={styles.pageCard}
+                        onClick={() => router.push(targetPath)}
+                        style={{'--card-color': page.color}}
                     >
-                        <svg 
-                            width="18" 
-                            height="18" 
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            xmlns="http://www.w3.org/2000/svg"
-                            className={styles.logoutIcon}
-                        >
-                            <path 
-                                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" 
-                                stroke="currentColor" 
-                                strokeWidth="2" 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                        <span>Se déconnecter</span>
-                    </button>
-                </div>
+                        <div className={styles.cardIcon} style={{backgroundColor: `${page.color}15`}}>
+                            <span style={{fontSize: '2rem'}}>{page.icon}</span>
+                        </div>
+                        <div className={styles.cardContent}>
+                            <h3 className={styles.cardTitle}>{page.title}</h3>
+                            <p className={styles.cardDescription}>{page.description}</p>
+                        </div>
+                        <div className={styles.cardArrow}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>);
+                })}
+            </div>
+
+            <div className={styles.footer}>
+                <button
+                    className={styles.logoutButton}
+                    onClick={async () => {
+                        try {
+                            await fetch("/api/logout", {method: "POST"});
+                            window.location.href = "/";
+                        } catch (error) {
+                            console.error("[Dashboard] Erreur déconnexion:", error);
+                        }
+                    }}
+                >
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={styles.logoutIcon}
+                    >
+                        <path
+                            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                    <span>Se déconnecter</span>
+                </button>
             </div>
         </div>
-    );
+    </div>);
 }
 

@@ -1,7 +1,7 @@
 "use client";
 import {useState, useEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams, useRouter} from "next/navigation";
-import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek} from "@/utils/dateUtils";
+import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek, getSchoolYearRange} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
 import {useDevMode} from "@/utils/env";
 import {fetchICSEvents, loadEventsFromCache, saveEventsToCache} from "@/services/icsService";
@@ -32,6 +32,7 @@ import SubjectHoursInfo from "@/components/SubjectHoursInfo";
 import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
+import YearCalendar from "@/components/YearCalendar";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -76,6 +77,8 @@ function HomeContent({searchParams}) {
     const previousWeekIndexRef = useRef(null);
     const [selectedSubjects, setSelectedSubjects] = useState([]);
     const [showOnlyExams, setShowOnlyExams] = useState(false);
+    // Mode affichage année scolaire complète (initialisé à false pour éviter les erreurs d'hydratation)
+    const [showFullYear, setShowFullYear] = useState(false);
     // Notification de debug pour le mode dev
     const [devNotification, setDevNotification] = useState(null);
     const [showDevNotification, setShowDevNotification] = useState(false);
@@ -423,18 +426,32 @@ function HomeContent({searchParams}) {
     }, [subjects]);
 
     useEffect(() => {
-        if (!selectedWeek || allEvents.length === 0) {
+        if (allEvents.length === 0) {
             setEventsCalculated(false);
             return;
         }
 
-        // Toujours afficher toute la semaine (du lundi au dimanche)
-        const startDate = new Date(selectedWeek);
-        startDate.setHours(0, 0, 0, 0);
+        let startDate, endDate;
 
-        const endDate = new Date(selectedWeek);
-        endDate.setDate(selectedWeek.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
+        if (showFullYear) {
+            // Mode année scolaire complète : septembre à août
+            const schoolYearRange = getSchoolYearRange();
+            startDate = schoolYearRange.start;
+            endDate = schoolYearRange.end;
+        } else {
+            // Mode semaine normale
+            if (!selectedWeek) {
+                setEventsCalculated(false);
+                return;
+            }
+            // Toujours afficher toute la semaine (du lundi au dimanche)
+            startDate = new Date(selectedWeek);
+            startDate.setHours(0, 0, 0, 0);
+
+            endDate = new Date(selectedWeek);
+            endDate.setDate(selectedWeek.getDate() + 6);
+            endDate.setHours(23, 59, 59, 999);
+        }
 
         let filtered = allEvents.filter((e) => {
             const start = new Date(e.start);
@@ -469,7 +486,7 @@ function HomeContent({searchParams}) {
 
         setEvents(filtered);
         setEventsCalculated(true);
-    }, [selectedWeek, allEvents, searchParams, selectedSubjects, showOnlyExams]);
+    }, [selectedWeek, allEvents, searchParams, selectedSubjects, showOnlyExams, showFullYear]);
 
     // Si un eventKey est présent dans l'URL, naviguer vers la semaine du cours
     useEffect(() => {
@@ -884,6 +901,9 @@ function HomeContent({searchParams}) {
 
         const savedShowTooltips = localStorage.getItem("showTooltips");
         if (savedShowTooltips !== null) setShowTooltips(savedShowTooltips === "true");
+
+        const savedShowFullYear = localStorage.getItem("showFullYear");
+        if (savedShowFullYear === 'true') setShowFullYear(true);
     }, []);
 
     useEffect(() => {
@@ -1027,23 +1047,36 @@ function HomeContent({searchParams}) {
     });
 
     const handleRefresh = handlers.handleRefresh;
-    // Wrapper pour handleToday qui supprime le paramètre eventKey de l'URL
-    const handleToday = () => {
-        handlers.handleToday();
-        // Supprimer le paramètre eventKey de l'URL si présent
-        if (searchParams?.get('eventKey')) {
-            router.replace('/');
-        }
-    };
-    const handleWeekChange = handlers.handleWeekChange;
     const handleToggleAutoScroll = (enabled) => handlers.handleToggleAutoScroll(enabled, setAutoScrollToday);
     const handleViewModeChange = (mode) => handlers.handleViewModeChange(mode, setViewMode);
     const handleToggleTimeLabels = (enabled) => handlers.handleToggleTimeLabels(enabled, setShowTimeLabels);
     const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
     const handleToggleTimeRemaining = (enabled) => handlers.handleToggleTimeRemaining(enabled, setShowTimeRemaining);
     const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
+    const handleToggleFullYear = () => handlers.handleToggleFullYear(!showFullYear, setShowFullYear);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
+    
+    // Wrapper pour handleToday qui supprime le paramètre eventKey de l'URL
+    const handleToday = () => {
+        // Désactiver le mode année scolaire si actif
+        if (showFullYear) {
+            handleToggleFullYear();
+        }
+        handlers.handleToday();
+        // Supprimer le paramètre eventKey de l'URL si présent
+        if (searchParams?.get('eventKey')) {
+            router.replace('/');
+        }
+    };
+    
+    const handleWeekChange = (newWeekMonday) => {
+        // Désactiver le mode année scolaire si actif
+        if (showFullYear) {
+            handleToggleFullYear();
+        }
+        handlers.handleWeekChange(newWeekMonday);
+    };
     const handleToggleTestMode = () => handlers.handleToggleTestMode(testMode);
     const handleToggleTestWeek = () => handlers.handleToggleTestWeek(testWeekMode);
 
@@ -1187,6 +1220,8 @@ function HomeContent({searchParams}) {
                 showFilter={!loading && allEvents.length > 0}
                 userInfo={userInfo}
                 isLoadingUser={isLoadingUser}
+                showFullYear={showFullYear}
+                onToggleFullYear={handleToggleFullYear}
             />
 
             <main className={styles.container}>
@@ -1237,7 +1272,17 @@ function HomeContent({searchParams}) {
                     </div>
                 )}
 
-                {(!loading || events.length > 0) && events.length > 0 && (
+                {showFullYear && (!loading || events.length > 0) ? (
+                    <YearCalendar 
+                        events={events} 
+                        onDateClick={(date) => {
+                            const monday = getMonday(date);
+                            setSelectedWeek(monday);
+                            handleToggleFullYear();
+                        }}
+                    />
+                ) : (
+                    (!loading || events.length > 0) && events.length > 0 && (
                     <div
                         key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
                         className={
@@ -1361,7 +1406,7 @@ function HomeContent({searchParams}) {
                             </div>
                         )}
                     </div>
-                )}
+                ))}
             </main>
 
             <Footer
