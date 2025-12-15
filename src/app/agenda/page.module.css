@@ -211,10 +211,7 @@
     border-bottom: 1px solid var(--border-light);
     padding-bottom: 1px;
     overflow-x: auto;
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE 10+ */
+    /* Laisse la scrollbar utiliser le style global du site */
     -webkit-overflow-scrolling: touch;
 }
 
@@ -222,11 +219,6 @@
     .tabNavigation {
         gap: 1rem;
     }
-}
-
-.tabNavigation::-webkit-scrollbar {
-    display: none;
-    /* Chrome/Safari */
 }
 
 .tabButton {

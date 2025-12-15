@@ -16,7 +16,7 @@
     --bg-color: #ffffff;
     
     /* Scrollbar colors (Light Mode) */
-    --scrollbar-track: transparent;
+    --scrollbar-track: var(--bg-secondary);
     --scrollbar-thumb: #cbd5e0;
     --scrollbar-thumb-hover: #a0aec0;
 }
@@ -39,7 +39,7 @@
     --bg-color: #f7fafc;
 
     /* Scrollbar colors (Dark Mode) */
-    --scrollbar-track: transparent;
+    --scrollbar-track: #1a202c;
     --scrollbar-thumb: #4a5568;
     --scrollbar-thumb-hover: #718096;
 }
@@ -203,6 +203,8 @@ body {
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
+    /* Important : fond derrière la scrollbar vertical/horizontale */
+    background: var(--bg-gradient);
     width: 100%;
     max-width: 100vw;
 }
@@ -221,6 +223,12 @@ body>div {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
+    /* Forcer le background en dark mode pour éviter les liserés blancs */
+    background: var(--bg-gradient);
+}
+
+.dark-mode body>div {
+    background: var(--bg-gradient) !important;
 }
 
 /* Styles de base pour les boutons */
@@ -262,26 +270,72 @@ button:disabled {
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
+    /* Forcer le background pour éviter les espaces blancs */
+    background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
     border-radius: 4px;
+    /* Pas de margin pour éviter les espaces blancs */
+    margin: 0;
+    border: none;
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 4px;
-    border: 2px solid transparent; /* Crée un effet de padding autour du thumb */
-    background-clip: content-box;
+    /* Pas de border transparent pour éviter les espaces blancs */
+    border: none;
+    /* Remplir toute la largeur disponible */
+    min-height: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--scrollbar-thumb-hover);
 }
 
+/* Corner (coin entre scrollbar verticale et horizontale) */
+::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+}
+
 /* Firefox standard */
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Forcer le background sombre en dark mode pour éviter les liserés blancs */
+.dark-mode ::-webkit-scrollbar-track {
+    background: var(--bg-primary) !important;
+}
+
+.dark-mode ::-webkit-scrollbar {
+    background: var(--bg-primary) !important;
+}
+
+.dark-mode ::-webkit-scrollbar-corner {
+    background: var(--bg-primary) !important;
+}
+
+/* S'assurer que html et body ont le bon background en dark mode */
+.dark-mode html,
+.dark-mode body {
+    background: var(--bg-gradient) !important;
+}
+
+/* Forcer le background sur tous les éléments racine pour éviter les liserés blancs */
+.dark-mode #__next,
+.dark-mode [data-nextjs-scroll-focus-boundary],
+.dark-mode main,
+.dark-mode body > div {
+    background: var(--bg-gradient) !important;
+    background-color: var(--bg-primary) !important;
+}
+
+/* Forcer le viewport à avoir le bon background en dark mode */
+.dark-mode {
+    background: var(--bg-gradient) !important;
+    background-color: var(--bg-primary) !important;
 }
