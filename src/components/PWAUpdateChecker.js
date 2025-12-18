@@ -4,87 +4,173 @@ import './PWAUpdateChecker.css';
 
 // Clé pour marquer qu'une mise à jour vient d'être effectuée
 const UPDATE_FLAG_KEY = 'pwa_update_in_progress';
-const UPDATE_FLAG_TTL = 10000; // 10 secondes
+const UPDATE_FLAG_TTL = 15000; // 15 secondes
 
 // Clés localStorage à conserver (préférences utilisateur)
+// Ces clés ne seront PAS supprimées lors d'une mise à jour
 const LOCALSTORAGE_KEYS_TO_KEEP = [
     'compactMode',
     'weekMode', 
     'cookieConsent',
     'theme',
     'devMode',
-    'showTestModeIndicator'
+    'showTestModeIndicator',
+    'darkMode',
+    'oledMode',
+    'autoScrollToday',
+    'viewMode',
+    'showTimeLabels',
+    'hide15MinSpacing',
+    'showTimeRemaining',
+    'showTooltips',
+    'showFullYear',
+    'collapsedDays',
+    'histo-last-seen-date',
+    'histo-auto-check-expanded',
+    'pwa_install_dismissed',
+    'allow_analytics'
 ];
 
 /**
- * Supprime TOUS les caches de l'application :
- * 1. Cache Storage (Service Worker)
- * 2. Cache localStorage (événements EDT)
- * 3. Désinscrit le SW actuel pour éviter qu'il recrée le cache
+ * Supprime VRAIMENT tous les caches de l'application.
+ * Cette fonction est SYNCHRONE autant que possible pour éviter les problèmes de timing.
  */
-async function clearAllAppCaches() {
+async function nukeAllCaches() {
     if (typeof window === 'undefined') {
-        return;
+        return false;
     }
 
-    console.log('[PWAUpdateChecker] === DÉBUT NETTOYAGE COMPLET DU CACHE ===');
+    console.log('%c[PWAUpdateChecker] 🔥 DÉBUT SUPPRESSION TOTALE DU CACHE 🔥', 'color: red; font-weight: bold; font-size: 14px');
 
-    // 1. Désinscrire TOUS les Service Workers pour éviter qu'ils recréent le cache
-    if ('serviceWorker' in navigator) {
-        try {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            console.log('[PWAUpdateChecker] Service Workers trouvés:', registrations.length);
-            for (const registration of registrations) {
-                const success = await registration.unregister();
-                console.log('[PWAUpdateChecker] SW désinscrit:', success);
-            }
-        } catch (err) {
-            console.warn('[PWAUpdateChecker] Erreur désinscription SW:', err);
-        }
-    }
+    let success = true;
 
-    // 2. Supprimer tous les caches du Cache Storage
-    if ('caches' in window) {
-        try {
-            const keys = await caches.keys();
-            console.log('[PWAUpdateChecker] Caches Storage à supprimer:', keys);
-            await Promise.all(
-                keys.map((key) => {
-                    console.log('[PWAUpdateChecker] Suppression cache:', key);
-                    return caches.delete(key);
-                })
-            );
-            console.log('[PWAUpdateChecker] Cache Storage vidé');
-        } catch (err) {
-            console.warn('[PWAUpdateChecker] Erreur suppression Cache Storage:', err);
-        }
-    }
-
-    // 3. Supprimer le cache localStorage (événements EDT) mais garder les préférences utilisateur
+    // ========== ÉTAPE 1 : SAUVEGARDER LES PRÉFÉRENCES ==========
+    console.log('[PWAUpdateChecker] 📦 Sauvegarde des préférences utilisateur...');
+    const savedPrefs = {};
     try {
-        // Sauvegarder les préférences utilisateur
-        const savedPrefs = {};
         for (const key of LOCALSTORAGE_KEYS_TO_KEEP) {
             const value = localStorage.getItem(key);
             if (value !== null) {
                 savedPrefs[key] = value;
             }
         }
+        console.log('[PWAUpdateChecker] ✓ Préférences sauvegardées:', Object.keys(savedPrefs).length);
+    } catch (err) {
+        console.warn('[PWAUpdateChecker] ⚠ Erreur sauvegarde préférences:', err);
+    }
+
+    // ========== ÉTAPE 2 : VIDER LE LOCALSTORAGE (CACHE EDT) ==========
+    console.log('[PWAUpdateChecker] 🗑️ Suppression du localStorage...');
+    try {
+        // Lister ce qu'on va supprimer
+        const keysToDelete = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!LOCALSTORAGE_KEYS_TO_KEEP.includes(key)) {
+                keysToDelete.push(key);
+            }
+        }
+        console.log('[PWAUpdateChecker] Clés à supprimer:', keysToDelete);
         
-        // Vider tout le localStorage
-        localStorage.clear();
-        console.log('[PWAUpdateChecker] localStorage vidé');
-        
-        // Restaurer les préférences utilisateur
+        // Supprimer les clés (pas clear() pour garder les préférences)
+        for (const key of keysToDelete) {
+            localStorage.removeItem(key);
+            console.log('[PWAUpdateChecker] ✓ Supprimé:', key);
+        }
+        console.log('[PWAUpdateChecker] ✓ localStorage nettoyé');
+    } catch (err) {
+        console.warn('[PWAUpdateChecker] ⚠ Erreur localStorage:', err);
+        success = false;
+    }
+
+    // ========== ÉTAPE 3 : SUPPRIMER LES CACHES DU CACHE STORAGE ==========
+    console.log('[PWAUpdateChecker] 🗑️ Suppression du Cache Storage...');
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            console.log('[PWAUpdateChecker] Caches trouvés:', cacheNames);
+            
+            for (const cacheName of cacheNames) {
+                const deleted = await caches.delete(cacheName);
+                console.log(`[PWAUpdateChecker] ${deleted ? '✓' : '✗'} Cache supprimé: ${cacheName}`);
+            }
+            
+            // Vérifier que c'est bien vide
+            const remaining = await caches.keys();
+            if (remaining.length > 0) {
+                console.warn('[PWAUpdateChecker] ⚠ Caches restants:', remaining);
+                success = false;
+            } else {
+                console.log('[PWAUpdateChecker] ✓ Cache Storage vidé');
+            }
+        } catch (err) {
+            console.warn('[PWAUpdateChecker] ⚠ Erreur Cache Storage:', err);
+            success = false;
+        }
+    }
+
+    // ========== ÉTAPE 4 : DÉSINSCRIRE LES SERVICE WORKERS ==========
+    console.log('[PWAUpdateChecker] 🗑️ Désinscription des Service Workers...');
+    if ('serviceWorker' in navigator) {
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            console.log('[PWAUpdateChecker] Service Workers trouvés:', registrations.length);
+            
+            for (const registration of registrations) {
+                const unregistered = await registration.unregister();
+                console.log(`[PWAUpdateChecker] ${unregistered ? '✓' : '✗'} SW désinscrit:`, registration.scope);
+            }
+            
+            // Attendre un peu que la désinscription soit effective
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Vérifier
+            const remaining = await navigator.serviceWorker.getRegistrations();
+            if (remaining.length > 0) {
+                console.warn('[PWAUpdateChecker] ⚠ SWs restants:', remaining.length);
+                // Réessayer
+                for (const reg of remaining) {
+                    await reg.unregister();
+                }
+            } else {
+                console.log('[PWAUpdateChecker] ✓ Tous les SW désinscrits');
+            }
+        } catch (err) {
+            console.warn('[PWAUpdateChecker] ⚠ Erreur SW:', err);
+            success = false;
+        }
+    }
+
+    // ========== ÉTAPE 5 : RE-VÉRIFIER LE CACHE STORAGE ==========
+    // Car le SW pouvait être en train de recréer des caches
+    if ('caches' in window) {
+        try {
+            const cacheNames = await caches.keys();
+            if (cacheNames.length > 0) {
+                console.log('[PWAUpdateChecker] ⚠ Caches recréés par SW, suppression à nouveau:', cacheNames);
+                for (const cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                }
+            }
+        } catch (err) {
+            // Ignore
+        }
+    }
+
+    // ========== ÉTAPE 6 : RESTAURER LES PRÉFÉRENCES ==========
+    console.log('[PWAUpdateChecker] 📦 Restauration des préférences...');
+    try {
         for (const [key, value] of Object.entries(savedPrefs)) {
             localStorage.setItem(key, value);
         }
-        console.log('[PWAUpdateChecker] Préférences restaurées:', Object.keys(savedPrefs));
+        console.log('[PWAUpdateChecker] ✓ Préférences restaurées');
     } catch (err) {
-        console.warn('[PWAUpdateChecker] Erreur nettoyage localStorage:', err);
+        console.warn('[PWAUpdateChecker] ⚠ Erreur restauration:', err);
     }
 
-    console.log('[PWAUpdateChecker] === FIN NETTOYAGE COMPLET DU CACHE ===');
+    console.log('%c[PWAUpdateChecker] 🔥 FIN SUPPRESSION - Succès: ' + success + ' 🔥', 'color: red; font-weight: bold; font-size: 14px');
+    
+    return success;
 }
 
 /**
@@ -298,20 +384,45 @@ export default function PWAUpdateChecker() {
         // Marquer qu'une mise à jour est en cours pour éviter la popup en boucle
         setUpdateInProgress();
 
-        console.log('[PWAUpdateChecker] Début du processus de mise à jour...');
+        console.log('%c[PWAUpdateChecker] 🚀 DÉBUT MISE À JOUR 🚀', 'color: blue; font-weight: bold; font-size: 16px');
 
-        // Étape 1 : Supprimer TOUS les caches (SW, Cache Storage, localStorage EDT)
-        // Cette fonction désinscrit aussi le SW pour éviter qu'il recrée le cache
-        await clearAllAppCaches();
+        try {
+            // Étape 1 : Supprimer TOUS les caches
+            const success = await nukeAllCaches();
+            console.log('[PWAUpdateChecker] Nettoyage terminé, succès:', success);
 
-        // Étape 2 : Recharger la page
-        // Le SW sera réenregistré automatiquement au prochain chargement
-        console.log('[PWAUpdateChecker] Rechargement de la page...');
-        
-        // Petit délai pour s'assurer que tout est bien nettoyé
-        setTimeout(() => {
+            // Étape 2 : Attendre un peu que tout soit bien nettoyé
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Étape 3 : Vérifier une dernière fois les caches
+            if ('caches' in window) {
+                const remainingCaches = await caches.keys();
+                if (remainingCaches.length > 0) {
+                    console.log('[PWAUpdateChecker] ⚠ Caches encore présents, suppression finale:', remainingCaches);
+                    for (const name of remainingCaches) {
+                        await caches.delete(name);
+                    }
+                }
+            }
+
+            // Étape 4 : Forcer un rechargement complet en ajoutant un paramètre de cache-bust
+            // Cela force le navigateur à ignorer son cache HTTP interne
+            console.log('%c[PWAUpdateChecker] 🔄 RECHARGEMENT FORCÉ 🔄', 'color: green; font-weight: bold; font-size: 16px');
+            
+            const currentUrl = new URL(window.location.href);
+            // Supprimer les anciens paramètres de cache-bust
+            currentUrl.searchParams.delete('_nocache');
+            currentUrl.searchParams.delete('testPWA');
+            // Ajouter un nouveau paramètre de cache-bust
+            currentUrl.searchParams.set('_nocache', Date.now().toString());
+            
+            // Utiliser location.replace pour ne pas créer d'entrée dans l'historique
+            window.location.replace(currentUrl.toString());
+        } catch (err) {
+            console.error('[PWAUpdateChecker] Erreur lors de la mise à jour:', err);
+            // En cas d'erreur, recharger quand même
             window.location.reload();
-        }, 100);
+        }
     }, []);
 
     const handleDismiss = useCallback(() => {
@@ -323,6 +434,19 @@ export default function PWAUpdateChecker() {
             }
         }, 30 * 60 * 1000);
     }, [updateAvailable]);
+
+    // Nettoyer l'URL après un rechargement de mise à jour (supprimer _nocache)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('_nocache')) {
+                url.searchParams.delete('_nocache');
+                // Remplacer l'URL sans recharger la page
+                window.history.replaceState({}, '', url.toString());
+                console.log('[PWAUpdateChecker] URL nettoyée (paramètre _nocache supprimé)');
+            }
+        }
+    }, []);
 
     // Mode debug pour tester l'affichage : ajouter ?testPWA=true dans l'URL
     useEffect(() => {
