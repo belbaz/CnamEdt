@@ -2,6 +2,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import './PWAUpdateChecker.css';
 
+// Clé pour marquer qu'une mise à jour vient d'être effectuée
+const UPDATE_FLAG_KEY = 'pwa_update_in_progress';
+const UPDATE_FLAG_TTL = 10000; // 10 secondes
+
 /**
  * Nettoie les caches HTTP côté client pour forcer une reconstruction propre.
  * On ne touche pas à localStorage / sessionStorage pour éviter de casser
@@ -14,14 +18,56 @@ async function clearAppCaches() {
 
     try {
         const keys = await caches.keys();
+        console.log('[PWAUpdateChecker] Caches à supprimer:', keys);
         await Promise.all(
             keys.map((key) => {
-                console.log('[PWAUpdateChecker] Suppression cache client:', key);
+                console.log('[PWAUpdateChecker] Suppression cache:', key);
                 return caches.delete(key);
             })
         );
+        console.log('[PWAUpdateChecker] Tous les caches supprimés');
     } catch (err) {
-        console.warn('[PWAUpdateChecker] Erreur suppression caches client:', err);
+        console.warn('[PWAUpdateChecker] Erreur suppression caches:', err);
+    }
+}
+
+/**
+ * Vérifie si une mise à jour est en cours (flag récent dans sessionStorage)
+ */
+function isUpdateInProgress() {
+    if (typeof window === 'undefined') return false;
+    try {
+        const flag = sessionStorage.getItem(UPDATE_FLAG_KEY);
+        if (!flag) return false;
+        const timestamp = parseInt(flag, 10);
+        // Le flag est valide pendant UPDATE_FLAG_TTL ms
+        return Date.now() - timestamp < UPDATE_FLAG_TTL;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Marque qu'une mise à jour est en cours
+ */
+function setUpdateInProgress() {
+    if (typeof window === 'undefined') return;
+    try {
+        sessionStorage.setItem(UPDATE_FLAG_KEY, Date.now().toString());
+    } catch {
+        // Ignore
+    }
+}
+
+/**
+ * Supprime le flag de mise à jour
+ */
+function clearUpdateFlag() {
+    if (typeof window === 'undefined') return;
+    try {
+        sessionStorage.removeItem(UPDATE_FLAG_KEY);
+    } catch {
+        // Ignore
     }
 }
 
@@ -121,17 +167,27 @@ export default function PWAUpdateChecker() {
                 }, 60 * 60 * 1000);
 
                 // Fonction pour afficher la notification avec un délai
+                // Ne pas afficher si une mise à jour est en cours (on vient de recharger)
                 const showNotification = () => {
+                    if (isUpdateInProgress()) {
+                        console.log('[PWAUpdateChecker] Mise à jour en cours, popup ignorée');
+                        clearUpdateFlag();
+                        return;
+                    }
                     setTimeout(() => {
                         setIsVisible(true);
                     }, 1500);
                 };
 
                 // Vérifier si un nouveau Service Worker est en attente
-                if (reg.waiting) {
+                // Ne pas afficher la popup si on vient de faire une mise à jour
+                if (reg.waiting && !isUpdateInProgress()) {
                     setWaitingWorker(reg.waiting);
                     setUpdateAvailable(true);
                     showNotification();
+                } else if (reg.waiting && isUpdateInProgress()) {
+                    console.log('[PWAUpdateChecker] Waiting worker détecté mais mise à jour en cours, ignoré');
+                    clearUpdateFlag();
                 }
 
                 // Écouter les mises à jour
@@ -142,9 +198,14 @@ export default function PWAUpdateChecker() {
                             if (newWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
                                     // Nouveau Service Worker installé et prêt (mise à jour)
-                                    setWaitingWorker(newWorker);
-                                    setUpdateAvailable(true);
-                                    showNotification();
+                                    // Ne pas afficher si une mise à jour est déjà en cours
+                                    if (!isUpdateInProgress()) {
+                                        setWaitingWorker(newWorker);
+                                        setUpdateAvailable(true);
+                                        showNotification();
+                                    } else {
+                                        console.log('[PWAUpdateChecker] Nouveau SW installé mais mise à jour en cours, ignoré');
+                                    }
                                 } else {
                                     // Première installation
                                     console.log('[PWAUpdateChecker] Service Worker installé pour la première fois');
@@ -163,34 +224,48 @@ export default function PWAUpdateChecker() {
             });
 
         // Écouter les changements de contrôleur (mise à jour appliquée)
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('[PWAUpdateChecker] Nouveau Service Worker actif - rechargement');
+        const handleControllerChange = async () => {
+            console.log('[PWAUpdateChecker] Nouveau Service Worker actif');
+            // Supprimer tous les caches MAINTENANT que le nouveau SW est actif
+            // Comme ça, le nouveau SW reconstruira un cache propre
+            await clearAppCaches();
+            console.log('[PWAUpdateChecker] Caches supprimés, rechargement...');
             window.location.reload();
-        });
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+        return () => {
+            navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+        };
     }, [isPageLoaded]);
 
     const handleReload = useCallback(async () => {
         setIsReloading(true);
 
-        // Supprimer le cache HTTP du client avant de recharger,
-        // pour s'assurer qu'on repart sur une base propre.
-        await clearAppCaches();
+        // Marquer qu'une mise à jour est en cours pour éviter la popup en boucle
+        setUpdateInProgress();
 
         if (!waitingWorker) {
-            // Pas de worker en attente, recharger normalement
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+            // Pas de worker en attente, supprimer le cache et recharger normalement
+            await clearAppCaches();
+            console.log('[PWAUpdateChecker] Pas de waiting worker, rechargement direct');
+            window.location.reload();
             return;
         }
 
-        // Envoyer un message au Service Worker pour qu'il prenne le contrôle
+        // Il y a un waiting worker : envoyer SKIP_WAITING
+        // Le listener controllerchange s'occupera de :
+        // 1. Supprimer les caches (quand le nouveau SW sera actif)
+        // 2. Recharger la page
+        console.log('[PWAUpdateChecker] Envoi SKIP_WAITING au waiting worker');
         waitingWorker.postMessage({ type: 'SKIP_WAITING' });
 
-        // Attendre un peu puis recharger
-        setTimeout(() => {
+        // Timeout de sécurité : si controllerchange ne se déclenche pas après 5s, forcer le reload
+        setTimeout(async () => {
+            console.log('[PWAUpdateChecker] Timeout de sécurité atteint, rechargement forcé');
+            await clearAppCaches();
             window.location.reload();
-        }, 500);
+        }, 5000);
     }, [waitingWorker]);
 
     const handleDismiss = useCallback(() => {
