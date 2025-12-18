@@ -9,6 +9,25 @@ const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIV
 const ACTIVE_CACHE = String(activeCacheEnv).toLowerCase() !== 'false';
 
 /**
+ * Charge les événements depuis le cache localStorage
+ * DÉFINI EN PREMIER pour être disponible dans les autres fonctions
+ */
+export function loadEventsFromCache() {
+    if (!ACTIVE_CACHE || typeof localStorage === 'undefined') return null;
+    const saved = localStorage.getItem("events");
+    const savedColors = localStorage.getItem("subjectColors");
+    
+    if (saved && savedColors) {
+        return {
+            events: JSON.parse(saved),
+            colors: JSON.parse(savedColors)
+        };
+    }
+    
+    return null;
+}
+
+/**
  * Parse un fichier ICS en format texte vers un tableau d'événements
  */
 function parseICSContent(icsContent) {
@@ -86,13 +105,52 @@ async function fetchEventsForWeb() {
         let diff = { added: [], updated: [], removed: [] };
         let meta = { source: 'api', fromCache: false, changed: null };
 
+        // Si le serveur dit que rien n'a changé, utiliser le cache localStorage
+        if (data && data.unchanged === true) {
+            console.log('[ICS Service] Server says unchanged, checking local cache');
+            const cached = loadEventsFromCache();
+            if (cached && cached.events && cached.events.length > 0) {
+                console.log('[ICS Service] Using local cache:', cached.events.length, 'events');
+                return {
+                    events: cached.events,
+                    diff: { added: [], updated: [], removed: [] },
+                    meta: {
+                        source: 'local-cache',
+                        fromCache: true,
+                        changed: 0,
+                        ...(data.meta || {})
+                    }
+                };
+            }
+            // Pas de cache local ! Refaire une requête en forçant le parsing
+            console.warn('[ICS Service] No local cache, forcing server to parse ICS');
+            const forceRes = await fetch('/api/fetch-ics?force=true', {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-cache'
+            });
+            if (forceRes.ok) {
+                const forceData = await forceRes.json();
+                if (forceData && Array.isArray(forceData.events) && forceData.events.length > 0) {
+                    console.log('[ICS Service] Forced fetch successful:', forceData.events.length, 'events');
+                    return {
+                        events: forceData.events,
+                        diff: forceData.diff || { added: [], updated: [], removed: [] },
+                        meta: forceData.meta || { source: 'forced-parse', fromCache: false }
+                    };
+                }
+            }
+            // Si ça échoue aussi, on continue avec le flux normal (qui va échouer)
+            console.error('[ICS Service] Forced fetch also failed');
+        }
+
         if (Array.isArray(data)) {
             events = data;
             meta.source = 'legacy-array';
         } else if (data && typeof data === 'object') {
             if (Array.isArray(data.events)) {
                 events = data.events;
-            } else {
+            } else if (data.unchanged !== true) {
+                // Seulement lever une erreur si ce n'est pas une réponse "unchanged"
                 events = [];
             }
 
@@ -136,24 +194,6 @@ async function fetchEventsForWeb() {
  */
 export async function fetchICSEvents() {
     return await fetchEventsForWeb();
-}
-
-/**
- * Charge les événements depuis le cache localStorage
- */
-export function loadEventsFromCache() {
-    if (!ACTIVE_CACHE || typeof localStorage === 'undefined') return null;
-    const saved = localStorage.getItem("events");
-    const savedColors = localStorage.getItem("subjectColors");
-    
-    if (saved && savedColors) {
-        return {
-            events: JSON.parse(saved),
-            colors: JSON.parse(savedColors)
-        };
-    }
-    
-    return null;
 }
 
 /**
