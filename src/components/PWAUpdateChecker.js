@@ -3,6 +3,29 @@ import { useState, useEffect, useCallback } from 'react';
 import './PWAUpdateChecker.css';
 
 /**
+ * Nettoie les caches HTTP côté client pour forcer une reconstruction propre.
+ * On ne touche pas à localStorage / sessionStorage pour éviter de casser
+ * les préférences utilisateur ou la session.
+ */
+async function clearAppCaches() {
+    if (typeof window === 'undefined' || !('caches' in window)) {
+        return;
+    }
+
+    try {
+        const keys = await caches.keys();
+        await Promise.all(
+            keys.map((key) => {
+                console.log('[PWAUpdateChecker] Suppression cache client:', key);
+                return caches.delete(key);
+            })
+        );
+    } catch (err) {
+        console.warn('[PWAUpdateChecker] Erreur suppression caches client:', err);
+    }
+}
+
+/**
  * Composant pour détecter et gérer les mises à jour de la PWA
  * Affiche une bannière "Nouvelle version disponible" avec bouton recharger
  */
@@ -147,16 +170,19 @@ export default function PWAUpdateChecker() {
     }, [isPageLoaded]);
 
     const handleReload = useCallback(async () => {
+        setIsReloading(true);
+
+        // Supprimer le cache HTTP du client avant de recharger,
+        // pour s'assurer qu'on repart sur une base propre.
+        await clearAppCaches();
+
         if (!waitingWorker) {
             // Pas de worker en attente, recharger normalement
-            setIsReloading(true);
             setTimeout(() => {
                 window.location.reload();
             }, 500);
             return;
         }
-
-        setIsReloading(true);
 
         // Envoyer un message au Service Worker pour qu'il prenne le contrôle
         waitingWorker.postMessage({ type: 'SKIP_WAITING' });
