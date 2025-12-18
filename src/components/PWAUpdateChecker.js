@@ -6,29 +6,85 @@ import './PWAUpdateChecker.css';
 const UPDATE_FLAG_KEY = 'pwa_update_in_progress';
 const UPDATE_FLAG_TTL = 10000; // 10 secondes
 
+// Clés localStorage à conserver (préférences utilisateur)
+const LOCALSTORAGE_KEYS_TO_KEEP = [
+    'compactMode',
+    'weekMode', 
+    'cookieConsent',
+    'theme',
+    'devMode',
+    'showTestModeIndicator'
+];
+
 /**
- * Nettoie les caches HTTP côté client pour forcer une reconstruction propre.
- * On ne touche pas à localStorage / sessionStorage pour éviter de casser
- * les préférences utilisateur ou la session.
+ * Supprime TOUS les caches de l'application :
+ * 1. Cache Storage (Service Worker)
+ * 2. Cache localStorage (événements EDT)
+ * 3. Désinscrit le SW actuel pour éviter qu'il recrée le cache
  */
-async function clearAppCaches() {
-    if (typeof window === 'undefined' || !('caches' in window)) {
+async function clearAllAppCaches() {
+    if (typeof window === 'undefined') {
         return;
     }
 
-    try {
-        const keys = await caches.keys();
-        console.log('[PWAUpdateChecker] Caches à supprimer:', keys);
-        await Promise.all(
-            keys.map((key) => {
-                console.log('[PWAUpdateChecker] Suppression cache:', key);
-                return caches.delete(key);
-            })
-        );
-        console.log('[PWAUpdateChecker] Tous les caches supprimés');
-    } catch (err) {
-        console.warn('[PWAUpdateChecker] Erreur suppression caches:', err);
+    console.log('[PWAUpdateChecker] === DÉBUT NETTOYAGE COMPLET DU CACHE ===');
+
+    // 1. Désinscrire TOUS les Service Workers pour éviter qu'ils recréent le cache
+    if ('serviceWorker' in navigator) {
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            console.log('[PWAUpdateChecker] Service Workers trouvés:', registrations.length);
+            for (const registration of registrations) {
+                const success = await registration.unregister();
+                console.log('[PWAUpdateChecker] SW désinscrit:', success);
+            }
+        } catch (err) {
+            console.warn('[PWAUpdateChecker] Erreur désinscription SW:', err);
+        }
     }
+
+    // 2. Supprimer tous les caches du Cache Storage
+    if ('caches' in window) {
+        try {
+            const keys = await caches.keys();
+            console.log('[PWAUpdateChecker] Caches Storage à supprimer:', keys);
+            await Promise.all(
+                keys.map((key) => {
+                    console.log('[PWAUpdateChecker] Suppression cache:', key);
+                    return caches.delete(key);
+                })
+            );
+            console.log('[PWAUpdateChecker] Cache Storage vidé');
+        } catch (err) {
+            console.warn('[PWAUpdateChecker] Erreur suppression Cache Storage:', err);
+        }
+    }
+
+    // 3. Supprimer le cache localStorage (événements EDT) mais garder les préférences utilisateur
+    try {
+        // Sauvegarder les préférences utilisateur
+        const savedPrefs = {};
+        for (const key of LOCALSTORAGE_KEYS_TO_KEEP) {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                savedPrefs[key] = value;
+            }
+        }
+        
+        // Vider tout le localStorage
+        localStorage.clear();
+        console.log('[PWAUpdateChecker] localStorage vidé');
+        
+        // Restaurer les préférences utilisateur
+        for (const [key, value] of Object.entries(savedPrefs)) {
+            localStorage.setItem(key, value);
+        }
+        console.log('[PWAUpdateChecker] Préférences restaurées:', Object.keys(savedPrefs));
+    } catch (err) {
+        console.warn('[PWAUpdateChecker] Erreur nettoyage localStorage:', err);
+    }
+
+    console.log('[PWAUpdateChecker] === FIN NETTOYAGE COMPLET DU CACHE ===');
 }
 
 /**
@@ -224,13 +280,10 @@ export default function PWAUpdateChecker() {
             });
 
         // Écouter les changements de contrôleur (mise à jour appliquée)
-        const handleControllerChange = async () => {
-            console.log('[PWAUpdateChecker] Nouveau Service Worker actif');
-            // Supprimer tous les caches MAINTENANT que le nouveau SW est actif
-            // Comme ça, le nouveau SW reconstruira un cache propre
-            await clearAppCaches();
-            console.log('[PWAUpdateChecker] Caches supprimés, rechargement...');
-            window.location.reload();
+        // Note: On ne fait plus rien ici car le handleReload gère tout
+        const handleControllerChange = () => {
+            console.log('[PWAUpdateChecker] Nouveau Service Worker actif (controllerchange)');
+            // Le rechargement est géré par handleReload, pas besoin de faire quoi que ce soit ici
         };
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
@@ -245,28 +298,21 @@ export default function PWAUpdateChecker() {
         // Marquer qu'une mise à jour est en cours pour éviter la popup en boucle
         setUpdateInProgress();
 
-        if (!waitingWorker) {
-            // Pas de worker en attente, supprimer le cache et recharger normalement
-            await clearAppCaches();
-            console.log('[PWAUpdateChecker] Pas de waiting worker, rechargement direct');
-            window.location.reload();
-            return;
-        }
+        console.log('[PWAUpdateChecker] Début du processus de mise à jour...');
 
-        // Il y a un waiting worker : envoyer SKIP_WAITING
-        // Le listener controllerchange s'occupera de :
-        // 1. Supprimer les caches (quand le nouveau SW sera actif)
-        // 2. Recharger la page
-        console.log('[PWAUpdateChecker] Envoi SKIP_WAITING au waiting worker');
-        waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        // Étape 1 : Supprimer TOUS les caches (SW, Cache Storage, localStorage EDT)
+        // Cette fonction désinscrit aussi le SW pour éviter qu'il recrée le cache
+        await clearAllAppCaches();
 
-        // Timeout de sécurité : si controllerchange ne se déclenche pas après 5s, forcer le reload
-        setTimeout(async () => {
-            console.log('[PWAUpdateChecker] Timeout de sécurité atteint, rechargement forcé');
-            await clearAppCaches();
+        // Étape 2 : Recharger la page
+        // Le SW sera réenregistré automatiquement au prochain chargement
+        console.log('[PWAUpdateChecker] Rechargement de la page...');
+        
+        // Petit délai pour s'assurer que tout est bien nettoyé
+        setTimeout(() => {
             window.location.reload();
-        }, 5000);
-    }, [waitingWorker]);
+        }, 100);
+    }, []);
 
     const handleDismiss = useCallback(() => {
         setIsVisible(false);
