@@ -1238,9 +1238,6 @@ function HomeContent({searchParams}) {
                                     🔍 Informations de débogage (cliquer pour voir)
                                 </summary>
                                 <div className={styles.debugContent}>
-                                    <div>
-                                        <strong>Mode:</strong> {debugInfo.isPWAInstalled ? '📱 PWA (Installée)' : '🌐 WEB'}
-                                    </div>
                                     <div><strong>PWA
                                         installée:</strong> {debugInfo.isPWAInstalled ? 'Oui ✅' : 'Non ❌'}</div>
                                     <div><strong>Mode
