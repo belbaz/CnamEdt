@@ -493,6 +493,93 @@
     color: #666;
 }
 
+/* Petite bannière d'erreur (vue utilisateur, mobile + desktop) */
+.smallErrorWrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 1.25rem 0 1rem 0;
+    padding: 0 1.25rem; /* Evite que la bannière colle aux bords de l'écran */
+    box-sizing: border-box;
+}
+
+.smallErrorBanner {
+    padding: 1rem 1.4rem;
+    border-radius: 1.25rem;
+    background: linear-gradient(
+        135deg,
+        rgba(248, 113, 113, 0.12),
+        rgba(239, 68, 68, 0.08)
+    );
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    box-shadow: 0 10px 30px rgba(239, 68, 68, 0.16);
+    max-width: 560px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.smallErrorContent {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+}
+
+.smallErrorTitle {
+    font-weight: 600;
+    color: #b91c1c;
+    text-align: center;
+    width: 100%;
+}
+
+.smallErrorText {
+    font-size: 0.84rem;
+    text-align: center;
+    width: 100%;
+}
+
+.smallErrorHint {
+    font-size: 0.78rem;
+    opacity: 0.9;
+    text-align: center;
+    width: 100%;
+}
+
+.smallErrorLink {
+    margin-top: 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(185, 28, 28, 0.6);
+    background: rgba(248, 113, 113, 0.16);
+    color: #b91c1c;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    word-break: break-word;
+}
+
+.smallErrorLink:hover {
+    background: rgba(248, 113, 113, 0.25);
+    color: #7f1d1d;
+    box-shadow: 0 3px 10px rgba(248, 113, 113, 0.3);
+    transform: translateY(-1px);
+}
+
 /* Message "Pas de cours" */
 .noCoursesMessage {
     text-align: center;

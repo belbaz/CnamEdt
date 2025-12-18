@@ -88,6 +88,7 @@ function HomeContent({searchParams}) {
     // Timestamp du dernier build (proxy pour la date du dernier commit déployé)
     const [buildTimestamp, setBuildTimestamp] = useState(null);
     const [isLoadingBuildTimestamp, setIsLoadingBuildTimestamp] = useState(false);
+    const supportUrl = process.env.NEXT_PUBLIC_ERROR_HELP_URL;
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -1225,11 +1226,12 @@ function HomeContent({searchParams}) {
             />
 
             <main className={styles.container}>
-                {error && !isSmallScreen && (
+                {/* Affichage détaillé de l'erreur uniquement en mode dev (desktop) */}
+                {error && devMode && !isSmallScreen && (
                     <div className={styles.errorContainer}>
                         <h3 className={styles.errorTitle}>❌ Erreur</h3>
                         <div className={styles.errorMessage}>
-                            <strong>Message:</strong> {error}
+                            <strong>Message&nbsp;:</strong> {error}
                         </div>
 
                         {debugInfo && (
@@ -1238,26 +1240,59 @@ function HomeContent({searchParams}) {
                                     🔍 Informations de débogage (cliquer pour voir)
                                 </summary>
                                 <div className={styles.debugContent}>
-                                    <div><strong>PWA
-                                        installée:</strong> {debugInfo.isPWAInstalled ? 'Oui ✅' : 'Non ❌'}</div>
-                                    <div><strong>Mode
-                                        standalone:</strong> {debugInfo.isStandalone ? 'Oui ✅' : 'Non ❌'}</div>
-                                    <div><strong>Protocole:</strong> {debugInfo.protocol}</div>
-                                    <div><strong>URL:</strong> {debugInfo.href}</div>
+                                    <div>
+                                        <strong>PWA installée&nbsp;:</strong>{' '}
+                                        {debugInfo.isPWAInstalled ? 'Oui ✅' : 'Non ❌'}
+                                    </div>
+                                    <div>
+                                        <strong>Mode standalone&nbsp;:</strong>{' '}
+                                        {debugInfo.isStandalone ? 'Oui ✅' : 'Non ❌'}
+                                    </div>
+                                    <div><strong>Protocole&nbsp;:</strong> {debugInfo.protocol}</div>
+                                    <div><strong>URL&nbsp;:</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
                                         <>
                                             <hr className={styles.debugHr}/>
-                                            <div><strong>Erreur Fetch:</strong> {debugInfo.fetchError}</div>
+                                            <div><strong>Erreur Fetch&nbsp;:</strong> {debugInfo.fetchError}</div>
                                         </>
                                     )}
                                     {debugInfo.userAgent && (
                                         <div className={styles.debugUserAgent}>
-                                            <strong>User Agent:</strong> {debugInfo.userAgent}
+                                            <strong>User Agent&nbsp;:</strong> {debugInfo.userAgent}
                                         </div>
                                     )}
                                 </div>
                             </details>
                         )}
+                    </div>
+                )}
+
+                {/* Affichage utilisateur simple (mobile + desktop) hors mode dev */}
+                {error && !devMode && (
+                    <div className={styles.smallErrorWrapper} role="status" aria-live="polite">
+                        <div className={styles.smallErrorBanner}>
+                            <div className={styles.smallErrorContent}>
+                                <div className={styles.smallErrorTitle}>Erreur lors du chargement de l&apos;EDT</div>
+                                <div className={styles.smallErrorText}>
+                                    Les données n&apos;ont pas pu être récupérées pour le moment.
+                                </div>
+                                {hasNetworkError && (
+                                    <div className={styles.smallErrorHint}>
+                                        Vérifiez votre connexion internet puis essayez de recharger la page.
+                                    </div>
+                                )}
+                                {supportUrl && (
+                                    <a
+                                        href={supportUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.smallErrorLink}
+                                    >
+                                        Ouvrir Galao
+                                    </a>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
