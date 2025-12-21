@@ -128,9 +128,7 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
             </button>
 
             {isOpen && typeof window !== 'undefined' && createPortal(
-                <>
-                    <div className="subject-hours-overlay" onClick={() => setIsOpen(false)}/>
-                    <div className="subject-hours-panel" ref={panelRef}>
+                <div className="subject-hours-panel" ref={panelRef}>
                         <div className="subject-hours-header">
                             <h3>Progression des matières</h3>
                             <button 
@@ -182,8 +180,7 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
                                 </>
                             )}
                         </div>
-                    </div>
-                </>,
+                    </div>,
                 document.body
             )}
         </div>
