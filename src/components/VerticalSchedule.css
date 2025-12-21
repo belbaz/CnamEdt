@@ -315,6 +315,22 @@
     z-index: 10;
 }
 
+/* Affichage du pourcentage en mode dev */
+.vertical-time-passed-overlay-percentage {
+    position: absolute;
+    left: 50%;
+    color: red;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 11;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
 /* Conteneur des événements */
 .vertical-events-container {
     z-index: 2;

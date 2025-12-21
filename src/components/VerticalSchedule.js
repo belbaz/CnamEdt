@@ -6,6 +6,7 @@ import { isToday } from "@/utils/dateUtils";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
+import { useDevMode } from "@/utils/env";
 
 export default function VerticalSchedule({
     events,
@@ -71,6 +72,7 @@ export default function VerticalSchedule({
 
     const [isMobile, setIsMobile] = useState(false);
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
+    const devMode = useDevMode();
 
     // Détecter un petit écran (mobile) OU app native
     useEffect(() => {
@@ -265,12 +267,46 @@ export default function VerticalSchedule({
         };
     };
 
-    // Obtenir l'heure actuelle pour l'indicateur
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const currentTimePercent = nowMinutes >= startMinutes && nowMinutes <= endMinutes
-        ? ((nowMinutes - startMinutes) / totalMinutes) * 100
-        : null;
+    // État pour la position actuelle qui se met à jour automatiquement
+    const [currentTimePercent, setCurrentTimePercent] = useState(() => {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        return nowMinutes >= startMinutes && nowMinutes <= endMinutes
+            ? ((nowMinutes - startMinutes) / totalMinutes) * 100
+            : null;
+    });
+
+    // Mettre à jour la position régulièrement et quand l'onglet redevient actif
+    useEffect(() => {
+        // Fonction pour mettre à jour la position
+        const updatePosition = () => {
+            const now = new Date();
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+            const percent = nowMinutes >= startMinutes && nowMinutes <= endMinutes
+                ? ((nowMinutes - startMinutes) / totalMinutes) * 100
+                : null;
+            setCurrentTimePercent(percent);
+        };
+
+        // Mise à jour initiale
+        updatePosition();
+
+        // Mise à jour toutes les minutes
+        const interval = setInterval(updatePosition, 60000);
+
+        // Mise à jour immédiate quand l'onglet redevient actif
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                updatePosition();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [startMinutes, endMinutes, totalMinutes]);
 
     if (days.length === 0 || events.length === 0) {
         return (
@@ -390,10 +426,20 @@ export default function VerticalSchedule({
 
                                     {/* Ligne de temps passée */}
                                     {currentPos !== null && (
-                                        <div
-                                            className="vertical-time-passed-overlay"
-                                            style={{ height: `${currentPos}%` }}
-                                        />
+                                        <>
+                                            <div
+                                                className="vertical-time-passed-overlay"
+                                                style={{ height: `${currentPos}%` }}
+                                            />
+                                            {devMode && (
+                                                <div
+                                                    className="vertical-time-passed-overlay-percentage"
+                                                    style={{ top: `${currentPos}%` }}
+                                                >
+                                                    {currentPos.toFixed(1)}%
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Marqueurs de temps */}

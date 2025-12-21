@@ -1,5 +1,5 @@
 "use client";
-import {forwardRef, useMemo} from "react";
+import {forwardRef, useMemo, useState, useEffect} from "react";
 import {isToday} from "@/utils/dateUtils";
 import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
 import {getCompactModeValues} from "@/utils/compactModeUtils";
@@ -36,9 +36,43 @@ const DayBlock = forwardRef(({
         return generateTimeMarkers(startMinutes, endMinutes);
     }, [startMinutes, endMinutes, isCollapsed]);
     
-    const currentPos = useMemo(() => {
+    // État pour la position actuelle qui se met à jour automatiquement
+    const [currentPos, setCurrentPos] = useState(() => {
         if (isCollapsed || !todayCheck) return null;
         return getCurrentTimePosition(dayDate, startMinutes, endMinutes);
+    });
+
+    // Mettre à jour la position régulièrement et quand l'onglet redevient actif
+    useEffect(() => {
+        if (isCollapsed || !todayCheck) {
+            setCurrentPos(null);
+            return;
+        }
+
+        // Fonction pour mettre à jour la position
+        const updatePosition = () => {
+            const pos = getCurrentTimePosition(dayDate, startMinutes, endMinutes);
+            setCurrentPos(pos);
+        };
+
+        // Mise à jour initiale
+        updatePosition();
+
+        // Mise à jour toutes les minutes
+        const interval = setInterval(updatePosition, 60000);
+
+        // Mise à jour immédiate quand l'onglet redevient actif
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                updatePosition();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [todayCheck, dayDate, startMinutes, endMinutes, isCollapsed]);
     
     const totalMinutes = useMemo(() => endMinutes - startMinutes, [startMinutes, endMinutes]);
