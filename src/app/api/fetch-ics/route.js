@@ -639,6 +639,47 @@ export async function GET(request) {
     let icsError = null;
     const TIMEOUT_MS = 15000; // 15 secondes
     
+    // Vérifier si le mode démo est activé (uniquement sur demo-edt.vercel.app)
+    const { checkDemoModeFromRequest } = await import('@/services/demoDataService');
+    const isDemoMode = checkDemoModeFromRequest(request);
+    
+    if (isDemoMode) {
+        console.log('[API fetch-ics] Mode démo activé, génération de données de démo');
+        try {
+            // Importer dynamiquement le service de démo (évite les erreurs si le fichier n'existe pas)
+            const { generateDemoYearData } = await import('@/services/demoDataService');
+            const demoData = generateDemoYearData();
+            
+            // Convertir les notes Map en format compatible
+            const notesArray = Array.from(demoData.notes.entries()).map(([key, value]) => ({
+                eventKey: key,
+                note: value
+            }));
+            
+            return NextResponse.json({
+                events: demoData.events,
+                diff: {
+                    added: demoData.events,
+                    updated: [],
+                    removed: []
+                },
+                meta: {
+                    source: 'demo',
+                    fromCache: false,
+                    changed: demoData.events.length,
+                    isDemo: true
+                },
+                notes: notesArray // Inclure les notes générées
+            });
+        } catch (demoError) {
+            console.error('[API fetch-ics] Erreur lors de la génération des données de démo:', demoError);
+            return NextResponse.json({
+                error: 'Erreur lors de la génération des données de démo',
+                details: demoError.message
+            }, { status: 500 });
+        }
+    }
+    
     // Vérifier si le client demande un parsing forcé (pas de cache local)
     const url = new URL(request.url);
     const forceParser = url.searchParams.get('force') === 'true';

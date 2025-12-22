@@ -65,6 +65,46 @@ async function getAuthenticatedUser() {
  */
 export async function GET(request) {
     try {
+        // Vérifier si le mode démo est activé (uniquement sur demo-edt.vercel.app)
+        const { checkDemoModeFromRequest } = await import('@/services/demoDataService');
+        const isDemoMode = checkDemoModeFromRequest(request);
+        
+        if (isDemoMode) {
+            console.log(`${LOG_PREFIX} Mode démo activé, retour des notes de démo`);
+            try {
+                // Importer dynamiquement le service de démo
+                const { generateDemoYearData } = await import('@/services/demoDataService');
+                const demoData = generateDemoYearData();
+                
+                // Convertir les notes Map en format compatible avec l'API
+                // Les notes utilisent l'UID de l'événement comme clé (course_uid)
+                const notesArray = Array.from(demoData.notes.entries()).map(([course_uid, noteText]) => ({
+                    id: `demo-${course_uid}`,
+                    course_uid: course_uid, // C'est l'UID de l'événement
+                    notes: noteText,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    user_id: 'demo-user',
+                    modification_history: null,
+                    labels: [],
+                    entry_labels: {},
+                    entries: parseStoredNoteValue(noteText),
+                    user_name: 'Mode Démo',
+                    user_name_first: 'Démo',
+                    user_name_last: 'Mode'
+                }));
+                
+                return NextResponse.json({
+                    authenticated: false,
+                    notes: notesArray,
+                    isDemo: true
+                });
+            } catch (demoError) {
+                console.error(`${LOG_PREFIX} Erreur lors de la génération des notes de démo:`, demoError);
+                // En cas d'erreur, continuer avec le flux normal
+            }
+        }
+        
         const user = await getAuthenticatedUser();
         const supabase = getSupabaseServerClient();
         if (!supabase) {

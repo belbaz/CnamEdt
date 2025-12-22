@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import SettingsMenu from "./SettingsMenu";
 import Tooltip from "./Tooltip";
 import Spinner from "./Spinner";
+import DemoModeModal from "./DemoModeModal";
 import "./PageHeader.css";
 
 export default function PageHeader({
@@ -31,12 +32,21 @@ export default function PageHeader({
     const [showEasterEgg, setShowEasterEgg] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showTooltip, setShowTooltip] = useState({ settings: false, dashboard: false, login: false, theme: false });
+    const [showDemoModal, setShowDemoModal] = useState(false);
+    const [isDemoMode, setIsDemoMode] = useState(false); // Pour éviter les erreurs d'hydratation
     const [longPressTimer, setLongPressTimer] = useState(null);
     const clickCount = useRef(0);
     const clickTimer = useRef(null);
     const buttonRef = useRef(null);
     const userMenuRef = useRef(null);
     const isBlockedRef = useRef(false); // Protection contre les clics juste après activation/désactivation
+    
+    // Vérifier le mode démo côté client uniquement (après le montage)
+    useEffect(() => {
+        const hostname = window.location.hostname;
+        const envMode = process.env.NEXT_PUBLIC_MODE_DEMO === 'true';
+        setIsDemoMode(hostname === 'demo-edt.vercel.app' || envMode);
+    }, []);
 
 
     // Gérer les 5 clics rapides sur la lune (uniquement en dark mode)
@@ -175,6 +185,23 @@ export default function PageHeader({
                         Edt
                     </h1>
 
+                    {/* Badge Mode démo */}
+                    {isDemoMode && (
+                        <>
+                            <div 
+                                className="demo-mode-badge"
+                                onClick={() => setShowDemoModal(true)}
+                                title="Cliquez pour plus d'informations sur le mode démo"
+                            >
+                                Mode démo
+                            </div>
+                            <DemoModeModal 
+                                isOpen={showDemoModal} 
+                                onClose={() => setShowDemoModal(false)} 
+                            />
+                        </>
+                    )}
+                    
                     {/* Salutation utilisateur avec menu */}
                     {isLoadingUser ? (
                         <div className="userInfo userInfoLoading">

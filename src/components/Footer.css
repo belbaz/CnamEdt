@@ -46,6 +46,11 @@
     font-weight: 600;
 }
 
+.app-footer-demo {
+    color: #4299e1;
+    font-weight: 600;
+}
+
 .app-footer-link {
     color: var(--primary-color);
     text-decoration: none;

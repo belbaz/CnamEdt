@@ -14,6 +14,21 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    position: relative;
+}
+
+/* Sur grand écran, centrer le badge Mode démo */
+@media (min-width: 768px) {
+    .header-content {
+        justify-content: space-between;
+    }
+    
+    .demo-mode-badge {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+    }
 }
 
 .header-actions {
@@ -70,6 +85,27 @@
 .title-container{
     display: flex;
     align-items: center;
+    gap: 0.75rem;
+}
+
+/* Badge Mode démo */
+.demo-mode-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4299e1;
+    background: rgba(66, 153, 225, 0.1);
+    border: 1px solid rgba(66, 153, 225, 0.3);
+    border-radius: 12px;
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.demo-mode-badge:hover {
+    background: rgba(66, 153, 225, 0.15);
+    border-color: rgba(66, 153, 225, 0.5);
 }
 
 .cnam-logo {

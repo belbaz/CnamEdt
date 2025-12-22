@@ -85,6 +85,8 @@ function HomeContent({searchParams}) {
     // Notification Supabase
     const [showSupabaseNotification, setShowSupabaseNotification] = useState(false);
     const [supabaseSource, setSupabaseSource] = useState(null);
+    // Modale hors ligne
+    const [showOfflineModal, setShowOfflineModal] = useState(false);
     // Timestamp du dernier build (proxy pour la date du dernier commit déployé)
     const [buildTimestamp, setBuildTimestamp] = useState(null);
     const [isLoadingBuildTimestamp, setIsLoadingBuildTimestamp] = useState(false);
@@ -1384,7 +1386,22 @@ function HomeContent({searchParams}) {
                             !hasNetworkError && (
                                 <div className="last-update-info">
                                     <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
-                                    <span>EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}</span>
+                                    <button 
+                                        onClick={() => setShowOfflineModal(true)} 
+                                        style={{ 
+                                            cursor: 'pointer',
+                                            background: 'none',
+                                            border: 'none',
+                                            padding: 0,
+                                            color: 'inherit',
+                                            font: 'inherit',
+                                            textAlign: 'inherit'
+                                        }}
+                                        title="Cliquer pour voir les détails"
+                                        aria-label="Voir les détails de la dernière mise à jour"
+                                    >
+                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                                    </button>
                                 </div>
                             )
                         }
@@ -1392,9 +1409,21 @@ function HomeContent({searchParams}) {
                         {
                             hasNetworkError && (
                                 <div className="last-update-info">
-                                    <span className={styles.offlineTimestamp}>
+                                    <button 
+                                        onClick={() => setShowOfflineModal(true)}
+                                        className={styles.offlineTimestamp}
+                                        style={{ 
+                                            cursor: 'pointer',
+                                            background: 'none',
+                                            font: 'inherit',
+                                            textAlign: 'inherit',
+                                            display: 'inline-block'
+                                        }}
+                                        title="Cliquer pour voir les détails"
+                                        aria-label="Voir les détails de la dernière mise à jour"
+                                    >
                                         EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
-                                    </span>
+                                    </button>
                                 </div>
                             )
                         }
@@ -1450,7 +1479,12 @@ function HomeContent({searchParams}) {
 
             <ScrollToTop/>
 
-            <OfflineNotification forceShow={hasNetworkError} lastUpdateTimestamp={lastUpdateTimestamp}/>
+            <OfflineNotification 
+                forceShow={hasNetworkError} 
+                lastUpdateTimestamp={lastUpdateTimestamp}
+                showModal={showOfflineModal}
+                onModalClose={() => setShowOfflineModal(false)}
+            />
 
             <SupabaseNotification
                 show={showSupabaseNotification}
