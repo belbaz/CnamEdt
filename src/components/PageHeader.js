@@ -31,7 +31,7 @@ export default function PageHeader({
                                    }) {
     const [showEasterEgg, setShowEasterEgg] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const [showTooltip, setShowTooltip] = useState({ settings: false, dashboard: false, login: false, theme: false });
+    const [showTooltip, setShowTooltip] = useState({ settings: false, agenda: false, dashboard: false, login: false, theme: false });
     const [showDemoModal, setShowDemoModal] = useState(false);
     const [isDemoMode, setIsDemoMode] = useState(false); // Pour éviter les erreurs d'hydratation
     const [longPressTimer, setLongPressTimer] = useState(null);
@@ -302,6 +302,32 @@ export default function PageHeader({
                                 onToggleTooltips={onToggleTooltips}
                             />
                         </div>
+                    </Tooltip>
+                    <Tooltip 
+                        text="Agenda"
+                        show={showTooltip.agenda}
+                        enabled={showTooltips}
+                    >
+                        <button
+                            className="agenda-btn"
+                            onClick={(e) => {
+                                handleClick('agenda');
+                                window.location.href = '/agenda';
+                            }}
+                            aria-label="Agenda"
+                            onMouseEnter={() => setShowTooltip(prev => ({ ...prev, agenda: true }))}
+                            onMouseLeave={() => setShowTooltip(prev => ({ ...prev, agenda: false }))}
+                            onTouchStart={() => handleLongPressStart('agenda')}
+                            onTouchEnd={() => handleLongPressEnd('agenda')}
+                        >
+                            <img 
+                                src="/agenda.svg" 
+                                alt="Agenda" 
+                                width="24" 
+                                height="24"
+                                style={{ display: 'block' }}
+                            />
+                        </button>
                     </Tooltip>
                     {isLoadingUser ? (
                         <button

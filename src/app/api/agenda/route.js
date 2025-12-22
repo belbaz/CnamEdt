@@ -78,21 +78,39 @@ export async function GET(request) {
                 
                 // Convertir les notes Map en format compatible avec l'API
                 // Les notes utilisent l'UID de l'événement comme clé (course_uid)
-                const notesArray = Array.from(demoData.notes.entries()).map(([course_uid, noteText]) => ({
-                    id: `demo-${course_uid}`,
-                    course_uid: course_uid, // C'est l'UID de l'événement
-                    notes: noteText,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    user_id: 'demo-user',
-                    modification_history: null,
-                    labels: [],
-                    entry_labels: {},
-                    entries: parseStoredNoteValue(noteText),
-                    user_name: 'Mode Démo',
-                    user_name_first: 'Démo',
-                    user_name_last: 'Mode'
-                }));
+                const notesArray = Array.from(demoData.notes.entries()).map(([course_uid, noteData]) => {
+                    // noteData peut être soit un objet {entries, entry_labels} soit une string (ancien format)
+                    let entries, entryLabels;
+                    if (typeof noteData === 'object' && noteData !== null && Array.isArray(noteData.entries)) {
+                        // Nouveau format avec entries et entry_labels
+                        entries = noteData.entries;
+                        entryLabels = noteData.entry_labels || {};
+                    } else {
+                        // Ancien format (string) - compatibilité
+                        const noteText = typeof noteData === 'string' ? noteData : String(noteData);
+                        entries = parseStoredNoteValue(noteText);
+                        entryLabels = {};
+                    }
+                    
+                    // Convertir entries en string pour le champ notes (format de stockage)
+                    const notesString = JSON.stringify(entries);
+                    
+                    return {
+                        id: `demo-${course_uid}`,
+                        course_uid: course_uid, // C'est l'UID de l'événement
+                        notes: notesString,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        user_id: 'demo-user',
+                        modification_history: null,
+                        labels: [], // Ancien système (vide pour compatibilité)
+                        entry_labels: entryLabels, // Nouveau système avec labels par paragraphe
+                        entries: entries,
+                        user_name: 'Mode Démo',
+                        user_name_first: 'Démo',
+                        user_name_last: 'Mode'
+                    };
+                });
                 
                 return NextResponse.json({
                     authenticated: false,

@@ -150,6 +150,12 @@ export default function SignupForm() {
                             </Link>
                         </p>
                     </div>
+
+                    <div className={styles.testAccessLink}>
+                        <a href="https://belbaz.vercel.app/contact" target="_blank" rel="noopener noreferrer" className={styles.testLink}>
+                            Demander une demo
+                        </a>
+                    </div>
                 </div>
             </div>
 

@@ -41,6 +41,7 @@
 .header-actions > div > button,
 .header-actions .settings-button,
 .header-actions .history-btn,
+.header-actions .agenda-btn,
 .header-actions .dashboard-btn,
 .header-actions .login-btn,
 .header-actions .theme-toggle {
@@ -56,11 +57,27 @@
     align-items: center;
     justify-content: center;
     padding: 0;
+    transition: all 0.2s ease;
+    transform-origin: center;
+}
+
+/* S'assurer que les images SVG dans les boutons restent bien centrées et fixes */
+.header-actions .agenda-btn img {
+    display: block;
+    object-fit: contain;
+    transition: none !important;
+    transform: none !important;
+    will-change: auto;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 .header-actions > div > button:hover,
 .header-actions .settings-button:hover,
 .header-actions .history-btn:hover,
+.header-actions .agenda-btn:hover,
 .header-actions .dashboard-btn:hover,
 .header-actions .login-btn:hover:not(:disabled),
 .header-actions .theme-toggle:hover {
@@ -634,6 +651,7 @@
     .header-actions > div > button,
     .header-actions .settings-button,
     .header-actions .history-btn,
+    .header-actions .agenda-btn,
     .header-actions .dashboard-btn,
     .header-actions .login-btn,
     .header-actions .theme-toggle {

@@ -420,10 +420,15 @@ function AgendaContent() {
         return filtered;
     }, [allPublicNotesWithStatus, showOldNotes, selectedLabelFilter]);
 
-    // Récupérer tous les labels uniques pour le filtre (depuis entry_labels de toutes les notes)
+    // Récupérer tous les labels uniques pour le filtre (depuis entry_labels des notes visibles uniquement)
     const allAvailableLabels = useMemo(() => {
         const labelsSet = new Set();
-        allPublicNotesWithStatus.forEach(note => {
+        // Filtrer les notes selon showOldNotes avant de récupérer les labels
+        const visibleNotes = showOldNotes 
+            ? allPublicNotesWithStatus 
+            : allPublicNotesWithStatus.filter(note => note.isFuture);
+        
+        visibleNotes.forEach(note => {
             const entryLabels = note.entry_labels || {};
             Object.values(entryLabels).forEach(labelsArray => {
                 if (Array.isArray(labelsArray)) {
@@ -432,7 +437,14 @@ function AgendaContent() {
             });
         });
         return Array.from(labelsSet).sort();
-    }, [allPublicNotesWithStatus]);
+    }, [allPublicNotesWithStatus, showOldNotes]);
+
+    // Réinitialiser le filtre de label si le label sélectionné n'est plus disponible
+    useEffect(() => {
+        if (selectedLabelFilter && !allAvailableLabels.includes(selectedLabelFilter)) {
+            setSelectedLabelFilter(null);
+        }
+    }, [selectedLabelFilter, allAvailableLabels]);
 
     // Compter les notes futures pour les stats
     const futureNotesCount = useMemo(() => {

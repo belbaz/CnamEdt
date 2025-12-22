@@ -132,20 +132,77 @@ function shouldBeDistanciel(date, eventIndex) {
 }
 
 /**
- * Génère une note de démo
+ * Génère une note de démo avec des labels appropriés
+ * Retourne un objet avec entries (tableau) et entry_labels (objet)
  */
 function generateDemoNote(subject, prof) {
     const noteTemplates = [
-        `Rappel : ${subject}\n\nRéviser les chapitres 3 et 4 pour le prochain cours.`,
-        `${subject} - ${prof}\n\nTP à rendre pour la semaine prochaine.`,
-        `Note ${subject} :\n\nContrôle prévu dans 2 semaines.`,
-        `${subject}\n\nPenser à préparer la présentation orale.`,
-        `Rappel ${subject} :\n\nDevoir à faire : exercices 5 à 10.`,
-        `${subject} - ${prof}\n\nRéunion projet le vendredi prochain.`
+        {
+            text: `Réviser les chapitres 3 et 4 pour le prochain cours.`,
+            labels: ['Révision']
+        },
+        {
+            text: `TP à rendre pour la semaine prochaine.`,
+            labels: ['TP', 'Devoir']
+        },
+        {
+            text: `Contrôle prévu dans 2 semaines.`,
+            labels: ['Examen']
+        },
+        {
+            text: `Penser à préparer la présentation orale.`,
+            labels: ['Présentation']
+        },
+        {
+            text: `Devoir à faire : exercices 5 à 10.`,
+            labels: ['Devoir']
+        },
+        {
+            text: `Réunion projet le vendredi prochain.`,
+            labels: ['Projet', 'Réunion']
+        },
+        {
+            text: `TP noté à préparer pour le prochain cours.`,
+            labels: ['TP', 'Examen']
+        },
+        {
+            text: `Devoir maison à rendre.`,
+            labels: ['Devoir']
+        },
+        {
+            text: `Présentation de projet en groupe. Deadline : semaine prochaine.`,
+            labels: ['Projet', 'Présentation', 'Urgent']
+        },
+        {
+            text: `TP pratique à faire.`,
+            labels: ['TP']
+        },
+        {
+            text: `Réviser les bases avant le prochain cours.`,
+            labels: ['Révision']
+        },
+        {
+            text: `Contrôle continu prévu.`,
+            labels: ['Examen']
+        }
     ];
     const seed = subject.length + prof.length;
     const random = (seed * 9301 + 49297) % 233280;
-    return noteTemplates[Math.floor((random / 233280) * noteTemplates.length)];
+    const template = noteTemplates[Math.floor((random / 233280) * noteTemplates.length)];
+    
+    // Une seule entrée par note
+    const entries = [template.text];
+    
+    // Construire entry_labels : objet avec index (string) -> tableau de labels
+    const entryLabels = {};
+    if (template.labels.length > 0) {
+        entryLabels['0'] = template.labels;
+    }
+    
+    return {
+        entries: entries,
+        entry_labels: entryLabels
+    };
 }
 
 /**
@@ -388,10 +445,10 @@ export function generateDemoYearData() {
                 }
                 
                 if (shouldAddNote) {
-                    const note = generateDemoNote(subject, prof);
+                    const noteData = generateDemoNote(subject, prof);
                     // Utiliser l'UID de l'événement comme clé (course_uid)
-                    // C'est ce que l'API /api/agenda attend pour mapper les notes
-                    notes.set(uid, note);
+                    // Stocker l'objet complet avec entries et entry_labels
+                    notes.set(uid, noteData);
                     hasNoteThisWeek = true; // Marquer qu'on a une note cette semaine
                 }
                 

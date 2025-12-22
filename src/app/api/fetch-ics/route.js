@@ -651,10 +651,21 @@ export async function GET(request) {
             const demoData = generateDemoYearData();
             
             // Convertir les notes Map en format compatible
-            const notesArray = Array.from(demoData.notes.entries()).map(([key, value]) => ({
-                eventKey: key,
-                note: value
-            }));
+            const notesArray = Array.from(demoData.notes.entries()).map(([key, noteData]) => {
+                // noteData peut être soit un objet {entries, entry_labels} soit une string (ancien format)
+                let noteValue;
+                if (typeof noteData === 'object' && noteData !== null && Array.isArray(noteData.entries)) {
+                    // Nouveau format : convertir entries en string JSON
+                    noteValue = JSON.stringify(noteData.entries);
+                } else {
+                    // Ancien format (string)
+                    noteValue = typeof noteData === 'string' ? noteData : String(noteData);
+                }
+                return {
+                    eventKey: key,
+                    note: noteValue
+                };
+            });
             
             return NextResponse.json({
                 events: demoData.events,

@@ -260,6 +260,20 @@
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    transform-origin: center;
+}
+
+/* S'assurer que les images SVG dans le bouton restent bien centrées et fixes */
+.view-filter-group-btn img {
+    display: block;
+    object-fit: contain;
+    transition: none !important;
+    transform: none !important;
+    will-change: auto;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
 }
 
 .view-filter-group-btn:hover {
