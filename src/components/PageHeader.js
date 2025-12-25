@@ -26,6 +26,10 @@ export default function PageHeader({
                                        onToggleTimeRemaining = null,
                                        showTooltips = true,
                                        onToggleTooltips = null,
+                                       colorPosition = 'background',
+                                       onColorPositionChange = null,
+                                       colorBackgroundOpacity = 0.6,
+                                       onColorBackgroundOpacityChange = null,
                                        userInfo = null,
                                        isLoadingUser = false
                                    }) {
@@ -300,6 +304,10 @@ export default function PageHeader({
                                 onToggleTimeRemaining={onToggleTimeRemaining}
                                 showTooltips={showTooltips}
                                 onToggleTooltips={onToggleTooltips}
+                                colorPosition={colorPosition}
+                                onColorPositionChange={onColorPositionChange}
+                                colorBackgroundOpacity={colorBackgroundOpacity}
+                                onColorBackgroundOpacityChange={onColorBackgroundOpacityChange}
                             />
                         </div>
                     </Tooltip>

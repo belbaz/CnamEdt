@@ -66,6 +66,16 @@ export function useHomePageHandlers({
         localStorage.setItem('showTooltips', enabled.toString());
     };
 
+    const handleColorPositionChange = (position, setColorPosition) => {
+        setColorPosition(position);
+        localStorage.setItem('colorPosition', position);
+    };
+
+    const handleColorBackgroundOpacityChange = (opacity, setColorBackgroundOpacity) => {
+        setColorBackgroundOpacity(opacity);
+        localStorage.setItem('colorBackgroundOpacity', opacity.toString());
+    };
+
     const handleToggleFullYear = (enabled, setShowFullYear) => {
         setShowFullYear(enabled);
         localStorage.setItem('showFullYear', enabled.toString());
@@ -255,6 +265,8 @@ export function useHomePageHandlers({
         handleToggle15MinSpacing,
         handleToggleTimeRemaining,
         handleToggleTooltips,
+        handleColorPositionChange,
+        handleColorBackgroundOpacityChange,
         handleToggleFullYear,
         handleToggleDay,
         handleToggleAllDays,

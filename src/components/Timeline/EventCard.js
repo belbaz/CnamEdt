@@ -12,6 +12,30 @@ const isVisioLocation = (location) => {
     return /visio/i.test(location);
 };
 
+// Couleurs RGB pour le mode background (correspondant aux couleurs du CSS)
+const BACKGROUND_COLORS_RGB = [
+    [14, 165, 233],   // 0: Sky
+    [16, 185, 129],   // 1: Emerald
+    [245, 158, 11],   // 2: Amber
+    [139, 92, 246],   // 3: Violet
+    [244, 63, 94],    // 4: Rose
+    [20, 184, 166],   // 5: Teal
+    [132, 204, 22],   // 6: Lime
+    [99, 102, 241],   // 7: Indigo
+    [249, 115, 22],   // 8: Orange
+    [6, 182, 212],    // 9: Cyan
+    [34, 197, 94],    // 10: Green
+    [232, 121, 249],  // 11: Fuchsia
+    [59, 130, 246],   // 12: Blue
+    [239, 68, 68],    // 13: Red
+    [234, 179, 8],    // 14: Yellow
+    [168, 85, 247],   // 15: Purple
+    [236, 72, 153],   // 16: Pink
+    [45, 212, 191],   // 17: Mint
+    [251, 146, 60],   // 18: Carrot
+    [29, 78, 216],    // 19: Deep Blue
+];
+
 export default function EventCard({
     event,
     stylePos,
@@ -21,7 +45,9 @@ export default function EventCard({
     fileCount: propsFileCount,
     isDistanciel = false,
     notePreviewItems = [],
-    nonDistancielLabels = []
+    nonDistancielLabels = [],
+    colorPosition = 'background',
+    colorBackgroundOpacity = 0.6
 }) {
     const {matiere, prof, description, splitGroup} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -179,11 +205,24 @@ export default function EventCard({
     // Détecter si la description contient "EXAMEN"
     const isExam = description && description.toUpperCase().includes("EXAMEN");
 
+    // Calculer l'index de couleur et le background pour le mode fond
+    const colorIndex = getColorIndexForSubject(matiere || description, subjectColors);
+    const bgColorRgb = BACKGROUND_COLORS_RGB[colorIndex] || BACKGROUND_COLORS_RGB[0];
+    const bgColorStyle = colorPosition === 'background' 
+        ? `rgba(${bgColorRgb[0]}, ${bgColorRgb[1]}, ${bgColorRgb[2]}, ${colorBackgroundOpacity})`
+        : undefined;
+    
+
     return (
         <li
-            className={`event-card`}
-            style={stylePos}
-            data-index={getColorIndexForSubject(matiere || description, subjectColors)}
+            className={`event-card ${colorPosition === 'background' ? 'color-background' : 'color-top'}`}
+            style={{
+                ...stylePos,
+                ...(colorPosition === 'background' && {
+                    backgroundColor: bgColorStyle
+                })
+            }}
+            data-index={colorIndex}
             ref={cardRef}
             onClick={(e) => {
                 if (onOpenEventDetails && cardRef.current) {

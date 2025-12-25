@@ -17,7 +17,9 @@ export default function VerticalSchedule({
     hide15MinSpacing = false,
     isPWAInstalled = false,
     monthFormat = 'long',
-    courseNotes = null
+    courseNotes = null,
+    colorPosition = 'background',
+    colorBackgroundOpacity = 0.6
 }) {
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat), [events, monthFormat]);
@@ -528,6 +530,8 @@ export default function VerticalSchedule({
                                                         notePreviewItems={notePreviewItems}
                                                         isDistanciel={hasDistancielLabel}
                                                         nonDistancielLabels={nonDistancielLabels}
+                                                        colorPosition={colorPosition}
+                                                        colorBackgroundOpacity={colorBackgroundOpacity}
                                                     />
                                                 );
                                             });

@@ -35,6 +35,17 @@
     border-radius: 28px 28px 0 0;
 }
 
+/* Mode fond : couleur en arrière-plan de toute la carte - on cache le ::before */
+.event-card.color-background::before {
+    display: none;
+}
+
+/* Mode fond : le background est maintenant appliqué en inline style dans React pour supporter l'opacité dynamique */
+/* Le hover ajoute un léger effet de brightness */
+.event-card.color-background:hover {
+    filter: brightness(0.95);
+}
+
 .event-card:hover {
     background: var(--bg-secondary);
     box-shadow: var(--shadow-lg);
@@ -968,7 +979,7 @@
 .event-time {
     font-weight: 600;
     font-size: 0.7rem;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-bottom: 0.18rem;
     margin-top: .1rem;
     display: block;
@@ -997,7 +1008,7 @@
 }
 
 .prof {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-style: normal;
     font-size: 0.7rem;
     margin-top: 0.18rem;
@@ -1009,11 +1020,10 @@
 
 .prof::before {
     content: "👤 ";
-    opacity: 0.7;
 }
 
 .location {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-style: normal;
     font-size: 0.7rem;
     margin-top: 0.15rem;
@@ -1025,13 +1035,11 @@
 
 .location::before {
     content: "📍 ";
-    opacity: 0.7;
     flex-shrink: 0;
 }
 
 .location.visio-location::before {
     content: "🎥 ";
-    opacity: 0.9;
 }
 
 .location-text {
@@ -1160,10 +1168,22 @@
         border-radius: 10px 10px 0 0;
     }
 
+    .event-card.color-background::before {
+        height: 100%;
+        width: 100%;
+        border-radius: 10px;
+    }
+
     .vertical-events-container .event-card::before {
         height: 6px;
         width: 97%;
         border-radius: 10px 10px 0 0;
+    }
+
+    .vertical-events-container .event-card.color-background::before {
+        height: 100%;
+        width: 100%;
+        border-radius: 10px;
     }
 
     .event-card:hover {
@@ -1231,6 +1251,7 @@
     .event-card:hover::before {
         height: 4px;
     }
+
 
     .event-time {
         font-size: 0.65rem;

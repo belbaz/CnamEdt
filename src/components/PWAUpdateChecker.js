@@ -23,6 +23,8 @@ const LOCALSTORAGE_KEYS_TO_KEEP = [
     'hide15MinSpacing',
     'showTimeRemaining',
     'showTooltips',
+    'colorPosition',
+    'colorBackgroundOpacity',
     'showFullYear',
     'collapsedDays',
     'histo-last-seen-date',

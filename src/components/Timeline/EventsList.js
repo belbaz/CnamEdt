@@ -15,7 +15,9 @@ export default function EventsList({
     onOpenEventDetails,
     compactMode = 5,
     hide15MinSpacing = false,
-    courseNotes = null
+    courseNotes = null,
+    colorPosition = 'background',
+    colorBackgroundOpacity = 0.6
 }) {
     const { dayHeightFactor, cardTopPadding, eventsContainerPadding } = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
@@ -216,6 +218,8 @@ export default function EventsList({
                                 isDistanciel={hasDistancielLabel}
                                 notePreviewItems={notePreviewItems}
                                 nonDistancielLabels={nonDistancielLabels}
+                                colorPosition={colorPosition}
+                                colorBackgroundOpacity={colorBackgroundOpacity}
                             />
                         );
                     });

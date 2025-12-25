@@ -16,7 +16,9 @@ const DayBlock = forwardRef(({
     compactMode = 5,
     showTimeLabels = true,
     hide15MinSpacing = false,
-    courseNotes = null
+    courseNotes = null,
+    colorPosition = 'background',
+    colorBackgroundOpacity = 0.6
 }, ref) => {
     // Mémoriser les calculs pour éviter de les refaire à chaque rendu
     const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
@@ -115,6 +117,8 @@ const DayBlock = forwardRef(({
                     showTimeLabels={showTimeLabels}
                     hide15MinSpacing={hide15MinSpacing}
                     courseNotes={courseNotes}
+                    colorPosition={colorPosition}
+                    colorBackgroundOpacity={colorBackgroundOpacity}
                 />
             )}
         </div>

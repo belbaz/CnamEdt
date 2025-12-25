@@ -18,7 +18,9 @@ export default function TimelineWrapper({
     compactMode = 5,
     showTimeLabels = true,
     hide15MinSpacing = false,
-    courseNotes = null
+    courseNotes = null,
+    colorPosition = 'background',
+    colorBackgroundOpacity = 0.6
 }) {
     // Mémoriser le calcul isMobile pour éviter les recalculs inutiles
     const isMobile = useMemo(() => {
@@ -52,6 +54,8 @@ export default function TimelineWrapper({
                 compactMode={compactMode}
                 hide15MinSpacing={hide15MinSpacing}
                 courseNotes={courseNotes}
+                colorPosition={colorPosition}
+                colorBackgroundOpacity={colorBackgroundOpacity}
             />
         </div>
     );

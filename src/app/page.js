@@ -72,6 +72,8 @@ function HomeContent({searchParams}) {
     const [hide15MinSpacing, setHide15MinSpacing] = useState(false); // Masquer l'espacement visuel de 15 minutes
     const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
     const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
+    const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
+    const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.6); // Opacité du background (0 à 1, par défaut: 0.6)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -905,6 +907,22 @@ function HomeContent({searchParams}) {
         const savedShowTooltips = localStorage.getItem("showTooltips");
         if (savedShowTooltips !== null) setShowTooltips(savedShowTooltips === "true");
 
+        const savedColorPosition = localStorage.getItem("colorPosition");
+        if (savedColorPosition === 'top' || savedColorPosition === 'background') {
+            setColorPosition(savedColorPosition);
+        } else {
+            // Par défaut : fond (background)
+            setColorPosition('background');
+        }
+
+        const savedColorBackgroundOpacity = localStorage.getItem("colorBackgroundOpacity");
+        if (savedColorBackgroundOpacity !== null) {
+            const opacity = parseFloat(savedColorBackgroundOpacity);
+            if (!isNaN(opacity) && opacity >= 0 && opacity <= 1) {
+                setColorBackgroundOpacity(opacity);
+            }
+        }
+
         const savedShowFullYear = localStorage.getItem("showFullYear");
         if (savedShowFullYear === 'true') setShowFullYear(true);
     }, []);
@@ -1056,6 +1074,8 @@ function HomeContent({searchParams}) {
     const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
     const handleToggleTimeRemaining = (enabled) => handlers.handleToggleTimeRemaining(enabled, setShowTimeRemaining);
     const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
+    const handleColorPositionChange = (position) => handlers.handleColorPositionChange(position, setColorPosition);
+    const handleColorBackgroundOpacityChange = (opacity) => handlers.handleColorBackgroundOpacityChange(opacity, setColorBackgroundOpacity);
     const handleToggleFullYear = () => handlers.handleToggleFullYear(!showFullYear, setShowFullYear);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
@@ -1215,6 +1235,10 @@ function HomeContent({searchParams}) {
                 onToggleTimeRemaining={handleToggleTimeRemaining}
                 showTooltips={showTooltips}
                 onToggleTooltips={handleToggleTooltips}
+                colorPosition={colorPosition}
+                onColorPositionChange={handleColorPositionChange}
+                colorBackgroundOpacity={colorBackgroundOpacity}
+                onColorBackgroundOpacityChange={handleColorBackgroundOpacityChange}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
@@ -1347,6 +1371,8 @@ function HomeContent({searchParams}) {
                                 isPWAInstalled={isInstalled}
                                 monthFormat={'short'}
                                 courseNotes={courseNotes}
+                                colorPosition={colorPosition}
+                                colorBackgroundOpacity={colorBackgroundOpacity}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {
@@ -1370,6 +1396,8 @@ function HomeContent({searchParams}) {
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}
                                             courseNotes={courseNotes}
+                                            colorPosition={colorPosition}
+                                            colorBackgroundOpacity={colorBackgroundOpacity}
                                         />
                                         {isToday && (
                                             <div

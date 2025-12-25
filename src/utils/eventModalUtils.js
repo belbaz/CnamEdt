@@ -164,7 +164,7 @@ export function parseLocationMeta(location) {
         // Si la localisation contient "visio", on affiche désormais un libellé distanciel
         display: visio
             ? 'Cours en distanciel'
-            : (cleaned || (raw ? raw.trim() : '?')),
+            : (cleaned || '?'),
         isVisio: visio,
         siteInfo,
         hasPhysical

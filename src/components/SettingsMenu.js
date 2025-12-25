@@ -4,6 +4,43 @@ import "./SettingsMenu.css";
 import Toast from "./Toast";
 import {useDevMode} from "../utils/env";
 
+const TABS = {
+    DISPLAY: 'display',
+    COLORS: 'colors',
+    CONTACT: 'contact'
+};
+
+// Composant séparé pour le slider d'opacité
+function SliderOpacity({ value, onChange }) {
+    const [localValue, setLocalValue] = useState(Math.round(value * 100));
+    
+    const handleChange = (e) => {
+        const newValue = parseInt(e.target.value, 10);
+        setLocalValue(newValue);
+        if (onChange) {
+            onChange(newValue / 100);
+        }
+    };
+    
+    return (
+        <div className="setting-item slider-item">
+            <div className="slider-label">
+                <span>Intensité de la couleur :</span>
+                <span className="slider-value">{localValue}%</span>
+            </div>
+            <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={localValue}
+                onChange={handleChange}
+                className="slider"
+            />
+        </div>
+    );
+}
+
 export default function SettingsMenu({
                                          onOpenChange,
                                          compactMode,
@@ -17,9 +54,14 @@ export default function SettingsMenu({
                                          showTimeRemaining = true,
                                          onToggleTimeRemaining = null,
                                          showTooltips = true,
-                                         onToggleTooltips = null
+                                         onToggleTooltips = null,
+                                         colorPosition = 'background',
+                                         onColorPositionChange = null,
+                                         colorBackgroundOpacity = 0.6,
+                                         onColorBackgroundOpacityChange = null
                                      }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState(TABS.DISPLAY);
     const [toastMessage, setToastMessage] = useState("");
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
@@ -124,76 +166,141 @@ export default function SettingsMenu({
                         </div>
 
                         <div className="settings-content">
-                            <div className="setting-item">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={showTimeLabels}
-                                        onChange={(e) => onToggleTimeLabels && onToggleTimeLabels(e.target.checked)}
-                                    />
-                                    <span>Afficher les heures</span>
-                                </label>
-                            </div>
-
-                            <div className="setting-item">
-                                <label htmlFor="hide15MinSpacing-checkbox">
-                                    <input
-                                        id="hide15MinSpacing-checkbox"
-                                        type="checkbox"
-                                        checked={hide15MinSpacing}
-                                        onChange={(e) => onToggle15MinSpacing && onToggle15MinSpacing(e.target.checked)}
-                                    />
-                                    <span>Masquer les pauses de 15 minutes</span>
-                                </label>
-                            </div>
-
-                            <div className="setting-item">
-                                <label htmlFor="showTimeRemaining-checkbox">
-                                    <input
-                                        id="showTimeRemaining-checkbox"
-                                        type="checkbox"
-                                        checked={showTimeRemaining}
-                                        onChange={(e) => onToggleTimeRemaining && onToggleTimeRemaining(e.target.checked)}
-                                    />
-                                    <span>Afficher le temps restant du cours</span>
-                                </label>
-                            </div>
-
-                            <div className="setting-item">
-                                <label htmlFor="showTooltips-checkbox">
-                                    <input
-                                        id="showTooltips-checkbox"
-                                        type="checkbox"
-                                        checked={showTooltips}
-                                        onChange={(e) => onToggleTooltips && onToggleTooltips(e.target.checked)}
-                                    />
-                                    <span>Afficher les indications des boutons</span>
-                                </label>
-                            </div>
-
-                            {/* Canal supprimé: interface épurée */}
-
-                            <div className="setting-item setting-button-item">
-                                <a
-                                    href={"https://belbaz.vercel.app/contact"}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="settings-action contact-button"
+                            {/* Onglets */}
+                            <div className="settings-tabs">
+                                <button
+                                    className={`settings-tab ${activeTab === TABS.DISPLAY ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(TABS.DISPLAY)}
                                 >
-                                    <span className="button-icon">✉️</span>
-                                    <span className="button-label">Contact</span>
-                                </a>
+                                    Affichage
+                                </button>
+                                <button
+                                    className={`settings-tab ${activeTab === TABS.COLORS ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(TABS.COLORS)}
+                                >
+                                    Couleurs
+                                </button>
+                                <button
+                                    className={`settings-tab ${activeTab === TABS.CONTACT ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(TABS.CONTACT)}
+                                >
+                                    Contact
+                                </button>
                             </div>
 
-                            <div className="setting-item copyright-item">
-                                <div className="copyright-line">
-                                    <span
-                                        className="copyright-text"
-                                        onClick={handleCopyrightClick}
-                                    >
-                                        © {new Date().getFullYear()} EDT CNAM{version && ` • v${version}`}
-                                    </span>
-                                </div>
+                            {/* Contenu des onglets */}
+                            <div className="settings-tab-content">
+                                {activeTab === TABS.DISPLAY && (
+                                    <div className="settings-tab-panel">
+                                        <div className="setting-item">
+                                            <label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={showTimeLabels}
+                                                    onChange={(e) => onToggleTimeLabels && onToggleTimeLabels(e.target.checked)}
+                                                />
+                                                <span>Afficher les heures</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="hide15MinSpacing-checkbox">
+                                                <input
+                                                    id="hide15MinSpacing-checkbox"
+                                                    type="checkbox"
+                                                    checked={hide15MinSpacing}
+                                                    onChange={(e) => onToggle15MinSpacing && onToggle15MinSpacing(e.target.checked)}
+                                                />
+                                                <span>Masquer les pauses de 15 minutes</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="showTimeRemaining-checkbox">
+                                                <input
+                                                    id="showTimeRemaining-checkbox"
+                                                    type="checkbox"
+                                                    checked={showTimeRemaining}
+                                                    onChange={(e) => onToggleTimeRemaining && onToggleTimeRemaining(e.target.checked)}
+                                                />
+                                                <span>Afficher le temps restant du cours</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="showTooltips-checkbox">
+                                                <input
+                                                    id="showTooltips-checkbox"
+                                                    type="checkbox"
+                                                    checked={showTooltips}
+                                                    onChange={(e) => onToggleTooltips && onToggleTooltips(e.target.checked)}
+                                                />
+                                                <span>Afficher les indications des boutons</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === TABS.COLORS && (
+                                    <div className="settings-tab-panel">
+                                        <div className="setting-item">
+                                            <label htmlFor="colorPosition-select">
+                                                <span style={{marginRight: '0.5rem'}}>Position de la couleur du cours :</span>
+                                                <select
+                                                    id="colorPosition-select"
+                                                    value={colorPosition}
+                                                    onChange={(e) => onColorPositionChange && onColorPositionChange(e.target.value)}
+                                                    style={{
+                                                        padding: '0.4rem 0.6rem',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid var(--border-color)',
+                                                        background: 'var(--bg-tertiary)',
+                                                        color: 'var(--text-primary)',
+                                                        fontSize: '0.9rem',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <option value="top">Au-dessus</option>
+                                                    <option value="background">Fond</option>
+                                                </select>
+                                            </label>
+                                        </div>
+
+                                        {colorPosition === 'background' && (
+                                            <SliderOpacity 
+                                                value={colorBackgroundOpacity} 
+                                                onChange={onColorBackgroundOpacityChange} 
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === TABS.CONTACT && (
+                                    <div className="settings-tab-panel">
+                                        <div className="setting-item setting-button-item">
+                                            <a
+                                                href={"https://belbaz.vercel.app/contact"}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="settings-action contact-button"
+                                            >
+                                                <span className="button-icon">✉️</span>
+                                                <span className="button-label">Contact</span>
+                                            </a>
+                                        </div>
+
+                                        <div className="setting-item copyright-item">
+                                            <div className="copyright-line">
+                                                <span
+                                                    className="copyright-text"
+                                                    onClick={handleCopyrightClick}
+                                                >
+                                                    © {new Date().getFullYear()} EDT CNAM{version && ` • v${version}`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
