@@ -73,7 +73,7 @@ function HomeContent({searchParams}) {
     const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
     const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
     const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
-    const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.6); // Opacité du background (0 à 1, par défaut: 0.6)
+    const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.75); // Opacité du background (0 à 1, par défaut: 0.6)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
