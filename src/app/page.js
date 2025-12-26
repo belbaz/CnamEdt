@@ -479,13 +479,14 @@ function HomeContent({searchParams}) {
             });
         }
 
-        // Si un eventKey est présent dans l'URL, filtrer pour n'afficher que ce cours
+        // Si un eventKey est présent dans l'URL, filtrer pour n'afficher que ce(s) cours
         const eventKeyParam = searchParams?.get('eventKey');
         if (eventKeyParam) {
-            const decodedKey = decodeURIComponent(eventKeyParam);
+            // Gérer plusieurs eventKey séparés par des virgules
+            const eventKeys = eventKeyParam.split(',').map(key => decodeURIComponent(key.trim()));
             filtered = filtered.filter((e) => {
                 const key = generateEventKey(e);
-                return key === decodedKey;
+                return eventKeys.includes(key);
             });
         }
 
@@ -498,11 +499,13 @@ function HomeContent({searchParams}) {
         const eventKeyParam = searchParams?.get('eventKey');
         if (!eventKeyParam || allEvents.length === 0) return;
 
-        const decodedKey = decodeURIComponent(eventKeyParam);
-        // Trouver l'événement correspondant
+        // Gérer plusieurs eventKey séparés par des virgules
+        const eventKeys = eventKeyParam.split(',').map(key => decodeURIComponent(key.trim()));
+        
+        // Trouver le premier événement correspondant (pour déterminer la semaine)
         const matchingEvent = allEvents.find((e) => {
             const key = generateEventKey(e);
-            return key === decodedKey;
+            return eventKeys.includes(key);
         });
 
         if (matchingEvent) {

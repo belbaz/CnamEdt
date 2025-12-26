@@ -2,7 +2,8 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-gradient);
+    transition: background 0.3s ease;
 }
 
 .main {
@@ -16,7 +17,7 @@
 .title {
     font-size: 2.5rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-primary);
     text-align: center;
     margin-bottom: 2rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
@@ -30,7 +31,7 @@
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
-    color: white;
+    color: var(--text-primary);
 }
 
 .errorMessage {
@@ -45,10 +46,11 @@
 .noExamsContainer {
     text-align: center;
     padding: 4rem 2rem;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-secondary);
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-lg);
     margin-top: 2rem;
+    border: 1px solid var(--border-color);
 }
 
 .noExamsIcon {
@@ -58,14 +60,14 @@
 
 .noExamsTitle {
     font-size: 2rem;
-    color: #4b5563;
+    color: var(--text-primary);
     margin-bottom: 1rem;
     font-weight: 600;
 }
 
 .noExamsText {
     font-size: 1.2rem;
-    color: #6b7280;
+    color: var(--text-muted);
     line-height: 1.6;
 }
 
@@ -76,7 +78,7 @@
 
 .summaryText {
     font-size: 1.3rem;
-    color: white;
+    color: var(--text-primary);
     font-weight: 500;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -91,27 +93,32 @@
 }
 
 .examItem {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 1rem 1.25rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
     border-left: 4px solid var(--subject-color);
+    border-top: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
 }
 
 .examItem:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
     transform: translateX(4px);
+    opacity: 0.9;
 }
 
 .examItem.urgent {
     border-left-color: #f59e0b;
-    background: rgba(255, 247, 237, 0.95);
+    background: var(--bg-tertiary);
 }
 
 .examItem.veryUrgent {
     border-left-color: #ef4444;
-    background: rgba(254, 242, 242, 0.95);
+    background: var(--bg-tertiary);
     animation: pulseUrgent 2s ease-in-out infinite;
 }
 
@@ -164,11 +171,18 @@
 .examSubject {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--text-primary);
     margin: 0 0 0.25rem 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.examCount {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.8;
 }
 
 .examMeta {
@@ -176,7 +190,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--text-muted);
 }
 
 .examDate,

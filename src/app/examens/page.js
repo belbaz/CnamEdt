@@ -1,19 +1,86 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { fetchICSEvents } from "@/services/icsService";
 import { getEventTitle } from "@/utils/eventUtils";
 import { createSubjectColorMapping } from "@/utils/eventUtils";
+import { generateEventKey } from "@/utils/eventModalUtils";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Footer from "@/components/Footer";
 import styles from "./page.module.css";
 
 function ExamensContent() {
+    const router = useRouter();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [subjectColors, setSubjectColors] = useState({});
+    const [darkMode, setDarkMode] = useState(false);
+    const [oledMode, setOledMode] = useState(false);
+
+    // Appliquer le dark mode immédiatement au chargement (avant React)
+    useEffect(() => {
+        try {
+            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
+            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+            const fromStorage = localStorage.getItem('darkMode');
+            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
+            if (dark) {
+                document.documentElement.classList.add('dark-mode');
+                setDarkMode(true);
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                setDarkMode(false);
+            }
+
+            // Vérifier aussi le mode OLED
+            const oled = localStorage.getItem('oledMode') === 'true';
+            if (oled && dark) {
+                document.documentElement.classList.add('oled-mode');
+                setOledMode(true);
+            } else {
+                document.documentElement.classList.remove('oled-mode');
+                setOledMode(false);
+            }
+        } catch (e) {
+            // Erreur silencieuse
+        }
+    }, []);
+
+    // Fonction pour toggle le dark mode
+    const handleToggleDarkMode = () => {
+        const newDarkMode = !darkMode;
+        setDarkMode(newDarkMode);
+        
+        if (newDarkMode) {
+            document.documentElement.classList.add('dark-mode');
+            localStorage.setItem('darkMode', 'true');
+            document.cookie = 'darkMode=true; path=/; max-age=31536000'; // 1 an
+        } else {
+            document.documentElement.classList.remove('dark-mode');
+            document.documentElement.classList.remove('oled-mode');
+            localStorage.setItem('darkMode', 'false');
+            localStorage.setItem('oledMode', 'false');
+            document.cookie = 'darkMode=false; path=/; max-age=31536000';
+            setOledMode(false);
+        }
+    };
+
+    // Fonction pour toggle le mode OLED
+    const handleToggleOledMode = () => {
+        const newOledMode = !oledMode;
+        setOledMode(newOledMode);
+        
+        if (newOledMode) {
+            document.documentElement.classList.add('oled-mode');
+            localStorage.setItem('oledMode', 'true');
+        } else {
+            document.documentElement.classList.remove('oled-mode');
+            localStorage.setItem('oledMode', 'false');
+        }
+    };
 
     // Mettre à jour l'heure actuelle toutes les secondes
     useEffect(() => {
@@ -47,7 +114,8 @@ function ExamensContent() {
 
     // Filtrer et traiter les examens
     const upcomingExams = useMemo(() => {
-        return events
+        // Filtrer et mapper les examens
+        const allExams = events
             .filter((event) => {
                 const description = event.description || "";
                 const isExam = description.toUpperCase().includes("EXAMEN");
@@ -69,6 +137,59 @@ function ExamensContent() {
                 };
             })
             .sort((a, b) => a.examDate - b.examDate);
+
+        // Regrouper les examens consécutifs de la même matière
+        const groupedExams = [];
+        let currentGroup = null;
+
+        for (const exam of allExams) {
+            if (!currentGroup) {
+                // Premier examen, créer un nouveau groupe
+                const examEndDate = exam.end || exam.end_time || exam.examDate;
+                currentGroup = {
+                    ...exam,
+                    exams: [exam],
+                    endDate: new Date(examEndDate),
+                };
+            } else {
+                // Vérifier si cet examen est consécutif et de la même matière
+                // Utiliser la date de fin du dernier examen du groupe
+                const lastExamInGroup = currentGroup.exams[currentGroup.exams.length - 1];
+                const lastExamEndDate = lastExamInGroup.end || lastExamInGroup.end_time || lastExamInGroup.examDate;
+                const timeBetweenExams = exam.examDate - new Date(lastExamEndDate);
+                const isSameSubject = exam.matiere === currentGroup.matiere;
+                const isConsecutive = timeBetweenExams <= 24 * 60 * 60 * 1000; // Moins de 24h entre les examens
+
+                if (isSameSubject && isConsecutive) {
+                    // Ajouter à ce groupe
+                    currentGroup.exams.push(exam);
+                    // Mettre à jour la date de fin avec la date de fin de cet examen
+                    const examEndDate = exam.end || exam.end_time || exam.examDate;
+                    currentGroup.endDate = new Date(examEndDate);
+                    // Mettre à jour le timeDiff avec le premier examen du groupe (le plus proche)
+                    if (exam.timeDiff < currentGroup.timeDiff) {
+                        currentGroup.timeDiff = exam.timeDiff;
+                        currentGroup.examDate = exam.examDate;
+                    }
+                } else {
+                    // Nouveau groupe, sauvegarder l'ancien
+                    groupedExams.push(currentGroup);
+                    const examEndDate = exam.end || exam.end_time || exam.examDate;
+                    currentGroup = {
+                        ...exam,
+                        exams: [exam],
+                        endDate: new Date(examEndDate),
+                    };
+                }
+            }
+        }
+
+        // Ne pas oublier le dernier groupe
+        if (currentGroup) {
+            groupedExams.push(currentGroup);
+        }
+
+        return groupedExams;
     }, [events, currentTime]);
 
     // Fonction pour formater le temps restant (toujours avec secondes)
@@ -112,14 +233,47 @@ function ExamensContent() {
         });
     }
 
+    // Fonction pour formater une plage de dates
+    function formatDateRange(startDate, endDate) {
+        const start = formatDate(startDate);
+        const end = formatDate(endDate);
+        
+        // Si c'est le même jour, afficher seulement une date avec les heures
+        const sameDay = startDate.toDateString() === endDate.toDateString();
+        if (sameDay) {
+            return start;
+        }
+        
+        return `${start} - ${end}`;
+    }
+
+    // Fonction pour naviguer vers le cours correspondant à l'examen
+    const handleExamClick = (exam) => {
+        try {
+            // Si c'est un groupe d'examens, passer tous les eventKey
+            if (exam.exams && exam.exams.length > 1) {
+                const eventKeys = exam.exams.map(e => encodeURIComponent(generateEventKey(e)));
+                router.push(`/?eventKey=${eventKeys.join(',')}`);
+            } else {
+                // Un seul examen, navigation normale
+                const examToNavigate = exam.exams ? exam.exams[0] : exam;
+                const eventKey = generateEventKey(examToNavigate);
+                const encodedKey = encodeURIComponent(eventKey);
+                router.push(`/?eventKey=${encodedKey}`);
+            }
+        } catch (err) {
+            console.error("[Examens] Erreur lors de la navigation:", err);
+        }
+    };
+
     if (loading) {
         return (
             <div className={styles.container}>
                 <Navbar
-                    darkMode={false}
-                    oledMode={false}
-                    onToggleDarkMode={() => {}}
-                    onToggleOledMode={() => {}}
+                    darkMode={darkMode}
+                    oledMode={oledMode}
+                    onToggleDarkMode={handleToggleDarkMode}
+                    onToggleOledMode={handleToggleOledMode}
                     availableWeeks={[]}
                     selectedWeek={null}
                     onWeekChange={() => {}}
@@ -139,10 +293,10 @@ function ExamensContent() {
         return (
             <div className={styles.container}>
                 <Navbar
-                    darkMode={false}
-                    oledMode={false}
-                    onToggleDarkMode={() => {}}
-                    onToggleOledMode={() => {}}
+                    darkMode={darkMode}
+                    oledMode={oledMode}
+                    onToggleDarkMode={handleToggleDarkMode}
+                    onToggleOledMode={handleToggleOledMode}
                     availableWeeks={[]}
                     selectedWeek={null}
                     onWeekChange={() => {}}
@@ -160,10 +314,10 @@ function ExamensContent() {
     return (
         <div className={styles.container}>
             <Navbar
-                darkMode={false}
-                oledMode={false}
-                onToggleDarkMode={() => {}}
-                onToggleOledMode={() => {}}
+                darkMode={darkMode}
+                oledMode={oledMode}
+                onToggleDarkMode={handleToggleDarkMode}
+                onToggleOledMode={handleToggleOledMode}
                 availableWeeks={[]}
                 selectedWeek={null}
                 onWeekChange={() => {}}
@@ -194,12 +348,17 @@ function ExamensContent() {
                                 const color = getSubjectColor(exam.matiere);
                                 const isUrgent = exam.timeDiff < 24 * 60 * 60 * 1000; // Moins de 24h
                                 const isVeryUrgent = exam.timeDiff < 7 * 60 * 60 * 1000; // Moins de 7h
+                                const isGrouped = exam.exams && exam.exams.length > 1;
+                                const firstExam = exam.exams ? exam.exams[0] : exam;
+                                const lastExam = exam.exams ? exam.exams[exam.exams.length - 1] : exam;
+                                const lastExamEndDate = lastExam.end || lastExam.end_time || lastExam.examDate;
 
                                 return (
                                     <li
                                         key={exam.uid || index}
                                         className={`${styles.examItem} ${isUrgent ? styles.urgent : ""} ${isVeryUrgent ? styles.veryUrgent : ""}`}
                                         style={{ "--subject-color": color }}
+                                        onClick={() => handleExamClick(exam)}
                                     >
                                         <div className={styles.examContent}>
                                             <div className={styles.examLeft}>
@@ -208,14 +367,19 @@ function ExamensContent() {
                                                     style={{ backgroundColor: color }}
                                                 />
                                                 <div className={styles.examInfo}>
-                                                    <h3 className={styles.examSubject}>{exam.matiere}</h3>
+                                                    <h3 className={styles.examSubject}>
+                                                        {exam.matiere}
+                                                    </h3>
                                                     <div className={styles.examMeta}>
                                                         <span className={styles.examDate}>
-                                                            📅 {formatDate(exam.examDate)}
+                                                            📅 {isGrouped 
+                                                                ? formatDateRange(firstExam.examDate, new Date(lastExamEndDate))
+                                                                : formatDate(exam.examDate)
+                                                            }
                                                         </span>
-                                                        {exam.location && (
+                                                        {firstExam.location && (
                                                             <span className={styles.examLocation}>
-                                                                📍 {exam.location}
+                                                                📍 {firstExam.location}
                                                             </span>
                                                         )}
                                                     </div>
