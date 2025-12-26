@@ -170,9 +170,24 @@
 }
 
 .offline-modal-icon {
-    color: #ef4444;
     width: 48px;
     height: 48px;
+}
+
+.offline-icon-red {
+    color: #ef4444;
+}
+
+.offline-icon-success {
+    color: #10b981;
+}
+
+.dark-mode .offline-icon-success {
+    color: #34d399;
+}
+
+.oled-mode .offline-icon-success {
+    color: #34d399;
 }
 
 .offline-modal-title {
@@ -222,41 +237,76 @@
 }
 
 /* Mode sombre */
-@media (prefers-color-scheme: dark) {
-    .offline-modal-content {
-        background: #1f2937;
-        color: white;
-    }
+.dark-mode .offline-modal-content {
+    background: #1f2937;
+    color: white;
+}
 
-    .offline-modal-close {
-        color: #9ca3af;
-    }
+.dark-mode .offline-modal-close {
+    color: #9ca3af;
+}
 
-    .offline-modal-close:hover {
-        background: #374151;
-        color: white;
-    }
+.dark-mode .offline-modal-close:hover {
+    background: #374151;
+    color: white;
+}
 
-    .offline-modal-title {
-        color: white;
-    }
+.dark-mode .offline-modal-title {
+    color: white;
+}
 
-    .offline-modal-message {
-        color: #d1d5db;
-    }
+.dark-mode .offline-modal-message {
+    color: #d1d5db;
+}
 
-    .offline-modal-info {
-        background: #111827;
-        border-color: #374151;
-    }
+.dark-mode .offline-modal-info {
+    background: #111827;
+    border-color: #374151;
+}
 
-    .offline-modal-label {
-        color: #9ca3af;
-    }
+.dark-mode .offline-modal-label {
+    color: #9ca3af;
+}
 
-    .offline-modal-date {
-        color: white;
-    }
+.dark-mode .offline-modal-date {
+    color: white;
+}
+
+/* Mode OLED */
+.oled-mode .offline-modal-content {
+    background: #000000;
+    color: white;
+    border: 1px solid #2a2a2a;
+}
+
+.oled-mode .offline-modal-close {
+    color: #9ca3af;
+}
+
+.oled-mode .offline-modal-close:hover {
+    background: #1a1a1a;
+    color: white;
+}
+
+.oled-mode .offline-modal-title {
+    color: white;
+}
+
+.oled-mode .offline-modal-message {
+    color: #d1d5db;
+}
+
+.oled-mode .offline-modal-info {
+    background: #0f1419;
+    border-color: #2a2a2a;
+}
+
+.oled-mode .offline-modal-label {
+    color: #9ca3af;
+}
+
+.oled-mode .offline-modal-date {
+    color: white;
 }
 
 /* Animations */

@@ -604,7 +604,7 @@ function HomeContent({searchParams}) {
                 const startTime = Date.now();
                 const [res] = await Promise.all([
                     fetch("/api/user", {cache: "no-store"}),
-                    new Promise(resolve => setTimeout(resolve, 200)) // Minimum 200ms
+                    new Promise(resolve => setTimeout(resolve, 500)) // Minimum 200ms
                 ]);
                 if (res.ok) {
                     const data = await res.json();
@@ -612,8 +612,8 @@ function HomeContent({searchParams}) {
                 }
                 // S'assurer que le délai minimum de 200ms est respecté
                 const elapsed = Date.now() - startTime;
-                if (elapsed < 200) {
-                    await new Promise(resolve => setTimeout(resolve, 200 - elapsed));
+                if (elapsed < 500) {
+                    await new Promise(resolve => setTimeout(resolve, 500 - elapsed));
                 }
             } catch (error) {
                 // Ignorer silencieusement si non connecté
@@ -1420,7 +1420,7 @@ function HomeContent({searchParams}) {
                                             cursor: 'pointer',
                                             background: 'none',
                                             border: 'none',
-                                            padding: 0,
+                                            padding: '5px 15px',
                                             color: 'inherit',
                                             font: 'inherit',
                                             textAlign: 'inherit'
@@ -1512,6 +1512,7 @@ function HomeContent({searchParams}) {
                 lastUpdateTimestamp={lastUpdateTimestamp}
                 showModal={showOfflineModal}
                 onModalClose={() => setShowOfflineModal(false)}
+                onModalOpen={() => setShowOfflineModal(true)}
             />
 
             <SupabaseNotification

@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import "./OfflineNotification.css";
 
-export default function OfflineNotification({ forceShow = false, lastUpdateTimestamp = null, showModal: externalShowModal = null, onModalClose: externalOnModalClose = null }) {
+export default function OfflineNotification({ forceShow = false, lastUpdateTimestamp = null, showModal: externalShowModal = null, onModalClose: externalOnModalClose = null, onModalOpen: externalOnModalOpen = null }) {
     const { isOnline } = useNetworkStatus();
     const [showNotification, setShowNotification] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -53,21 +53,47 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
         };
     }, [isOnline, showNotification, forceShow, isClosing]);
 
-    // Ne rien afficher si on est en ligne (et pas forceShow) ou si la notification n'est pas affichée
-    // SAUF si on a un contrôle externe de la modale (dans ce cas, on peut afficher seulement la modale)
-    const shouldShowNotification = (isOnline && !forceShow) || !showNotification;
+    // Tous les hooks doivent être appelés avant les retours conditionnels
+    const handleCloseModal = useCallback(() => {
+        if (externalOnModalClose) {
+            externalOnModalClose();
+        } else {
+            setInternalShowModal(false);
+        }
+    }, [externalOnModalClose]);
+
+    // Gérer la touche ESC pour fermer la modal
+    useEffect(() => {
+        if (!showModal) return;
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                handleCloseModal();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showModal, handleCloseModal]);
+
+    // Déterminer si on doit afficher la notification (hors ligne ou forceShow)
+    const shouldShowNotification = (!isOnline || forceShow) && showNotification && !isClosing;
     
-    // Si on a un contrôle externe de la modale, on peut afficher seulement la modale sans la notification
-    // Dans ce cas, on ne retourne null que si la modale n'est pas ouverte
+    // Si on a un contrôle externe de la modale, on peut afficher seulement la modale
+    // Mais on ne retourne null que si la modale n'est pas ouverte ET qu'on ne doit pas afficher la notification
     if (externalShowModal !== null) {
-        // Si on a un contrôle externe, on affiche seulement la modale si elle est ouverte
-        if (!showModal) {
+        // Si on a un contrôle externe, on affiche la modale si elle est ouverte, ou la notification si nécessaire
+        if (!showModal && !shouldShowNotification) {
             return null;
         }
-        // Sinon, on continue pour afficher la modale
-    } else if (shouldShowNotification) {
-        // Si on n'a pas de contrôle externe et qu'on ne doit pas afficher la notification, on ne retourne rien
-        return null;
+        // Sinon, on continue pour afficher la modale et/ou la notification
+    } else {
+        // Si on n'a pas de contrôle externe, on ne retourne null que si on ne doit rien afficher
+        if (!showModal && !shouldShowNotification) {
+            return null;
+        }
     }
 
     // Formater le timestamp pour l'affichage
@@ -91,29 +117,24 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
     };
 
     const handleClick = () => {
-        if (externalOnModalClose) {
-            // Si on a un contrôle externe, on ne fait rien ici (le parent gère)
-            return;
-        }
-        setInternalShowModal(true);
         // Annuler la fermeture automatique si on ouvre la modal
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
         }
-    };
-
-    const handleCloseModal = () => {
-        if (externalOnModalClose) {
-            externalOnModalClose();
+        
+        if (externalOnModalOpen) {
+            // Si on a un contrôle externe, on appelle le callback pour ouvrir la modal
+            externalOnModalOpen();
         } else {
-            setInternalShowModal(false);
+            // Sinon, on utilise l'état interne
+            setInternalShowModal(true);
         }
     };
 
     return (
         <>
-            {!shouldShowNotification && (
+            {shouldShowNotification && (
                 <div className={`offline-notification ${isClosing ? 'closing' : ''}`}>
                     <div className="offline-notification-content" onClick={handleClick} style={{ cursor: 'pointer' }}>
                         <svg className="offline-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -135,12 +156,21 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
                             ×
                         </button>
                         <div className="offline-modal-header">
-                            <svg className="offline-modal-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path 
-                                    d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" 
-                                    fill="currentColor"
-                                />
-                            </svg>
+                            {(!isOnline || forceShow) ? (
+                                <svg className="offline-modal-icon offline-icon-red" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path 
+                                        d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" 
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            ) : (
+                                <svg className="offline-modal-icon offline-icon-success" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path 
+                                        d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" 
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            )}
                             <h2 className="offline-modal-title">
                                 {!isOnline || forceShow ? 'Mode hors ligne' : 'Informations EDT'}
                             </h2>

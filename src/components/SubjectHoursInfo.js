@@ -76,6 +76,31 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
             .sort((a, b) => b.percentage - a.percentage);
     }, [allEvents]);
 
+    // Appliquer le blur directement sur le contenu de la page
+    useEffect(() => {
+        if (isOpen) {
+            // Appliquer filter: blur() sur #__next pour flouter tout le contenu
+            const nextDiv = document.getElementById('__next');
+            if (nextDiv) {
+                nextDiv.style.setProperty('filter', 'blur(8px)', 'important');
+                nextDiv.style.setProperty('transition', 'filter 0.2s ease', 'important');
+            }
+        } else {
+            // Retirer le blur
+            const nextDiv = document.getElementById('__next');
+            if (nextDiv) {
+                nextDiv.style.removeProperty('filter');
+            }
+        }
+        
+        return () => {
+            const nextDiv = document.getElementById('__next');
+            if (nextDiv) {
+                nextDiv.style.removeProperty('filter');
+            }
+        };
+    }, [isOpen]);
+
     // Fermer avec la touche Escape
     useEffect(() => {
         if (!isOpen) return;
@@ -128,7 +153,8 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
             </button>
 
             {isOpen && typeof window !== 'undefined' && createPortal(
-                <div className="subject-hours-panel" ref={panelRef}>
+                <div className="subject-hours-overlay" onClick={() => setIsOpen(false)}>
+                    <div className="subject-hours-panel" ref={panelRef} onClick={(e) => e.stopPropagation()}>
                         <div className="subject-hours-header">
                             <h3>Progression des matières</h3>
                             <button 
@@ -180,7 +206,8 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
                                 </>
                             )}
                         </div>
-                    </div>,
+                    </div>
+                </div>,
                 document.body
             )}
         </div>

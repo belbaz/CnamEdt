@@ -7,6 +7,7 @@ import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
 import { generateEventKey } from "@/utils/eventModalUtils";
+import { fetchICSEvents } from "@/services/icsService";
 import LoginForm from "@/app/login/LoginForm";
 
 function AgendaContent() {
@@ -176,10 +177,11 @@ function AgendaContent() {
             setError(null);
 
             const userPromise = fetch("/api/user", { cache: "no-store" });
-            const eventsPromise = fetch("/api/fetch-ics", { cache: "no-store" });
+            // Utiliser le service ICS qui gère correctement la réponse "unchanged" et le cache localStorage
+            const eventsPromise = fetchICSEvents();
             const publicPromise = fetch("/api/agenda?mode=public", { cache: "no-store" });
 
-            const [userRes, eventsRes, publicRes] = await Promise.all([
+            const [userRes, eventsData, publicRes] = await Promise.all([
                 userPromise,
                 eventsPromise,
                 publicPromise,
@@ -187,14 +189,14 @@ function AgendaContent() {
 
             await refreshPublicNotes({ existingResponse: publicRes });
 
-            if (!eventsRes.ok) {
-                throw new Error("Erreur lors de la récupération des cours");
-            }
-
-            const eventsData = await eventsRes.json();
-            const eventsList = Array.isArray(eventsData.events)
+            // eventsData est retourné par fetchICSEvents (format: { events, diff, meta })
+            const eventsList = Array.isArray(eventsData?.events)
                 ? eventsData.events
                 : [];
+
+            if (eventsList.length === 0) {
+                console.warn("[Agenda] Aucun événement récupéré");
+            }
 
             eventsList.sort((a, b) => {
                 const dateA = new Date(a.start || 0);

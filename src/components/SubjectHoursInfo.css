@@ -21,15 +21,21 @@
     transform: scale(1.05);
 }
 
-/* Subject Hours Overlay - transparent pour permettre de fermer en cliquant à l'extérieur */
+/* Subject Hours Overlay - fond semi-transparent, le blur est appliqué sur #__next via JS */
 .subject-hours-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: transparent;
-    z-index: 9998;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+    pointer-events: auto;
 }
 
 @keyframes fadeIn {
@@ -44,17 +50,11 @@
 
 /* Subject Hours Panel */
 .subject-hours-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: auto;
+    position: relative;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    z-index: 9999;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     width: 90vw;
     max-width: 500px;
     height: fit-content;
@@ -62,14 +62,14 @@
     display: flex;
     flex-direction: column;
     opacity: 0;
-    transform: scale(0.95);
-    animation: slideUp 0.2s ease forwards;
+    transform: translateY(20px) scale(0.95);
+    animation: slideUpModal 0.3s ease-out forwards;
 }
 
-@keyframes slideUp {
+@keyframes slideUpModal {
     to {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -100,7 +100,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 12px;
     transition: all 0.2s ease;
 }
 

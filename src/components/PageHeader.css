@@ -539,10 +539,14 @@
     border-radius: 12px;
     transition: all 0.2s ease;
     user-select: none;
+    position: relative;
+    z-index: 100;
+    border: 1px dashed var(--border-color);
 }
 
 .userInfo:hover {
     background: var(--bg-tertiary);
+    border-color: var(--primary-color);
 }
 
 /* Loading state pour userInfo */
@@ -550,10 +554,15 @@
     cursor: default;
     pointer-events: none;
     opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--border-color);
 }
 
 .userInfoLoading:hover {
     background: var(--bg-secondary);
+    border-color: var(--primary-color);
 }
 
 .userRoleLabel {
@@ -569,16 +578,27 @@
 /* Menu déroulant utilisateur */
 .userMenuDropdown {
     position: absolute;
-    top: calc(100% + 0.5rem);
+    top: calc(100% + 0.25rem);
     left: 0;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
     min-width: 200px;
-    z-index: 1000;
-    overflow: hidden;
+    z-index: 9999;
+    overflow: visible;
     animation: slideDown 0.2s ease;
+}
+
+/* Pont invisible pour éviter que le menu se ferme quand on déplace la souris */
+.userMenuDropdown::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    left: 0;
+    right: 0;
+    height: 0.5rem;
+    background: transparent;
 }
 
 @keyframes slideDown {
@@ -624,6 +644,26 @@
 .userMenuItemLogout:hover {
     background: rgba(239, 68, 68, 0.1);
     color: #dc2626;
+}
+
+/* Style pour l'utilisateur invité */
+.userInfoGuest {
+    border: 1px dashed var(--border-color);
+}
+
+.userInfoGuest:hover {
+    border-color: var(--primary-color);
+}
+
+/* Bouton créer un compte */
+.userMenuItemSignup {
+    border-top: 1px solid var(--border-color);
+    color: #10b981;
+}
+
+.userMenuItemSignup:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
 }
 
 /* Bouton Dashboard */
