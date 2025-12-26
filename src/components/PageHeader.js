@@ -221,7 +221,7 @@ export default function PageHeader({
                     {/* Salutation utilisateur avec menu */}
                     {isLoadingUser ? (
                         <div className="userInfo userInfoLoading">
-                            <p style={{margin: "0"}}>Chargement</p>
+                            {/*<p style={{margin: "0"}}>Chargement</p>*/}
                             <Spinner size="small" ariaLabel="Chargement de l'utilisateur..."/>
                         </div>
                     ) : userInfo && userInfo.name ? (

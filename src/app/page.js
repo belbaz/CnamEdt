@@ -1416,15 +1416,7 @@ function HomeContent({searchParams}) {
                                     <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
                                     <button 
                                         onClick={() => setShowOfflineModal(true)} 
-                                        style={{ 
-                                            cursor: 'pointer',
-                                            background: 'none',
-                                            border: 'none',
-                                            padding: '5px 15px',
-                                            color: 'inherit',
-                                            font: 'inherit',
-                                            textAlign: 'inherit'
-                                        }}
+                                        className="btn-update-detail"
                                         title="Cliquer pour voir les détails"
                                         aria-label="Voir les détails de la dernière mise à jour"
                                     >
@@ -1438,11 +1430,10 @@ function HomeContent({searchParams}) {
                             hasNetworkError && (
                                 <div className="last-update-info">
                                     <button 
-                                        onClick={() => setShowOfflineModal(true)}
+                                        onClick={() => setShowOfflineModal(true)} 
                                         className={styles.offlineTimestamp}
                                         style={{ 
                                             cursor: 'pointer',
-                                            background: 'none',
                                             font: 'inherit',
                                             textAlign: 'inherit',
                                             display: 'inline-block'

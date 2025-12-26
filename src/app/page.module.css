@@ -917,16 +917,37 @@
 
 /* Style pour le timestamp en mode hors ligne */
 :global(.last-update-info) .offlineTimestamp {
-    color: #dc2626 !important;
-    border: 1px solid #dc2626 !important;
+    color: var(--text-secondary) !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.4) !important;
     border-radius: 15px;
     padding: 0.25rem 0.5rem;
     display: inline-block;
+    background: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:global(.last-update-info) .offlineTimestamp:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-color: rgba(0, 0, 0, 0.45) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .dark-mode :global(.last-update-info) .offlineTimestamp,
 [data-theme="dark"] :global(.last-update-info) .offlineTimestamp,
 .oled-mode :global(.last-update-info) .offlineTimestamp {
-    color: #f87171 !important;
-    border-color: #f87171 !important;
+    color: var(--text-secondary) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode :global(.last-update-info) .offlineTimestamp:hover,
+[data-theme="dark"] :global(.last-update-info) .offlineTimestamp:hover,
+.oled-mode :global(.last-update-info) .offlineTimestamp:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
 }

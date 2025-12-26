@@ -686,6 +686,16 @@
     }
 }
 
+.btn-update-detail {
+    cursor: pointer;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    padding: 5px 15px;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+}
+
 /* Affichage de la dernière mise à jour */
 .last-update-info {
     width: 100%;
