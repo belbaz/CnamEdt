@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./login.module.css";
 
 const LOG_PREFIX = "[LoginForm]";
 
 export default function LoginForm({ onSuccess, embedded = false }) {
+    const { t } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [email, setEmail] = useState("");
@@ -59,12 +61,12 @@ export default function LoginForm({ onSuccess, embedded = false }) {
         const normalizedEmail = email.trim().toLowerCase();
         // Accepter soit "admin" soit une adresse @lecnam.net
         if (normalizedEmail !== "admin" && !normalizedEmail.endsWith("@lecnam.net")) {
-            setErrorMessage("Connectez-vous avec une adresse @lecnam.net");
+            setErrorMessage(t('login.errorEmail'));
             return;
         }
 
         if (!password) {
-            setErrorMessage("Le mot de passe est requis.");
+            setErrorMessage(t('login.errorPassword'));
             return;
         }
 
@@ -79,11 +81,11 @@ export default function LoginForm({ onSuccess, embedded = false }) {
             const payload = await response.json();
 
             if (!response.ok) {
-                throw new Error(payload?.error || "Connexion impossible. Réessayez plus tard.");
+                throw new Error(payload?.error || t('login.errorConnection'));
             }
 
             if (onSuccess) {
-                setSuccessMessage("Connexion réussie !");
+                setSuccessMessage(t('login.success'));
                 // Si une callback est fournie (ex: rechargement des données), on l'appelle
                 // et on laisse le composant parent gérer la suite (ou pas de redirection)
                 await onSuccess();
@@ -133,7 +135,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                             <div className={styles.loadingState} style={{ justifyContent: "center", marginBottom: "1rem" }}>
                                 <div className={styles.loader}></div>
                             </div>
-                            <p style={{ color: "var(--text-secondary)" }}>Chargement de la session...</p>
+                            <p style={{ color: "var(--text-secondary)" }}>{t('login.loadingSession')}</p>
                         </div>
                     </div>
                 </div>
@@ -148,19 +150,19 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                     <div className={styles.formCard}>
                         <header className={styles.cardHeader}>
                             <div>
-                                <h2>Vous êtes déjà connecté</h2>
+                                <h2>{t('login.alreadyLoggedIn')}</h2>
                                 <p className={styles.cardSubhead}>
-                                    Bonjour {userInfo.name} {userInfo.lastName}
+                                    {t('login.hello')} {userInfo.name} {userInfo.lastName}
                                 </p>
                             </div>
                         </header>
                         <div style={{ padding: "1.5rem", textAlign: "center" }}>
                             <div style={{ marginBottom: "1.5rem" }}>
                                 <p style={{ marginBottom: "1rem", color: "var(--text-secondary)" }}>
-                                    Vous êtes déjà connecté à votre compte.
+                                    {t('login.alreadyLoggedInText')}
                                 </p>
                                 <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)" }}>
-                                    Vous pouvez accéder à votre emploi du temps ou au tableau de bord.
+                                    {t('login.alreadyLoggedInText2')}
                                 </p>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -169,7 +171,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                                     className={styles.submitButton}
                                     style={{ width: "100%" }}
                                 >
-                                    Aller à l'EDT
+                                    {t('login.goToEDT')}
                                 </button>
                                 <button
                                     onClick={() => router.push("/dashboard")}
@@ -181,7 +183,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                                         border: "1px solid var(--border-color)"
                                     }}
                                 >
-                                    Tableau de bord
+                                    {t('login.goToDashboard')}
                                 </button>
                             </div>
                         </div>
@@ -198,12 +200,12 @@ export default function LoginForm({ onSuccess, embedded = false }) {
 
             <form className={styles.form} onSubmit={handleSubmit} noValidate>
                 <div className={styles.inputGroup}>
-                    <label htmlFor="login-email">Adresse e-mail</label>
+                    <label htmlFor="login-email">{t('login.emailLabel')}</label>
                     <input
                         id="login-email"
                         name="email"
                         type="email"
-                        placeholder="prenom.nom@lecnam.net"
+                        placeholder={t('login.emailPlaceholder')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -212,12 +214,12 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                 </div>
 
                 <div className={styles.inputGroup}>
-                    <label htmlFor="login-password">Mot de passe</label>
+                    <label htmlFor="login-password">{t('login.passwordLabel')}</label>
                     <input
                         id="login-password"
                         name="password"
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={t('login.passwordPlaceholder')}
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -227,7 +229,7 @@ export default function LoginForm({ onSuccess, embedded = false }) {
 
                 <div className={styles.inlineActions}>
                     <Link href="/login/forgot" className={styles.ghostLink}>
-                        Mot de passe oublié ?
+                        {t('login.forgotPassword')}
                     </Link>
                 </div>
 
@@ -235,19 +237,19 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                     {isSubmitting || isRedirecting ? (
                         <span className={styles.loadingState}>
                             <span className={styles.loader} aria-hidden="true" />
-                            {isRedirecting ? "Redirection..." : "Connexion..."}
+                            {isRedirecting ? t('login.redirecting') : t('login.connecting')}
                         </span>
                     ) : (
-                        "Se connecter"
+                        t('login.submit')
                     )}
                 </button>
             </form>
 
             <div className={styles.formFooter}>
                 <p>
-                    Pas encore de compte ?{" "}
+                    {t('login.noAccount')}{" "}
                     <Link href="/signup" className={styles.footerLink}>
-                        Créer un compte
+                        {t('login.createAccount')}
                     </Link>
                 </p>
             </div>
@@ -263,13 +265,13 @@ export default function LoginForm({ onSuccess, embedded = false }) {
     }
 
     return (
-        <div className={styles.page}>
+            <div className={styles.page}>
             <div className={styles.wrapper}>
-                <BackButton href="/" title="Retour à l'accueil" />
+                <BackButton href="/" title={t('login.backToHome')} />
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
                         <div>
-                            <h2>Connexion</h2>
+                            <h2>{t('login.title')}</h2>
                             <p className={styles.cardSubhead}> </p>
                         </div>
                     </header>

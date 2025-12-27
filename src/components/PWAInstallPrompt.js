@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { usePWA } from '@/hooks/usePWA';
+import {useI18n} from '@/i18n/I18nContext';
 import './PWAInstallPrompt.css';
 
 /**
@@ -8,6 +9,7 @@ import './PWAInstallPrompt.css';
  * S'affiche uniquement si l'app n'est pas encore installée et que l'installation est possible
  */
 export default function PWAInstallPrompt() {
+    const { t } = useI18n();
     const { canInstall, isInstalled, promptInstall } = usePWA();
     const [isVisible, setIsVisible] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
@@ -84,7 +86,7 @@ export default function PWAInstallPrompt() {
 
     const handleManualInstall = () => {
         // Ouvrir les instructions pour installation manuelle
-        alert('Pour installer l\'application :\n\n1. Appuyez sur le menu (⋮) en haut à droite\n2. Sélectionnez "Ajouter à l\'écran d\'accueil" ou "Installer l\'application"\n3. Confirmez l\'installation');
+        alert(t('pwaInstall.manualInstructions'));
         handleDismiss();
     };
 
@@ -98,21 +100,21 @@ export default function PWAInstallPrompt() {
                 <div className="pwa-install-content">
                     <div className="pwa-install-icon">📱</div>
                     <div className="pwa-install-text">
-                        <strong>Installer l'application</strong>
-                        <span>Ajoutez EDT EICNAM à votre écran d'accueil pour un accès rapide</span>
+                        <strong>{t('pwaInstall.title')}</strong>
+                        <span>{t('pwaInstall.description')}</span>
                     </div>
                     <div className="pwa-install-actions">
                         <button
                             className="pwa-install-button pwa-install-button-primary"
                             onClick={handleInstall}
                         >
-                            Installer
+                            {t('pwaInstall.install')}
                         </button>
                         <button
                             className="pwa-install-button pwa-install-button-secondary"
                             onClick={handleDismiss}
                         >
-                            Plus tard
+                            {t('pwaInstall.later')}
                         </button>
                     </div>
                 </div>
@@ -127,21 +129,21 @@ export default function PWAInstallPrompt() {
                 <div className="pwa-install-content">
                     <div className="pwa-install-icon">📱</div>
                     <div className="pwa-install-text">
-                        <strong>Installer l'application</strong>
-                        <span>Utilisez le menu Chrome (⋮) → "Ajouter à l'écran d'accueil"</span>
+                        <strong>{t('pwaInstall.manualTitle')}</strong>
+                        <span>{t('pwaInstall.manualDescription')}</span>
                     </div>
                     <div className="pwa-install-actions">
                         <button
                             className="pwa-install-button pwa-install-button-primary"
                             onClick={handleManualInstall}
                         >
-                            Comment installer ?
+                            {t('pwaInstall.howToInstall')}
                         </button>
                         <button
                             className="pwa-install-button pwa-install-button-secondary"
                             onClick={handleDismiss}
                         >
-                            Plus tard
+                            {t('pwaInstall.later')}
                         </button>
                     </div>
                 </div>

@@ -14,6 +14,7 @@ import {
 } from "@/utils/eventModalUtils";
 import { getEventTitle } from "@/utils/eventUtils";
 import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "@/app/page.module.css";
 
 export default function EventModal({
@@ -39,6 +40,7 @@ export default function EventModal({
     const [originalEntryLabels, setOriginalEntryLabels] = useState({}); // Labels originaux pour détecter les modifications
     const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
     const [newLabelValue, setNewLabelValue] = useState(""); // Valeur du nouveau label
+    const { t } = useI18n();
 
     const extractNoteEntries = (record) => {
         if (!record) return [];
@@ -118,7 +120,7 @@ export default function EventModal({
         if (!selectedEvent || !selectedEvent.uid) return;
 
         if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            alert(t('eventModal.visitorCannotEdit'));
             return;
         }
 
@@ -142,7 +144,7 @@ export default function EventModal({
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || "Erreur lors de la sauvegarde");
+                throw new Error(data.error || t('eventModal.saveError'));
             }
 
             const data = await res.json();
@@ -166,7 +168,7 @@ export default function EventModal({
             }
         } catch (err) {
             console.error("[EventModal] Erreur sauvegarde note:", err);
-            alert("Erreur lors de la sauvegarde : " + err.message);
+            alert(t('eventModal.saveError') + " : " + err.message);
         } finally {
             setSavingNote(false);
         }
@@ -244,7 +246,7 @@ export default function EventModal({
 
     const handleAddEntry = () => {
         if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            alert(t('eventModal.visitorCannotEdit'));
             return;
         }
         if (!isModalEditingNotes) {
@@ -259,7 +261,7 @@ export default function EventModal({
 
     const handleStartEditing = () => {
         if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            alert(t('eventModal.visitorCannotEdit'));
             return;
         }
         setIsModalEditingNotes(true);
@@ -289,13 +291,13 @@ export default function EventModal({
 
     // Labels prédéfinis avec leurs couleurs
     const predefinedLabels = [
-        { name: "Contrôle",       color: "#ef4444" }, // Rouge
-        { name: "TP noté",        color: "#10b981" }, // Vert
-        { name: "Devoir",         color: "#f59e0b" }, // Orange
-        { name: "Examen",         color: "#a855f7" }, // Violet
-        { name: "Lien",           color: "#3b82f6" }, // Bleu
-        { name: "Information",   color: "#fde047" }, // Jaune
-        { name: "Distanciel",    color: "#06b6d4" }, // Cyan
+        { name: t('agenda.predefinedLabels.control'),       color: "#ef4444" }, // Rouge
+        { name: t('agenda.predefinedLabels.gradedTP'),        color: "#10b981" }, // Vert
+        { name: t('agenda.predefinedLabels.homework'),         color: "#f59e0b" }, // Orange
+        { name: t('agenda.predefinedLabels.exam'),        color: "#a855f7" }, // Violet
+        { name: t('agenda.predefinedLabels.link'),           color: "#3b82f6" }, // Bleu
+        { name: t('agenda.predefinedLabels.information'),   color: "#fde047" }, // Jaune
+        { name: t('agenda.predefinedLabels.remote'),    color: "#06b6d4" }, // Cyan
     ];
 
     // Fonction pour générer une couleur à partir d'un label
@@ -320,7 +322,7 @@ export default function EventModal({
     // Gérer les labels par note
     const handleAddLabel = (entryIndex, label) => {
         if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            alert(t('eventModal.visitorCannotEdit'));
             return;
         }
         
@@ -347,7 +349,7 @@ export default function EventModal({
 
     const handleRemoveLabel = (entryIndex, labelToRemove) => {
         if (userRole === 'visiteur') {
-            alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            alert(t('eventModal.visitorCannotEdit'));
             return;
         }
         
@@ -395,15 +397,15 @@ export default function EventModal({
                 >
                     <div className="event-modal-header">
                         <div className="event-modal-title">
-                            {selectedEvent.summary || selectedEvent.description || 'Cours'}
+                            {selectedEvent.summary || selectedEvent.description || t('eventModal.course')}
                             {/* Badge Examen si présent dans la description */}
                             {selectedEvent.description && selectedEvent.description.toUpperCase().includes("EXAMEN") && (
-                                <span className="exam-badge-modal" title="Examen">
-                                    📝 EXAMEN
+                                <span className="exam-badge-modal" title={t('eventModal.exam')}>
+                                    📝 {t('eventModal.exam').toUpperCase()}
                                 </span>
                             )}
                         </div>
-                        <button className="event-modal-close" aria-label="Fermer"
+                        <button className="event-modal-close" aria-label={t('eventModal.close')}
                             onClick={onClose}>✕
                         </button>
                     </div>
@@ -423,7 +425,7 @@ export default function EventModal({
                             {formatDurationHM(selectedEvent.start, selectedEvent.end) && (
                                 <div className="pop-row">
                                     <span>⏳</span>
-                                    <span>Durée : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</span>
+                                    <span>{t('eventModal.duration')} : {formatDurationHM(selectedEvent.start, selectedEvent.end)}</span>
                                 </div>
                             )}
                             {(() => {
@@ -447,7 +449,7 @@ export default function EventModal({
                                         )}
                                         <div className="pop-row">
                                             <span>👤</span>
-                                            <span>Professeur{splitGroup && splitGroup.professors.length > 1 ? 's' : ''} : {profName || "?"}</span>
+                                            <span>{(splitGroup && splitGroup.professors.length > 1 ? t('eventModal.teacherPlural') : t('eventModal.teacher'))} : {profName || "?"}</span>
                                         </div>
                                     </>
                                 );
@@ -456,13 +458,13 @@ export default function EventModal({
                                 <span>{isDistancielCourse ? '🎥' : '🚪'}</span>
                                 <span>
                                     {isDistancielCourse
-                                        ? 'Cours en distanciel'
+                                        ? t('eventModal.remote')
                                         : splitGroup
-                                            ? `Salle${splitGroup.rooms.length > 1 ? 's' : ''} : ${splitGroup.rooms.join(' / ')}`
-                                            : `Salle : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
+                                            ? `${splitGroup.rooms.length > 1 ? t('eventModal.roomPlural') : t('eventModal.room')} : ${splitGroup.rooms.join(' / ')}`
+                                            : `${t('eventModal.room')} : ${selectedEventLocationMeta ? selectedEventLocationMeta.display : "?"}`}
                                 </span>
                                 {isDistancielCourse ? (
-                                    <span className="site-badge distanciel-badge">DISTANCIEL</span>
+                                    <span className="site-badge distanciel-badge">{t('eventModal.remoteBadge')}</span>
                                 ) : splitGroup ? (
                                     (() => {
                                         // Détecter le site pour chaque salle du demi-groupe
@@ -551,7 +553,7 @@ export default function EventModal({
                                             style={{ cursor: 'pointer' }}
                                         >
                                             <span className="hours-stats-icon">📊</span>
-                                            <span className="hours-stats-label">Progression</span>
+                                            <span className="hours-stats-label">{t('eventModal.progression')}</span>
                                             <span className={`hours-stats-chevron ${isExpanded ? 'expanded' : ''}`}>▼</span>
                                         </div>
                                         {isExpanded && (
@@ -573,7 +575,7 @@ export default function EventModal({
                                                         <>
                                                             <span className="hours-stats-dot">•</span>
                                                             <span
-                                                                className="hours-stats-remaining">{formatHoursDecimal(hoursStats.remaining)} restantes après ce cours</span>
+                                                                className="hours-stats-remaining">{formatHoursDecimal(hoursStats.remaining)} {t('eventModal.remainingAfter')}</span>
                                                         </>
                                                     )}
                                                 </div>
@@ -589,7 +591,7 @@ export default function EventModal({
                             <div className="modal-section modal-section-dashed">
                                 <div className="modal-notes-header">
                                     <div className="modal-notes-title">
-                                        <h3>📋 Notes</h3>
+                                        <h3>📋 {t('eventModal.notes')}</h3>
                                     </div>
                                     {notesAuthenticated && (
                                         <button
@@ -597,13 +599,13 @@ export default function EventModal({
                                             className={courseFilesStyles.uploadButton}
                                             onClick={handleAddNoteButton}
                                             disabled={savingNote || userRole === 'visiteur'}
-                                            title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
+                                            title={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}
                                         >
                                             {isModalEditingNotes
-                                                ? "Ajouter un paragraphe"
+                                                ? t('eventModal.addParagraph')
                                                 : ((savedModalEntries.length > 0 || hasAnyLabelForModal)
-                                                    ? "✏️ Modifier la note"
-                                                    : "Créer une note")}
+                                                    ? "✏️ " + t('eventModal.editNote')
+                                                    : t('eventModal.createNote'))}
                                         </button>
                                     )}
                                 </div>
@@ -623,12 +625,12 @@ export default function EventModal({
                                             if (!hasAnyContent) {
                                                 return (
                                                     <div className="modal-notes-empty">
-                                                        <p className="modal-note-view-text">Aucune note</p>
+                                                        <p className="modal-note-view-text">{t('eventModal.noNotes')}</p>
                                                         <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
                                                             <p className="modal-auth-message-text">
                                                                 <a href="/login" className={styles.notesUnauthLink}>
-                                                                    Connectez-vous
-                                                                </a> pour créer une note
+                                                                    {t('eventModal.connectToCreate')}
+                                                                </a> {t('eventModal.connectToCreateFull').replace(t('eventModal.connectToCreate'), '').trim()}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -714,8 +716,8 @@ export default function EventModal({
                                                     <div className="modal-auth-message" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
                                                         <p className="modal-auth-message-text">
                                                             <a href="/login" className={styles.notesUnauthLink}>
-                                                                Connectez-vous
-                                                            </a> pour modifier cette note
+                                                                {t('eventModal.connectToCreate')}
+                                                            </a> {t('eventModal.connectToEdit').replace(t('eventModal.connectToCreate'), '').trim()}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -733,7 +735,7 @@ export default function EventModal({
                                             // Utilisateur connecté, aucune note ni label
                                             return (
                                                 <div className="modal-notes-empty">
-                                                    <p className="modal-note-view-text">Aucune note</p>
+                                                    <p className="modal-note-view-text">{t('eventModal.noNotes')}</p>
                                                 </div>
                                             );
                                         }
@@ -801,7 +803,7 @@ export default function EventModal({
                                                                         )}
                                                                         {lastPerson && (
                                                                             <div className="modal-note-last-person">
-                                                                                {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                                {lastPerson.user_name || t('eventModal.unknownUser')}
                                                                                 {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
                                                                             </div>
                                                                         )}
@@ -837,27 +839,27 @@ export default function EventModal({
                                                         <div key={`${selectedEvent.uid}-${index}`}
                                                             className="modal-note-entry">
                                                             <div className="modal-note-header">
-                                                                <span>Note {index + 1}</span>
+                                                                <span>{t('eventModal.noteNumber')} {index + 1}</span>
                                                                 <button
                                                                     type="button"
                                                                     className="modal-note-remove"
                                                                     onClick={() => handleRemoveEntry(index)}
                                                                     disabled={savingNote || userRole === 'visiteur'}
-                                                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : ""}
+                                                                    title={userRole === 'visiteur' ? t('eventModal.visitorCannotModify') : ""}
                                                                 >
-                                                                    Supprimer
+                                                                    {t('eventModal.delete')}
                                                                 </button>
                                                             </div>
                                                             
                                                             {/* Labels pour ce paragraphe */}
                                                             <div className="modal-labels-section">
                                                                 <div className="modal-labels-header">
-                                                                    <span className="modal-labels-title">Labels</span>
+                                                                    <span className="modal-labels-title">{t('eventModal.labels')}</span>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => {
                                                                             if (userRole === 'visiteur') {
-                                                                                alert("Les visiteurs ne peuvent pas créer ou modifier de notes");
+                                                                                alert(t('eventModal.visitorCannotEdit'));
                                                                                 return;
                                                                             }
                                                                             if (!isModalEditingNotes) {
@@ -866,10 +868,10 @@ export default function EventModal({
                                                                             setShowLabelInputForEntry(showLabelInputForEntry === index ? null : index);
                                                                         }}
                                                                         className="modal-add-label-button"
-                                                                        title="Créer un label personnalisé"
+                                                                        title={t('eventModal.createLabelTitle')}
                                                                         disabled={userRole === 'visiteur'}
                                                                     >
-                                                                        Créer un label
+                                                                        {t('eventModal.createLabel')}
                                                                     </button>
                                                                 </div>
                                                                 
@@ -893,7 +895,7 @@ export default function EventModal({
                                                                                         type="button"
                                                                                         onClick={() => handleRemoveLabel(index, label)}
                                                                                         className="modal-remove-label-button"
-                                                                                        title="Supprimer ce label"
+                                                                                        title={t('eventModal.removeLabel')}
                                                                                         style={{ color: labelColor }}
                                                                                         disabled={userRole === 'visiteur'}
                                                                                     >
@@ -904,7 +906,7 @@ export default function EventModal({
                                                                         })
                                                                     ) : (
                                                                         <span className="modal-no-labels-text">
-                                                                            {isModalEditingNotes ? "Aucun label pour cette note." : "Aucun label"}
+                                                                            {isModalEditingNotes ? t('eventModal.noLabelsForNote') : t('eventModal.noLabels')}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -947,7 +949,7 @@ export default function EventModal({
                                                                                     setNewLabelValue("");
                                                                                 }
                                                                             }}
-                                                                            placeholder="Nom du label..."
+                                                                            placeholder={t('eventModal.labelPlaceholder')}
                                                                             className="modal-custom-label-input-field"
                                                                             autoFocus
                                                                         />
@@ -957,7 +959,7 @@ export default function EventModal({
                                                                             disabled={!newLabelValue.trim() || entryLabelsForIndex.includes(newLabelValue.trim())}
                                                                             className="modal-custom-label-add-button"
                                                                         >
-                                                                            Ajouter
+                                                                            {t('eventModal.add')}
                                                                         </button>
                                                                         <button
                                                                             type="button"
@@ -967,7 +969,7 @@ export default function EventModal({
                                                                             }}
                                                                             className="modal-custom-label-cancel-button"
                                                                         >
-                                                                            Annuler
+                                                                            {t('eventModal.cancel')}
                                                                         </button>
                                                                     </div>
                                                                 )}
@@ -983,7 +985,7 @@ export default function EventModal({
                                                                     }
                                                                 }}
                                                                 className="modal-note-textarea"
-                                                                placeholder={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : "Ajoutez vos notes..."}
+                                                                placeholder={userRole === 'visiteur' ? t('eventModal.visitorCannotModify') : t('eventModal.addNotesPlaceholder')}
                                                                 rows={3}
                                                                 disabled={userRole === 'visiteur'}
                                                             />
@@ -1075,20 +1077,20 @@ export default function EventModal({
                                                     onClick={handleCancelEditing}
                                                     disabled={savingNote}
                                                 >
-                                                    Annuler
+                                                    {t('eventModal.cancel')}
                                                 </button>
                                                 {modalHasChanges && (
                                                     <button
                                                         onClick={handleSaveNote}
                                                         disabled={savingNote || userRole === 'visiteur'}
                                                         className="modal-note-save"
-                                                        title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer ou modifier de notes" : ""}
+                                                        title={userRole === 'visiteur' ? t('eventModal.visitorCannotEdit') : ""}
                                                     >
                                                         {savingNote
-                                                            ? "Enregistrement..."
+                                                            ? t('common.loading')
                                                             : isDeletingNote
-                                                                ? "Enregistrer (supprimer)"
-                                                                : "Enregistrer"}
+                                                                ? t('eventModal.saveNote') + " (" + t('eventModal.delete') + ")"
+                                                                : t('eventModal.saveNote')}
                                                     </button>
                                                 )}
                                             </div>
@@ -1112,10 +1114,10 @@ export default function EventModal({
                                 <button
                                     className="action-btn map-btn"
                                     onClick={() => onShowMap(true)}
-                                    aria-label="Voir le plan"
+                                    aria-label={t('eventModal.map')}
                                 >
                                     <span className="action-btn-icon">🗺️</span>
-                                    <span className="action-btn-text">Voir le plan</span>
+                                    <span className="action-btn-text">{t('eventModal.map')}</span>
                                 </button>
                             )}
                             {(() => {
@@ -1130,7 +1132,7 @@ export default function EventModal({
                                         href={moodleUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label={`Ouvrir Moodle pour ${courseId}`}
+                                        aria-label={`${t('eventModal.map')} ${courseId}`}
                                     >
                                         <span className="action-btn-icon">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20"
@@ -1148,7 +1150,7 @@ export default function EventModal({
                                                 </g>
                                             </svg>
                                         </span>
-                                        <span className="action-btn-text">Ouvrir Moodle</span>
+                                        <span className="action-btn-text">Moodle</span>
                                     </a>
                                 );
                             })()}

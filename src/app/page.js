@@ -1,6 +1,7 @@
 "use client";
 import {useState, useEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams, useRouter} from "next/navigation";
+import {useI18n} from "@/i18n/I18nContext";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek, getSchoolYearRange} from "@/utils/dateUtils";
 import {createSubjectColorMapping, groupEventsByDay, getEventTitle} from "@/utils/eventUtils";
 import {useDevMode} from "@/utils/env";
@@ -40,6 +41,7 @@ import {parseStoredNoteValue} from "@/utils/noteEntries";
 import {generateEventKey} from "@/utils/eventModalUtils";
 
 function HomeContent({searchParams}) {
+    const { t } = useI18n();
     const router = useRouter();
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -662,7 +664,7 @@ function HomeContent({searchParams}) {
             document.querySelector('.event-modal-layer') ||
             document.querySelector('.settings-overlay') ||
             document.querySelector('.map-viewer-overlay') ||
-            document.querySelector('.subject-hours-overlay') ||
+            document.querySelector('.subject-hours-modal-overlay') ||
             document.querySelector('.filter-overlay') ||
             document.querySelector('.apk-popup-overlay') ||
             document.querySelector('.update-popup-overlay') ||
@@ -1301,13 +1303,13 @@ function HomeContent({searchParams}) {
                     <div className={styles.smallErrorWrapper} role="status" aria-live="polite">
                         <div className={styles.smallErrorBanner}>
                             <div className={styles.smallErrorContent}>
-                                <div className={styles.smallErrorTitle}>Erreur lors du chargement de l&apos;EDT</div>
+                                <div className={styles.smallErrorTitle}>{t('page.errorLoadingEDT')}</div>
                                 <div className={styles.smallErrorText}>
-                                    Les données n&apos;ont pas pu être récupérées pour le moment.
+                                    {t('page.errorLoadingData')}
                                 </div>
                                 {hasNetworkError && (
                                     <div className={styles.smallErrorHint}>
-                                        Vérifiez votre connexion internet puis essayez de recharger la page.
+                                        {t('page.errorNetworkHint')}
                                     </div>
                                 )}
                                 {supportUrl && (
@@ -1317,7 +1319,7 @@ function HomeContent({searchParams}) {
                                         rel="noopener noreferrer"
                                         className={styles.smallErrorLink}
                                     >
-                                        Ouvrir Galao
+                                        {t('page.openGalao')}
                                     </a>
                                 )}
                             </div>
@@ -1329,7 +1331,7 @@ function HomeContent({searchParams}) {
 
                 {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
                     <div className={styles.noCoursesMessage}>
-                        Pas de cours trouvé pour cette semaine
+                        {t('page.noCoursesThisWeek')}
                     </div>
                 )}
 
@@ -1423,7 +1425,7 @@ function HomeContent({searchParams}) {
                                         title="Cliquer pour voir les détails"
                                         aria-label="Voir les détails de la dernière mise à jour"
                                     >
-                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                                        {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
                                     </button>
                                 </div>
                             )
@@ -1444,7 +1446,7 @@ function HomeContent({searchParams}) {
                                         title="Cliquer pour voir les détails"
                                         aria-label="Voir les détails de la dernière mise à jour"
                                     >
-                                        EDT à jour le : {formatLastUpdate(lastUpdateTimestamp)}
+                                        {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
                                     </button>
                                 </div>
                             )
@@ -1455,7 +1457,7 @@ function HomeContent({searchParams}) {
                                     <div className={styles.superAdminBuildInfo}>
                                         {(() => {
                                             if (isLoadingBuildTimestamp) {
-                                                return <span style={{ opacity: 0.6 }}>Last deployment : Chargement...</span>;
+                                                return <span style={{ opacity: 0.6 }}>{t('loading.lastDeploymentLoading')}</span>;
                                             }
 
                                             const formatted = formatLastUpdate(buildTimestamp);

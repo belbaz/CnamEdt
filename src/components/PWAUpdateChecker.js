@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
+import {useI18n} from '@/i18n/I18nContext';
 import './PWAUpdateChecker.css';
 
 // Clé pour marquer qu'une mise à jour vient d'être effectuée
@@ -30,7 +31,8 @@ const LOCALSTORAGE_KEYS_TO_KEEP = [
     'histo-last-seen-date',
     'histo-auto-check-expanded',
     'pwa_install_dismissed',
-    'allow_analytics'
+    'allow_analytics',
+    'language'
 ];
 
 /**
@@ -222,6 +224,7 @@ function clearUpdateFlag() {
 export default function PWAUpdateChecker() {
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const { t } = useI18n();
     const [isReloading, setIsReloading] = useState(false);
     const [registration, setRegistration] = useState(null);
     const [waitingWorker, setWaitingWorker] = useState(null);
@@ -468,8 +471,8 @@ export default function PWAUpdateChecker() {
             <div className="pwa-update-content">
                 <div className="pwa-update-icon"><Icon /></div>
                 <div className="pwa-update-text">
-                    <strong>Nouvelle version disponible</strong>
-                    <span>Rechargez pour profiter des dernières améliorations</span>
+                    <strong>{t('pwaUpdate.newVersion')}</strong>
+                    <span>{t('pwaUpdate.reloadMessage')}</span>
                 </div>
                 <div className="pwa-update-actions">
                     <button
@@ -477,14 +480,14 @@ export default function PWAUpdateChecker() {
                         onClick={handleReload}
                         disabled={isReloading}
                     >
-                        {isReloading ? 'Rechargement...' : 'Recharger'}
+                        {isReloading ? t('pwaUpdate.reloading') : t('pwaUpdate.reload')}
                     </button>
                     <button
                         className="pwa-update-button pwa-update-button-secondary"
                         onClick={handleDismiss}
                         disabled={isReloading}
                     >
-                        Plus tard
+                        {t('pwaUpdate.later')}
                     </button>
                 </div>
             </div>

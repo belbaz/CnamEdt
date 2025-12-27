@@ -325,17 +325,6 @@ button:disabled {
     background: var(--bg-gradient) !important;
 }
 
-/* Forcer le background sur tous les éléments racine pour éviter les liserés blancs */
-/* SAUF quand une modal est ouverte (pour permettre le backdrop-filter) */
-/* Utilise :has() pour détecter si body a la classe modal-open */
-.dark-mode:not(:has(body.modal-open)) #__next,
-.dark-mode:not(:has(body.modal-open)) [data-nextjs-scroll-focus-boundary],
-.dark-mode:not(:has(body.modal-open)) main,
-.dark-mode:not(:has(body.modal-open)) body > div {
-    background: var(--bg-gradient) !important;
-    background-color: var(--bg-primary) !important;
-}
-
 /* Forcer le viewport à avoir le bon background en dark mode */
 .dark-mode {
     background: var(--bg-gradient) !important;

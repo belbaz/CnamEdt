@@ -5,10 +5,12 @@ import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Link from "next/link";
 import Spinner from "@/components/Spinner";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./page.module.css";
 import {getEventTitle} from "@/utils/eventUtils";
 
 function FilesContent() {
+    const { t } = useI18n();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
@@ -65,7 +67,7 @@ function FilesContent() {
             }
         } catch (err) {
             console.error("[Files] Erreur chargement:", err);
-            setError("Erreur lors du chargement des données");
+            setError(t('files.errorLoading'));
         } finally {
             setLoading(false);
         }
@@ -84,11 +86,11 @@ function FilesContent() {
             if (data.success) {
                 setFiles(data.files || []);
             } else {
-                setError(data.error || "Erreur lors du chargement des fichiers");
+                setError(data.error || t('files.errorLoadingFiles'));
             }
         } catch (err) {
             console.error("[Files] Erreur chargement fichiers:", err);
-            setError("Erreur lors du chargement des fichiers");
+            setError(t('files.errorLoadingFiles'));
         }
     };
 
@@ -115,18 +117,18 @@ function FilesContent() {
                 await loadFiles();
                 event.target.value = '';
             } else {
-                setError(data.error || "Erreur lors de l'upload");
+                setError(data.error || t('files.errorUpload'));
             }
         } catch (err) {
             console.error("[Files] Erreur upload:", err);
-            setError("Erreur lors de l'upload du fichier");
+            setError(t('files.errorUploadFile'));
         } finally {
             setUploading(false);
         }
     };
 
     const handleDelete = async (fileId) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer ce fichier ?")) {
+        if (!confirm(t('files.confirmDelete'))) {
             return;
         }
 
@@ -140,11 +142,11 @@ function FilesContent() {
             if (data.success) {
                 await loadFiles();
             } else {
-                setError(data.error || "Erreur lors de la suppression");
+                setError(data.error || t('files.errorDelete'));
             }
         } catch (err) {
             console.error("[Files] Erreur suppression:", err);
-            setError("Erreur lors de la suppression du fichier");
+            setError(t('files.errorDeleteFile'));
         }
     };
 
@@ -223,7 +225,7 @@ function FilesContent() {
                 <div className={styles.container}>
                     <div className={styles.loadingContainer}>
                         <Spinner size="large" variant="border" />
-                        <p>Chargement...</p>
+                        <p>{t('files.loading')}</p>
                     </div>
                 </div>
             </div>
@@ -236,13 +238,13 @@ function FilesContent() {
                 {/* Header */}
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <BackButton href="/dashboard" title="Retour au dashboard"/>
+                        <BackButton href="/dashboard" title={t('files.backToDashboard')}/>
                         <div className={styles.headerTitle}>
-                            <h1>Mes fichiers</h1>
+                            <h1>{t('files.title')}</h1>
                             <p className={styles.subtitle}>
                                 {files.length > 0 
-                                    ? `${files.length} fichier${files.length > 1 ? 's' : ''} au total`
-                                    : "Aucun fichier uploadé"}
+                                    ? `${files.length} ${files.length > 1 ? t('files.totalFilesPlural') : t('files.totalFiles')}`
+                                    : t('files.noFiles')}
                             </p>
                         </div>
                         {authenticated && userInfo && (
@@ -261,7 +263,7 @@ function FilesContent() {
                                         }
                                     }}
                                 >
-                                    Déconnexion
+                                    {t('files.logout')}
                                 </button>
                             </div>
                         )}
@@ -270,9 +272,9 @@ function FilesContent() {
 
                 {!authenticated ? (
                     <div className={styles.card}>
-                        <p>Vous devez être connecté pour voir vos fichiers.</p>
+                        <p>{t('files.mustBeConnected')}</p>
                         <Link href="/login" className={styles.loginLink}>
-                            Se connecter
+                            {t('files.signIn')}
                         </Link>
                     </div>
                 ) : (
@@ -287,7 +289,7 @@ function FilesContent() {
                         {coursesWithFiles.length > 0 && (
                             <div className={styles.filterCard}>
                                 <label htmlFor="courseFilter" className={styles.filterLabel}>
-                                    Filtrer par cours :
+                                    {t('files.filterByCourse')}
                                 </label>
                                 <select
                                     id="courseFilter"
@@ -295,14 +297,14 @@ function FilesContent() {
                                     onChange={(e) => setSelectedCourseUid(e.target.value || null)}
                                     className={styles.filterSelect}
                                 >
-                                    <option value="">Tous les cours</option>
+                                    <option value="">{t('files.allCourses')}</option>
                                     {coursesWithFiles.map(({courseUid, event}) => {
                                         const {matiere} = event ? getEventTitle(event) : {};
                                         const courseName = matiere || event?.summary || courseUid.substring(0, 20);
                                         const fileCount = filesByCourse[courseUid].files.length;
                                         return (
                                             <option key={courseUid} value={courseUid}>
-                                                {courseName} ({fileCount} fichier{fileCount > 1 ? 's' : ''})
+                                                {courseName} ({fileCount} {fileCount > 1 ? t('files.fileCountPlural') : t('files.fileCount')})
                                             </option>
                                         );
                                     })}
@@ -356,20 +358,20 @@ function FilesContent() {
                                                             style={{display: 'none'}}
                                                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                                                         />
-                                                        {uploading ? '⏳ Upload en cours...' : '➕ Ajouter un fichier'}
+                                                        {uploading ? t('files.uploading') : t('files.addFile')}
                                                     </label>
                                                 ) : (
                                                     <p className={styles.authMessageText}>
                                                         <Link href="/login" className={styles.loginLink}>
-                                                            Connectez-vous
-                                                        </Link> pour ajouter et uploader des fichiers
+                                                            {t('files.connectToUpload')}
+                                                        </Link> {t('files.connectToUploadFull')}
                                                     </p>
                                                 )}
                                             </div>
 
                                             {courseFiles.length === 0 ? (
                                                 <div className={styles.emptyState}>
-                                                    Aucun fichier pour ce cours.
+                                                    {t('files.noFilesForCourse')}
                                                 </div>
                                             ) : (
                                                 <div className={styles.filesGrid}>
@@ -411,7 +413,7 @@ function FilesContent() {
                                                                         <button
                                                                             className={styles.fileCardDelete}
                                                                             onClick={() => handleDelete(file.id)}
-                                                                            title="Supprimer"
+                                                                            title={t('files.delete')}
                                                                         >
                                                                             <svg width="16" height="16"
                                                                                  viewBox="0 0 16 16" fill="none"
@@ -444,9 +446,9 @@ function FilesContent() {
                             <div className={styles.filesSection}>
                                 {coursesWithFiles.length === 0 ? (
                                     <div className={styles.emptyState}>
-                                        <p>Aucun fichier uploadé pour le moment.</p>
+                                        <p>{t('files.noFilesYet')}</p>
                                         <p className={styles.emptyStateSubtext}>
-                                            Les fichiers que vous uploaderez apparaîtront ici.
+                                            {t('files.filesWillAppear')}
                                         </p>
                                     </div>
                                 ) : (
@@ -477,7 +479,7 @@ function FilesContent() {
                                                         className={styles.courseCardFilterButton}
                                                         onClick={() => setSelectedCourseUid(courseUid)}
                                                     >
-                                                        Voir ce cours
+                                                        {t('files.viewCourse')}
                                                     </button>
                                                 </div>
                                                 <div className={styles.filesGrid}>
@@ -519,7 +521,7 @@ function FilesContent() {
                                                                         <button
                                                                             className={styles.fileCardDelete}
                                                                             onClick={() => handleDelete(file.id)}
-                                                                            title="Supprimer"
+                                                                            title={t('files.delete')}
                                                                         >
                                                                             <svg width="16" height="16"
                                                                                  viewBox="0 0 16 16" fill="none"
@@ -556,13 +558,14 @@ function FilesContent() {
 }
 
 export default function FilesPage() {
+    const { t } = useI18n();
     return (
         <Suspense fallback={
             <div className={styles.page}>
                 <div className={styles.container}>
                     <div className={styles.loadingContainer}>
                         <Spinner size="large" variant="border" />
-                        <p>Chargement...</p>
+                        <p suppressHydrationWarning>{t('files.loading')}</p>
                     </div>
                 </div>
             </div>

@@ -7,6 +7,7 @@ import Tooltip from "./Tooltip";
 import "./Navbar.css";
 import {isDevMode, useDevMode} from "../utils/env";
 import {getSchoolYearLabel} from "../utils/dateUtils";
+import {useI18n} from "../i18n/I18nContext";
 
 export default function Navbar({
                                    darkMode,
@@ -63,6 +64,7 @@ export default function Navbar({
     });
     const [longPressTimer, setLongPressTimer] = useState(null);
     const devMode = useDevMode();
+    const { t } = useI18n();
 
     // Calculer l'année scolaire pour l'afficher dans l'icône
     const schoolYear = getSchoolYearLabel();
@@ -284,13 +286,13 @@ export default function Navbar({
                                     alignItems: 'center',
                                     gap: '0.5rem'
                                 }}
-                                aria-label="Désactiver la vue année scolaire"
+                                aria-label={t('navbar.back')}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                                 </svg>
-                                Retour
+                                {t('navbar.back')}
                             </button>
                         </div>
                     )}
@@ -298,7 +300,7 @@ export default function Navbar({
                         <div className="dev-buttons-container">
                             <div className="view-filter-group">
                                 <Tooltip
-                                    text="Retour à la semaine actuelle"
+                                    text={t('navbar.today')}
                                     show={showTooltip.today}
                                     enabled={showTooltips}
                                 >
@@ -308,7 +310,7 @@ export default function Navbar({
                                             handleClick('today');
                                             onToday();
                                         }}
-                                        aria-label="Retour à la semaine actuelle"
+                                        aria-label={t('navbar.today')}
                                         onMouseEnter={() => setShowTooltip(prev => ({...prev, today: true}))}
                                         onMouseLeave={() => setShowTooltip(prev => ({...prev, today: false}))}
                                         onTouchStart={() => handleLongPressStart('today')}
@@ -326,7 +328,7 @@ export default function Navbar({
                                 </Tooltip>
                                 {onToggleFullYear && (
                                     <Tooltip
-                                        text={showFullYear ? "Voir la semaine" : "Voir toute l'année scolaire"}
+                                        text={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
                                         show={showTooltip.fullYear}
                                         enabled={showTooltips}
                                     >
@@ -336,7 +338,7 @@ export default function Navbar({
                                                 handleClick('fullYear');
                                                 onToggleFullYear();
                                             }}
-                                            aria-label={showFullYear ? "Voir la semaine" : "Voir toute l'année scolaire"}
+                                            aria-label={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
                                             onMouseEnter={() => setShowTooltip(prev => ({...prev, fullYear: true}))}
                                             onMouseLeave={() => setShowTooltip(prev => ({...prev, fullYear: false}))}
                                             onTouchStart={() => handleLongPressStart('fullYear')}
@@ -344,7 +346,7 @@ export default function Navbar({
                                         >
                                             <img 
                                                 src="/annee.svg" 
-                                                alt="Voir toute l'année scolaire" 
+                                                alt={t('navbar.fullYear')} 
                                                 width="24" 
                                                 height="24"
                                                 style={{ display: 'block' }}
@@ -354,7 +356,7 @@ export default function Navbar({
                                 )}
                                 {showFilter && (
                                     <Tooltip
-                                        text="Filtrer les cours"
+                                        text={t('navbar.filter')}
                                         show={showTooltip.filter}
                                         enabled={showTooltips}
                                     >
@@ -379,7 +381,7 @@ export default function Navbar({
                                 )}
                                 {isDevMode() ?
                                     <Tooltip
-                                        text="Afficher l'historique des modifications"
+                                        text={t('navbar.history')}
                                         show={showTooltip.history}
                                         enabled={showTooltips}
                                     >
@@ -390,7 +392,7 @@ export default function Navbar({
                                                     handleClick('history');
                                                     handleShowHistory();
                                                 }}
-                                                aria-label="Afficher l'historique des modifications"
+                                                aria-label={t('navbar.history')}
                                                 onMouseEnter={() => setShowTooltip(prev => ({...prev, history: true}))}
                                                 onMouseLeave={() => setShowTooltip(prev => ({...prev, history: false}))}
                                                 onTouchStart={() => handleLongPressStart('history')}
@@ -441,7 +443,7 @@ export default function Navbar({
                                 {/* Menu déroulant pour toutes les options */}
                                 <div className="options-menu-container">
                                     <Tooltip
-                                        text="Plus d'options"
+                                        text={t('navbar.options')}
                                         show={showTooltip.options && !isOptionsMenuOpen}
                                         enabled={showTooltips}
                                     >
@@ -451,7 +453,7 @@ export default function Navbar({
                                                 handleClick('options');
                                                 setIsOptionsMenuOpen(!isOptionsMenuOpen);
                                             }}
-                                            aria-label="Plus d'options"
+                                            aria-label={t('navbar.options')}
                                             aria-expanded={isOptionsMenuOpen}
                                             onMouseEnter={() => setShowTooltip(prev => ({...prev, options: true}))}
                                             onMouseLeave={() => setShowTooltip(prev => ({...prev, options: false}))}
@@ -493,7 +495,7 @@ export default function Navbar({
                                                         </>
                                                     )}
                                                 </svg>
-                                                <span>{viewMode === 'horizontal' ? "Vue verticale" : "Vue horizontale"}</span>
+                                                <span>{viewMode === 'horizontal' ? t('navbar.verticalView') : t('navbar.horizontalView')}</span>
                                             </button>
                                             {viewMode === 'horizontal' && (
                                                 <button
@@ -515,7 +517,7 @@ export default function Navbar({
                                                                   strokeLinejoin="round"/>
                                                         )}
                                                     </svg>
-                                                    <span>{allDaysCollapsed ? "Étendre tous les jours" : "Replier tous les jours"}</span>
+                                                    <span>{allDaysCollapsed ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}</span>
                                                 </button>
                                             )}
                                         </div>
@@ -527,8 +529,8 @@ export default function Navbar({
                                     <button
                                         className="dev-clear-cache-btn"
                                         onClick={handleClearCache}
-                                        title="Vider le cache et les cookies (localhost uniquement)"
-                                        aria-label="Vider le cache et les cookies"
+                                        title={t('navbar.clearCache')}
+                                        aria-label={t('navbar.clearCache')}
                                     >
                                         DEV
                                     </button>

@@ -4,6 +4,7 @@ import SettingsMenu from "./SettingsMenu";
 import Tooltip from "./Tooltip";
 import Spinner from "./Spinner";
 import DemoModeModal from "./DemoModeModal";
+import {useI18n} from "../i18n/I18nContext";
 import "./PageHeader.css";
 
 export default function PageHeader({
@@ -50,6 +51,7 @@ export default function PageHeader({
     const buttonRef = useRef(null);
     const userMenuRef = useRef(null);
     const isBlockedRef = useRef(false); // Protection contre les clics juste après activation/désactivation
+    const { t } = useI18n();
 
     // Vérifier le mode démo côté client uniquement (après le montage)
     useEffect(() => {
@@ -196,7 +198,7 @@ export default function PageHeader({
                             }
                         }}
                         style={{cursor: 'pointer', margin: 0}}
-                        title="Revenir à l'EDT (réinitialiser l'URL)"
+                        title={t('pageHeader.backToEDT')}
                     >
                         Edt
                     </h1>
@@ -207,9 +209,9 @@ export default function PageHeader({
                             <div
                                 className="demo-mode-badge"
                                 onClick={() => setShowDemoModal(true)}
-                                title="Cliquez pour plus d'informations sur le mode démo"
+                                title={t('pageHeader.demoModeInfo')}
                             >
-                                Mode démo
+                                {t('pageHeader.demoMode')}
                             </div>
                             <DemoModeModal
                                 isOpen={showDemoModal}
@@ -222,7 +224,7 @@ export default function PageHeader({
                     {isLoadingUser ? (
                         <div className="userInfo userInfoLoading">
                             {/*<p style={{margin: "0"}}>Chargement</p>*/}
-                            <Spinner size="small" ariaLabel="Chargement de l'utilisateur..."/>
+                            <Spinner size="small" ariaLabel={t('pageHeader.loadingUser')}/>
                         </div>
                     ) : userInfo && userInfo.name ? (
                         <div
@@ -230,7 +232,7 @@ export default function PageHeader({
                             className="userInfo"
                             style={{position: 'relative', cursor: 'pointer'}}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            title="Menu utilisateur"
+                            title={t('pageHeader.userMenu')}
                         >
                             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -279,7 +281,7 @@ export default function PageHeader({
                                             <rect x="14" y="14" width="7" height="7" stroke="currentColor"
                                                   strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
-                                        Tableau de bord
+                                        {t('pageHeader.dashboard')}
                                     </button>
                                     <button
                                         className="userMenuItem userMenuItemLogout"
@@ -299,7 +301,7 @@ export default function PageHeader({
                                                   stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                                   strokeLinejoin="round"/>
                                         </svg>
-                                        Se déconnecter
+                                        {t('pageHeader.logout')}
                                     </button>
                                 </div>
                             )}
@@ -310,7 +312,7 @@ export default function PageHeader({
                             className="userInfo userInfoGuest"
                             style={{position: 'relative', cursor: 'pointer'}}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            title="Menu invité"
+                            title={t('pageHeader.guestMenu')}
                         >
                             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -320,7 +322,7 @@ export default function PageHeader({
                                     <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"
                                             strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                <span>Invité</span>
+                                <span>{t('pageHeader.guestMenu')}</span>
                                 <svg
                                     width="12"
                                     height="12"
@@ -352,7 +354,7 @@ export default function PageHeader({
                                                   stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                                   strokeLinejoin="round"/>
                                         </svg>
-                                        Se connecter
+                                        {t('pageHeader.login')}
                                     </button>
                                     <button
                                         className="userMenuItem userMenuItemSignup"
@@ -373,7 +375,7 @@ export default function PageHeader({
                                             <line x1="23" y1="11" x2="17" y2="11" stroke="currentColor" strokeWidth="2"
                                                   strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
-                                        Créer un compte
+                                        {t('pageHeader.signup')}
                                     </button>
                                 </div>
                             )}
@@ -382,7 +384,7 @@ export default function PageHeader({
                 </div>
                 <div className="header-actions">
                     <Tooltip
-                        text="Paramètres"
+                        text={t('pageHeader.settings')}
                         show={showTooltip.settings}
                         enabled={showTooltips}
                     >
@@ -415,7 +417,7 @@ export default function PageHeader({
                         </div>
                     </Tooltip>
                     <Tooltip
-                        text="Agenda"
+                        text={t('pageHeader.agenda')}
                         show={showTooltip.agenda}
                         enabled={showTooltips}
                     >
@@ -425,7 +427,7 @@ export default function PageHeader({
                                 handleClick('agenda');
                                 window.location.href = '/agenda';
                             }}
-                            aria-label="Agenda"
+                            aria-label={t('pageHeader.agenda')}
                             onMouseEnter={() => setShowTooltip(prev => ({...prev, agenda: true}))}
                             onMouseLeave={() => setShowTooltip(prev => ({...prev, agenda: false}))}
                             onTouchStart={() => handleLongPressStart('agenda')}
@@ -433,7 +435,7 @@ export default function PageHeader({
                         >
                             <img
                                 src="/agenda.svg"
-                                alt="Agenda"
+                                alt={t('pageHeader.agenda')}
                                 width="24"
                                 height="24"
                                 style={{display: 'block'}}
@@ -444,13 +446,13 @@ export default function PageHeader({
                         <button
                             className="login-btn user-loading-btn"
                             disabled
-                            aria-label="Chargement..."
+                            aria-label={t('pageHeader.loading')}
                         >
-                            <Spinner size="medium" ariaLabel="Chargement..."/>
+                            <Spinner size="medium" ariaLabel={t('pageHeader.loading')}/>
                         </button>
                     ) : userInfo ? (
                         <Tooltip
-                            text="Tableau de bord"
+                            text={t('pageHeader.dashboard')}
                             show={showTooltip.dashboard}
                             enabled={showTooltips}
                         >
@@ -460,7 +462,7 @@ export default function PageHeader({
                                     handleClick('dashboard');
                                     window.location.href = '/dashboard';
                                 }}
-                                aria-label="Tableau de bord"
+                                aria-label={t('pageHeader.dashboard')}
                                 onMouseEnter={() => setShowTooltip(prev => ({...prev, dashboard: true}))}
                                 onMouseLeave={() => setShowTooltip(prev => ({...prev, dashboard: false}))}
                                 onTouchStart={() => handleLongPressStart('dashboard')}
@@ -481,7 +483,7 @@ export default function PageHeader({
                         </Tooltip>
                     ) : (
                         <Tooltip
-                            text="Se connecter"
+                            text={t('pageHeader.login')}
                             show={showTooltip.login}
                             enabled={showTooltips}
                         >
@@ -491,7 +493,7 @@ export default function PageHeader({
                                     handleClick('login');
                                     window.location.href = '/login';
                                 }}
-                                aria-label="Se connecter"
+                                aria-label={t('pageHeader.login')}
                                 onMouseEnter={() => setShowTooltip(prev => ({...prev, login: true}))}
                                 onMouseLeave={() => setShowTooltip(prev => ({...prev, login: false}))}
                                 onTouchStart={() => handleLongPressStart('login')}
@@ -510,8 +512,8 @@ export default function PageHeader({
                     <Tooltip
                         text={
                             darkMode
-                                ? (oledMode ? "Mode OLED actif" : "Mode sombre")
-                                : "Mode clair"
+                                ? (oledMode ? t('pageHeader.themeOLED') : t('pageHeader.themeDark'))
+                                : t('pageHeader.themeLight')
                         }
                         show={showTooltip.theme}
                         enabled={showTooltips}
@@ -526,8 +528,8 @@ export default function PageHeader({
                                 }}
                                 aria-label={
                                     darkMode
-                                        ? (oledMode ? "Mode OLED actif" : "Mode sombre")
-                                        : "Mode clair"
+                                        ? (oledMode ? t('pageHeader.themeOLED') : t('pageHeader.themeDark'))
+                                        : t('pageHeader.themeLight')
                                 }
                                 onMouseEnter={() => setShowTooltip(prev => ({...prev, theme: true}))}
                                 onMouseLeave={() => setShowTooltip(prev => ({...prev, theme: false}))}
@@ -560,11 +562,11 @@ export default function PageHeader({
                                         </div>
                                         <span className="easter-egg-icon">{oledMode ? '🌙' : '💡'}</span>
                                         <span
-                                            className="easter-egg-text">Mode OLED {oledMode ? 'activé' : 'désactivé'} !</span>
+                                            className="easter-egg-text">{oledMode ? t('pageHeader.oledActivated') : t('pageHeader.oledDeactivated')}</span>
                                         <span className="easter-egg-subtitle">
                                             {oledMode
-                                                ? 'Économie d\'énergie pour écran OLED 🔋'
-                                                : 'Retour au mode sombre classique'}
+                                                ? t('pageHeader.oledEnergy')
+                                                : t('pageHeader.oledBack')}
                                         </span>
                                     </div>
                                 </div>

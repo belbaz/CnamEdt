@@ -2,6 +2,7 @@
 import React, { useState, useEffect, Suspense, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
@@ -11,6 +12,7 @@ import { fetchICSEvents } from "@/services/icsService";
 import LoginForm from "@/app/login/LoginForm";
 
 function AgendaContent() {
+    const { t } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const extractNoteEntries = (record) => {
@@ -57,7 +59,7 @@ function AgendaContent() {
             });
 
             if (!response.ok) {
-                throw new Error("Erreur lors de la récupération des notes publiques");
+                throw new Error(t('agenda.errorPublicNotes'));
             }
 
             const data = await response.json();
@@ -77,7 +79,7 @@ function AgendaContent() {
         if (!selectedCourse) return;
 
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            setError(t('agenda.visitorCannotEdit'));
             return;
         }
 
@@ -101,7 +103,7 @@ function AgendaContent() {
             });
 
             if (!res.ok) {
-                const data = await res.json().catch(() => ({ error: "Erreur inconnue" }));
+                const data = await res.json().catch(() => ({ error: t('agenda.errorUnknown') }));
                 const errorMessage = data.error || `Erreur ${res.status}: ${res.statusText}`;
                 throw new Error(errorMessage);
             }
@@ -134,7 +136,7 @@ function AgendaContent() {
         } catch (err) {
             console.error("[Agenda] Erreur sauvegarde:", err);
             // Afficher un message d'erreur explicite
-            const errorMessage = err.message || "Une erreur inattendue s'est produite lors de la sauvegarde";
+            const errorMessage = err.message || t('agenda.errorSave');
             setError(errorMessage);
             
             // Garder l'erreur visible pendant au moins 5 secondes
@@ -216,7 +218,7 @@ function AgendaContent() {
                 if (!userRes.ok) {
                     const errorData = await userRes.json().catch(() => ({}));
                     console.error("[Agenda] Erreur récupération user:", errorData);
-                    throw new Error(errorData.error || "Erreur lors de la récupération des informations utilisateur");
+                    throw new Error(errorData.error || t('agenda.errorUserInfo'));
                 }
 
                 const userData = await userRes.json();
@@ -231,7 +233,7 @@ function AgendaContent() {
                 });
 
                 if (!personalRes.ok) {
-                    throw new Error("Erreur lors de la récupération de vos notes");
+                    throw new Error(t('agenda.errorPersonalNotes'));
                 }
 
                 const personalData = await personalRes.json();
@@ -251,7 +253,7 @@ function AgendaContent() {
             }
         } catch (err) {
             console.error("[Agenda] Erreur chargement:", err);
-            setError(err.message || "Erreur lors du chargement");
+            setError(err.message || t('agenda.loading'));
         } finally {
             setLoading(false);
         }
@@ -494,7 +496,7 @@ function AgendaContent() {
 
     const ensureEditingMode = () => {
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            setError(t('agenda.visitorCannotEdit'));
             return;
         }
         if (!isEditingNotes) {
@@ -513,7 +515,7 @@ function AgendaContent() {
 
     const handleStartEditing = () => {
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            setError(t('agenda.visitorCannotEdit'));
             return;
         }
         setIsEditingNotes(true);
@@ -563,7 +565,7 @@ function AgendaContent() {
     // Gérer les labels par note
     const handleAddLabel = (entryIndex, label) => {
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            setError(t('agenda.visitorCannotEdit'));
             return;
         }
         
@@ -590,7 +592,7 @@ function AgendaContent() {
 
     const handleRemoveLabel = (entryIndex, labelToRemove) => {
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+            setError(t('agenda.visitorCannotEdit'));
             return;
         }
         
@@ -629,7 +631,7 @@ function AgendaContent() {
                 weekday: "long",
             })
         )
-        : "Choisir une date";
+        : t('agenda.chooseDate');
     const readableMonth = selectedDateObj
         ? capitalize(
             selectedDateObj.toLocaleDateString("fr-FR", {
@@ -935,11 +937,11 @@ function AgendaContent() {
         if (!selectedCourse) return;
 
         if (userRole === 'visiteur') {
-            setError("Les visiteurs ne peuvent pas supprimer de notes");
+            setError(t('agenda.visitorCannotDelete'));
             return;
         }
 
-        if (!confirm("Supprimer cette note ?")) {
+        if (!confirm(t('agenda.deleteConfirm'))) {
             return;
         }
 
@@ -952,7 +954,7 @@ function AgendaContent() {
             });
 
             if (!res.ok) {
-                const data = await res.json().catch(() => ({ error: "Erreur inconnue" }));
+                const data = await res.json().catch(() => ({ error: t('agenda.errorUnknown') }));
                 const errorMessage = data.error || `Erreur ${res.status}: ${res.statusText}`;
                 throw new Error(errorMessage);
             }
@@ -969,7 +971,7 @@ function AgendaContent() {
         } catch (err) {
             console.error("[Agenda] Erreur suppression:", err);
             // Afficher un message d'erreur explicite
-            const errorMessage = err.message || "Une erreur inattendue s'est produite lors de la suppression";
+            const errorMessage = err.message || t('agenda.errorDelete');
             setError(errorMessage);
             
             // Garder l'erreur visible pendant au moins 5 secondes
@@ -1042,7 +1044,7 @@ function AgendaContent() {
             <div className={styles.pageCentered}>
                 <div className={styles.loadingContainer}>
                     <div className={styles.loader}></div>
-                    <p>Chargement de l'agenda</p>
+                    <p>{t('agenda.loading')}</p>
                 </div>
             </div>
         );
@@ -1058,7 +1060,7 @@ function AgendaContent() {
             return (
                 <div className={styles.notePlaceholder}>
                     <div style={{ fontSize: '3rem' }}>👈</div>
-                    <p>Sélectionnez un cours ci-dessus<br />pour ajouter ou modifier une note.</p>
+                    <p>{t('agenda.selectCourse')}</p>
                 </div>
             );
         }
@@ -1075,7 +1077,7 @@ function AgendaContent() {
                         <h2 className={styles.noteTitle}>
                             {selectedCourseData
                                 ? (getEventTitle(selectedCourseData).matiere || selectedCourseData.summary)
-                                : "Cours sélectionné"}
+                                : t('agenda.selectedCourse')}
                         </h2>
                         {selectedCourseData && (
                             <div className={styles.noteTime}>
@@ -1103,26 +1105,26 @@ function AgendaContent() {
                                 return (
                                     <div key={index} className={styles.noteEntryCard}>
                                         <div className={styles.noteEntryHeader}>
-                                            <span>Note {index + 1}</span>
+                                            <span>{t('agenda.note')} {index + 1}</span>
                                             <button
                                                 onClick={() => handleRemoveEntry(index)}
                                                 className={styles.noteEntryRemove}
                                                 disabled={userRole === 'visiteur'}
-                                                title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : ""}
+                                                title={userRole === 'visiteur' ? t('agenda.visitorCannotEdit') : ""}
                                             >
-                                                Supprimer
+                                                {t('agenda.remove')}
                                             </button>
                                         </div>
                                         
                                         {/* Labels pour cette note */}
                                         <div className={styles.noteLabelsSection}>
                                             <div className={styles.noteLabelsHeader}>
-                                                <span className={styles.noteLabelsTitle}>Labels</span>
+                                                <span className={styles.noteLabelsTitle}>{t('agenda.labels')}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         if (userRole === 'visiteur') {
-                                                            setError("Les visiteurs ne peuvent pas créer ou modifier de notes");
+                                                            setError(t('agenda.visitorCannotEdit'));
                                                             return;
                                                         }
                                                         if (!isEditingNotes) {
@@ -1131,10 +1133,10 @@ function AgendaContent() {
                                                         setShowLabelInputForEntry(showLabelInputForEntry === index ? null : index);
                                                     }}
                                                     className={styles.addLabelButton}
-                                                    title="Créer un label personnalisé"
+                                                    title={t('agenda.createCustomLabel')}
                                                     disabled={userRole === 'visiteur'}
                                                 >
-                                                    + Nouveau
+                                                    {t('agenda.newLabel')}
                                                 </button>
                                             </div>
                                             
@@ -1169,7 +1171,7 @@ function AgendaContent() {
                                                     })
                                                 ) : (
                                                     <span className={styles.noLabelsText}>
-                                                        {isEditingNotes ? "Aucun label pour cette note." : "Aucun label"}
+                                                        {isEditingNotes ? t('agenda.noLabels') : t('agenda.noLabelsShort')}
                                                     </span>
                                                 )}
                                             </div>
@@ -1212,7 +1214,7 @@ function AgendaContent() {
                                                                 setNewLabelValue("");
                                                             }
                                                         }}
-                                                        placeholder="Nom du label..."
+                                                        placeholder={t('agenda.labelPlaceholder')}
                                                         className={styles.customLabelInputField}
                                                         autoFocus
                                                     />
@@ -1222,7 +1224,7 @@ function AgendaContent() {
                                                         disabled={!newLabelValue.trim() || entryLabelsForIndex.includes(newLabelValue.trim())}
                                                         className={styles.customLabelAddButton}
                                                     >
-                                                        Ajouter
+                                                        {t('agenda.add')}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -1232,7 +1234,7 @@ function AgendaContent() {
                                                         }}
                                                         className={styles.customLabelCancelButton}
                                                     >
-                                                        Annuler
+                                                        {t('agenda.cancel')}
                                                     </button>
                                                 </div>
                                             )}
@@ -1249,7 +1251,7 @@ function AgendaContent() {
                                                 }
                                             }}
                                             disabled={userRole === 'visiteur'}
-                                            placeholder={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas modifier de notes" : "Écrivez votre note ici..."}
+                                            placeholder={userRole === 'visiteur' ? t('agenda.visitorCannotEdit') : t('agenda.writeNote')}
                                         />
                                     </div>
                                 );
@@ -1261,23 +1263,23 @@ function AgendaContent() {
                                 onClick={handleAddEntry} 
                                 className={styles.addNoteButton}
                                 disabled={userRole === 'visiteur'}
-                                title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
+                                title={userRole === 'visiteur' ? t('agenda.visitorCannotCreate') : ""}
                             >
-                                + Ajouter une note
+                                {t('agenda.addNote')}
                             </button>
                             <button
                                 onClick={saveNote}
                                 disabled={saving}
                                 className={styles.saveButton}
                             >
-                                {saving ? "Sauvegarde..." : "Enregistrer"}
+                                {saving ? t('agenda.saving') : t('agenda.save')}
                             </button>
                             <button
                                 onClick={handleCancelEditing}
                                 disabled={saving}
                                 className={styles.cancelButton}
                             >
-                                Annuler
+                                {t('agenda.cancel')}
                             </button>
                         </div>
                     </>
@@ -1285,7 +1287,7 @@ function AgendaContent() {
                     <>
                         {noteEntries.length === 0 && !hasAnyLabel ? (
                             <div className={styles.notePlaceholder}>
-                                <p>Aucune note pour ce cours.</p>
+                                <p>{t('agenda.noNoteForCourse')}</p>
                                 <button 
                                     onClick={handleStartEditing} 
                                     className={styles.addNoteButton}
@@ -1348,7 +1350,7 @@ function AgendaContent() {
 
                                 {notes.get(selectedCourse)?.user_name && (
                                     <div className={styles.noteLastPerson}>
-                                        Dernière modif par : {notes.get(selectedCourse).user_name}
+                                        {t('agenda.lastModifiedBy')} {notes.get(selectedCourse).user_name}
                                         {notes.get(selectedCourse).updated_at && (
                                             <> le {formatDateTime(notes.get(selectedCourse).updated_at)}</>
                                         )}
@@ -1360,7 +1362,7 @@ function AgendaContent() {
                                         <div className={styles.visitorWarning}>
                                             <span className={styles.visitorWarningIcon}>ℹ️</span>
                                             <span className={styles.visitorWarningText}>
-                                                En tant que visiteur, vous ne pouvez pas modifier ou supprimer de notes
+                                                {t('agenda.visitorWarning')}
                                             </span>
                                         </div>
                                     ) : (
@@ -1369,14 +1371,14 @@ function AgendaContent() {
                                                 onClick={handleStartEditing} 
                                                 className={styles.noteEditButton}
                                             >
-                                                ✏️ Modifier
+                                                {t('agenda.edit')}
                                             </button>
                                             <button 
                                                 onClick={deleteNote} 
                                                 className={styles.deleteButton}
                                                 disabled={deleting}
                                             >
-                                                {deleting ? "Suppression..." : "🗑️ Supprimer"}
+                                                {deleting ? t('agenda.deleting') : t('agenda.delete')}
                                             </button>
                                         </>
                                     )}
@@ -1394,8 +1396,8 @@ function AgendaContent() {
             <div className={styles.container}>
                 <div className={styles.header}>
                     <div className={styles.headerTop}>
-                        <BackButton href="/dashboard" title="Retour au dashboard" />
-                        <h1>Agenda</h1>
+                        <BackButton href="/dashboard" title={t('agenda.backToDashboard')} />
+                        <h1>{t('agenda.title')}</h1>
                     </div>
                 </div>
 
@@ -1404,13 +1406,13 @@ function AgendaContent() {
                         <div className={styles.errorContent}>
                             <span className={styles.errorIcon}>⚠️</span>
                             <div className={styles.errorText}>
-                                <strong>Erreur :</strong> {error}
+                                <strong>{t('agenda.error')}</strong> {error}
                             </div>
                         </div>
                         <button
                             onClick={() => setError(null)}
                             className={styles.closeError}
-                            title="Fermer"
+                            title={t('agenda.close')}
                         >
                             ×
                         </button>
@@ -1425,8 +1427,8 @@ function AgendaContent() {
                             onClick={() => setActiveTab("public")}
                             aria-pressed={activeTab === "public"}
                         >
-                            <strong>Notes</strong>
-                            <span>Consulter les notes</span>
+                            <strong>{t('agenda.tabNotes')}</strong>
+                            <span>{t('agenda.tabNotesDesc')}</span>
                         </button>
                         <button
                             type="button"
@@ -1434,8 +1436,8 @@ function AgendaContent() {
                             onClick={() => setActiveTab("private")}
                             aria-pressed={activeTab === "private"}
                         >
-                            <strong>Ajout / modification</strong>
-                            <span>{authenticated ? "Gérer les notes" : "Connexion requise"}</span>
+                            <strong>{t('agenda.tabAddEdit')}</strong>
+                            <span>{authenticated ? t('agenda.tabAddEditDesc') : t('agenda.tabAddEditDescGuest')}</span>
                         </button>
                     </div>
 
@@ -1444,17 +1446,17 @@ function AgendaContent() {
                             <div className={styles.publicContainer}>
                                 <div className={styles.publicIntroCard}>
                                     <div>
-                                        <h2>Notes</h2>
-                                        <p>Retrouvez ici toutes les notes partagées</p>
+                                        <h2>{t('agenda.publicTitle')}</h2>
+                                        <p>{t('agenda.publicDesc')}</p>
                                     </div>
                                     <div className={styles.publicStats}>
                                         <div>
                                             <span className={styles.publicStatsValue}>{showOldNotes ? publicNotesList.length : futureNotesCount}</span>
-                                            <span className={styles.publicStatsLabel}>Cours notés{!showOldNotes ? " (futurs)" : ""}</span>
+                                            <span className={styles.publicStatsLabel}>{!showOldNotes ? t('agenda.publicStatsNotedFuture') : t('agenda.publicStatsNoted')}</span>
                                         </div>
                                         <div>
                                             <span className={styles.publicStatsValue}>{events.length}</span>
-                                            <span className={styles.publicStatsLabel}>Cours</span>
+                                            <span className={styles.publicStatsLabel}>{t('agenda.publicStatsCourses')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1467,20 +1469,20 @@ function AgendaContent() {
                                             onClick={() => setShowOldNotes(!showOldNotes)}
                                             className={styles.showOldNotesButton}
                                         >
-                                            {showOldNotes ? "📅 Masquer les anciennes notes" : "📅 Voir les anciennes notes"}
+                                            {showOldNotes ? t('agenda.hideOldNotes') : t('agenda.showOldNotes')}
                                         </button>
                                         
                                         {/* Filtre par label */}
                                         {allAvailableLabels.length > 0 && (
                                             <div className={styles.labelFilterSection}>
-                                                <span className={styles.labelFilterTitle}>Filtrer par label :</span>
+                                                <span className={styles.labelFilterTitle}>{t('agenda.filterByLabel')}</span>
                                                 <div className={styles.labelFilterButtons}>
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelectedLabelFilter(null)}
                                                         className={[styles.labelFilterButton, !selectedLabelFilter && styles.labelFilterButtonActive].filter(Boolean).join(' ')}
                                                     >
-                                                        Tous
+                                                        {t('agenda.all')}
                                                     </button>
                                                     {allAvailableLabels.map((label) => {
                                                         const labelColor = getLabelColor(label);
@@ -1513,13 +1515,13 @@ function AgendaContent() {
                                     <div className={styles.publicEmptyState}>
                                         <p>
                                             {selectedLabelFilter 
-                                                ? `Aucune note avec le label "${selectedLabelFilter}" disponible.`
+                                                ? t('agenda.noNotesWithLabel').replace('{label}', selectedLabelFilter)
                                                 : showOldNotes 
-                                                    ? "Aucune note disponible pour le moment." 
-                                                    : "Aucune note future disponible pour le moment."}
+                                                    ? t('agenda.noNotesAvailable')
+                                                    : t('agenda.noFutureNotes')}
                                         </p>
                                         {!selectedLabelFilter && (
-                                            <span>Connectez-vous pour publier la première note (elle sera visible de tous).</span>
+                                            <span>{t('agenda.connectToPublish')}</span>
                                         )}
                                     </div>
                                 ) : (
@@ -1549,19 +1551,19 @@ function AgendaContent() {
                                                     {isFirstFuture && (
                                                         <div className={styles.publicNotesSeparator}>
                                                             <span className={styles.publicNotesSeparatorLine}></span>
-                                                            <span className={styles.publicNotesSeparatorText}>Cours à venir</span>
+                                                            <span className={styles.publicNotesSeparatorText}>{t('agenda.upcomingCourses')}</span>
                                                             <span className={styles.publicNotesSeparatorLine}></span>
                                                         </div>
                                                     )}
                                                     <article 
                                                         className={[styles.publicNoteCard, !note.isFuture && styles.publicNoteCardPast, note.event && note.event.start && styles.publicNoteCardClickable].filter(Boolean).join(' ')}
                                                         onClick={() => handleNoteClick(note)}
-                                                        title={note.event && note.event.start ? "Cliquer pour ouvrir dans l'EDT" : ""}
+                                                        title={note.event && note.event.start ? t('agenda.clickToOpenEDT') : ""}
                                                     >
                                                         <div className={styles.publicNoteHeader}>
                                                             <div>
                                                                 <h3>
-                                                                    {matiere || event?.summary || "Cours à identifier"}
+                                                                    {matiere || event?.summary || t('agenda.courseToIdentify')}
                                                                     {note.isOrphan && (
                                                                         <span style={{ 
                                                                             fontSize: '0.75rem', 
@@ -1569,7 +1571,7 @@ function AgendaContent() {
                                                                             color: '#666',
                                                                             marginLeft: '0.5rem'
                                                                         }}>
-                                                                            (cours modifié)
+                                                                            {t('agenda.courseModified')}
                                                                         </span>
                                                                     )}
                                                                 </h3>
@@ -1642,8 +1644,8 @@ function AgendaContent() {
                             <>
                                 {!authenticated ? (
                                     <div className={styles.privateLocked}>
-                                        <span className={styles.badgeGuest}>Mode Invité</span>
-                                        <h2>Connectez-vous pour ajouter des notes</h2>
+                                        <span className={styles.badgeGuest}>{t('agenda.guestMode')}</span>
+                                        <h2>{t('agenda.connectToAddNotes')}</h2>
                                         <LoginForm onSuccess={loadData} embedded={true} />
                                     </div>
                                 ) : (
@@ -1655,7 +1657,7 @@ function AgendaContent() {
                                                 <button
                                                     className={styles.datePickerButton}
                                                     onClick={() => shiftSelectedDate(-1)}
-                                                    aria-label="Jour précédent"
+                                                    aria-label={t('agenda.previousDay')}
                                                 >
                                                     ←
                                                 </button>
@@ -1672,7 +1674,7 @@ function AgendaContent() {
                                                 <button
                                                     className={styles.datePickerButton}
                                                     onClick={() => shiftSelectedDate(1)}
-                                                    aria-label="Jour suivant"
+                                                    aria-label={t('agenda.nextDay')}
                                                 >
                                                     →
                                                 </button>
@@ -1711,7 +1713,7 @@ function AgendaContent() {
                                                                         >
                                                                             <span className={styles.calendarDayNumber}>{dayObj.label}</span>
                                                                             {dayObj.hasNotes && (
-                                                                                <span className={styles.calendarDayNoteIndicator} title="Ce jour a des notes"></span>
+                                                                                <span className={styles.calendarDayNoteIndicator} title={t('agenda.dayHasNotes')}></span>
                                                                             )}
                                                                         </button>
                                                                     );
@@ -1727,13 +1729,13 @@ function AgendaContent() {
                                                                     className={[styles.calendarFilterButton, showOnlyCourseDays && styles.calendarFilterButtonActive].filter(Boolean).join(' ')}
                                                                     onClick={() => setShowOnlyCourseDays(true)}
                                                                 >
-                                                                    Jours de cours
+                                                                    {t('agenda.courseDays')}
                                                                 </button>
                                                                 <button
                                                                     className={[styles.calendarFilterButton, !showOnlyCourseDays && styles.calendarFilterButtonActive].filter(Boolean).join(' ')}
                                                                     onClick={() => setShowOnlyCourseDays(false)}
                                                                 >
-                                                                    Tous les jours
+                                                                    {t('agenda.allDays')}
                                                                 </button>
                                                             </div>
                                                             <button
@@ -1741,7 +1743,7 @@ function AgendaContent() {
                                                                 style={{ justifyContent: 'center', padding: '0.75rem' }}
                                                                 onClick={handleTodaySelect}
                                                             >
-                                                                Aujourd'hui
+                                                                {t('agenda.today')}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1750,12 +1752,12 @@ function AgendaContent() {
 
                                             {/* Liste des cours */}
                                             <div className={styles.coursesList}>
-                                                <div className={styles.sectionTitle}>Cours du jour</div>
+                                                <div className={styles.sectionTitle}>{t('agenda.coursesToday')}</div>
                                                 {dateLoading ? (
-                                                    <div className={styles.noCourseAlert}>Chargement...</div>
+                                                    <div className={styles.noCourseAlert}>{t('agenda.loadingDate')}</div>
                                                 ) : coursesForSelectedDate.length === 0 ? (
                                                     <div className={styles.noCourseAlert}>
-                                                        Aucun cours ce jour-là
+                                                        {t('agenda.noCoursesToday')}
                                                     </div>
                                                 ) : (
                                                     coursesForSelectedDate.map((course) => {
@@ -1779,7 +1781,7 @@ function AgendaContent() {
                                                                                     {formatTime(course.start)} - {formatTime(course.end)}
                                                                                 </span>
                                                                                 {hasNote && (
-                                                                                    <span className={styles.courseButtonNoteBadge} title="Ce cours a des notes">
+                                                                                    <span className={styles.courseButtonNoteBadge} title={t('agenda.courseHasNotes')}>
                                                                                         📋
                                                                                     </span>
                                                                                 )}
@@ -1828,11 +1830,12 @@ function AgendaContent() {
 }
 
 export default function AgendaPage() {
+    const { t } = useI18n();
     return (
         <Suspense fallback={
             <div className={styles.pageCentered}>
                 <div className={styles.card}>
-                    <p>Chargement...</p>
+                    <p suppressHydrationWarning>{t('agenda.loadingDate')}</p>
                 </div>
             </div>
         }>

@@ -2,11 +2,13 @@
 
 import {useEffect, useState, Suspense} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
+import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Composant interne qui utilise useSearchParams (doit être dans Suspense)
 function HistoContent() {
+    const { t } = useI18n();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedGroups, setExpandedGroups] = useState(new Set());
@@ -106,7 +108,7 @@ function HistoContent() {
     }, []);
 
     const formatEventSummary = (summary) => {
-        if (!summary || summary.trim() === '' || summary === ':') return 'Sans titre';
+        if (!summary || summary.trim() === '' || summary === ':') return t('histo.noTitle');
         return summary.replace(/^(USS|UAS)[A-Z0-9]*\s*:\s*/i, '').trim() || summary;
     };
 
@@ -169,8 +171,8 @@ function HistoContent() {
         <main style={{maxWidth: 900, margin: "0 auto", padding: "1rem"}}>
             <div style={{marginBottom: "0.75rem"}}>
                 <div style={{display: "flex", alignItems: "center", marginBottom: "0.75rem"}}>
-                    <BackButton href={backHref} title="Retour au dashboard"/>
-                    <h1 style={{paddingLeft: "1rem"}}>Historique des cours ajoutés</h1>
+                    <BackButton href={backHref} title={t('histo.backToDashboard')}/>
+                    <h1 style={{paddingLeft: "1rem"}}>{t('histo.title')}</h1>
                 </div>
             </div>
             <div style={{
@@ -247,7 +249,7 @@ function HistoContent() {
                                 margin: 0,
                                 letterSpacing: "-0.02em"
                             }}>
-                                Vérification automatique
+                                {t('histo.autoCheck')}
                             </h2>
                         </div>
                         <span style={{
@@ -267,7 +269,7 @@ function HistoContent() {
                                 margin: "1rem 0 1.25rem 0",
                                 lineHeight: "1.5"
                             }}>
-                                Les modifications de l'emploi du temps sont détectées automatiquement grace à un bot:
+                                {t('histo.autoCheckDescription')}
                             </p>
 
                             <div style={{

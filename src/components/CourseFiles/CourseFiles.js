@@ -2,12 +2,14 @@
 import {useState, useEffect} from "react";
 import styles from "./CourseFiles.module.css";
 import pageStyles from "@/app/page.module.css";
+import {useI18n} from "@/i18n/I18nContext";
 
 /**
  * Composant pour gérer les fichiers d'un cours
  * Affiche la liste des fichiers et permet l'upload
  */
 export default function CourseFiles({courseUid, authenticated}) {
+    const { t } = useI18n();
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -165,7 +167,7 @@ export default function CourseFiles({courseUid, authenticated}) {
         <div className="modal-section modal-section-dashed">
             <div className="modal-notes-header">
                 <div className="modal-notes-title">
-                    <h3>📄 Fichiers</h3>
+                    <h3>{t('files.filesTitle')}</h3>
                 </div>
                 {authenticated && (
                     <label className={styles.uploadButton}>
@@ -176,7 +178,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                             style={{display: 'none'}}
                             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                         />
-                        {uploading ? '⏳ Upload...' : '➕ Ajouter'}
+                        {uploading ? t('files.uploadingShort') : t('files.add')}
                     </label>
                 )}
             </div>
@@ -189,11 +191,11 @@ export default function CourseFiles({courseUid, authenticated}) {
 
             {loading ? (
                 <div className={styles.empty}>
-                    <div className={styles.loading} style={{padding: 0}}>Chargement...</div>
+                    <div className={styles.loading} style={{padding: 0}}>{t('files.loading')}</div>
                 </div>
             ) : files.length === 0 ? (
                 <div className={styles.empty}>
-                    {authenticated ? "Aucun fichier" : "Aucun fichier"}
+                    {t('files.noFilesEmpty')}
                 </div>
             ) : (
                 <div className={styles.filesList}>
@@ -229,7 +231,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                                             e.preventDefault();
                                             handleDownload(file);
                                         }}
-                                        title="Télécharger"
+                                        title={t('files.download')}
                                     >
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                                              xmlns="http://www.w3.org/2000/svg">
@@ -241,7 +243,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                                         <button
                                             className={styles.deleteButton}
                                             onClick={() => handleDelete(file.id)}
-                                            title="Supprimer"
+                                            title={t('files.delete')}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                                                  xmlns="http://www.w3.org/2000/svg">
@@ -266,9 +268,9 @@ export default function CourseFiles({courseUid, authenticated}) {
                 <div className="modal-auth-message" style={{marginTop: '0.75rem'}}>
                     <p className="modal-auth-message-text">
                         <a href="/login" className={pageStyles.notesUnauthLink}>
-                            Connectez-vous
+                            {t('files.connectToUpload')}
                         </a>
-                        <span style={{display: 'block', marginTop: '0.25rem'}}>pour ajouter des fichiers</span>
+                        <span style={{display: 'block', marginTop: '0.25rem'}}>{t('files.connectToAddFiles')}</span>
                     </p>
                 </div>
             )}

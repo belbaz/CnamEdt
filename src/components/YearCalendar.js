@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { getSchoolYearRange, getSchoolYearLabel } from '@/utils/dateUtils';
+import { useI18n } from '@/i18n/I18nContext';
 import styles from './YearCalendar.module.css';
 
 // Mois de l'année scolaire (Septembre à Août)
@@ -15,6 +16,7 @@ const DAYS_OF_WEEK_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DAYS_OF_WEEK_FULL = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 const YearCalendar = ({ events, onDateClick }) => {
+    const { t } = useI18n();
     const schoolYear = getSchoolYearRange();
     const yearLabel = getSchoolYearLabel();
     
@@ -154,13 +156,13 @@ const YearCalendar = ({ events, onDateClick }) => {
     return (
         <div className={styles['year-calendar-container']}>
             <div className={styles['year-header']}>
-                <h2 className={styles['year-title']}>Année Scolaire {yearLabel}</h2>
+                <h2 className={styles['year-title']}>{t('yearCalendar.title').replace('{year}', yearLabel)}</h2>
                 <button 
                     className={styles['view-toggle-button']}
                     onClick={toggleView}
-                    title={viewType === 'grid' ? "Passer en vue Planning Mural" : "Passer en vue Calendrier"}
+                    title={viewType === 'grid' ? t('yearCalendar.switchToPlanner') : t('yearCalendar.switchToCalendar')}
                 >
-                    {viewType === 'grid' ? '📅 Planning' : '🗓️ Calendrier'}
+                    {viewType === 'grid' ? t('yearCalendar.plannerView') : t('yearCalendar.calendarView')}
                 </button>
             </div>
             
@@ -202,7 +204,11 @@ const YearCalendar = ({ events, onDateClick }) => {
                                                 ${dayData.isToday ? styles['cell-today'] : ''}
                                             `}
                                             onClick={() => dayData.hasCourse && onDateClick && onDateClick(dayData.date)}
-                                            title={dayData.hasCourse ? `${dayData.courseCount} cours le ${dayName} ${dayData.dayNum} ${col.fullName}` : undefined}
+                                            title={dayData.hasCourse ? t('yearCalendar.coursesOnDay')
+                                                .replace('{count}', dayData.courseCount)
+                                                .replace('{dayName}', dayName)
+                                                .replace('{day}', dayData.dayNum)
+                                                .replace('{month}', col.fullName) : undefined}
                                         >
                                             <span className={styles['cell-day-initial']}>{dayInitial}</span>
                                         </div>
@@ -239,12 +245,14 @@ const YearCalendar = ({ events, onDateClick }) => {
                                                 ${day.isToday ? styles['is-today'] : ''}
                                             `}
                                             onClick={() => day.hasCourse && onDateClick && onDateClick(day.date)}
-                                            title={day.hasCourse ? `${day.courseCount} cours le ${day.date.toLocaleDateString()}` : undefined}
+                                            title={day.hasCourse ? t('yearCalendar.coursesOnDate')
+                                                .replace('{count}', day.courseCount)
+                                                .replace('{date}', day.date.toLocaleDateString()) : undefined}
                                         >
                                             {day.dayNumber}
                                             {day.hasCourse && (
                                                 <div className={styles['day-tooltip']}>
-                                                    {day.courseCount} cours
+                                                    {t('yearCalendar.courses').replace('{count}', day.courseCount)}
                                                 </div>
                                             )}
                                         </div>
@@ -260,15 +268,15 @@ const YearCalendar = ({ events, onDateClick }) => {
             <div className={styles['legend-container']}>
                 <div className={styles['legend-item']}>
                     <div className={`${styles['legend-color']} ${styles['legend-has-course']}`}></div>
-                    <span>Jour avec cours</span>
+                    <span>{t('yearCalendar.dayWithCourse')}</span>
                 </div>
                 <div className={styles['legend-item']}>
                     <div className={`${styles['legend-color']} ${styles['legend-weekend']}`}></div>
-                    <span>Weekend</span>
+                    <span>{t('yearCalendar.weekend')}</span>
                 </div>
                 <div className={styles['legend-item']}>
                     <div className={`${styles['legend-color']} ${styles['legend-no-course']}`}></div>
-                    <span>Pas de cours</span>
+                    <span>{t('yearCalendar.noCourse')}</span>
                 </div>
             </div>
         </div>

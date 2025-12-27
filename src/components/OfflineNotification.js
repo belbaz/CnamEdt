@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import {useI18n} from "@/i18n/I18nContext";
 import "./OfflineNotification.css";
 
 export default function OfflineNotification({ forceShow = false, lastUpdateTimestamp = null, showModal: externalShowModal = null, onModalClose: externalOnModalClose = null, onModalOpen: externalOnModalOpen = null }) {
+    const { t } = useI18n();
     const { isOnline } = useNetworkStatus();
     const [showNotification, setShowNotification] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -99,11 +101,11 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
         if (!timestamp) {
-            return 'Non disponible';
+            return t('offline.lastSave');
         }
         try {
             const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return 'Non disponible';
+            if (isNaN(date.getTime())) return t('offline.lastSave');
             return date.toLocaleString('fr-FR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -112,7 +114,7 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
                 minute: '2-digit'
             });
         } catch (e) {
-            return 'Non disponible';
+            return t('offline.lastSave');
         }
     };
 
@@ -144,7 +146,7 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
                                 fill="white"
                             />
                         </svg>
-                        <span className="offline-text">Mode hors ligne</span>
+                        <span className="offline-text">{t('offline.title')}</span>
                     </div>
                 </div>
             )}
@@ -152,7 +154,7 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
             {showModal && (
                 <div className="offline-modal-overlay" onClick={handleCloseModal}>
                     <div className="offline-modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="offline-modal-close" onClick={handleCloseModal} aria-label="Fermer">
+                        <button className="offline-modal-close" onClick={handleCloseModal} aria-label={t('offline.close')}>
                             ×
                         </button>
                         <div className="offline-modal-header">
@@ -172,18 +174,18 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
                                 </svg>
                             )}
                             <h2 className="offline-modal-title">
-                                {!isOnline || forceShow ? 'Mode hors ligne' : 'Informations EDT'}
+                                {!isOnline || forceShow ? t('offline.title') : t('offline.infoTitle')}
                             </h2>
                         </div>
                         <div className="offline-modal-body">
                             <p className="offline-modal-message">
                                 {!isOnline || forceShow 
-                                    ? 'Actuellement en mode hors ligne.'
-                                    : 'L\'emploi du temps est à jour.'
+                                    ? t('offline.offlineMessage')
+                                    : t('offline.onlineMessage')
                                 }
                             </p>
                             <div className="offline-modal-info">
-                                <p className="offline-modal-label">Dernière sauvegarde :</p>
+                                <p className="offline-modal-label">{t('offline.lastSave')}</p>
                                 <p className="offline-modal-date">{formatLastUpdate(lastUpdateTimestamp)}</p>
                             </div>
                         </div>

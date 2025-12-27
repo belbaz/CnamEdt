@@ -3,6 +3,7 @@ import './Footer.css';
 import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import {useDevMode} from '../utils/env';
+import {useI18n} from '../i18n/I18nContext';
 
 export default function Footer({
                                    testMode = false,
@@ -10,6 +11,7 @@ export default function Footer({
                                    testWeekMode = false,
                                    onToggleTestWeek = null
                                }) {
+    const { t } = useI18n();
     const [version, setVersion] = useState(null);
     const [isDemoMode, setIsDemoMode] = useState(false); // Pour éviter les erreurs d'hydratation
     const devMode = useDevMode();
@@ -46,26 +48,26 @@ export default function Footer({
         <footer className="app-footer">
             <div className="app-footer-content">
                 <Link href="/politique-confidentialite" className="app-footer-link">
-                    Politique de confidentialité
+                    {t('footer.privacy')}
                 </Link>
                 <div className="app-footer-content-first">
                     <span className="app-footer-text">EDT EICNAM</span>
                     {version && (
                         <>
                             <span className="app-footer-separator">•</span>
-                            <span className="app-footer-version">Version {version}</span>
+                            <span className="app-footer-version">{t('footer.version')} {version}</span>
                         </>
                     )}
                     {process.env.NEXT_PUBLIC_ENV === "DEV" && (
                         <>
                             <span className="app-footer-separator">•</span>
-                            <span className="app-footer-dev">MODE DEV</span>
+                            <span className="app-footer-dev">{t('footer.devMode')}</span>
                         </>
                     )}
                     {isDemoMode && (
                         <>
                             <span className="app-footer-separator">•</span>
-                            <span className="app-footer-demo">MODE DÉMO</span>
+                            <span className="app-footer-demo">{t('footer.demoMode')}</span>
                         </>
                     )}
                 </div>
@@ -76,16 +78,16 @@ export default function Footer({
                     <button
                         className={`test-mode-btn ${testMode ? 'active' : ''}`}
                         onClick={onToggleTestMode}
-                        title="Ajouter des cours de test pour aujourd'hui (9h-17h)"
+                        title={t('footer.testTodayTitle')}
                     >
-                        {testMode ? '✅ Test Aujourd\'hui' : '🧪 Test Aujourd\'hui'}
+                        {testMode ? t('footer.testTodayActive') : t('footer.testTodayInactive')}
                     </button>
                     <button
                         className={`test-week-btn ${testWeekMode ? 'active' : ''}`}
                         onClick={onToggleTestWeek}
-                        title="Générer une semaine complète de test (dimanche à dimanche, 7h30-20h)"
+                        title={t('footer.testWeekTitle')}
                     >
-                        {testWeekMode ? '✅ Test Semaine' : '📅 Test Semaine'}
+                        {testWeekMode ? t('footer.testWeekActive') : t('footer.testWeekInactive')}
                     </button>
                 </div>
             )}

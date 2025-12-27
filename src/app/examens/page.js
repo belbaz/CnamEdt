@@ -5,12 +5,14 @@ import { fetchICSEvents } from "@/services/icsService";
 import { getEventTitle } from "@/utils/eventUtils";
 import { createSubjectColorMapping } from "@/utils/eventUtils";
 import { generateEventKey } from "@/utils/eventModalUtils";
+import {useI18n} from "@/i18n/I18nContext";
 import Navbar from "@/components/Navbar";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import Spinner from "@/components/Spinner";
 import Footer from "@/components/Footer";
 import styles from "./page.module.css";
 
 function ExamensContent() {
+    const { t } = useI18n();
     const router = useRouter();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ function ExamensContent() {
                 }
             } catch (err) {
                 console.error("[Examens] Erreur lors du chargement:", err);
-                setError(err.message || "Erreur lors du chargement des examens");
+                setError(err.message || t('examens.errorLoading'));
             } finally {
                 setLoading(false);
             }
@@ -131,7 +133,7 @@ function ExamensContent() {
                 
                 return {
                     ...event,
-                    matiere: matiere || event.summary || "Matière inconnue",
+                    matiere: matiere || event.summary || t('examens.unknownSubject'),
                     examDate,
                     timeDiff,
                 };
@@ -281,8 +283,8 @@ function ExamensContent() {
                     showFilter={false}
                 />
                 <div className={styles.loadingContainer}>
-                    <LoadingSpinner />
-                    <p>Chargement des examens...</p>
+                    <Spinner size="large" variant="border" />
+                    <p>{t('examens.loading')}</p>
                 </div>
                 <Footer />
             </div>
@@ -325,21 +327,23 @@ function ExamensContent() {
                 showFilter={false}
             />
             <main className={styles.main}>
-                <h1 className={styles.title}>⏰ Temps restant jusqu'aux examens</h1>
+                <h1 className={styles.title}>⏰ {t('examens.title')}</h1>
 
                 {upcomingExams.length === 0 ? (
                     <div className={styles.noExamsContainer}>
                         <div className={styles.noExamsIcon}>😌</div>
-                        <h2 className={styles.noExamsTitle}>Relax, pas encore d'examen !</h2>
+                        <h2 className={styles.noExamsTitle}>{t('examens.noExamsTitle')}</h2>
                         <p className={styles.noExamsText}>
-                            Aucun examen à venir pour le moment. Profite de ce répit ! 🎉
+                            {t('examens.noExamsText')}
                         </p>
                     </div>
                 ) : (
                     <>
                         <div className={styles.summary}>
                             <p className={styles.summaryText}>
-                                {upcomingExams.length} examen{upcomingExams.length > 1 ? "s" : ""} à venir
+                                {t('examens.upcomingExams')
+                                    .replace('{count}', upcomingExams.length)
+                                    .replace('{plural}', upcomingExams.length > 1 ? 's' : '')}
                             </p>
                         </div>
 

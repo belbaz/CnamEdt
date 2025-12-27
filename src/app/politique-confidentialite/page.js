@@ -4,9 +4,11 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./privacy-policy.module.css";
 
 function PrivacyPolicyContent() {
+    const { t } = useI18n();
     const searchParams = useSearchParams();
     const [backHref, setBackHref] = useState(null);
 
@@ -47,101 +49,87 @@ function PrivacyPolicyContent() {
             <div className={styles.header}>
                 <BackButton 
                     href={backHref} 
-                    title={backHref === '/dashboard' ? "Retour au dashboard" : backHref === '/' ? "Retour à l'EDT" : "Retour à la page précédente"} 
+                    title={backHref === '/dashboard' ? t('privacy.backToDashboard') : backHref === '/' ? t('privacy.backToEDT') : t('privacy.backToPrevious')} 
                 />
                 <h1 className={styles.title}>
-                    Politique de confidentialité
+                    {t('privacy.title')}
                 </h1>
             </div>
 
             <p className={styles.intro}>
-                La confidentialité de vos données est une priorité. Cette page détaille en toute transparence les informations que nous utilisons pour faire fonctionner l&apos;application.
+                {t('privacy.intro')}
             </p>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
-                    1. Fonctionnement local et Stockage
+                    {t('privacy.section1Title')}
                 </h2>
                 <div className={styles.sectionContent}>
-                    <p>
-                        L&apos;application est conçue pour fonctionner au maximum en local sur votre appareil via le <strong>LocalStorage</strong>.
-                        Nous y enregistrons :
-                    </p>
+                    <p dangerouslySetInnerHTML={{__html: t('privacy.section1Text1').replace('LocalStorage', '<strong>LocalStorage</strong>')}} />
                     <ul className={styles.list}>
-                        <li>
-                            <strong>Vos préférences d&apos;affichage</strong> : Thème (Sombre/Clair), filtres, options de vue.
-                        </li>
-                        <li>
-                            <strong>Le cache de votre emploi du temps</strong> : Pour permettre un accès hors-ligne et rapide.
-                        </li>
-                        <li>
-                            <strong>L&apos;état de l&apos;application</strong> : Jours réduits, défilement automatique, etc.
-                        </li>
+                        <li dangerouslySetInnerHTML={{__html: `<strong>${t('privacy.section1Item1').split(':')[0]}</strong> : ${t('privacy.section1Item1').split(':')[1]}`}} />
+                        <li dangerouslySetInnerHTML={{__html: `<strong>${t('privacy.section1Item2').split(':')[0]}</strong> : ${t('privacy.section1Item2').split(':')[1]}`}} />
+                        <li dangerouslySetInnerHTML={{__html: `<strong>${t('privacy.section1Item3').split(':')[0]}</strong> : ${t('privacy.section1Item3').split(':')[1]}`}} />
                     </ul>
                     <p style={{ marginTop: "1rem" }}>
-                        Ces données restent sur votre appareil et ne sont pas envoyées à des tiers.
+                        {t('privacy.section1Text2')}
                     </p>
                 </div>
             </section>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
-                    2. Authentification et Base de données
+                    {t('privacy.section2Title')}
                 </h2>
                 <div className={styles.sectionContent}>
-                    <p>
-                        Pour la synchronisation et l&apos;accès sécurisé, nous utilisons <strong>Supabase</strong> (hébergé sur AWS).
-                        Si vous créez un compte, nous stockons de manière sécurisée :
-                    </p>
+                    <p dangerouslySetInnerHTML={{__html: t('privacy.section2Text1').replace('Supabase', '<strong>Supabase</strong>')}} />
                     <ul className={styles.list}>
                         <li>
-                            Vos identifiants de connexion (mots de passe chiffrés).
+                            {t('privacy.section2Item1')}
                         </li>
                         <li>
-                            Vos paramètres de synchronisation.
+                            {t('privacy.section2Item2')}
                         </li>
                     </ul>
                     <p style={{ marginTop: "1rem" }}>
-                        L&apos;accès à ces données est strictement limité au fonctionnement du service.
+                        {t('privacy.section2Text2')}
                     </p>
                 </div>
             </section>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
-                    3. Cookies
+                    {t('privacy.section3Title')}
                 </h2>
                 <div className={styles.sectionContent}>
-                    <p>Nous utilisons un nombre minimal de cookies, uniquement pour :</p>
+                    <p>{t('privacy.section3Text1')}</p>
                     <ul className={styles.list}>
+                        <li dangerouslySetInnerHTML={{__html: t('privacy.section3Item1').replace('edt_session', '<code>edt_session</code>')}} />
                         <li>
-                            Maintenir votre session connectée (<code>edt_session</code>).
-                        </li>
-                        <li>
-                            Mémoriser votre choix de consentement.
+                            {t('privacy.section3Item2')}
                         </li>
                     </ul>
                     <p style={{ marginTop: "1rem" }}>
-                        Aucun cookie publicitaire ou de traçage tiers n&apos;est utilisé.
+                        {t('privacy.section3Text2')}
                     </p>
                 </div>
             </section>
 
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
-                    4. Vos Droits
+                    {t('privacy.section4Title')}
                 </h2>
                 <div className={styles.sectionContent}>
-                    <p>Vous gardez le contrôle total. Vous pouvez à tout moment :</p>
+                    <p>{t('privacy.section4Text1')}</p>
                     <ul className={styles.list}>
                         <li>
-                            Vider le cache de l&apos;application (via les paramètres).
+                            {t('privacy.section4Item1')}
                         </li>
                         <li>
-                            Supprimer votre compte et vos données associées.
+                            {t('privacy.section4Item2')}
                         </li>
                         <li>
-                            Demander l&apos;accès ou la rectification de vos informations en nous contactant.
+                            {t('privacy.section4Item3')}
                         </li>
                     </ul>
                 </div>
@@ -149,10 +137,10 @@ function PrivacyPolicyContent() {
 
             <div className={styles.footer}>
                 <p>
-                    Pour toute question :
+                    {t('privacy.footerText')}
                 </p>
                 <a href="https://belbaz.vercel.app/contact" className={styles.contactLink}>
-                    contact
+                    {t('common.contact')}
                 </a>
             </div>
         </main>

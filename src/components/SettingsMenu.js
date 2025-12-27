@@ -3,6 +3,7 @@ import {useState, useEffect, useRef} from "react";
 import "./SettingsMenu.css";
 import Toast from "./Toast";
 import {useDevMode} from "../utils/env";
+import {useI18n} from "../i18n/I18nContext";
 
 const TABS = {
     DISPLAY: 'display',
@@ -12,6 +13,7 @@ const TABS = {
 
 // Composant séparé pour le slider d'opacité
 function SliderOpacity({ value, onChange }) {
+    const { t } = useI18n();
     const [localValue, setLocalValue] = useState(Math.round(value * 100));
     
     const handleChange = (e) => {
@@ -25,7 +27,7 @@ function SliderOpacity({ value, onChange }) {
     return (
         <div className="setting-item slider-item">
             <div className="slider-label">
-                <span>Intensité de la couleur :</span>
+                <span>{t('settings.colorIntensity')}</span>
                 <span className="slider-value">{localValue}%</span>
             </div>
             <input
@@ -60,6 +62,7 @@ export default function SettingsMenu({
                                          colorBackgroundOpacity = 0.6,
                                          onColorBackgroundOpacityChange = null
                                      }) {
+    const { t, language, setLanguage } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(TABS.DISPLAY);
     const [toastMessage, setToastMessage] = useState("");
@@ -151,9 +154,9 @@ export default function SettingsMenu({
             <button
                 className="settings-button"
                 onClick={() => setIsOpen(!isOpen)}
-                aria-label="Paramètres"
+                aria-label={t('settings.title')}
             >
-                <img src="/settings.svg" alt="Paramètres" width="22" height="22" aria-hidden="true"/>
+                <img src="/settings.svg" alt={t('settings.title')} width="22" height="22" aria-hidden="true"/>
             </button>
 
             {isOpen && (
@@ -161,7 +164,7 @@ export default function SettingsMenu({
                     <div className="settings-overlay" onClick={() => setIsOpen(false)}/>
                     <div className="settings-menu">
                         <div className="settings-header">
-                            <h3>Paramètres</h3>
+                            <h3>{t('settings.title')}</h3>
                             <button className="settings-close" onClick={() => setIsOpen(false)}>✕</button>
                         </div>
 
@@ -172,19 +175,19 @@ export default function SettingsMenu({
                                     className={`settings-tab ${activeTab === TABS.DISPLAY ? 'active' : ''}`}
                                     onClick={() => setActiveTab(TABS.DISPLAY)}
                                 >
-                                    Affichage
+                                    {t('settings.display')}
                                 </button>
                                 <button
                                     className={`settings-tab ${activeTab === TABS.COLORS ? 'active' : ''}`}
                                     onClick={() => setActiveTab(TABS.COLORS)}
                                 >
-                                    Couleurs
+                                    {t('settings.colors')}
                                 </button>
                                 <button
                                     className={`settings-tab ${activeTab === TABS.CONTACT ? 'active' : ''}`}
                                     onClick={() => setActiveTab(TABS.CONTACT)}
                                 >
-                                    Contact
+                                    {t('settings.contact')}
                                 </button>
                             </div>
 
@@ -199,7 +202,7 @@ export default function SettingsMenu({
                                                     checked={showTimeLabels}
                                                     onChange={(e) => onToggleTimeLabels && onToggleTimeLabels(e.target.checked)}
                                                 />
-                                                <span>Afficher les heures</span>
+                                                <span>{t('settings.showTimeLabels')}</span>
                                             </label>
                                         </div>
 
@@ -211,7 +214,7 @@ export default function SettingsMenu({
                                                     checked={hide15MinSpacing}
                                                     onChange={(e) => onToggle15MinSpacing && onToggle15MinSpacing(e.target.checked)}
                                                 />
-                                                <span>Masquer les pauses de 15 minutes</span>
+                                                <span>{t('settings.hide15MinSpacing')}</span>
                                             </label>
                                         </div>
 
@@ -223,7 +226,7 @@ export default function SettingsMenu({
                                                     checked={showTimeRemaining}
                                                     onChange={(e) => onToggleTimeRemaining && onToggleTimeRemaining(e.target.checked)}
                                                 />
-                                                <span>Afficher le temps restant du cours</span>
+                                                <span>{t('settings.showTimeRemaining')}</span>
                                             </label>
                                         </div>
 
@@ -235,7 +238,30 @@ export default function SettingsMenu({
                                                     checked={showTooltips}
                                                     onChange={(e) => onToggleTooltips && onToggleTooltips(e.target.checked)}
                                                 />
-                                                <span>Afficher les indications des boutons</span>
+                                                <span>{t('settings.showTooltips')}</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="language-select">
+                                                <span style={{marginRight: '0.5rem'}}>{t('settings.language')}:</span>
+                                                <select
+                                                    id="language-select"
+                                                    value={language}
+                                                    onChange={(e) => setLanguage(e.target.value)}
+                                                    style={{
+                                                        padding: '0.4rem 0.6rem',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid var(--border-color)',
+                                                        background: 'var(--bg-tertiary)',
+                                                        color: 'var(--text-primary)',
+                                                        fontSize: '0.9rem',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <option value="fr">{t('settings.languageFrench')}</option>
+                                                    <option value="en">{t('settings.languageEnglish')}</option>
+                                                </select>
                                             </label>
                                         </div>
                                     </div>
@@ -245,7 +271,7 @@ export default function SettingsMenu({
                                     <div className="settings-tab-panel">
                                         <div className="setting-item">
                                             <label htmlFor="colorPosition-select">
-                                                <span style={{marginRight: '0.5rem'}}>Position de la couleur du cours :</span>
+                                                <span style={{marginRight: '0.5rem'}}>{t('settings.colorPosition')}</span>
                                                 <select
                                                     id="colorPosition-select"
                                                     value={colorPosition}
@@ -260,8 +286,8 @@ export default function SettingsMenu({
                                                         cursor: 'pointer'
                                                     }}
                                                 >
-                                                    <option value="top">Au-dessus</option>
-                                                    <option value="background">Fond</option>
+                                                    <option value="top">{t('settings.colorPositionTop')}</option>
+                                                    <option value="background">{t('settings.colorPositionBackground')}</option>
                                                 </select>
                                             </label>
                                         </div>
@@ -285,7 +311,7 @@ export default function SettingsMenu({
                                                 className="settings-action contact-button"
                                             >
                                                 <span className="button-icon">✉️</span>
-                                                <span className="button-label">Contact</span>
+                                                <span className="button-label">{t('common.contact')}</span>
                                             </a>
                                         </div>
 

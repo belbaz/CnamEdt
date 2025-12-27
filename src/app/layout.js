@@ -1,6 +1,8 @@
 import "./global.css";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
 import CookieConsent from "@/components/CookieConsent";
+import LanguageSetter from "@/components/LanguageSetter";
+import { I18nProvider } from "@/i18n/I18nContext";
 
 const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
 const IS_CACHE_ENABLED = String(activeCacheEnv).toLowerCase() !== 'false';
@@ -73,6 +75,18 @@ export default function RootLayout({ children }) {
                         __html: `
                     (function() {
                         try {
+                            // Définir la langue de manière synchrone pour éviter le flash
+                            var savedLanguage = localStorage.getItem('language');
+                            if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
+                                document.documentElement.lang = savedLanguage;
+                                // Exposer la langue pour que React puisse l'utiliser immédiatement
+                                window.__INITIAL_LANGUAGE__ = savedLanguage;
+                            } else {
+                                document.documentElement.lang = 'fr';
+                                window.__INITIAL_LANGUAGE__ = 'fr';
+                            }
+                            
+                            // Dark mode
                             var cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
                             var fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
                             var fromStorage = localStorage.getItem('darkMode');
@@ -82,7 +96,11 @@ export default function RootLayout({ children }) {
                             } else {
                                 document.documentElement.classList.remove('dark-mode');
                             }
-                        } catch (e) {}
+                        } catch (e) {
+                            // En cas d'erreur, définir les valeurs par défaut
+                            document.documentElement.lang = 'fr';
+                            window.__INITIAL_LANGUAGE__ = 'fr';
+                        }
                     })();
                 `}}
                 />
@@ -132,10 +150,13 @@ export default function RootLayout({ children }) {
                 `}}
                 />
             </head>
-            <body>
-                <AnalyticsCollector />
-                <CookieConsent />
-                {children}
+            <body suppressHydrationWarning>
+                <I18nProvider>
+                    <LanguageSetter />
+                    <AnalyticsCollector />
+                    <CookieConsent />
+                    {children}
+                </I18nProvider>
             </body>
         </html>
     );

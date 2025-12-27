@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./info.module.css";
 
 export default function InfoPage() {
+    const { t } = useI18n();
     const router = useRouter();
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -59,13 +61,13 @@ export default function InfoPage() {
             
             if (!response.ok) {
                 if (response.status === 401) {
-                    setError("Vous devez être connecté pour accéder à cette page.");
+                    setError(t('info.mustBeConnected'));
                     setTimeout(() => {
                         router.push("/login");
                     }, 2000);
                     return;
                 }
-                throw new Error("Erreur lors du chargement des informations");
+                throw new Error(t('info.errorLoading'));
             }
 
             const data = await response.json();
@@ -91,11 +93,11 @@ export default function InfoPage() {
                 // Redirection vers l'accueil
                 window.location.href = "/";
             } else {
-                throw new Error("Erreur lors de la déconnexion");
+                throw new Error(t('info.errorLogout'));
             }
         } catch (err) {
             console.error("[Info] Erreur déconnexion:", err);
-            alert("Erreur lors de la déconnexion : " + err.message);
+            alert(t('info.errorLogoutMessage') + " " + err.message);
             setLoggingOut(false);
         }
     };
@@ -125,7 +127,7 @@ export default function InfoPage() {
                     setEmailCopied(false);
                 }, 2000);
             } catch (e) {
-                alert("Impossible de copier l'email");
+                alert(t('info.errorLogout'));
             }
             document.body.removeChild(textArea);
         }
@@ -133,10 +135,10 @@ export default function InfoPage() {
 
     const getRoleBadge = (role) => {
         const roleConfig = {
-            superAdmin: { label: "Super Administrateur", className: "super-admin" },
-            admin: { label: "Administrateur", className: "admin" },
-            editeur: { label: "Éditeur", className: "editeur" },
-            visiteur: { label: "Visiteur", className: "visiteur" }
+            superAdmin: { label: t('info.roles.superAdmin'), className: "super-admin" },
+            admin: { label: t('info.roles.admin'), className: "admin" },
+            editeur: { label: t('info.roles.editeur'), className: "editeur" },
+            visiteur: { label: t('info.roles.visiteur'), className: "visiteur" }
         };
         
         return roleConfig[role] || { label: role, className: "default" };
@@ -149,22 +151,22 @@ export default function InfoPage() {
 
         // Validation
         if (!oldPassword || !newPassword || !confirmPassword) {
-            setPasswordError("Tous les champs sont requis");
+            setPasswordError(t('info.passwordModal.errorAllFields'));
             return;
         }
 
         if (newPassword.length < 8) {
-            setPasswordError("Le nouveau mot de passe doit contenir au moins 8 caractères");
+            setPasswordError(t('info.passwordModal.errorMinLength'));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            setPasswordError("Les nouveaux mots de passe ne correspondent pas");
+            setPasswordError(t('info.passwordModal.errorMatch'));
             return;
         }
 
         if (oldPassword === newPassword) {
-            setPasswordError("Le nouveau mot de passe doit être différent de l'ancien");
+            setPasswordError(t('info.passwordModal.errorDifferent'));
             return;
         }
 
@@ -185,7 +187,7 @@ export default function InfoPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "Erreur lors du changement de mot de passe");
+                throw new Error(data.error || t('info.passwordModal.errorChange'));
             }
 
             // Succès
@@ -202,7 +204,7 @@ export default function InfoPage() {
 
         } catch (err) {
             console.error("[Info] Erreur changement mot de passe:", err);
-            setPasswordError(err.message || "Erreur lors du changement de mot de passe");
+            setPasswordError(err.message || t('info.passwordModal.errorChange'));
         } finally {
             setChangingPassword(false);
         }
@@ -222,7 +224,7 @@ export default function InfoPage() {
             <div className={styles.container}>
                 <div className={styles.loadingContainer}>
                     <Spinner size="large" variant="border" />
-                    <p>Chargement de vos informations...</p>
+                    <p>{t('info.loading')}</p>
                 </div>
             </div>
         );
@@ -232,9 +234,9 @@ export default function InfoPage() {
         return (
             <div className={styles.container}>
                 <div className={styles.errorContainer}>
-                    <h2>⚠️ Erreur</h2>
+                    <h2>{t('info.error')}</h2>
                     <p>{error}</p>
-                    <BackButton href="/dashboard" title="Retour au dashboard" />
+                    <BackButton href="/dashboard" title={t('info.backToDashboard')} />
                 </div>
             </div>
         );
@@ -250,8 +252,8 @@ export default function InfoPage() {
         <div className={styles.container}>
             <div className={styles.content}>
                 <header className={styles.header}>
-                    <BackButton href="/dashboard" title="Retour au dashboard" />
-                    <h1>Informations du compte</h1>
+                    <BackButton href="/dashboard" title={t('info.backToDashboard')} />
+                    <h1>{t('info.title')}</h1>
                 </header>
 
                 <div className={styles.card}>
@@ -266,13 +268,13 @@ export default function InfoPage() {
 
                     <div className={styles.infoSection}>
                         <div className={[styles.infoItem, styles.emailItem].filter(Boolean).join(' ')}>
-                            <span className={styles.infoLabel}>Email</span>
+                            <span className={styles.infoLabel}>{t('info.email')}</span>
                             <div style={{ position: 'relative' }}>
                                 <span className={styles.infoValue} title={userInfo.email}>{userInfo.email}</span>
                                 <button
                                     className={[styles.copyEmailButton, emailCopied && styles.copied].filter(Boolean).join(' ')}
                                     onClick={handleCopyEmail}
-                                    title={emailCopied ? "Copié !" : "Copier l'email"}
+                                    title={emailCopied ? t('info.copied') : t('info.copyEmail')}
                                 >
                                     {emailCopied ? "✓" : "📋"}
                                 </button>
@@ -280,28 +282,28 @@ export default function InfoPage() {
                         </div>
 
                         <div className={styles.infoItem}>
-                            <span className={styles.infoLabel}>Prénom</span>
+                            <span className={styles.infoLabel}>{t('info.firstName')}</span>
                             <span className={styles.infoValue}>{userInfo.name}</span>
                         </div>
 
                         <div className={styles.infoItem}>
-                            <span className={styles.infoLabel}>Nom</span>
+                            <span className={styles.infoLabel}>{t('info.lastName')}</span>
                             <span className={styles.infoValue}>{userInfo.lastName}</span>
                         </div>
 
                         <div className={styles.infoItem}>
-                            <span className={styles.infoLabel}>Rôle</span>
+                            <span className={styles.infoLabel}>{t('info.role')}</span>
                             <span className={styles.infoValue}>{roleBadge.label}</span>
                         </div>
 
                         <div className={styles.infoItem}>
-                            <span className={styles.infoLabel}>ID Utilisateur</span>
+                            <span className={styles.infoLabel}>{t('info.userId')}</span>
                             <span className={styles.infoValue}>{userInfo.id}</span>
                         </div>
 
                         {userInfo.lastLogin && (
                             <div className={styles.infoItem}>
-                                <span className={styles.infoLabel}>Dernière connexion</span>
+                                <span className={styles.infoLabel}>{t('info.lastLogin')}</span>
                                 <span className={styles.infoValue}>
                                     {new Date(userInfo.lastLogin).toLocaleString('fr-FR', {
                                         day: '2-digit',
@@ -316,7 +318,7 @@ export default function InfoPage() {
 
                         {userInfo.createdAt && (
                             <div className={styles.infoItem}>
-                                <span className={styles.infoLabel}>Date de création</span>
+                                <span className={styles.infoLabel}>{t('info.createdAt')}</span>
                                 <span className={styles.infoValue}>
                                     {new Date(userInfo.createdAt).toLocaleString('fr-FR', {
                                         day: '2-digit',
@@ -336,7 +338,7 @@ export default function InfoPage() {
                             className={styles.changePasswordButton}
                             onClick={() => setShowPasswordForm(true)}
                         >
-                            🔒 Changer mon mot de passe
+                            {t('info.changePassword')}
                         </button>
                     </div>
 
@@ -346,13 +348,13 @@ export default function InfoPage() {
                             onClick={handleLogout}
                             disabled={loggingOut}
                         >
-                            {loggingOut ? "Déconnexion..." : "🚪 Se déconnecter"}
+                            {loggingOut ? t('info.loggingOut') : t('info.logout')}
                         </button>
                     </div>
                 </div>
 
                 <div className={styles.footer}>
-                    <p>EDT CNAM © 2025</p>
+                    <p>{t('info.copyright')}</p>
                 </div>
             </div>
 
@@ -361,12 +363,12 @@ export default function InfoPage() {
                 <div className={styles.modalOverlay} onClick={handleCancelPasswordChange}>
                     <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.modalHeader}>
-                            <h2 className={styles.modalTitle}>Changer mon mot de passe</h2>
+                            <h2 className={styles.modalTitle}>{t('info.passwordModal.title')}</h2>
                             <button
                                 className={styles.modalCloseButton}
                                 onClick={handleCancelPasswordChange}
                                 disabled={changingPassword}
-                                aria-label="Fermer"
+                                aria-label={t('info.passwordModal.close')}
                             >
                                 ✕
                             </button>
@@ -381,18 +383,18 @@ export default function InfoPage() {
                             
                             {passwordSuccess && (
                                 <div className={styles.passwordSuccess}>
-                                    ✓ Mot de passe modifié avec succès !
+                                    {t('info.passwordModal.success')}
                                 </div>
                             )}
 
                             <div className={styles.passwordField}>
-                                <label htmlFor="oldPassword">Ancien mot de passe</label>
+                                <label htmlFor="oldPassword">{t('info.passwordModal.oldPassword')}</label>
                                 <input
                                     type="password"
                                     id="oldPassword"
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
-                                    placeholder="Entrez votre ancien mot de passe"
+                                    placeholder={t('info.passwordModal.oldPasswordPlaceholder')}
                                     required
                                     disabled={changingPassword}
                                     className={styles.passwordInput}
@@ -401,13 +403,13 @@ export default function InfoPage() {
                             </div>
 
                             <div className={styles.passwordField}>
-                                <label htmlFor="newPassword">Nouveau mot de passe</label>
+                                <label htmlFor="newPassword">{t('info.passwordModal.newPassword')}</label>
                                 <input
                                     type="password"
                                     id="newPassword"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    placeholder="Au moins 8 caractères"
+                                    placeholder={t('info.passwordModal.newPasswordPlaceholder')}
                                     required
                                     minLength={8}
                                     disabled={changingPassword}
@@ -416,13 +418,13 @@ export default function InfoPage() {
                             </div>
 
                             <div className={styles.passwordField}>
-                                <label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</label>
+                                <label htmlFor="confirmPassword">{t('info.passwordModal.confirmPassword')}</label>
                                 <input
                                     type="password"
                                     id="confirmPassword"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Répétez le nouveau mot de passe"
+                                    placeholder={t('info.passwordModal.confirmPasswordPlaceholder')}
                                     required
                                     minLength={8}
                                     disabled={changingPassword}
@@ -436,7 +438,7 @@ export default function InfoPage() {
                                     disabled={changingPassword}
                                     className={styles.savePasswordButton}
                                 >
-                                    {changingPassword ? "Modification..." : "✓ Enregistrer"}
+                                    {changingPassword ? t('info.passwordModal.saving') : t('info.passwordModal.save')}
                                 </button>
                                 <button
                                     type="button"
@@ -444,7 +446,7 @@ export default function InfoPage() {
                                     disabled={changingPassword}
                                     className={styles.cancelPasswordButton}
                                 >
-                                    Annuler
+                                    {t('info.passwordModal.cancel')}
                                 </button>
                             </div>
                         </form>

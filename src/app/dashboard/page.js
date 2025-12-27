@@ -4,9 +4,11 @@ import {useState, useEffect} from "react";
 import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
+    const { t } = useI18n();
     const router = useRouter();
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -61,28 +63,32 @@ export default function DashboardPage() {
     // Pages disponibles selon le rôle
     const getAvailablePages = () => {
         const basePages = [{
-            title: "Emploi du temps", description: "Consultez l'emploi du temps", path: "/", icon: "📅", color: "#3b82f6"
+            title: t('dashboard.pages.schedule.title'), 
+            description: t('dashboard.pages.schedule.description'), 
+            path: "/", 
+            icon: "📅", 
+            color: "#3b82f6"
         }, {
-            title: "Agenda",
-            description: "Consultez l'agenda avec tous vos cours",
+            title: t('dashboard.pages.agenda.title'),
+            description: t('dashboard.pages.agenda.description'),
             path: "/agenda",
             icon: "📋",
             color: "#10b981"
         }, {
-            title: "Fichiers de cours",
-            description: "Gérez les fichiers uploadés par cours",
+            title: t('dashboard.pages.files.title'),
+            description: t('dashboard.pages.files.description'),
             path: "/files",
             icon: "📄",
             color: "#ec4899"
         }, {
-            title: "Historique",
-            description: "Historique des modifications de l'emploi du temps",
+            title: t('dashboard.pages.history.title'),
+            description: t('dashboard.pages.history.description'),
             path: "/histo",
             icon: "📜",
             color: "#8b5cf6"
         }, {
-            title: "Mes informations",
-            description: "Consultez vos informations de compte",
+            title: t('dashboard.pages.info.title'),
+            description: t('dashboard.pages.info.description'),
             path: "/info",
             icon: "ℹ️",
             color: "#f59e0b"
@@ -92,8 +98,8 @@ export default function DashboardPage() {
 
         if (userInfo?.role !== 'superAdmin') {
             adminPages.push({
-                title: "Politique de confidentialité",
-                description: "Informations sur la protection de vos données",
+                title: t('dashboard.pages.privacy.title'),
+                description: t('dashboard.pages.privacy.description'),
                 path: "/politique-confidentialite",
                 icon: "🔒",
                 color: "#6366f1"
@@ -102,20 +108,20 @@ export default function DashboardPage() {
 
         if (userInfo?.role === 'superAdmin') {
             adminPages.push({
-                title: "Analytics",
-                description: "Statistiques et analyses de l'application",
+                title: t('dashboard.pages.analytics.title'),
+                description: t('dashboard.pages.analytics.description'),
                 path: "/admin/analytics",
                 icon: "📊",
                 color: "#ef4444"
             }, {
-                title: "Gestion des utilisateurs",
-                description: "Gérer les utilisateurs de l'application",
+                title: t('dashboard.pages.users.title'),
+                description: t('dashboard.pages.users.description'),
                 path: "/admin/users",
                 icon: "👥",
                 color: "#8b5cf6"
             }, {
-                title: "Room Mapper",
-                description: "Mapper les salles sur le plan SVG",
+                title: t('dashboard.pages.roomMapper.title'),
+                description: t('dashboard.pages.roomMapper.description'),
                 path: "/admin/room-mapper",
                 icon: "🗺️",
                 color: "#06b6d4"
@@ -129,7 +135,7 @@ export default function DashboardPage() {
         return (<div className={styles.container}>
             <div className={styles.loadingContainer}>
                 <Spinner size="large" variant="border"/>
-                <p>Chargement...</p>
+                <p suppressHydrationWarning>{t('dashboard.loading')}</p>
             </div>
         </div>);
     }
@@ -143,11 +149,11 @@ export default function DashboardPage() {
     return (<div className={styles.container}>
         <div className={styles.content}>
             <header className={styles.parentHeader}>
-                <BackButton href="/" title="Retour à l'EDT"/>
+                <BackButton href="/" title={t('dashboard.backToEDT')}/>
                 <div className={styles.header}>
-                    <h1>Tableau de bord</h1>
+                    <h1>{t('dashboard.title')}</h1>
                     <p className={styles.welcomeText}>
-                        Bonjour<strong>{userInfo.name} {userInfo.lastName}</strong>
+                        {t('dashboard.welcome')}<strong>{userInfo.name} {userInfo.lastName}</strong>
                         {userInfo.role && (<span className={styles.roleBadge}>{userInfo.role}</span>)}
                     </p>
                 </div>
@@ -212,7 +218,7 @@ export default function DashboardPage() {
                             strokeLinejoin="round"
                         />
                     </svg>
-                    <span>Se déconnecter</span>
+                    <span>{t('dashboard.logout')}</span>
                 </button>
             </div>
         </div>

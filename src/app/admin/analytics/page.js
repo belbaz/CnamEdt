@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import './analytics.css';
@@ -8,6 +9,7 @@ import './analytics.css';
 const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
 
 export default function AnalyticsPage() {
+    const { t } = useI18n();
     const [data, setData] = useState([]);
     const [statistics, setStatistics] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function AnalyticsPage() {
                 if (response.status === 401) {
                     setIsAuthenticated(false);
                     setUnauthorized(true);
-                    setError('Vous devez être connecté pour accéder à cette page.');
+                    setError(t('admin.analytics.mustBeConnected'));
                     setTimeout(() => {
                         // Passer la page actuelle comme paramètre de redirection
                         const currentPath = encodeURIComponent(window.location.pathname);
@@ -70,7 +72,7 @@ export default function AnalyticsPage() {
                 } else {
                     setIsAuthenticated(false);
                     setUnauthorized(true);
-                    setError('Erreur lors de la vérification de votre session.');
+                    setError(t('admin.analytics.errorSession'));
                 }
                 setAuthChecked(true);
                 setLoading(false);
@@ -105,7 +107,7 @@ export default function AnalyticsPage() {
                     email: user.email
                 });
                 setUnauthorized(true);
-                setError(`Accès refusé : vous devez être un superAdmin pour accéder à cette page. Rôle actuel : "${user.role || 'non défini'}"`);
+                setError(t('admin.analytics.accessDeniedMessage').replace('{role}', user.role || 'non défini'));
                 setLoading(false);
                 setAuthChecked(true);
                 return;
@@ -144,7 +146,7 @@ export default function AnalyticsPage() {
                 if (response.status === 401) {
                     setIsAuthenticated(false);
                     setUnauthorized(true);
-                    setError('Vous devez être connecté pour accéder à cette page. Redirection vers la page de connexion...');
+                    setError(t('admin.analytics.mustBeConnectedRedirect'));
                     setTimeout(() => {
                         // Passer la page actuelle comme paramètre de redirection
                         const currentPath = encodeURIComponent(window.location.pathname);
@@ -152,12 +154,12 @@ export default function AnalyticsPage() {
                     }, 2000);
                 } else if (response.status === 403) {
                     setUnauthorized(true);
-                    setError('Accès refusé : vous devez être un admin pour accéder à cette page.');
+                    setError(t('admin.analytics.accessDeniedMessage').replace('{role}', 'non défini'));
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 3000);
                 } else if (response.status === 500) {
-                    let errorMsg = errorData.error || "Erreur serveur";
+                    let errorMsg = errorData.error || t('admin.analytics.errorServer');
                     if (errorData.details) {
                         errorMsg += ` - ${errorData.details}`;
                     }
@@ -166,7 +168,7 @@ export default function AnalyticsPage() {
                     }
                     setError(errorMsg);
                 } else {
-                    setError(`Erreur ${response.status}: ${errorData.error || 'Erreur lors de la récupération des données.'}`);
+                    setError(`Erreur ${response.status}: ${errorData.error || t('admin.analytics.errorFetchData')}`);
                 }
                 setLoading(false);
                 return;
@@ -179,7 +181,7 @@ export default function AnalyticsPage() {
             setLastUpdate(new Date());
         } catch (err) {
             console.error('[Analytics] Erreur:', err);
-            setError(`Erreur de connexion au serveur: ${err.message}`);
+            setError(t('admin.analytics.errorConnection').replace('{message}', err.message));
         } finally {
             setLoading(false);
         }
@@ -193,7 +195,7 @@ export default function AnalyticsPage() {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                setError(`Erreur: ${errorData.error || 'Impossible de récupérer les stats utilisateur'}`);
+                setError(`${t('admin.analytics.error')}: ${errorData.error || t('admin.analytics.errorFetchUserStats')}`);
                 setLoadingUser(false);
                 return;
             }
@@ -202,14 +204,14 @@ export default function AnalyticsPage() {
             setUserStats(result);
         } catch (err) {
             console.error('[Analytics] Erreur récupération stats utilisateur:', err);
-            setError(`Erreur: ${err.message}`);
+            setError(`${t('admin.analytics.error')}: ${err.message}`);
         } finally {
             setLoadingUser(false);
         }
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
+        if (!dateString) return t('admin.analytics.na');
         const date = new Date(dateString);
         return date.toLocaleString('fr-FR', {
             day: '2-digit',
@@ -235,11 +237,11 @@ export default function AnalyticsPage() {
         if (!date) return '';
         const now = new Date();
         const diff = Math.floor((now - date) / 1000);
-        if (diff < 60) return `Il y a ${diff} seconde${diff > 1 ? 's' : ''}`;
+        if (diff < 60) return t('admin.analytics.agoSeconds').replace('{seconds}', diff).replace('{plural}', diff > 1 ? 's' : '');
         const minutes = Math.floor(diff / 60);
-        if (minutes < 60) return `Il y a ${minutes} minute${minutes > 1 ? 's' : ''}`;
+        if (minutes < 60) return t('admin.analytics.agoMinutes').replace('{minutes}', minutes).replace('{plural}', minutes > 1 ? 's' : '');
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+        if (hours < 24) return t('admin.analytics.agoHours').replace('{hours}', hours).replace('{plural}', hours > 1 ? 's' : '');
         return date.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     };
 
@@ -327,7 +329,17 @@ export default function AnalyticsPage() {
 
     const exportData = () => {
         const csv = [
-            ['Session ID', 'IP', 'Device', 'OS', 'Browser', 'Visites', 'Temps moyen', 'Première visite', 'Dernière visite'].join(','),
+            [
+                t('admin.analytics.tableSessionId'),
+                t('admin.analytics.tableIP'),
+                t('admin.analytics.tableDevice'),
+                t('admin.analytics.tableOS'),
+                t('admin.analytics.tableBrowser'),
+                t('admin.analytics.tableVisits'),
+                t('admin.analytics.sortAvgTime'),
+                t('admin.analytics.tableFirstVisit'),
+                t('admin.analytics.tableLastVisit')
+            ].join(','),
             ...filteredData.map(item => [
                 item.session_id,
                 item.ip_address,
@@ -356,7 +368,7 @@ export default function AnalyticsPage() {
             <div className="analytics-container">
                 <div className="analytics-loading">
                     <Spinner size="large" variant="border" />
-                    <p>{authChecked ? 'Chargement des données analytics...' : 'Vérification des permissions...'}</p>
+                    <p>{authChecked ? t('admin.analytics.loadingData') : t('admin.analytics.checkingPermissions')}</p>
                 </div>
             </div>
         );
@@ -368,14 +380,14 @@ export default function AnalyticsPage() {
         return (
             <div className="analytics-container">
                 <div className="analytics-error">
-                    <h2>🚫 Accès Refusé</h2>
-                    <p className="error-message">{error || 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.'}</p>
+                    <h2>🚫 {t('admin.analytics.accessDenied')}</h2>
+                    <p className="error-message">{error || t('admin.analytics.noPermissions')}</p>
                     <div className="error-actions">
-                        <BackButton href="/dashboard" label="Retour au dashboard" title="Retour au dashboard" />
+                        <BackButton href="/dashboard" label={t('admin.analytics.backToDashboard')} title={t('admin.analytics.backToDashboard')} />
                         {/* Afficher le bouton "Se connecter" seulement si l'utilisateur n'est pas déjà connecté */}
                         {!isAuthenticated && (
                             <button onClick={() => window.location.href = `/login?redirect=${currentPath}`}>
-                                Se connecter
+                                {t('admin.analytics.seConnecter')}
                             </button>
                         )}
                     </div>
@@ -397,16 +409,16 @@ export default function AnalyticsPage() {
         return (
             <div className="analytics-container">
                 <div className="analytics-error">
-                    <h2>⚠️ Erreur</h2>
+                    <h2>⚠️ {t('admin.analytics.error')}</h2>
                     <p className="error-message">{formatError(error)}</p>
                     <div className="error-actions">
-                        <button onClick={fetchAnalytics}>Réessayer</button>
+                        <button onClick={fetchAnalytics}>{t('admin.analytics.reessayer')}</button>
                         {error.includes('connecté') && !isAuthenticated && (
                             <button onClick={() => {
                                 const currentPath = encodeURIComponent(window.location.pathname);
                                 window.location.href = `/login?redirect=${currentPath}`;
                             }}>
-                                Se connecter
+                                {t('admin.analytics.seConnecter')}
                             </button>
                         )}
                     </div>
@@ -447,21 +459,21 @@ export default function AnalyticsPage() {
     return (
         <div className="analytics-container">
             <div className="analytics-back-button">
-                <BackButton href="/dashboard" title="Retour au dashboard" />
+                <BackButton href="/dashboard" title={t('admin.analytics.backToDashboard')} />
             </div>
             <header className="analytics-header">
                 <div>
-                    <h1>📊 Analytics du Site</h1>
-                    <p>Analyse complète des visiteurs et de leur comportement</p>
+                    <h1>📊 {t('admin.analytics.title')}</h1>
+                    <p>{t('admin.analytics.subtitle')}</p>
                     {lastUpdate && (
                         <div className="last-update">
                             <span className="last-update-icon">🔄</span>
-                            <span>Dernière mise à jour : {formatLastUpdate(lastUpdate)}</span>
+                            <span>{t('admin.analytics.lastUpdate')} {formatLastUpdate(lastUpdate)}</span>
                         </div>
                     )}
                 </div>
-                <button className="export-btn" onClick={exportData} title="Exporter en CSV">
-                    📥 Exporter
+                <button className="export-btn" onClick={exportData} title={t('admin.analytics.exportCSV')}>
+                    📥 {t('admin.analytics.export')}
                 </button>
             </header>
 
@@ -470,32 +482,32 @@ export default function AnalyticsPage() {
                     className={selectedTab === 'overview' ? 'active' : ''}
                     onClick={() => setSelectedTab('overview')}
                 >
-                    📈 Vue d'ensemble
+                    📈 {t('admin.analytics.tabOverview')}
                 </button>
                 <button
                     className={selectedTab === 'sessions' ? 'active' : ''}
                     onClick={() => setSelectedTab('sessions')}
                 >
-                    👥 Sessions ({totalCount})
+                    👥 {t('admin.analytics.tabSessions')} ({totalCount})
                 </button>
                 <button
                     className={selectedTab === 'devices' ? 'active' : ''}
                     onClick={() => setSelectedTab('devices')}
                 >
-                    📱 Appareils
+                    📱 {t('admin.analytics.tabDevices')}
                 </button>
                 <button
                     className={selectedTab === 'versions' ? 'active' : ''}
                     onClick={() => setSelectedTab('versions')}
                 >
-                    🔄 Versions
+                    🔄 {t('admin.analytics.tabVersions')}
                 </button>
                 {selectedUser && (
                     <button
                         className={selectedTab === 'user' ? 'active' : ''}
                         onClick={() => setSelectedTab('user')}
                     >
-                        👤 Utilisateur
+                        👤 {t('admin.analytics.tabUser')}
                     </button>
                 )}
             </div>
@@ -505,59 +517,59 @@ export default function AnalyticsPage() {
                     <div className="stats-grid">
                         <div className="stat-card stat-card-primary">
                             <div className="stat-icon">📊</div>
-                            <h3>Total d'enregistrements</h3>
+                            <h3>{t('admin.analytics.statTotalRecords')}</h3>
                             <p className="stat-value">{statistics.total.toLocaleString()}</p>
                             <div className="stat-badge">
-                                <span>Toutes périodes</span>
+                                <span>{t('admin.analytics.statAllPeriods')}</span>
                             </div>
                         </div>
                         <div className="stat-card stat-card-success">
                             <div className="stat-icon">👤</div>
-                            <h3>Sessions uniques</h3>
+                            <h3>{t('admin.analytics.statUniqueSessions')}</h3>
                             <p className="stat-value">{statistics.uniqueSessions?.toLocaleString() || 0}</p>
                             {statistics.uniqueSessions && statistics.total > 0 && (
                                 <div className="stat-badge">
-                                    <span>{Math.round((statistics.uniqueSessions / statistics.total) * 100)}% du total</span>
+                                    <span>{t('admin.analytics.statPercentOfTotal').replace('{percent}', Math.round((statistics.uniqueSessions / statistics.total) * 100))}</span>
                                 </div>
                             )}
                         </div>
                         <div className="stat-card stat-card-info">
                             <div className="stat-icon">🌐</div>
-                            <h3>IPs uniques</h3>
+                            <h3>{t('admin.analytics.statUniqueIPs')}</h3>
                             <p className="stat-value">{statistics.uniqueIPs?.toLocaleString() || 0}</p>
                             {statistics.uniqueIPs && statistics.uniqueSessions > 0 && (
                                 <div className="stat-badge">
-                                    <span>{Math.round((statistics.uniqueIPs / statistics.uniqueSessions) * 100)}% des sessions</span>
+                                    <span>{t('admin.analytics.statPercentOfSessions').replace('{percent}', Math.round((statistics.uniqueIPs / statistics.uniqueSessions) * 100))}</span>
                                 </div>
                             )}
                         </div>
                         <div className="stat-card stat-card-warning">
                             <div className="stat-icon">🔄</div>
-                            <h3>Total visites</h3>
+                            <h3>{t('admin.analytics.statTotalVisits')}</h3>
                             <p className="stat-value">{statistics.totalVisits?.toLocaleString() || 0}</p>
                             {statistics.totalVisits && statistics.uniqueSessions > 0 && (
                                 <div className="stat-badge">
-                                    <span>{Math.round(statistics.totalVisits / statistics.uniqueSessions)} visites/session</span>
+                                    <span>{t('admin.analytics.statVisitsPerSession').replace('{visits}', Math.round(statistics.totalVisits / statistics.uniqueSessions))}</span>
                                 </div>
                             )}
                         </div>
                         <div className="stat-card stat-card-secondary">
                             <div className="stat-icon">⏱️</div>
-                            <h3>Temps moyen sur page</h3>
+                            <h3>{t('admin.analytics.statAvgTimeOnPage')}</h3>
                             <p className="stat-value">{formatDuration(statistics.avgTimeOnPage || 0)}</p>
                             {statistics.avgTimeOnPage && statistics.avgTimeOnPage > 60 && (
                                 <div className="stat-badge stat-badge-trend up">
-                                    <span>↑ Engagement élevé</span>
+                                    <span>{t('admin.analytics.statHighEngagement')}</span>
                                 </div>
                             )}
                         </div>
                         <div className="stat-card stat-card-tertiary">
                             <div className="stat-icon">📈</div>
-                            <h3>Visites moyennes/session</h3>
+                            <h3>{t('admin.analytics.statAvgVisitsPerSession')}</h3>
                             <p className="stat-value">{statistics.avgVisitsPerSession || '0'}</p>
                             {statistics.avgVisitsPerSession && parseFloat(statistics.avgVisitsPerSession) > 2 && (
                                 <div className="stat-badge stat-badge-trend up">
-                                    <span>↑ Bonne rétention</span>
+                                    <span>{t('admin.analytics.statGoodRetention')}</span>
                                 </div>
                             )}
                         </div>
@@ -565,7 +577,7 @@ export default function AnalyticsPage() {
 
                     <div className="charts-grid">
                         <div className="chart-card">
-                            <h3>Types d'appareils</h3>
+                            <h3>{t('admin.analytics.chartDeviceTypes')}</h3>
                             <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
                                     <Pie
@@ -588,7 +600,7 @@ export default function AnalyticsPage() {
                         </div>
 
                         <div className="chart-card">
-                            <h3>Systèmes d'exploitation</h3>
+                            <h3>{t('admin.analytics.chartOperatingSystems')}</h3>
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={osChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -601,7 +613,7 @@ export default function AnalyticsPage() {
                         </div>
 
                         <div className="chart-card">
-                            <h3>Navigateurs</h3>
+                            <h3>{t('admin.analytics.chartBrowsers')}</h3>
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={browserChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -615,7 +627,7 @@ export default function AnalyticsPage() {
 
                         {visitsByDayData.length > 0 && (
                             <div className="chart-card chart-card-wide">
-                                <h3>Visites par jour (30 derniers jours)</h3>
+                                <h3>{t('admin.analytics.chartVisitsByDay')}</h3>
                                 <ResponsiveContainer width="100%" height={300}>
                                     <AreaChart data={visitsByDayData}>
                                         <CartesianGrid strokeDasharray="3 3" />
@@ -630,7 +642,7 @@ export default function AnalyticsPage() {
 
                         {visitsByHourData.length > 0 && (
                             <div className="chart-card chart-card-wide">
-                                <h3>Visites par heure de la journée</h3>
+                                <h3>{t('admin.analytics.chartVisitsByHour')}</h3>
                                 <ResponsiveContainer width="100%" height={300}>
                                     <LineChart data={visitsByHourData}>
                                         <CartesianGrid strokeDasharray="3 3" />
@@ -654,22 +666,22 @@ export default function AnalyticsPage() {
                         </div>
                     )}
                     <div className="filters-panel">
-                        <h3>🔍 Filtres</h3>
+                        <h3>🔍 {t('admin.analytics.filtersTitle')}</h3>
                         <div className="filters-grid">
                             <input
                                 type="text"
-                                placeholder="Rechercher (session, IP, device, OS, browser)..."
+                                placeholder={t('admin.analytics.searchPlaceholder')}
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
                                 className="filter-input"
-                                title="Recherche dans les sessions, IPs, appareils, OS et navigateurs"
+                                title={t('admin.analytics.searchTooltip')}
                             />
                             <select
                                 value={filters.deviceType}
                                 onChange={(e) => handleFilterChange('deviceType', e.target.value)}
                                 className="filter-select"
                             >
-                                <option value="">Tous les appareils</option>
+                                <option value="">{t('admin.analytics.allDevices')}</option>
                                 {statistics?.deviceTypes?.map((item, idx) => (
                                     <option key={idx} value={item.name}>{item.name}</option>
                                 ))}
@@ -679,7 +691,7 @@ export default function AnalyticsPage() {
                                 onChange={(e) => handleFilterChange('osName', e.target.value)}
                                 className="filter-select"
                             >
-                                <option value="">Tous les OS</option>
+                                <option value="">{t('admin.analytics.allOS')}</option>
                                 {statistics?.osNames?.map((item, idx) => (
                                     <option key={idx} value={item.name}>{item.name}</option>
                                 ))}
@@ -689,7 +701,7 @@ export default function AnalyticsPage() {
                                 onChange={(e) => handleFilterChange('browserName', e.target.value)}
                                 className="filter-select"
                             >
-                                <option value="">Tous les navigateurs</option>
+                                <option value="">{t('admin.analytics.allBrowsers')}</option>
                                 {statistics?.browserNames?.map((item, idx) => (
                                     <option key={idx} value={item.name}>{item.name}</option>
                                 ))}
@@ -699,7 +711,7 @@ export default function AnalyticsPage() {
                                 onChange={(e) => handleFilterChange('siteVersion', e.target.value)}
                                 className="filter-select"
                             >
-                                <option value="">Toutes les versions</option>
+                                <option value="">{t('admin.analytics.allVersions')}</option>
                                 {statistics?.siteVersions?.map((item, idx) => (
                                     <option key={idx} value={item.name}>v{item.name}</option>
                                 ))}
@@ -709,31 +721,31 @@ export default function AnalyticsPage() {
                                 value={filters.dateFrom}
                                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
                                 className="filter-input"
-                                placeholder="Date de début"
+                                placeholder={t('admin.analytics.dateFrom')}
                             />
                             <input
                                 type="date"
                                 value={filters.dateTo}
                                 onChange={(e) => handleFilterChange('dateTo', e.target.value)}
                                 className="filter-input"
-                                placeholder="Date de fin"
+                                placeholder={t('admin.analytics.dateTo')}
                             />
                             <input
                                 type="number"
-                                placeholder="Visites min"
+                                placeholder={t('admin.analytics.minVisits')}
                                 value={filters.minVisits}
                                 onChange={(e) => handleFilterChange('minVisits', e.target.value)}
                                 className="filter-input"
                             />
                             <input
                                 type="number"
-                                placeholder="Temps min (secondes)"
+                                placeholder={t('admin.analytics.minTime')}
                                 value={filters.minTime}
                                 onChange={(e) => handleFilterChange('minTime', e.target.value)}
                                 className="filter-input"
                             />
                             <label className="filter-label">
-                                Période stats (jours):
+                                {t('admin.analytics.statsPeriodDays')}
                                 <input
                                     type="number"
                                     min="1"
@@ -741,7 +753,7 @@ export default function AnalyticsPage() {
                                     value={filters.statsDays}
                                     onChange={(e) => handleFilterChange('statsDays', e.target.value)}
                                     className="filter-input"
-                                    title="Nombre de jours à analyser pour les statistiques (défaut: 30)"
+                                    title={t('admin.analytics.statsPeriodTooltip')}
                                 />
                             </label>
                             <label className="filter-checkbox">
@@ -750,21 +762,21 @@ export default function AnalyticsPage() {
                                     checked={filters.excludeLocalhost}
                                     onChange={(e) => handleFilterChange('excludeLocalhost', e.target.checked)}
                                 />
-                                <span>Exclure localhost (::1, 127.0.0.1)</span>
+                                <span>{t('admin.analytics.excludeLocalhost')}</span>
                             </label>
                             <button onClick={clearFilters} className="clear-filters-btn">
-                                🗑️ Effacer
+                                🗑️ {t('admin.analytics.clearFilters')}
                             </button>
                         </div>
                         <div className="filter-info">
-                            <p>💡 Les statistiques analysent les {filters.statsDays || 30} derniers jours pour optimiser les performances</p>
+                            <p>{t('admin.analytics.filterInfo').replace('{days}', filters.statsDays || 30)}</p>
                         </div>
                     </div>
 
                     <div className="sessions-controls">
                         <div className="controls-left">
                             <label>
-                                Limite:
+                                {t('admin.analytics.limit')}
                                 <select value={limit} onChange={(e) => { setLimit(parseInt(e.target.value)); setOffset(0); }}>
                                     <option value={50}>50</option>
                                     <option value={100}>100</option>
@@ -773,25 +785,27 @@ export default function AnalyticsPage() {
                                 </select>
                             </label>
                             <label>
-                                Trier par:
+                                {t('admin.analytics.sortBy')}
                                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                    <option value="created_at">Date de création</option>
-                                    <option value="last_visit_at">Dernière visite</option>
-                                    <option value="visit_count">Nombre de visites</option>
-                                    <option value="avg_time_on_page">Temps moyen</option>
-                                    <option value="total_time_on_page">Temps total</option>
+                                    <option value="created_at">{t('admin.analytics.sortCreatedAt')}</option>
+                                    <option value="last_visit_at">{t('admin.analytics.sortLastVisit')}</option>
+                                    <option value="visit_count">{t('admin.analytics.sortVisitCount')}</option>
+                                    <option value="avg_time_on_page">{t('admin.analytics.sortAvgTime')}</option>
+                                    <option value="total_time_on_page">{t('admin.analytics.sortTotalTime')}</option>
                                 </select>
                             </label>
                             <label>
-                                Ordre:
+                                {t('admin.analytics.order')}
                                 <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                                    <option value="desc">Décroissant</option>
-                                    <option value="asc">Croissant</option>
+                                    <option value="desc">{t('admin.analytics.orderDesc')}</option>
+                                    <option value="asc">{t('admin.analytics.orderAsc')}</option>
                                 </select>
                             </label>
                             {filteredData.length > 0 && (
                                 <div className="stat-badge" style={{ margin: 0 }}>
-                                    <span>{filteredData.length} résultat{filteredData.length > 1 ? 's' : ''} affiché{filteredData.length > 1 ? 's' : ''}</span>
+                                    <span>{t('admin.analytics.resultsShown')
+                                        .replace('{count}', filteredData.length)
+                                        .replace(/{plural}/g, filteredData.length > 1 ? 's' : '')}</span>
                                 </div>
                             )}
                         </div>
@@ -799,17 +813,21 @@ export default function AnalyticsPage() {
                             <button
                                 disabled={offset === 0}
                                 onClick={() => setOffset(Math.max(0, offset - limit))}
-                                title="Page précédente"
+                                title={t('admin.analytics.previous')}
                             >
-                                ← Précédent
+                                ← {t('admin.analytics.previous')}
                             </button>
-                            <span>Page {Math.floor(offset / limit) + 1} ({(offset + 1)}-{Math.min(offset + limit, totalCount)} sur {totalCount})</span>
+                            <span>{t('admin.analytics.pageInfo')
+                                .replace('{page}', Math.floor(offset / limit) + 1)
+                                .replace('{from}', offset + 1)
+                                .replace('{to}', Math.min(offset + limit, totalCount))
+                                .replace('{total}', totalCount)}</span>
                             <button
                                 disabled={offset + limit >= totalCount}
                                 onClick={() => setOffset(offset + limit)}
-                                title="Page suivante"
+                                title={t('admin.analytics.next')}
                             >
-                                Suivant →
+                                {t('admin.analytics.next')} →
                             </button>
                         </div>
                     </div>
@@ -818,16 +836,16 @@ export default function AnalyticsPage() {
                         <table className="sessions-table">
                             <thead>
                                 <tr>
-                                    <th>Session ID</th>
-                                    <th>IP</th>
-                                    <th>Appareil</th>
-                                    <th>OS</th>
-                                    <th>Navigateur</th>
-                                    <th>Version Site</th>
-                                    <th>Temps</th>
-                                    <th>Visites</th>
-                                    <th>Première visite</th>
-                                    <th>Dernière visite</th>
+                                    <th>{t('admin.analytics.tableSessionId')}</th>
+                                    <th>{t('admin.analytics.tableIP')}</th>
+                                    <th>{t('admin.analytics.tableDevice')}</th>
+                                    <th>{t('admin.analytics.tableOS')}</th>
+                                    <th>{t('admin.analytics.tableBrowser')}</th>
+                                    <th>{t('admin.analytics.tableSiteVersion')}</th>
+                                    <th>{t('admin.analytics.tableTime')}</th>
+                                    <th>{t('admin.analytics.tableVisits')}</th>
+                                    <th>{t('admin.analytics.tableFirstVisit')}</th>
+                                    <th>{t('admin.analytics.tableLastVisit')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -836,7 +854,7 @@ export default function AnalyticsPage() {
                                         key={idx}
                                         className="session-row"
                                         onClick={() => handleUserClick(session)}
-                                        title="Cliquer pour voir les détails de cette session"
+                                        title={t('admin.analytics.tableClickForDetails')}
                                     >
                                         <td className="session-id" title={session.session_id}>{session.session_id.substring(0, 8)}...</td>
                                         <td title={`Adresse IP: ${session.ip_address || 'N/A'}`}>{session.ip_address || 'N/A'}</td>
@@ -861,7 +879,7 @@ export default function AnalyticsPage() {
                                             <div className="time-info">
                                                 <span className="time-last">{formatDuration(session.time_on_page)}</span>
                                                 {session.avg_time_on_page && (
-                                                    <span className="time-avg" title="Temps moyen par visite">
+                                                    <span className="time-avg" title={t('admin.analytics.tableAvgTimeTooltip')}>
                                                         (moy: {formatDuration(Math.round(session.avg_time_on_page))})
                                                     </span>
                                                 )}
@@ -876,9 +894,9 @@ export default function AnalyticsPage() {
                         </table>
                         {filteredData.length === 0 && (
                             <div className="no-results">
-                                <p>Aucun résultat trouvé avec ces filtres</p>
+                                <p>{t('admin.analytics.noResults')}</p>
                                 <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.7 }}>
-                                    Essayez de modifier vos critères de recherche ou de réinitialiser les filtres
+                                    {t('admin.analytics.noResultsHint')}
                                 </p>
                             </div>
                         )}
@@ -890,7 +908,7 @@ export default function AnalyticsPage() {
                 <div className="analytics-devices">
                     <div className="charts-grid">
                         <div className="chart-card">
-                            <h3>Types d'appareils</h3>
+                            <h3>{t('admin.analytics.chartDeviceTypes')}</h3>
                             <ResponsiveContainer width="100%" height={400}>
                                 <PieChart>
                                     <Pie
@@ -914,7 +932,7 @@ export default function AnalyticsPage() {
                         </div>
 
                         <div className="chart-card">
-                            <h3>Systèmes d'exploitation</h3>
+                            <h3>{t('admin.analytics.chartOperatingSystems')}</h3>
                             <ResponsiveContainer width="100%" height={400}>
                                 <BarChart data={osChartData}>
                                     <CartesianGrid strokeDasharray="3 3" />
@@ -933,7 +951,7 @@ export default function AnalyticsPage() {
             {selectedTab === 'versions' && statistics && (
                 <div className="analytics-versions">
                     <div className="chart-card">
-                        <h3>Versions du site utilisées</h3>
+                        <h3>{t('admin.analytics.chartSiteVersions')}</h3>
                         <ResponsiveContainer width="100%" height={400}>
                             <BarChart data={statistics.siteVersions.map(v => ({ name: `v${v.name}`, value: v.count }))}>
                                 <CartesianGrid strokeDasharray="3 3" />
@@ -952,101 +970,101 @@ export default function AnalyticsPage() {
                     <div className="user-detail-header">
                         <BackButton 
                             onClick={() => { setSelectedUser(null); setUserStats(null); setSelectedTab('sessions'); }}
-                            label="Retour à la liste"
-                            title="Retour à la liste"
+                            label={t('admin.analytics.backToList')}
+                            title={t('admin.analytics.backToList')}
                         />
-                        <h2>Détails de l'utilisateur</h2>
+                        <h2>{t('admin.analytics.userDetailTitle')}</h2>
                     </div>
 
                     {loadingUser ? (
-                        <div className="loading-state">Chargement des statistiques...</div>
+                        <div className="loading-state">{t('admin.analytics.loadingUserStats')}</div>
                     ) : userStats ? (
                         <div className="user-detail-content">
                             <div className="user-info-card">
-                                <h3>Informations de l'appareil</h3>
+                                <h3>{t('admin.analytics.userDeviceInfo')}</h3>
                                 <div className="user-info-grid">
                                     <div className="info-item">
-                                        <span className="info-label">Session ID:</span>
+                                        <span className="info-label">{t('admin.analytics.labelSessionId')}</span>
                                         <span className="info-value">{userStats.user.session_id}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">IP:</span>
+                                        <span className="info-label">{t('admin.analytics.labelIP')}</span>
                                         <span className="info-value">{userStats.user.ip_address}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">Appareil:</span>
+                                        <span className="info-label">{t('admin.analytics.labelDevice')}</span>
                                         <span className="info-value">{userStats.user.device_name || 'unknown'} ({userStats.user.device_type})</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">OS:</span>
+                                        <span className="info-label">{t('admin.analytics.labelOS')}</span>
                                         <span className="info-value">{userStats.user.os_name} {userStats.user.os_version}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">Navigateur:</span>
+                                        <span className="info-label">{t('admin.analytics.labelBrowser')}</span>
                                         <span className="info-value">{userStats.user.browser_name} {userStats.user.browser_version}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">Langue:</span>
+                                        <span className="info-label">{t('admin.analytics.labelLanguage')}</span>
                                         <span className="info-value">{userStats.user.browser_language}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">Résolution:</span>
+                                        <span className="info-label">{t('admin.analytics.labelResolution')}</span>
                                         <span className="info-value">{userStats.user.screen_width}x{userStats.user.screen_height}</span>
                                     </div>
                                     <div className="info-item">
-                                        <span className="info-label">Version du site:</span>
+                                        <span className="info-label">{t('admin.analytics.labelSiteVersion')}</span>
                                         <span className="info-value">{userStats.user.site_version || 'unknown'}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="user-stats-card">
-                                <h3>Statistiques d'utilisation</h3>
+                                <h3>{t('admin.analytics.userStats')}</h3>
                                 <div className="stats-grid">
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Sessions totales</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statTotalSessions')}</div>
                                         <div className="stat-box-value">{userStats.statistics.totalSessions}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Visites totales</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statTotalVisits')}</div>
                                         <div className="stat-box-value">{userStats.statistics.totalVisits}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Temps total sur le site</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statTotalTimeOnSite')}</div>
                                         <div className="stat-box-value">{formatDuration(userStats.statistics.totalTimeOnSite)}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Temps moyen par visite</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statAvgTimePerVisit')}</div>
                                         <div className="stat-box-value">{formatDuration(Math.round(userStats.statistics.avgTimePerVisit))}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Première visite</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statFirstVisit')}</div>
                                         <div className="stat-box-value">{formatDate(userStats.statistics.firstVisitAt)}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Dernière visite</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statLastVisit')}</div>
                                         <div className="stat-box-value">{formatDate(userStats.statistics.lastVisitAt)}</div>
                                     </div>
                                     <div className="stat-box">
-                                        <div className="stat-box-label">Jours depuis la première visite</div>
-                                        <div className="stat-box-value">{userStats.statistics.daysSinceFirstVisit} jours</div>
+                                        <div className="stat-box-label">{t('admin.analytics.statDaysSinceFirstVisit')}</div>
+                                        <div className="stat-box-value">{userStats.statistics.daysSinceFirstVisit} {t('admin.analytics.days')}</div>
                                     </div>
                                 </div>
                             </div>
 
                             {userStats.sessions && userStats.sessions.length > 0 && (
                                 <div className="user-sessions-list">
-                                    <h3>Historique des sessions</h3>
+                                    <h3>{t('admin.analytics.userSessionsHistory')}</h3>
                                     <table className="sessions-table">
                                         <thead>
                                             <tr>
-                                                <th>Session ID</th>
-                                                <th>Visites</th>
-                                                <th>Temps dernière visite</th>
-                                                <th>Temps total</th>
-                                                <th>Temps moyen</th>
-                                                <th>Version site</th>
-                                                <th>Dernière visite</th>
+                                                <th>{t('admin.analytics.tableSessionId')}</th>
+                                                <th>{t('admin.analytics.tableVisits')}</th>
+                                                <th>{t('admin.analytics.tableTime')}</th>
+                                                <th>{t('admin.analytics.sortTotalTime')}</th>
+                                                <th>{t('admin.analytics.sortAvgTime')}</th>
+                                                <th>{t('admin.analytics.tableSiteVersion')}</th>
+                                                <th>{t('admin.analytics.tableLastVisit')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1067,14 +1085,14 @@ export default function AnalyticsPage() {
                             )}
                         </div>
                     ) : (
-                        <div className="error-state">Aucune donnée disponible</div>
+                        <div className="error-state">{t('admin.analytics.noDataAvailable')}</div>
                     )}
                 </div>
             )}
 
             <div className="analytics-footer">
                 <button onClick={fetchAnalytics} disabled={loading}>
-                    {loading ? '🔄 Actualisation...' : '🔄 Actualiser'}
+                    {loading ? `🔄 ${t('admin.analytics.refreshing')}` : `🔄 ${t('admin.analytics.refresh')}`}
                 </button>
             </div>
         </div>

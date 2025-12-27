@@ -1,8 +1,10 @@
 "use client";
 import { useEffect } from "react";
+import {useI18n} from "@/i18n/I18nContext";
 import "./DemoModeModal.css";
 
 export default function DemoModeModal({ isOpen, onClose }) {
+    const { t } = useI18n();
     // Bloquer le scroll quand la modal est ouverte
     useEffect(() => {
         if (isOpen) {
@@ -20,11 +22,11 @@ export default function DemoModeModal({ isOpen, onClose }) {
             <div className="demo-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="demo-modal-header">
                     <div className="demo-modal-icon">🎯</div>
-                    <h2 className="demo-modal-title">Mode Démo</h2>
+                    <h2 className="demo-modal-title">{t('demoMode.title')}</h2>
                     <button 
                         className="demo-modal-close" 
                         onClick={onClose}
-                        aria-label="Fermer"
+                        aria-label={t('demoMode.close')}
                     >
                         ✕
                     </button>
@@ -32,20 +34,19 @@ export default function DemoModeModal({ isOpen, onClose }) {
                 
                 <div className="demo-modal-body">
                     <p className="demo-modal-intro">
-                        Vous visualisez des données de démonstration générées automatiquement.
+                        {t('demoMode.intro')}
                     </p>
                     
                     <div className="demo-modal-section">
                         <p className="demo-modal-info">
-                            Ces données incluent des cours variés, des professeurs et des matières fictives pour toute l'année scolaire. 
-                            Elles ne correspondent pas à un emploi du temps réel.
+                            {t('demoMode.info')}
                         </p>
                     </div>
                 </div>
                 
                 <div className="demo-modal-footer">
                     <button className="demo-modal-button" onClick={onClose}>
-                        Compris
+                        {t('demoMode.understood')}
                     </button>
                 </div>
             </div>

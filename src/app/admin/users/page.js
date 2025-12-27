@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import './users.css';
 
 export default function UsersManagementPage() {
+    const { t } = useI18n();
     const router = useRouter();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export default function UsersManagementPage() {
                 if (response.status === 401) {
                     setIsAuthenticated(false);
                     setUnauthorized(true);
-                    setError('Vous devez être connecté pour accéder à cette page.');
+                    setError(t('admin.mustBeConnected'));
                     setTimeout(() => {
                         const currentPath = encodeURIComponent(window.location.pathname);
                         window.location.href = `/login?redirect=${currentPath}`;
@@ -58,7 +60,7 @@ export default function UsersManagementPage() {
                 } else {
                     setIsAuthenticated(false);
                     setUnauthorized(true);
-                    setError('Erreur lors de la vérification de votre session.');
+                    setError(t('admin.errorSession'));
                 }
                 setAuthChecked(true);
                 setLoading(false);
@@ -80,7 +82,7 @@ export default function UsersManagementPage() {
                     roleAttendu: expectedRole
                 });
                 setUnauthorized(true);
-                setError(`Accès refusé : vous devez être un admin pour accéder à cette page. Rôle actuel : "${user.role || 'non défini'}"`);
+                setError(t('admin.accessDeniedMessage').replace('{role}', user.role || 'non défini'));
                 setLoading(false);
                 setAuthChecked(true);
                 return;
@@ -118,7 +120,7 @@ export default function UsersManagementPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'Erreur lors de la récupération des utilisateurs');
+                throw new Error(data.error || t('admin.errorFetchUsers'));
             }
 
             const data = await response.json();
@@ -126,7 +128,7 @@ export default function UsersManagementPage() {
             setTotal(data.total || 0);
         } catch (err) {
             console.error('[Users Management] Erreur récupération utilisateurs:', err);
-            setError(err.message || 'Erreur lors de la récupération des utilisateurs');
+            setError(err.message || t('admin.errorFetchUsers'));
         } finally {
             setLoading(false);
         }
@@ -168,7 +170,7 @@ export default function UsersManagementPage() {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || 'Erreur lors de la mise à jour');
+                throw new Error(data.error || t('admin.errorUpdate'));
             }
 
             const data = await response.json();
@@ -179,7 +181,7 @@ export default function UsersManagementPage() {
             setEditForm({});
         } catch (err) {
             console.error('[Users Management] Erreur sauvegarde:', err);
-            setSaveError(err.message || 'Erreur lors de la sauvegarde');
+            setSaveError(err.message || t('admin.errorSave'));
         } finally {
             setSaving(false);
         }
@@ -211,7 +213,7 @@ export default function UsersManagementPage() {
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'Jamais';
+        if (!dateString) return t('admin.never');
         const date = new Date(dateString);
         return date.toLocaleDateString('fr-FR', {
             year: 'numeric',
@@ -238,7 +240,7 @@ export default function UsersManagementPage() {
             <div className="users-container">
                 <div className="loading-container">
                     <Spinner size="large" variant="border" />
-                    <p>Vérification des permissions...</p>
+                    <p>{t('admin.checkingPermissions')}</p>
                 </div>
             </div>
         );
@@ -248,9 +250,9 @@ export default function UsersManagementPage() {
         return (
             <div className="users-container">
                 <div className="error-container">
-                    <h2>Accès refusé</h2>
+                    <h2>{t('admin.accessDenied')}</h2>
                     <p>{error}</p>
-                    <BackButton href="/dashboard" label="Retour au dashboard" title="Retour au dashboard" />
+                    <BackButton href="/dashboard" label={t('admin.analytics.backToDashboard')} title={t('admin.analytics.backToDashboard')} />
                 </div>
             </div>
         );
@@ -259,45 +261,45 @@ export default function UsersManagementPage() {
     return (
         <div className="users-container">
             <div className="users-header">
-                <BackButton href="/dashboard" title="Retour au dashboard" />
-                <h1>Gestion des utilisateurs</h1>
-                <p className="subtitle">Gérez les utilisateurs de l'application</p>
+                <BackButton href="/dashboard" title={t('admin.analytics.backToDashboard')} />
+                <h1>{t('admin.title')}</h1>
+                <p className="subtitle">{t('admin.subtitle')}</p>
             </div>
 
             {error && !unauthorized && (
                 <div className="error-message">
                     {error}
-                    <button onClick={fetchUsers} className="retry-button">Réessayer</button>
+                    <button onClick={fetchUsers} className="retry-button">{t('admin.retry')}</button>
                 </div>
             )}
 
             <div className="filters-section">
                 <div className="filter-group">
-                    <label>Recherche</label>
+                    <label>{t('admin.search')}</label>
                     <input
                         type="text"
-                        placeholder="Email, nom, prénom..."
+                        placeholder={t('admin.searchPlaceholder')}
                         value={search}
                         onChange={handleSearch}
                         className="search-input"
                     />
                 </div>
                 <div className="filter-group">
-                    <label>Rôle</label>
+                    <label>{t('admin.role')}</label>
                     <select value={roleFilter} onChange={handleRoleFilter} className="filter-select">
-                        <option value="">Tous</option>
-                        <option value="visiteur">Visiteur</option>
-                        <option value="editeur">Editeur</option>
-                        <option value="admin">Admin</option>
-                        <option value="superAdmin">SuperAdmin</option>
+                        <option value="">{t('admin.allRoles')}</option>
+                        <option value="visiteur">{t('admin.visitor')}</option>
+                        <option value="editeur">{t('admin.editor')}</option>
+                        <option value="admin">{t('admin.admin')}</option>
+                        <option value="superAdmin">{t('admin.superAdmin')}</option>
                     </select>
                 </div>
                 <div className="filter-group">
-                    <label>Statut</label>
+                    <label>{t('admin.status')}</label>
                     <select value={activeFilter} onChange={handleActiveFilter} className="filter-select">
-                        <option value="">Tous</option>
-                        <option value="true">Actif</option>
-                        <option value="false">Inactif</option>
+                        <option value="">{t('admin.allRoles')}</option>
+                        <option value="true">{t('admin.active')}</option>
+                        <option value="false">{t('admin.inactive')}</option>
                     </select>
                 </div>
             </div>
@@ -306,36 +308,36 @@ export default function UsersManagementPage() {
                 {loading ? (
                     <div className="loading-container">
                         <Spinner size="large" variant="border" />
-                        <p>Chargement des utilisateurs...</p>
+                        <p>{t('admin.loadingUsers')}</p>
                     </div>
                 ) : users.length === 0 ? (
                     <div className="empty-state">
-                        <p>Aucun utilisateur trouvé</p>
+                        <p>{t('admin.noUsers')}</p>
                     </div>
                 ) : (
                     <table className="users-table">
                         <thead>
                             <tr>
                                 <th onClick={() => handleSort('email')} className="sortable">
-                                    Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.email')} {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th onClick={() => handleSort('name')} className="sortable">
-                                    Nom {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.name')} {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th onClick={() => handleSort('last_name')} className="sortable">
-                                    Prénom {sortBy === 'last_name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.firstName')} {sortBy === 'last_name' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th onClick={() => handleSort('role')} className="sortable">
-                                    Rôle {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.role')} {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
-                                <th>Statut</th>
+                                <th>{t('admin.status')}</th>
                                 <th onClick={() => handleSort('date_online')} className="sortable">
-                                    Dernière connexion {sortBy === 'date_online' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.lastConnection')} {sortBy === 'date_online' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th onClick={() => handleSort('created_at')} className="sortable">
-                                    Créé le {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                    {t('admin.createdAt')} {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
-                                <th>Actions</th>
+                                <th>{t('admin.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -373,10 +375,10 @@ export default function UsersManagementPage() {
                                                     onChange={(e) => setEditForm({...editForm, role: e.target.value})}
                                                     className="edit-select"
                                                 >
-                                                    <option value="visiteur">Visiteur</option>
-                                                    <option value="editeur">Editeur</option>
-                                                    <option value="admin">Admin</option>
-                                                    <option value="superAdmin">SuperAdmin</option>
+                                                    <option value="visiteur">{t('admin.visitor')}</option>
+                                                    <option value="editeur">{t('admin.editor')}</option>
+                                                    <option value="admin">{t('admin.admin')}</option>
+                                                    <option value="superAdmin">{t('admin.superAdmin')}</option>
                                                 </select>
                                             </td>
                                             <td>
@@ -396,14 +398,14 @@ export default function UsersManagementPage() {
                                                         disabled={saving}
                                                         className="save-button"
                                                     >
-                                                        {saving ? 'Sauvegarde...' : '✓ Sauvegarder'}
+                                                        {saving ? t('admin.saving') : t('admin.save')}
                                                     </button>
                                                     <button
                                                         onClick={handleCancelEdit}
                                                         disabled={saving}
                                                         className="cancel-button"
                                                     >
-                                                        ✕ Annuler
+                                                        {t('admin.cancel')}
                                                     </button>
                                                     {saveError && (
                                                         <span className="save-error">{saveError}</span>
@@ -423,7 +425,7 @@ export default function UsersManagementPage() {
                                             </td>
                                             <td>
                                                 <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
-                                                    {user.is_active ? 'Actif' : 'Inactif'}
+                                                    {user.is_active ? t('admin.active') : t('admin.inactive')}
                                                 </span>
                                             </td>
                                             <td>{formatDate(user.date_online)}</td>
@@ -432,9 +434,9 @@ export default function UsersManagementPage() {
                                                 <button
                                                     onClick={() => handleEdit(user)}
                                                     className="edit-button"
-                                                    title="Modifier"
+                                                    title={t('admin.edit')}
                                                 >
-                                                    ✏️ Modifier
+                                                    ✏️ {t('admin.edit')}
                                                 </button>
                                             </td>
                                         </>
@@ -453,17 +455,17 @@ export default function UsersManagementPage() {
                         disabled={offset === 0}
                         className="pagination-button"
                     >
-                        ← Précédent
+                        {t('admin.previous')}
                     </button>
                     <span className="pagination-info">
-                        {offset + 1} - {Math.min(offset + limit, total)} sur {total}
+                        {t('admin.pageInfo').replace('{from}', offset + 1).replace('{to}', Math.min(offset + limit, total)).replace('{total}', total)}
                     </span>
                     <button
                         onClick={() => setOffset(offset + limit)}
                         disabled={offset + limit >= total}
                         className="pagination-button"
                     >
-                        Suivant →
+                        {t('admin.next')}
                     </button>
                 </div>
             )}

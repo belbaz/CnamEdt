@@ -1,5 +1,6 @@
 "use client";
 
+import {useI18n} from "@/i18n/I18nContext";
 import styles from "./Spinner.module.css";
 
 /**
@@ -7,14 +8,16 @@ import styles from "./Spinner.module.css";
  * @param {string} size - Taille du spinner: 'small' (16px), 'medium' (20px), 'large' (50px). Par défaut 'medium'
  * @param {string} variant - Variante: 'circular' (cercle SVG) ou 'border' (bordure CSS). Par défaut 'circular'
  * @param {string} className - Classe CSS supplémentaire (optionnel)
- * @param {string} ariaLabel - Label d'accessibilité (optionnel, par défaut "Chargement...")
+ * @param {string} ariaLabel - Label d'accessibilité (optionnel, par défaut traduit)
  */
 export default function Spinner({ 
     size = 'medium',
     variant = 'circular',
     className = '',
-    ariaLabel = 'Chargement...'
+    ariaLabel = null
 }) {
+    const { t } = useI18n();
+    const defaultAriaLabel = ariaLabel || t('loading.default');
     const sizeClass = styles[`size${size.charAt(0).toUpperCase() + size.slice(1)}`];
     const variantClass = styles[variant];
 
@@ -25,7 +28,8 @@ export default function Spinner({
             <div 
                 className={spinnerClassName}
                 role="status"
-                aria-label={ariaLabel}
+                aria-label={defaultAriaLabel}
+                suppressHydrationWarning
             >
                 <svg 
                     viewBox="0 0 24 24" 
@@ -65,7 +69,8 @@ export default function Spinner({
         <div 
             className={borderSpinnerClassName}
             role="status"
-            aria-label={ariaLabel}
+            aria-label={defaultAriaLabel}
+            suppressHydrationWarning
         >
             <div className={styles.borderSpinner}></div>
         </div>
