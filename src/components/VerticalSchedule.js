@@ -2,7 +2,8 @@
 import { useMemo, useEffect, useState, useRef } from "react";
 import { getDayTimeRange, generateTimeMarkers, getCurrentTimePosition } from "@/utils/timelineUtils";
 import { groupEventsByDay } from "@/utils/eventUtils";
-import { isToday } from "@/utils/dateUtils";
+import { isToday, getLocale } from "@/utils/dateUtils";
+import { useI18n } from "@/i18n/I18nContext";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
@@ -21,8 +22,10 @@ export default function VerticalSchedule({
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6
 }) {
+    const { language } = useI18n();
+    const locale = getLocale(language);
     // Grouper les événements par jour
-    const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat), [events, monthFormat]);
+    const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat, language), [events, monthFormat, language]);
 
     // Obtenir tous les jours de la semaine
     const days = useMemo(() => {
@@ -324,7 +327,7 @@ export default function VerticalSchedule({
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) return 'Non disponible';
-            return date.toLocaleString('fr-FR', {
+            return date.toLocaleString(locale, {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',

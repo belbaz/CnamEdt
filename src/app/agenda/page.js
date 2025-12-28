@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense, useRef, useMemo, useCallback } fr
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {useI18n} from "@/i18n/I18nContext";
+import {getLocale} from "@/utils/dateUtils";
 import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
@@ -12,7 +13,7 @@ import { fetchICSEvents } from "@/services/icsService";
 import LoginForm from "@/app/login/LoginForm";
 
 function AgendaContent() {
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const extractNoteEntries = (record) => {
@@ -624,17 +625,18 @@ function AgendaContent() {
         return value.charAt(0).toUpperCase() + value.slice(1);
     };
 
+    const locale = getLocale(language);
     const selectedDateObj = selectedDate ? new Date(selectedDate + "T00:00:00") : null;
     const readableWeekday = selectedDateObj
         ? capitalize(
-            selectedDateObj.toLocaleDateString("fr-FR", {
+            selectedDateObj.toLocaleDateString(locale, {
                 weekday: "long",
             })
         )
         : t('agenda.chooseDate');
     const readableMonth = selectedDateObj
         ? capitalize(
-            selectedDateObj.toLocaleDateString("fr-FR", {
+            selectedDateObj.toLocaleDateString(locale, {
                 month: "long",
                 year: "numeric",
             })
@@ -824,7 +826,7 @@ function AgendaContent() {
     };
 
     const calendarMonthLabel = capitalize(
-        displayedMonth.toLocaleDateString("fr-FR", {
+        displayedMonth.toLocaleDateString(locale, {
             month: "long",
             year: "numeric",
         })
@@ -986,7 +988,7 @@ function AgendaContent() {
     const formatDate = (dateStr) => {
         if (!dateStr) return "";
         const date = new Date(dateStr);
-        return date.toLocaleDateString("fr-FR", {
+        return date.toLocaleDateString(locale, {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -997,7 +999,7 @@ function AgendaContent() {
     const formatTime = (dateStr) => {
         if (!dateStr) return "";
         const date = new Date(dateStr);
-        return date.toLocaleTimeString("fr-FR", {
+        return date.toLocaleTimeString(locale, {
             hour: "2-digit",
             minute: "2-digit",
         });
@@ -1006,7 +1008,7 @@ function AgendaContent() {
     const formatDateTime = (dateStr) => {
         if (!dateStr) return "";
         const date = new Date(dateStr);
-        return date.toLocaleString("fr-FR", {
+        return date.toLocaleString(locale, {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",

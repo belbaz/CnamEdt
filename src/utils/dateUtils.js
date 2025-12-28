@@ -3,6 +3,15 @@
  */
 
 /**
+ * Obtient la locale selon la langue
+ * @param {string} language - Langue ('fr' ou 'en')
+ * @returns {string} Locale ('fr-FR' ou 'en-US')
+ */
+export function getLocale(language = 'fr') {
+    return language === 'en' ? 'en-US' : 'fr-FR';
+}
+
+/**
  * Obtient le lundi d'une date donnée
  */
 export function getMonday(date) {
@@ -31,8 +40,11 @@ export function isToday(dayDate) {
 
 /**
  * Extrait les semaines disponibles à partir des événements
+ * @param {Array} data - Liste des événements
+ * @param {string} language - Langue ('fr' ou 'en', par défaut 'fr')
  */
-export function extractAvailableWeeks(data) {
+export function extractAvailableWeeks(data, language = 'fr') {
+    const locale = getLocale(language);
     const weeksMap = new Map();
     data.forEach(event => {
         const eventDate = new Date(event.start);
@@ -45,9 +57,9 @@ export function extractAvailableWeeks(data) {
             weeksMap.set(key, {
                 monday,
                 sunday,
-                label: `${monday.toLocaleDateString("fr-FR", {
+                label: `${monday.toLocaleDateString(locale, {
                     day: "numeric", month: "short"
-                })} - ${sunday.toLocaleDateString("fr-FR", {day: "numeric", month: "short"})}`
+                })} - ${sunday.toLocaleDateString(locale, {day: "numeric", month: "short"})}`
             });
         }
     });

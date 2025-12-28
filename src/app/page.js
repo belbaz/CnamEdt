@@ -41,7 +41,7 @@ import {parseStoredNoteValue} from "@/utils/noteEntries";
 import {generateEventKey} from "@/utils/eventModalUtils";
 
 function HomeContent({searchParams}) {
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const router = useRouter();
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -125,7 +125,7 @@ function HomeContent({searchParams}) {
         console.log('[Page] Utilisation du cache:', cached.events.length, 'événements');
         setAllEvents(cached.events);
         setSubjectColors(cached.colors);
-        const weeks = extractAvailableWeeks(cached.events);
+        const weeks = extractAvailableWeeks(cached.events, language);
         setAvailableWeeks(weeks);
         if (!eventKeyParam && weeks.length > 0) {
             const weekToSelect = selectBestWeek(weeks);
@@ -241,7 +241,7 @@ function HomeContent({searchParams}) {
             const colorMapping = createSubjectColorMapping(eventsData);
             setSubjectColors(colorMapping);
 
-            const weeks = extractAvailableWeeks(eventsData);
+            const weeks = extractAvailableWeeks(eventsData, language);
             setAvailableWeeks(weeks);
             if (!eventKeyParam) {
                 const weekToSelect = selectBestWeek(weeks);
@@ -516,7 +516,7 @@ function HomeContent({searchParams}) {
             const monday = getMonday(eventDate);
 
             // Vérifier si cette semaine est disponible
-            const weeks = extractAvailableWeeks(allEvents);
+            const weeks = extractAvailableWeeks(allEvents, language);
             const weekExists = weeks.some(w => w.monday.getTime() === monday.getTime());
 
             if (weekExists && (!selectedWeek || selectedWeek.getTime() !== monday.getTime())) {
@@ -551,7 +551,7 @@ function HomeContent({searchParams}) {
             console.log('[Page] Chargement depuis le cache:', cached.events.length, 'événements');
             setAllEvents(cached.events);
             setSubjectColors(cached.colors);
-            const weeks = extractAvailableWeeks(cached.events);
+            const weeks = extractAvailableWeeks(cached.events, language);
             setAvailableWeeks(weeks);
             if (!eventKeyParam && weeks.length > 0) {
                 const weekToSelect = selectBestWeek(weeks);
@@ -1052,7 +1052,7 @@ function HomeContent({searchParams}) {
     };
 
     // Calculer groupByDay avant de l'utiliser dans le hook
-    const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short'), [events, viewMode]);
+    const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short', language), [events, viewMode, language]);
 
     // Utiliser le hook pour les handlers
     const handlers = useHomePageHandlers({

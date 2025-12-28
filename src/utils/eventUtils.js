@@ -1,6 +1,7 @@
 /**
  * Utilitaires pour la gestion des événements
  */
+import { getLocale } from "./dateUtils";
 
 /**
  * Crée un mapping des couleurs par matière
@@ -112,13 +113,17 @@ export function getColorIndexForSubject(matiere, subjectColors) {
 
 /**
  * Groupe les événements par jour
+ * @param {Array} events - Liste des événements
+ * @param {string} monthFormat - Format du mois ("short" ou "long")
+ * @param {string} language - Langue ('fr' ou 'en', par défaut 'fr')
  */
-export function groupEventsByDay(events, monthFormat = "short") {
+export function groupEventsByDay(events, monthFormat = "short", language = "fr") {
+    const locale = getLocale(language);
     return events.reduce((acc, ev) => {
         const d = new Date(ev.start);
-        const weekday = d.toLocaleDateString("fr-FR", { weekday: "long" });
-        const date = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
-        const date_short = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+        const weekday = d.toLocaleDateString(locale, { weekday: "long" });
+        const date = d.toLocaleDateString(locale, { day: "numeric", month: "long" });
+        const date_short = d.toLocaleDateString(locale, { day: "numeric", month: "short" });
         const monthLabel = monthFormat === "long" ? date : date_short;
         const key = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${monthLabel}`;
         if (!acc[key]) acc[key] = [];

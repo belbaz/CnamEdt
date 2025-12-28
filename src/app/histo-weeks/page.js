@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/i18n/I18nContext";
+import { getLocale } from "@/utils/dateUtils";
 
 export default function HistoWeeksPage() {
+    const { language } = useI18n();
+    const locale = getLocale(language);
     const [items, setItems] = useState([]);
 
     useEffect(() => {
@@ -49,7 +53,7 @@ export default function HistoWeeksPage() {
                             <div>
                                 <strong>Semaine du {row.week_monday}</strong>
                                 <div style={{ color: "var(--text-secondary)", fontSize: ".9rem" }}>
-                                    Snapshot: {new Date(row.created_at).toLocaleString("fr-FR")}
+                                    Snapshot: {new Date(row.created_at).toLocaleString(locale)}
                                 </div>
                             </div>
                             <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
@@ -59,8 +63,8 @@ export default function HistoWeeksPage() {
                         </div>
 
                         <div style={{ marginTop: ".75rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-                            <EventChangeList title="Ajoutés" keys={row.added_keys} events={row.events} accent="#10b981" emptyLabel="Aucun ajout" />
-                            <EventChangeList title="Retirés" keys={row.removed_keys} events={row.events} accent="#ef4444" emptyLabel="Aucun retrait" />
+                            <EventChangeList title="Ajoutés" keys={row.added_keys} events={row.events} accent="#10b981" emptyLabel="Aucun ajout" locale={locale} />
+                            <EventChangeList title="Retirés" keys={row.removed_keys} events={row.events} accent="#ef4444" emptyLabel="Aucun retrait" locale={locale} />
                         </div>
                     </li>
                 ))}
@@ -83,7 +87,7 @@ function Badge({ children, color }) {
     );
 }
 
-function EventChangeList({ title, keys = [], events = [], accent, emptyLabel }) {
+function EventChangeList({ title, keys = [], events = [], accent, emptyLabel, locale = 'fr-FR' }) {
     const lookup = new Map((events || []).map(e => [e.key, e]));
     return (
         <div style={{
@@ -102,7 +106,7 @@ function EventChangeList({ title, keys = [], events = [], accent, emptyLabel }) 
                         if (!e) return (
                             <li key={k} style={{ color: "var(--text-secondary)", borderLeft: `3px solid ${accent}`, paddingLeft: ".5rem", margin: ".15rem 0" }}>{k}</li>
                         );
-                        const time = new Date(e.start).toLocaleString("fr-FR", { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+                        const time = new Date(e.start).toLocaleString(locale, { weekday: 'long', hour: '2-digit', minute: '2-digit' });
                         return (
                             <li key={k} style={{ color: "var(--text-secondary)", borderLeft: `3px solid ${accent}`, paddingLeft: ".5rem", margin: ".15rem 0" }}>
                                 <strong>{e.summary}</strong> — {time} — {e.location}

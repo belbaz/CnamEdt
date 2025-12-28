@@ -3,12 +3,13 @@
 import {useEffect, useState, Suspense} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useI18n} from "@/i18n/I18nContext";
+import {getLocale} from "@/utils/dateUtils";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Composant interne qui utilise useSearchParams (doit être dans Suspense)
 function HistoContent() {
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedGroups, setExpandedGroups] = useState(new Set());
@@ -127,9 +128,10 @@ function HistoContent() {
     });
 
     // Grouper les événements par date (jour)
+    const locale = getLocale(language);
     const groupedEvents = sortedEvents.reduce((groups, event) => {
         const date = new Date(event.first_seen);
-        const dateKey = date.toLocaleDateString('fr-FR', {
+        const dateKey = date.toLocaleDateString(locale, {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
@@ -545,14 +547,14 @@ function HistoContent() {
                                                                     color: "var(--text-secondary)",
                                                                     fontSize: ".9rem"
                                                                 }}>
-                                                                    {startDate.toLocaleString('fr-FR', {
+                                                                    {startDate.toLocaleString(locale, {
                                                                         weekday: 'long',
                                                                         day: 'numeric',
                                                                         month: 'long',
                                                                         year: 'numeric',
                                                                         hour: '2-digit',
                                                                         minute: '2-digit'
-                                                                    })} - {endDate.toLocaleTimeString('fr-FR', {
+                                                                    })} - {endDate.toLocaleTimeString(locale, {
                                                                     hour: '2-digit',
                                                                     minute: '2-digit'
                                                                 })}
@@ -571,7 +573,7 @@ function HistoContent() {
                                                                 textAlign: "right"
                                                             }}>
                                                                 Ajouté à<br/>
-                                                                {new Date(row.first_seen).toLocaleTimeString('fr-FR', {
+                                                                {new Date(row.first_seen).toLocaleTimeString(locale, {
                                                                     hour: '2-digit',
                                                                     minute: '2-digit'
                                                                 })}
