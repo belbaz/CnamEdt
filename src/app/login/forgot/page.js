@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import { useI18n } from "@/i18n/I18nContext";
 import styles from "../login.module.css";
 
 export default function ForgotPage() {
+    const { t } = useI18n();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -20,12 +22,12 @@ export default function ForgotPage() {
 
         const normalizedEmail = email.trim().toLowerCase();
         if (!normalizedEmail) {
-            setErrorMessage("Veuillez saisir votre adresse email.");
+            setErrorMessage(t('forgot.errorEmailRequired'));
             return;
         }
 
         if (!normalizedEmail.endsWith("@lecnam.net")) {
-            setErrorMessage("Connectez-vous uniquement avec une adresse @lecnam.net.");
+            setErrorMessage(t('forgot.errorEmailDomain'));
             return;
         }
 
@@ -40,10 +42,10 @@ export default function ForgotPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data?.error || "Erreur lors de l'envoi de l'email.");
+                throw new Error(data?.error || t('forgot.errorSendEmail'));
             }
 
-            setSuccessMessage("Si cette adresse existe, un email de réinitialisation a été envoyé. L'email peut prendre jusqu'à 3 minutes pour arriver dans votre boîte mail. Le lien sera valide 15 minutes.");
+            setSuccessMessage(t('forgot.successMessage'));
         } catch (error) {
             console.error("[ForgotPassword] Erreur:", error);
             setErrorMessage(error.message);
@@ -54,9 +56,9 @@ export default function ForgotPage() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
-                <BackButton href="/login" title="Retour à la connexion" />
+                <BackButton href="/login" title={t('forgot.backToLogin')} />
                 <div className={styles.notice}>
-                    <h1>Mot de passe oublié</h1>
+                    <h1>{t('forgot.title')}</h1>
                 </div>
 
                 <section className={styles.formsPanel}>
@@ -67,12 +69,12 @@ export default function ForgotPage() {
                         {!successMessage && (
                             <form className={styles.form} onSubmit={handleSubmit} noValidate>
                                 <div className={styles.inputGroup}>
-                                    <label htmlFor="forgot-email">Adresse @lecnam.net</label>
+                                    <label htmlFor="forgot-email">{t('forgot.emailLabel')}</label>
                                     <input
                                         id="forgot-email"
                                         name="email"
                                         type="email"
-                                        placeholder="prenom.nom@lecnam.net"
+                                        placeholder={t('forgot.emailPlaceholder')}
                                         autoComplete="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -84,24 +86,40 @@ export default function ForgotPage() {
                                     {isSubmitting ? (
                                         <span className={styles.loadingState}>
                                             <span className={styles.loader} aria-hidden="true" />
-                                            Envoi...
+                                            {t('forgot.submitting')}
                                         </span>
                                     ) : (
-                                        "Envoyer le lien"
+                                        t('forgot.submit')
                                     )}
                                 </button>
                             </form>
                         )}
 
                         {successMessage && (
-                            <div style={{ marginTop: "1rem", textAlign: "center" }}>
-                                <a
-                                    href="https://outlook.office365.com/?realm=lecnam.net&modurl=0"
-                                    className={styles.submitButton}
-                                    style={{ display: "inline-block", textDecoration: "none" }}
-                                >
-                                    Ouvrir Outlook
-                                </a>
+                            <div className={styles.successActions}>
+                                <div className={styles.actionGroup}>
+                                    <a
+                                        href="https://outlook.office365.com/?realm=lecnam.net&modurl=0"
+                                        className={styles.submitButton}
+                                        style={{ display: "inline-block", textDecoration: "none" }}
+                                    >
+                                        {t('forgot.openOutlook')}
+                                    </a>
+                                </div>
+                                <div className={styles.contactSection}>
+                                    <a
+                                        href="https://belbaz.vercel.app/contact"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.contactButton}
+                                    >
+                                        <span>✉️</span>
+                                        {t('common.contact')}
+                                    </a>
+                                    <p className={styles.contactHint}>
+                                        {t('forgot.contactIfNoEmail')}
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </div>

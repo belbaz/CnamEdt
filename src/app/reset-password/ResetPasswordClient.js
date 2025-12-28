@@ -4,16 +4,18 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import { useI18n } from "@/i18n/I18nContext";
 import styles from "../login/login.module.css";
 
 export default function ResetPasswordClient() {
+    const { t } = useI18n();
     return (
         <Suspense fallback={
             <div className={styles.page}>
                 <div className={styles.wrapper}>
                     <div className={styles.formCard}>
                         <div style={{ padding: "2rem", textAlign: "center" }}>
-                            <p>Chargement...</p>
+                            <p>{t('resetPassword.loading')}</p>
                         </div>
                     </div>
                 </div>
@@ -25,6 +27,7 @@ export default function ResetPasswordClient() {
 }
 
 function ResetPasswordForm() {
+    const { t } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [token, setToken] = useState("");
@@ -44,7 +47,7 @@ function ResetPasswordForm() {
             validateToken(tokenParam);
         } else {
             setIsValidating(false);
-            setErrorMessage("Lien de réinitialisation invalide ou manquant.");
+            setErrorMessage(t('resetPassword.errorTokenMissing'));
         }
     }, [searchParams]);
 
@@ -63,12 +66,12 @@ function ResetPasswordForm() {
                 setEmail(data.email || "");
             } else {
                 setIsValid(false);
-                setErrorMessage(data.error || "Lien expiré ou invalide.");
+                setErrorMessage(data.error || t('resetPassword.errorTokenExpired'));
             }
         } catch (error) {
             console.error("[ResetPassword] Erreur validation token:", error);
             setIsValid(false);
-            setErrorMessage("Erreur lors de la validation du lien.");
+            setErrorMessage(t('resetPassword.errorValidation'));
         } finally {
             setIsValidating(false);
         }
@@ -80,17 +83,17 @@ function ResetPasswordForm() {
         setSuccessMessage("");
 
         if (!password || !confirmPassword) {
-            setErrorMessage("Veuillez remplir tous les champs.");
+            setErrorMessage(t('resetPassword.errorAllFields'));
             return;
         }
 
         if (password.length < 8) {
-            setErrorMessage("Le mot de passe doit contenir au moins 8 caractères.");
+            setErrorMessage(t('resetPassword.errorMinLength'));
             return;
         }
 
         if (password !== confirmPassword) {
-            setErrorMessage("Les mots de passe ne correspondent pas.");
+            setErrorMessage(t('resetPassword.errorPasswordMatch'));
             return;
         }
 
@@ -105,10 +108,10 @@ function ResetPasswordForm() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data?.error || "Erreur lors de la réinitialisation.");
+                throw new Error(data?.error || t('resetPassword.errorReset'));
             }
 
-            setSuccessMessage("Mot de passe réinitialisé avec succès !");
+            setSuccessMessage(t('resetPassword.success'));
             setTimeout(() => {
                 router.push("/login");
             }, 2000);
@@ -128,7 +131,7 @@ function ResetPasswordForm() {
                             <div className={styles.loadingState} style={{ justifyContent: "center", marginBottom: "1rem" }}>
                                 <div className={styles.loader}></div>
                             </div>
-                            <p style={{ color: "var(--text-secondary)" }}>Vérification du lien...</p>
+                            <p style={{ color: "var(--text-secondary)" }}>{t('resetPassword.validating')}</p>
                         </div>
                     </div>
                 </div>
@@ -140,23 +143,23 @@ function ResetPasswordForm() {
         return (
             <div className={styles.page}>
                 <div className={styles.wrapper}>
-                    <BackButton href="/" title="Retour à l'accueil" />
+                    <BackButton href="/" title={t('resetPassword.backToHome')} />
                     <div className={styles.formCard}>
                         <header className={styles.cardHeader}>
                             <div>
-                                <h2>Lien invalide</h2>
-                                <p className={styles.cardSubhead}>Le lien de réinitialisation est expiré ou invalide.</p>
+                                <h2>{t('resetPassword.invalidLinkTitle')}</h2>
+                                <p className={styles.cardSubhead}>{t('resetPassword.invalidLinkMessage')}</p>
                             </div>
                         </header>
                         {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
                         <div className={styles.formFooter}>
                             <p>
                                 <Link href="/login/forgot" className={styles.footerLink}>
-                                    Demander un nouveau lien
+                                    {t('resetPassword.requestNewLink')}
                                 </Link>
                             </p>
                             <p style={{ marginTop: "0.5rem" }}>
-                                <BackButton href="/login" label="Retour à la connexion" title="Retour à la connexion" />
+                                <BackButton href="/login" label={t('resetPassword.backToLogin')} title={t('resetPassword.backToLogin')} />
                             </p>
                         </div>
                     </div>
@@ -168,13 +171,13 @@ function ResetPasswordForm() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
-                <BackButton href="/" title="Retour à l'accueil" />
+                <BackButton href="/" title={t('resetPassword.backToHome')} />
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
                         <div>
-                            <h2>Réinitialiser le mot de passe</h2>
+                            <h2>{t('resetPassword.title')}</h2>
                             <p className={styles.cardSubhead}>
-                                {email && `Pour ${email}`}
+                                {email && t('resetPassword.forEmail').replace('{email}', email)}
                             </p>
                         </div>
                     </header>
@@ -184,12 +187,12 @@ function ResetPasswordForm() {
 
                     <form className={styles.form} onSubmit={handleSubmit} noValidate>
                         <div className={styles.inputGroup}>
-                            <label htmlFor="reset-password">Nouveau mot de passe</label>
+                            <label htmlFor="reset-password">{t('resetPassword.newPasswordLabel')}</label>
                             <input
                                 id="reset-password"
                                 name="password"
                                 type="password"
-                                placeholder="••••••••"
+                                placeholder={t('resetPassword.passwordPlaceholder')}
                                 autoComplete="new-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -199,12 +202,12 @@ function ResetPasswordForm() {
                         </div>
 
                         <div className={styles.inputGroup}>
-                            <label htmlFor="reset-confirm-password">Confirmer le mot de passe</label>
+                            <label htmlFor="reset-confirm-password">{t('resetPassword.confirmPasswordLabel')}</label>
                             <input
                                 id="reset-confirm-password"
                                 name="confirmPassword"
                                 type="password"
-                                placeholder="••••••••"
+                                placeholder={t('resetPassword.passwordPlaceholder')}
                                 autoComplete="new-password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -217,17 +220,17 @@ function ResetPasswordForm() {
                             {isSubmitting ? (
                                 <span className={styles.loadingState}>
                                     <span className={styles.loader} aria-hidden="true" />
-                                    Réinitialisation...
+                                    {t('resetPassword.submitting')}
                                 </span>
                             ) : (
-                                "Réinitialiser le mot de passe"
+                                t('resetPassword.submit')
                             )}
                         </button>
                     </form>
 
                     <div className={styles.formFooter}>
                         <p>
-                            <BackButton href="/login" label="Retour à la connexion" title="Retour à la connexion" />
+                            <BackButton href="/login" label={t('resetPassword.backToLogin')} title={t('resetPassword.backToLogin')} />
                         </p>
                     </div>
                 </div>

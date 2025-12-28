@@ -44,13 +44,19 @@ export function I18nProvider({ children }) {
   const [isMounted, setIsMounted] = useState(false);
 
   // Charger la langue depuis window.__INITIAL_LANGUAGE__ ou localStorage de manière synchrone
-  // Utiliser useLayoutEffect pour que la mise à jour se fasse avant le premier rendu
+  // Utiliser useLayoutEffect pour que la mise à jour se fasse avant le premier paint
   useLayoutEffect(() => {
     const savedLanguage = getInitialLanguage();
     if (savedLanguage !== language) {
       setLanguageState(savedLanguage);
     }
     setIsMounted(true);
+    
+    // Révéler le contenu une fois la langue chargée (évite le flash de langue)
+    // On utilise requestAnimationFrame pour s'assurer que le DOM est à jour
+    requestAnimationFrame(() => {
+      document.body.classList.add('i18n-ready');
+    });
   }, []);
 
   // Mettre à jour l'attribut lang du HTML de manière synchrone

@@ -416,3 +416,92 @@
 .embeddedWrapper .submitButton {
     width: 100%;
 }
+
+/* Styles pour la page forgot password - section succès */
+.successActions {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-light);
+}
+
+.actionGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.actionGroup:first-child {
+    margin-bottom: 0.5rem;
+}
+
+.contactSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(14, 165, 233, 0.08));
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.contactButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: var(--bg-secondary);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    min-width: 160px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.contactButton:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+.contactHint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    max-width: 320px;
+}
+
+@media (max-width: 480px) {
+    .successActions {
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        gap: 1rem;
+    }
+
+    .contactSection {
+        padding: 1rem;
+    }
+
+    .contactButton {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .contactHint {
+        font-size: 0.8rem;
+    }
+}

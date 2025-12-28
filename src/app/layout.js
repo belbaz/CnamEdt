@@ -16,6 +16,11 @@ export default function RootLayout({ children }) {
     return (
         <html lang="fr" suppressHydrationWarning>
             <head>
+                {/* Style critique pour éviter le flash de langue - cache le body jusqu'à ce que la langue soit chargée */}
+                <style dangerouslySetInnerHTML={{__html: `
+                    body:not(.i18n-ready) { opacity: 0 !important; }
+                    body.i18n-ready { opacity: 1; }
+                `}} />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
                 <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png" />
