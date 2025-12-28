@@ -87,10 +87,10 @@ export default function DashboardPage() {
             icon: "📜",
             color: "#8b5cf6"
         }, {
-            title: t('dashboard.pages.info.title'),
-            description: t('dashboard.pages.info.description'),
-            path: "/info",
-            icon: "ℹ️",
+            title: t('dashboard.pages.compte.title'),
+            description: t('dashboard.pages.compte.description'),
+            path: "/compte",
+            icon: "👤",
             color: "#f59e0b"
         }];
 

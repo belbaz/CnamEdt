@@ -298,9 +298,9 @@
         "title": "Historique",
         "description": "Historique des modifications de l'emploi du temps"
       },
-      "info": {
-        "title": "Mes informations",
-        "description": "Consultez vos informations de compte"
+      "compte": {
+        "title": "Mon compte",
+        "description": "Gérez vos informations et paramètres de compte"
       },
       "privacy": {
         "title": "Politique de confidentialité",
@@ -320,8 +320,8 @@
       }
     }
   },
-  "info": {
-    "title": "Informations du compte",
+  "compte": {
+    "title": "Mon compte",
     "loading": "Chargement de vos informations...",
     "backToDashboard": "Retour au dashboard",
     "error": "⚠️ Erreur",
@@ -336,7 +336,26 @@
     "createdAt": "Date de création",
     "copyEmail": "Copier l'email",
     "copied": "Copié !",
+    "language": "Langue",
+    "languageFrench": "Français",
+    "languageEnglish": "Anglais",
     "changePassword": "🔒 Changer mon mot de passe",
+    "requestAccountDeletion": "🗑️ Demander la suppression de mon compte",
+    "requestingDeletion": "Envoi de la demande...",
+    "deletionRequestSuccess": "✓ Votre demande de suppression a été envoyée avec succès.",
+    "deletionRequestError": "Erreur lors de l'envoi de la demande",
+    "dangerZone": {
+      "title": "Zone de danger",
+      "description": "Actions irréversibles et destructives"
+    },
+    "deletionModal": {
+      "title": "Demander la suppression de compte",
+      "close": "Fermer",
+      "message": "Êtes-vous sûr de vouloir demander la suppression de votre compte ? Cette action enverra une demande par email à l'administrateur.",
+      "confirmationEmail": "Un email de confirmation vous sera envoyé lorsque la suppression de votre compte sera effective.",
+      "confirm": "Confirmer la demande",
+      "cancel": "Annuler"
+    },
     "logout": "🚪 Se déconnecter",
     "loggingOut": "Déconnexion...",
     "errorLogout": "Erreur lors de la déconnexion",

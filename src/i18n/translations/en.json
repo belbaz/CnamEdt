@@ -298,9 +298,9 @@
         "title": "History",
         "description": "Schedule modification history"
       },
-      "info": {
-        "title": "My information",
-        "description": "View your account information"
+      "compte": {
+        "title": "My account",
+        "description": "Manage your account information and settings"
       },
       "privacy": {
         "title": "Privacy Policy",
@@ -320,8 +320,8 @@
       }
     }
   },
-  "info": {
-    "title": "Account information",
+  "compte": {
+    "title": "My account",
     "loading": "Loading your information...",
     "backToDashboard": "Back to dashboard",
     "error": "⚠️ Error",
@@ -336,7 +336,26 @@
     "createdAt": "Creation date",
     "copyEmail": "Copy email",
     "copied": "Copied!",
+    "language": "Language",
+    "languageFrench": "French",
+    "languageEnglish": "English",
     "changePassword": "🔒 Change my password",
+    "requestAccountDeletion": "🗑️ Request account deletion",
+    "requestingDeletion": "Sending request...",
+    "deletionRequestSuccess": "✓ Your deletion request has been sent successfully.",
+    "deletionRequestError": "Error sending request",
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible and destructive actions"
+    },
+    "deletionModal": {
+      "title": "Request account deletion",
+      "close": "Close",
+      "message": "Are you sure you want to request the deletion of your account? This action will send a deletion request by email to the administrator.",
+      "confirmationEmail": "A confirmation email will be sent to you when your account deletion is effective.",
+      "confirm": "Confirm request",
+      "cancel": "Cancel"
+    },
     "logout": "🚪 Sign out",
     "loggingOut": "Signing out...",
     "errorLogout": "Error signing out",

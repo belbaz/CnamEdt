@@ -68,6 +68,7 @@ export default function SettingsMenu({
     const [toastMessage, setToastMessage] = useState("");
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
+    const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     const devMode = useDevMode();
@@ -115,6 +116,22 @@ export default function SettingsMenu({
     }, [isOpen]);
 
     // Bloquer le scroll de la page quand la modale est ouverte
+    // Fermer le menu de langue en cliquant à l'extérieur
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showLanguageDropdown && !event.target.closest('.language-selector-settings')) {
+                setShowLanguageDropdown(false);
+            }
+        };
+
+        if (showLanguageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }
+    }, [showLanguageDropdown]);
+
     useEffect(() => {
         if (isOpen) {
             // Sauvegarder la position du scroll actuelle
@@ -243,26 +260,73 @@ export default function SettingsMenu({
                                         </div>
 
                                         <div className="setting-item">
-                                            <label htmlFor="language-select">
+                                            <label>
                                                 <span style={{marginRight: '0.5rem'}}>{t('settings.language')}:</span>
-                                                <select
-                                                    id="language-select"
-                                                    value={language}
-                                                    onChange={(e) => setLanguage(e.target.value)}
-                                                    style={{
-                                                        padding: '0.4rem 0.6rem',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid var(--border-color)',
-                                                        background: 'var(--bg-tertiary)',
-                                                        color: 'var(--text-primary)',
-                                                        fontSize: '0.9rem',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    <option value="fr">{t('settings.languageFrench')}</option>
-                                                    <option value="en">{t('settings.languageEnglish')}</option>
-                                                </select>
                                             </label>
+                                            <div className="language-selector-settings">
+                                                <button
+                                                    type="button"
+                                                    className="language-button-settings"
+                                                    onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                                                    aria-expanded={showLanguageDropdown}
+                                                    aria-haspopup="true"
+                                                >
+                                                    <span className="language-button-text-settings">
+                                                        {language === 'fr' ? t('settings.languageFrench') : t('settings.languageEnglish')}
+                                                    </span>
+                                                    <span className="language-button-icon-settings">
+                                                        {showLanguageDropdown ? '▲' : '▼'}
+                                                    </span>
+                                                </button>
+                                                {showLanguageDropdown && (
+                                                    <>
+                                                        <div 
+                                                            className="language-dropdown-overlay-settings"
+                                                            onClick={() => setShowLanguageDropdown(false)}
+                                                        />
+                                                        <div className="language-dropdown-settings">
+                                                            <button
+                                                                type="button"
+                                                                className={`language-option-settings ${language === 'fr' ? 'language-option-active-settings' : ''}`}
+                                                                onClick={() => {
+                                                                    setLanguage('fr');
+                                                                    setShowLanguageDropdown(false);
+                                                                }}
+                                                            >
+                                                                <span className="language-option-flag-settings">
+                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <rect width="8" height="18" fill="#1E40AF"/>
+                                                                        <rect x="8" width="8" height="18" fill="#FFFFFF"/>
+                                                                        <rect x="16" width="8" height="18" fill="#DC2626"/>
+                                                                    </svg>
+                                                                </span>
+                                                                <span className="language-option-text-settings">{t('settings.languageFrench')}</span>
+                                                                {language === 'fr' && <span className="language-option-check-settings">✓</span>}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className={`language-option-settings ${language === 'en' ? 'language-option-active-settings' : ''}`}
+                                                                onClick={() => {
+                                                                    setLanguage('en');
+                                                                    setShowLanguageDropdown(false);
+                                                                }}
+                                                            >
+                                                                <span className="language-option-flag-settings">
+                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <rect width="24" height="18" fill="#1E3A8A"/>
+                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="white" strokeWidth="2.4"/>
+                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="#DC2626" strokeWidth="1.6"/>
+                                                                        <path d="M12 0V18M0 9H24" stroke="white" strokeWidth="3.2"/>
+                                                                        <path d="M12 0V18M0 9H24" stroke="#DC2626" strokeWidth="2"/>
+                                                                    </svg>
+                                                                </span>
+                                                                <span className="language-option-text-settings">{t('settings.languageEnglish')}</span>
+                                                                {language === 'en' && <span className="language-option-check-settings">✓</span>}
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -303,6 +367,11 @@ export default function SettingsMenu({
 
                                 {activeTab === TABS.CONTACT && (
                                     <div className="settings-tab-panel">
+                                        <div className="contact-intro">
+                                            <p>Une question, un problème ou une suggestion ?</p>
+                                            <p>N'hésitez pas à nous contacter !</p>
+                                        </div>
+
                                         <div className="setting-item setting-button-item">
                                             <a
                                                 href={"https://belbaz.vercel.app/contact"}
