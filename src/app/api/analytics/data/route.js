@@ -49,16 +49,42 @@ export async function GET(request) {
         const offset = parseInt(searchParams.get('offset') || '0');
         const orderBy = searchParams.get('order_by') || 'created_at';
         const orderDirection = searchParams.get('order_direction') || 'desc';
+        const filterEmail = searchParams.get('filter_email'); // Filtre par email
 
-        // Construire la requête
+        // Construire la requête avec JOIN pour récupérer nom et prénom
+        // OPTIMISATION: LEFT JOIN automatique via Supabase (seulement pour les lignes avec user_id)
         let query = supabase
             .from('edt_analytics')
-            .select('*', { count: 'exact' })
-            .order(orderBy, { ascending: orderDirection === 'asc' })
-            .range(offset, offset + limit - 1);
+            .select('*, edt_user:user_id(name, last_name, email)', { count: 'exact' })
+            .order(orderBy, { ascending: orderDirection === 'asc' });
+
+        // Appliquer le filtre par email si fourni (côté serveur pour optimiser)
+        if (filterEmail && filterEmail.trim()) {
+            query = query.ilike('user_email', `%${filterEmail.trim()}%`);
+        }
+
+        // Appliquer la pagination après les filtres
+        query = query.range(offset, offset + limit - 1);
 
         // Exécuter la requête
         const { data, error, count } = await query;
+
+        // Formater les données pour inclure le nom et prénom depuis le JOIN
+        let formattedData = [];
+        if (data && !error) {
+            formattedData = data.map(item => {
+                const userInfo = item.edt_user || null;
+                const userName = userInfo ? `${userInfo.name || ''} ${userInfo.last_name || ''}`.trim() : null;
+                return {
+                    ...item,
+                    user_name: userName || null, // Nom complet (prénom + nom)
+                    user_first_name: userInfo?.name || null, // Prénom
+                    user_last_name: userInfo?.last_name || null, // Nom
+                    // Garder user_email depuis analytics (plus fiable que depuis le JOIN)
+                    user_email: item.user_email || null
+                };
+            });
+        }
 
         if (error) {
             console.error(`${LOG_PREFIX} Erreur récupération analytics:`, error);
@@ -266,7 +292,7 @@ export async function GET(request) {
         }
 
         return NextResponse.json({
-            data: data || [],
+            data: formattedData || [],
             count: count || 0,
             limit,
             offset,

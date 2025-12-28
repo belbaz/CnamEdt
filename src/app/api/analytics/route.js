@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSupabaseServerClient } from '@/lib/supabaseServer';
+import { requireAuth } from '@/lib/auth';
 
 // Fonction pour générer un UUID simple (sans dépendance externe)
 function generateUUID() {
@@ -138,6 +139,22 @@ export async function POST(request) {
             console.log(`${LOG_PREFIX} IP localhost détectée mais autorisée pour les tests (${ipAddress})`);
         }
 
+        // Récupérer l'utilisateur connecté (si disponible)
+        // On ne bloque pas si l'utilisateur n'est pas connecté (analytics anonymes OK)
+        let userId = null;
+        let userEmail = null;
+        try {
+            const authResult = await requireAuth();
+            if (authResult.user && !authResult.error) {
+                userId = authResult.user.id;
+                userEmail = authResult.user.email;
+                console.log(`${LOG_PREFIX} Utilisateur connecté détecté: ${userEmail} (${userId})`);
+            }
+        } catch (authError) {
+            // Ignorer les erreurs d'authentification (visiteur anonyme)
+            console.log(`${LOG_PREFIX} Visiteur anonyme (pas d'authentification)`);
+        }
+
         // Vérifier si une entrée existe déjà pour cette session
         const { data: existing, error: checkError } = await supabase
             .from('edt_analytics')
@@ -162,32 +179,42 @@ export async function POST(request) {
             const newAvgTime = newVisitCount > 0 ? (newTotalTime / newVisitCount).toFixed(2) : 0;
 
             // Mettre à jour l'entrée existante
+            const updateData = {
+                ip_address: ipAddress,
+                user_agent: user_agent || null,
+                device_name: device_name || null,
+                device_type: device_type || null,
+                os_name: os_name || null,
+                os_version: os_version || null,
+                browser_name: browser_name || null,
+                browser_version: browser_version || null,
+                browser_language: browser_language || null,
+                screen_width: screen_width || null,
+                screen_height: screen_height || null,
+                viewport_width: viewport_width || null,
+                viewport_height: viewport_height || null,
+                site_version: site_version || null,
+                time_on_page: currentTime, // Temps de la dernière visite
+                total_time_on_page: newTotalTime, // Temps total cumulé
+                avg_time_on_page: parseFloat(newAvgTime), // Temps moyen
+                page_url: page_url || null,
+                referrer: referrer || null,
+                last_visit_at: new Date().toISOString(),
+                visit_count: newVisitCount,
+                updated_at: new Date().toISOString()
+            };
+
+            // Ajouter les informations utilisateur si connecté
+            if (userId) {
+                updateData.user_id = userId;
+            }
+            if (userEmail) {
+                updateData.user_email = userEmail;
+            }
+
             const { error: updateError } = await supabase
                 .from('edt_analytics')
-                .update({
-                    ip_address: ipAddress,
-                    user_agent: user_agent || null,
-                    device_name: device_name || null,
-                    device_type: device_type || null,
-                    os_name: os_name || null,
-                    os_version: os_version || null,
-                    browser_name: browser_name || null,
-                    browser_version: browser_version || null,
-                    browser_language: browser_language || null,
-                    screen_width: screen_width || null,
-                    screen_height: screen_height || null,
-                    viewport_width: viewport_width || null,
-                    viewport_height: viewport_height || null,
-                    site_version: site_version || null,
-                    time_on_page: currentTime, // Temps de la dernière visite
-                    total_time_on_page: newTotalTime, // Temps total cumulé
-                    avg_time_on_page: parseFloat(newAvgTime), // Temps moyen
-                    page_url: page_url || null,
-                    referrer: referrer || null,
-                    last_visit_at: new Date().toISOString(),
-                    visit_count: newVisitCount,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', existing.id);
 
             if (updateError) {
@@ -202,33 +229,43 @@ export async function POST(request) {
         } else {
             // Créer une nouvelle entrée
             const currentTime = time_on_page || 0;
+            const insertData = {
+                session_id: session_id,
+                ip_address: ipAddress,
+                user_agent: user_agent || null,
+                device_name: device_name || null,
+                device_type: device_type || null,
+                os_name: os_name || null,
+                os_version: os_version || null,
+                browser_name: browser_name || null,
+                browser_version: browser_version || null,
+                browser_language: browser_language || null,
+                screen_width: screen_width || null,
+                screen_height: screen_height || null,
+                viewport_width: viewport_width || null,
+                viewport_height: viewport_height || null,
+                site_version: site_version || null,
+                time_on_page: currentTime, // Temps de la première visite
+                total_time_on_page: currentTime, // Temps total (première visite)
+                avg_time_on_page: currentTime, // Temps moyen (première visite)
+                page_url: page_url || null,
+                referrer: referrer || null,
+                first_visit_at: new Date().toISOString(),
+                last_visit_at: new Date().toISOString(),
+                visit_count: 1
+            };
+
+            // Ajouter les informations utilisateur si connecté
+            if (userId) {
+                insertData.user_id = userId;
+            }
+            if (userEmail) {
+                insertData.user_email = userEmail;
+            }
+
             const { error: insertError } = await supabase
                 .from('edt_analytics')
-                .insert({
-                    session_id: session_id,
-                    ip_address: ipAddress,
-                    user_agent: user_agent || null,
-                    device_name: device_name || null,
-                    device_type: device_type || null,
-                    os_name: os_name || null,
-                    os_version: os_version || null,
-                    browser_name: browser_name || null,
-                    browser_version: browser_version || null,
-                    browser_language: browser_language || null,
-                    screen_width: screen_width || null,
-                    screen_height: screen_height || null,
-                    viewport_width: viewport_width || null,
-                    viewport_height: viewport_height || null,
-                    site_version: site_version || null,
-                    time_on_page: currentTime, // Temps de la première visite
-                    total_time_on_page: currentTime, // Temps total (première visite)
-                    avg_time_on_page: currentTime, // Temps moyen (première visite)
-                    page_url: page_url || null,
-                    referrer: referrer || null,
-                    first_visit_at: new Date().toISOString(),
-                    last_visit_at: new Date().toISOString(),
-                    visit_count: 1
-                });
+                .insert(insertData);
 
             if (insertError) {
                 console.error(`${LOG_PREFIX} Erreur insertion analytics:`, insertError);

@@ -45,10 +45,10 @@ export async function GET(request) {
             );
         }
 
-        // Construire la requête
+        // Construire la requête avec JOIN pour récupérer nom et prénom
         let query = supabase
             .from('edt_analytics')
-            .select('*');
+            .select('*, edt_user:user_id(name, last_name, email)');
 
         if (sessionId) {
             query = query.eq('session_id', sessionId);
@@ -90,10 +90,19 @@ export async function GET(request) {
             return !latest || date > latest ? date : latest;
         }, null);
 
+        // Formater les données utilisateur avec nom et prénom depuis le JOIN
+        const userInfo = userData.edt_user || null;
+        const userName = userInfo ? `${userInfo.name || ''} ${userInfo.last_name || ''}`.trim() : null;
+
         return NextResponse.json({
             user: {
                 session_id: userData.session_id,
                 ip_address: userData.ip_address,
+                user_id: userData.user_id || null,
+                user_email: userData.user_email || null,
+                user_name: userName || null,
+                user_first_name: userInfo?.name || null,
+                user_last_name: userInfo?.last_name || null,
                 device_name: userData.device_name,
                 device_type: userData.device_type,
                 os_name: userData.os_name,

@@ -107,15 +107,13 @@ export default function ForgotPage() {
                                     </a>
                                 </div>
                                 <div className={styles.contactSection}>
-                                    <a
-                                        href="https://belbaz.vercel.app/contact"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <Link
+                                        href="/contact?from=forgot-password"
                                         className={styles.contactButton}
                                     >
                                         <span>✉️</span>
                                         {t('common.contact')}
-                                    </a>
+                                    </Link>
                                     <p className={styles.contactHint}>
                                         {t('forgot.contactIfNoEmail')}
                                     </p>

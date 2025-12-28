@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {useI18n} from "@/i18n/I18nContext";
@@ -139,9 +140,9 @@ function PrivacyPolicyContent() {
                 <p>
                     {t('privacy.footerText')}
                 </p>
-                <a href="https://belbaz.vercel.app/contact" className={styles.contactLink}>
+                <Link href="/contact?from=privacy-policy" className={styles.contactLink}>
                     {t('common.contact')}
-                </a>
+                </Link>
             </div>
         </main>
     );

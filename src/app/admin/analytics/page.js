@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
@@ -25,10 +25,12 @@ export default function AnalyticsPage() {
     const [authChecked, setAuthChecked] = useState(false);
     const [unauthorized, setUnauthorized] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const emailFilterDebounceRef = useRef(null);
 
     // Filtres
     const [filters, setFilters] = useState({
         search: '',
+        email: '', // Filtre par email
         deviceType: '',
         osName: '',
         browserName: '',
@@ -48,12 +50,34 @@ export default function AnalyticsPage() {
         checkAuth();
     }, []);
 
-    // Charger les données après vérification de l'auth
+    // Charger les données après vérification de l'auth (pour limit, offset, sortBy, sortOrder)
     useEffect(() => {
         if (authChecked && !unauthorized) {
             fetchAnalytics();
         }
     }, [limit, offset, sortBy, sortOrder, authChecked, unauthorized]);
+
+    // OPTIMISATION: Debounce pour le filtre email pour éviter trop d'appels API
+    useEffect(() => {
+        if (authChecked && !unauthorized) {
+            // Si le filtre email change, attendre 500ms avant de recharger (debounce)
+            if (emailFilterDebounceRef.current) {
+                clearTimeout(emailFilterDebounceRef.current);
+            }
+            
+            const timeout = setTimeout(() => {
+                fetchAnalytics();
+            }, 500); // Debounce de 500ms pour le filtre email
+            
+            emailFilterDebounceRef.current = timeout;
+            
+            return () => {
+                if (emailFilterDebounceRef.current) {
+                    clearTimeout(emailFilterDebounceRef.current);
+                }
+            };
+        }
+    }, [filters.email, authChecked, unauthorized]);
 
     const checkAuth = async () => {
         try {
@@ -138,6 +162,11 @@ export default function AnalyticsPage() {
                 order_direction: sortOrder,
                 stats_days: filters.statsDays || '30'
             });
+
+            // Ajouter le filtre par email si fourni (côté serveur pour optimiser)
+            if (filters.email && filters.email.trim()) {
+                params.append('filter_email', filters.email.trim());
+            }
 
             const response = await fetch(`/api/analytics/data?${params}`);
 
@@ -254,6 +283,8 @@ export default function AnalyticsPage() {
             filtered = filtered.filter(item =>
                 item.session_id?.toLowerCase().includes(search) ||
                 item.ip_address?.toLowerCase().includes(search) ||
+                item.user_email?.toLowerCase().includes(search) ||
+                item.user_id?.toLowerCase().includes(search) ||
                 item.device_name?.toLowerCase().includes(search) ||
                 item.os_name?.toLowerCase().includes(search) ||
                 item.browser_name?.toLowerCase().includes(search)
@@ -315,6 +346,7 @@ export default function AnalyticsPage() {
     const clearFilters = () => {
         setFilters({
             search: '',
+            email: '',
             deviceType: '',
             osName: '',
             browserName: '',
@@ -322,7 +354,9 @@ export default function AnalyticsPage() {
             dateFrom: '',
             dateTo: '',
             minVisits: '',
-            minTime: ''
+            minTime: '',
+            statsDays: '30',
+            excludeLocalhost: true
         });
         setOffset(0);
     };
@@ -332,6 +366,9 @@ export default function AnalyticsPage() {
             [
                 t('admin.analytics.tableSessionId'),
                 t('admin.analytics.tableIP'),
+                t('admin.analytics.tableUser') || 'Utilisateur',
+                'Nom',
+                'Email',
                 t('admin.analytics.tableDevice'),
                 t('admin.analytics.tableOS'),
                 t('admin.analytics.tableBrowser'),
@@ -343,6 +380,9 @@ export default function AnalyticsPage() {
             ...filteredData.map(item => [
                 item.session_id,
                 item.ip_address,
+                item.user_name || 'Anonyme',
+                item.user_name || '',
+                item.user_email || '',
                 `${item.device_type} ${item.device_name || ''}`,
                 `${item.os_name} ${item.os_version || ''}`,
                 `${item.browser_name} ${item.browser_version || ''}`,
@@ -676,6 +716,14 @@ export default function AnalyticsPage() {
                                 className="filter-input"
                                 title={t('admin.analytics.searchTooltip')}
                             />
+                            <input
+                                type="text"
+                                placeholder="Filtrer par email..."
+                                value={filters.email}
+                                onChange={(e) => handleFilterChange('email', e.target.value)}
+                                className="filter-input"
+                                title="Filtrer les sessions par email utilisateur"
+                            />
                             <select
                                 value={filters.deviceType}
                                 onChange={(e) => handleFilterChange('deviceType', e.target.value)}
@@ -838,6 +886,7 @@ export default function AnalyticsPage() {
                                 <tr>
                                     <th>{t('admin.analytics.tableSessionId')}</th>
                                     <th>{t('admin.analytics.tableIP')}</th>
+                                    <th>{t('admin.analytics.tableUser') || 'Utilisateur'}</th>
                                     <th>{t('admin.analytics.tableDevice')}</th>
                                     <th>{t('admin.analytics.tableOS')}</th>
                                     <th>{t('admin.analytics.tableBrowser')}</th>
@@ -858,6 +907,31 @@ export default function AnalyticsPage() {
                                     >
                                         <td className="session-id" title={session.session_id}>{session.session_id.substring(0, 8)}...</td>
                                         <td title={`Adresse IP: ${session.ip_address || 'N/A'}`}>{session.ip_address || 'N/A'}</td>
+                                        <td title={session.user_email ? `Email: ${session.user_email}${session.user_id ? `\nID: ${session.user_id}` : ''}${session.user_name ? `\nNom: ${session.user_name}` : ''}` : 'Visiteur anonyme'}>
+                                            {session.user_email ? (
+                                                <div className="user-info">
+                                                    {session.user_name ? (
+                                                        <>
+                                                            <span className="user-name" title={`${session.user_first_name || ''} ${session.user_last_name || ''}`.trim()}>
+                                                                {session.user_name}
+                                                            </span>
+                                                            <span className="user-email" title={`Email: ${session.user_email}`}>
+                                                                ({session.user_email})
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="user-email">{session.user_email}</span>
+                                                    )}
+                                                    {session.user_id && (
+                                                        <span className="user-id" title={`User ID: ${session.user_id}`}>
+                                                            ID: {session.user_id.substring(0, 8)}...
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="anonymous-user">Anonyme</span>
+                                            )}
+                                        </td>
                                         <td>
                                             <div className="device-info">
                                                 <span className="device-type">{session.device_type || 'unknown'}</span>
@@ -983,6 +1057,36 @@ export default function AnalyticsPage() {
                             <div className="user-info-card">
                                 <h3>{t('admin.analytics.userDeviceInfo')}</h3>
                                 <div className="user-info-grid">
+                                    {userStats.user.user_name && (
+                                        <div className="info-item">
+                                            <span className="info-label">Nom complet</span>
+                                            <span className="info-value">{userStats.user.user_name}</span>
+                                        </div>
+                                    )}
+                                    {userStats.user.user_first_name && (
+                                        <div className="info-item">
+                                            <span className="info-label">Prénom</span>
+                                            <span className="info-value">{userStats.user.user_first_name}</span>
+                                        </div>
+                                    )}
+                                    {userStats.user.user_last_name && (
+                                        <div className="info-item">
+                                            <span className="info-label">Nom</span>
+                                            <span className="info-value">{userStats.user.user_last_name}</span>
+                                        </div>
+                                    )}
+                                    {userStats.user.user_email && (
+                                        <div className="info-item">
+                                            <span className="info-label">Email utilisateur</span>
+                                            <span className="info-value">{userStats.user.user_email}</span>
+                                        </div>
+                                    )}
+                                    {userStats.user.user_id && (
+                                        <div className="info-item">
+                                            <span className="info-label">ID utilisateur</span>
+                                            <span className="info-value">{userStats.user.user_id}</span>
+                                        </div>
+                                    )}
                                     <div className="info-item">
                                         <span className="info-label">{t('admin.analytics.labelSessionId')}</span>
                                         <span className="info-value">{userStats.user.session_id}</span>

@@ -95,6 +95,7 @@ export default function SettingsMenu({
         }
     }, [isPWAInstalled, currentVersion]);
 
+
     useEffect(() => {
         if (typeof onOpenChange === 'function') {
             onOpenChange(isOpen);
@@ -373,15 +374,16 @@ export default function SettingsMenu({
                                         </div>
 
                                         <div className="setting-item setting-button-item">
-                                            <a
-                                                href={"https://belbaz.vercel.app/contact"}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    window.location.href = '/contact?from=edt-settings';
+                                                }}
                                                 className="settings-action contact-button"
                                             >
                                                 <span className="button-icon">✉️</span>
                                                 <span className="button-label">{t('common.contact')}</span>
-                                            </a>
+                                            </button>
                                         </div>
 
                                         <div className="setting-item copyright-item">
