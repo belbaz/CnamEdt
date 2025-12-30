@@ -149,7 +149,7 @@
 .vertical-day-header {
     padding: 0.5rem 0;
     background: rgba(228, 225, 225, 0.3);
-    border-radius: 12px;
+    border-radius: 15px;
     border: 1px solid var(--border-color);
     text-align: center;
     box-shadow: var(--shadow-sm);
