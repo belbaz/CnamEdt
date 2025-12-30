@@ -18,7 +18,8 @@ const DayBlock = forwardRef(({
     hide15MinSpacing = false,
     courseNotes = null,
     colorPosition = 'background',
-    colorBackgroundOpacity = 0.6
+    colorBackgroundOpacity = 0.6,
+    timePassedOverlayIntensity = 0.5
 }, ref) => {
     // Mémoriser les calculs pour éviter de les refaire à chaque rendu
     const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
@@ -119,6 +120,7 @@ const DayBlock = forwardRef(({
                     courseNotes={courseNotes}
                     colorPosition={colorPosition}
                     colorBackgroundOpacity={colorBackgroundOpacity}
+                    timePassedOverlayIntensity={timePassedOverlayIntensity}
                 />
             )}
         </div>

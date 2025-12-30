@@ -76,6 +76,7 @@ function HomeContent({searchParams}) {
     const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
     const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
     const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.75); // Opacité du background (0 à 1, par défaut: 0.6)
+    const [timePassedOverlayIntensity, setTimePassedOverlayIntensity] = useState(0.5); // Intensité de l'overlay de temps passé (0.1 à 0.9, par défaut: 0.5)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -928,6 +929,16 @@ function HomeContent({searchParams}) {
             }
         }
 
+        const savedTimePassedOverlayIntensity = localStorage.getItem("timePassedOverlayIntensity");
+        if (savedTimePassedOverlayIntensity !== null) {
+            const intensity = parseFloat(savedTimePassedOverlayIntensity);
+            if (!isNaN(intensity) && intensity >= 0 && intensity <= 1) {
+                // Clamper entre 0.1 et 0.9
+                const clampedIntensity = Math.max(0.1, Math.min(0.9, intensity));
+                setTimePassedOverlayIntensity(clampedIntensity);
+            }
+        }
+
         const savedShowFullYear = localStorage.getItem("showFullYear");
         if (savedShowFullYear === 'true') setShowFullYear(true);
     }, []);
@@ -1081,6 +1092,7 @@ function HomeContent({searchParams}) {
     const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
     const handleColorPositionChange = (position) => handlers.handleColorPositionChange(position, setColorPosition);
     const handleColorBackgroundOpacityChange = (opacity) => handlers.handleColorBackgroundOpacityChange(opacity, setColorBackgroundOpacity);
+    const handleTimePassedOverlayIntensityChange = (intensity) => handlers.handleTimePassedOverlayIntensityChange(intensity, setTimePassedOverlayIntensity);
     const handleToggleFullYear = () => handlers.handleToggleFullYear(!showFullYear, setShowFullYear);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
@@ -1244,6 +1256,8 @@ function HomeContent({searchParams}) {
                 onColorPositionChange={handleColorPositionChange}
                 colorBackgroundOpacity={colorBackgroundOpacity}
                 onColorBackgroundOpacityChange={handleColorBackgroundOpacityChange}
+                timePassedOverlayIntensity={timePassedOverlayIntensity}
+                onTimePassedOverlayIntensityChange={handleTimePassedOverlayIntensityChange}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
@@ -1378,6 +1392,7 @@ function HomeContent({searchParams}) {
                                 courseNotes={courseNotes}
                                 colorPosition={colorPosition}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
+                                timePassedOverlayIntensity={timePassedOverlayIntensity}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {
@@ -1403,6 +1418,7 @@ function HomeContent({searchParams}) {
                                             courseNotes={courseNotes}
                                             colorPosition={colorPosition}
                                             colorBackgroundOpacity={colorBackgroundOpacity}
+                                            timePassedOverlayIntensity={timePassedOverlayIntensity}
                                         />
                                         {isToday && (
                                             <div

@@ -5,7 +5,7 @@ import WeekPicker from "./WeekPicker";
 import FilterPanel from "./FilterPanel";
 import Tooltip from "./Tooltip";
 import "./Navbar.css";
-import {isDevMode, useDevMode} from "../utils/env";
+import {useDevMode} from "../utils/env";
 import {getSchoolYearLabel} from "../utils/dateUtils";
 import {useI18n} from "../i18n/I18nContext";
 
@@ -41,6 +41,8 @@ export default function Navbar({
                                    onColorPositionChange = null,
                                    colorBackgroundOpacity = 0.6,
                                    onColorBackgroundOpacityChange = null,
+                                   timePassedOverlayIntensity = 0.5,
+                                   onTimePassedOverlayIntensityChange = null,
                                    subjects = [],
                                    selectedSubjects = [],
                                    onSubjectsChange = null,
@@ -246,6 +248,8 @@ export default function Navbar({
                     onColorPositionChange={onColorPositionChange}
                     colorBackgroundOpacity={colorBackgroundOpacity}
                     onColorBackgroundOpacityChange={onColorBackgroundOpacityChange}
+                    timePassedOverlayIntensity={timePassedOverlayIntensity}
+                    onTimePassedOverlayIntensityChange={onTimePassedOverlayIntensityChange}
                     userInfo={userInfo}
                     isLoadingUser={isLoadingUser}
                 />
@@ -379,7 +383,7 @@ export default function Navbar({
                                         </div>
                                     </Tooltip>
                                 )}
-                                {isDevMode() ?
+                                {devMode ?
                                     <Tooltip
                                         text={t('navbar.history')}
                                         show={showTooltip.history}

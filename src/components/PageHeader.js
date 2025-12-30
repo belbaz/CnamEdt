@@ -31,6 +31,8 @@ export default function PageHeader({
                                        onColorPositionChange = null,
                                        colorBackgroundOpacity = 0.6,
                                        onColorBackgroundOpacityChange = null,
+                                       timePassedOverlayIntensity = 0.5,
+                                       onTimePassedOverlayIntensityChange = null,
                                        userInfo = null,
                                        isLoadingUser = false
                                    }) {
@@ -413,6 +415,8 @@ export default function PageHeader({
                                 onColorPositionChange={onColorPositionChange}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
                                 onColorBackgroundOpacityChange={onColorBackgroundOpacityChange}
+                                timePassedOverlayIntensity={timePassedOverlayIntensity}
+                                onTimePassedOverlayIntensityChange={onTimePassedOverlayIntensityChange}
                             />
                         </div>
                     </Tooltip>

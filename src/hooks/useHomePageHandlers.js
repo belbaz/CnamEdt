@@ -76,6 +76,11 @@ export function useHomePageHandlers({
         localStorage.setItem('colorBackgroundOpacity', opacity.toString());
     };
 
+    const handleTimePassedOverlayIntensityChange = (intensity, setTimePassedOverlayIntensity) => {
+        setTimePassedOverlayIntensity(intensity);
+        localStorage.setItem('timePassedOverlayIntensity', intensity.toString());
+    };
+
     const handleToggleFullYear = (enabled, setShowFullYear) => {
         setShowFullYear(enabled);
         localStorage.setItem('showFullYear', enabled.toString());
@@ -267,6 +272,7 @@ export function useHomePageHandlers({
         handleToggleTooltips,
         handleColorPositionChange,
         handleColorBackgroundOpacityChange,
+        handleTimePassedOverlayIntensityChange,
         handleToggleFullYear,
         handleToggleDay,
         handleToggleAllDays,

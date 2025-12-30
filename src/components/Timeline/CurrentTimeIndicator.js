@@ -7,12 +7,14 @@ export default function CurrentTimeIndicator({currentPos}) {
     if (currentPos === null) return null;
 
     return (
-        <div
-            className="current-time-indicator"
-            style={isMobile ? {top: `${currentPos}%`} : {left: `${currentPos}%`}}
-        >
-            <div className="current-time-line"></div>
-            <div className="current-time-dot"></div>
-        </div>
+        <>
+        </>
+        // <div
+        //     className="current-time-indicator"
+        //     style={isMobile ? {top: `${currentPos}%`} : {left: `${currentPos}%`}}
+        // >
+        //     <div className="current-time-line"></div>
+        //     <div className="current-time-dot"></div>
+        // </div>
     );
 }

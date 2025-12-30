@@ -20,7 +20,8 @@ export default function VerticalSchedule({
     monthFormat = 'long',
     courseNotes = null,
     colorPosition = 'background',
-    colorBackgroundOpacity = 0.6
+    colorBackgroundOpacity = 0.6,
+    timePassedOverlayIntensity = 0.5
 }) {
     const { language } = useI18n();
     const locale = getLocale(language);
@@ -420,13 +421,15 @@ export default function VerticalSchedule({
                                 >
                                     {/* Indicateur de temps actuel */}
                                     {currentPos !== null && (
-                                        <div
-                                            className="vertical-current-time-indicator"
-                                            style={{ top: `${currentPos}%` }}
-                                        >
-                                            <div className="vertical-current-time-line"></div>
-                                            <div className="vertical-current-time-dot"></div>
+                                        <div>
                                         </div>
+                                        // <div
+                                        //     className="vertical-current-time-indicator"
+                                        //     style={{ top: `${currentPos}%` }}
+                                        // >
+                                        //     <div className="vertical-current-time-line"></div>
+                                        //     <div className="vertical-current-time-dot"></div>
+                                        // </div>
                                     )}
 
                                     {/* Ligne de temps passée */}
@@ -434,7 +437,7 @@ export default function VerticalSchedule({
                                         <>
                                             <div
                                                 className="vertical-time-passed-overlay"
-                                                style={{ height: `${currentPos}%` }}
+                                                style={{ height: `${currentPos}%`, opacity: timePassedOverlayIntensity }}
                                             />
                                             {devMode && (
                                                 <div

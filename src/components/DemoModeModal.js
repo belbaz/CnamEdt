@@ -15,13 +15,28 @@ export default function DemoModeModal({ isOpen, onClose }) {
         }
     }, [isOpen]);
 
+    // Fermer la modal avec la touche ESC
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleEscape);
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
         <div className="demo-modal-overlay" onClick={onClose}>
             <div className="demo-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="demo-modal-header">
-                    <div className="demo-modal-icon">🎯</div>
                     <h2 className="demo-modal-title">{t('demoMode.title')}</h2>
                     <button 
                         className="demo-modal-close" 

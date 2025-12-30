@@ -12,28 +12,40 @@ const TABS = {
 };
 
 // Composant séparé pour le slider d'opacité
-function SliderOpacity({ value, onChange }) {
+function SliderOpacity({ value, onChange, labelKey = 'colorIntensity', min = 0, max = 100 }) {
     const { t } = useI18n();
     const [localValue, setLocalValue] = useState(Math.round(value * 100));
     
+    useEffect(() => {
+        const rounded = Math.round(value * 100);
+        // S'assurer que la valeur est dans les limites
+        const clamped = Math.max(min, Math.min(max, rounded));
+        setLocalValue(clamped);
+        // Si la valeur était hors limites, la corriger
+        if (rounded !== clamped && onChange) {
+            onChange(clamped / 100);
+        }
+    }, [value, min, max, onChange]);
+    
     const handleChange = (e) => {
         const newValue = parseInt(e.target.value, 10);
-        setLocalValue(newValue);
+        const clampedValue = Math.max(min, Math.min(max, newValue));
+        setLocalValue(clampedValue);
         if (onChange) {
-            onChange(newValue / 100);
+            onChange(clampedValue / 100);
         }
     };
     
     return (
         <div className="setting-item slider-item">
             <div className="slider-label">
-                <span>{t('settings.colorIntensity')}</span>
+                <span>{t(`settings.${labelKey}`)}</span>
                 <span className="slider-value">{localValue}%</span>
             </div>
             <input
                 type="range"
-                min={0}
-                max={100}
+                min={min}
+                max={max}
                 step={5}
                 value={localValue}
                 onChange={handleChange}
@@ -60,7 +72,9 @@ export default function SettingsMenu({
                                          colorPosition = 'background',
                                          onColorPositionChange = null,
                                          colorBackgroundOpacity = 0.6,
-                                         onColorBackgroundOpacityChange = null
+                                         onColorBackgroundOpacityChange = null,
+                                         timePassedOverlayIntensity = 0.5,
+                                         onTimePassedOverlayIntensityChange = null
                                      }) {
     const { t, language, setLanguage } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
@@ -71,7 +85,22 @@ export default function SettingsMenu({
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
+    const languageSelectorRef = useRef(null);
     const devMode = useDevMode();
+    
+    // Fermer la dropdown de langue quand on clique en dehors
+    useEffect(() => {
+        if (!showLanguageDropdown) return;
+        
+        const handleClickOutside = (event) => {
+            if (languageSelectorRef.current && !languageSelectorRef.current.contains(event.target)) {
+                setShowLanguageDropdown(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showLanguageDropdown]);
     // Le bouton update reste visible sur mobile/PWA
     const showUpdateButton = devMode ? true : (isMobile || isPWAInstalled);
 
@@ -264,7 +293,7 @@ export default function SettingsMenu({
                                             <label>
                                                 <span style={{marginRight: '0.5rem'}}>{t('settings.language')}:</span>
                                             </label>
-                                            <div className="language-selector-settings">
+                                            <div className="language-selector-settings" ref={languageSelectorRef}>
                                                 <button
                                                     type="button"
                                                     className="language-button-settings"
@@ -280,11 +309,6 @@ export default function SettingsMenu({
                                                     </span>
                                                 </button>
                                                 {showLanguageDropdown && (
-                                                    <>
-                                                        <div 
-                                                            className="language-dropdown-overlay-settings"
-                                                            onClick={() => setShowLanguageDropdown(false)}
-                                                        />
                                                         <div className="language-dropdown-settings">
                                                             <button
                                                                 type="button"
@@ -325,7 +349,6 @@ export default function SettingsMenu({
                                                                 {language === 'en' && <span className="language-option-check-settings">✓</span>}
                                                             </button>
                                                         </div>
-                                                    </>
                                                 )}
                                             </div>
                                         </div>
@@ -363,6 +386,14 @@ export default function SettingsMenu({
                                                 onChange={onColorBackgroundOpacityChange} 
                                             />
                                         )}
+
+                                        <SliderOpacity 
+                                            value={timePassedOverlayIntensity} 
+                                            onChange={onTimePassedOverlayIntensityChange}
+                                            labelKey="timePassedOverlayIntensity"
+                                            min={10}
+                                            max={90}
+                                        />
                                     </div>
                                 )}
 

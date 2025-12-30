@@ -12,6 +12,7 @@
     "colorPositionTop": "Au-dessus",
     "colorPositionBackground": "Fond",
     "colorIntensity": "Intensité de la couleur :",
+    "timePassedOverlayIntensity": "Intensité de l'overlay de temps passé :",
     "language": "Langue",
     "languageFrench": "Français",
     "languageEnglish": "English"
@@ -751,8 +752,8 @@
   "demoMode": {
     "title": "Mode Démo",
     "close": "Fermer",
-    "intro": "Vous visualisez des données de démonstration générées automatiquement.",
-    "info": "Ces données incluent des cours variés, des professeurs et des matières fictives pour toute l'année scolaire. Elles ne correspondent pas à un emploi du temps réel.",
+    "intro": "Vous consultez des données de démonstration générées automatiquement.",
+    "info": "Elles présentent des cours variés, des enseignants et des matières fictifs sur l’ensemble de l’année scolaire, et ne reflètent pas un emploi du temps réel.",
     "understood": "Compris"
   },
   "yearCalendar": {

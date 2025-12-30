@@ -12,6 +12,7 @@
     "colorPositionTop": "Top",
     "colorPositionBackground": "Background",
     "colorIntensity": "Color intensity:",
+    "timePassedOverlayIntensity": "Time passed overlay intensity:",
     "language": "Language",
     "languageFrench": "Français",
     "languageEnglish": "English"
@@ -654,8 +655,8 @@
   "demoMode": {
     "title": "Demo Mode",
     "close": "Close",
-    "intro": "You are viewing automatically generated demonstration data.",
-    "info": "This data includes various courses, teachers and fictional subjects for the entire school year. They do not correspond to a real schedule.",
+    "intro": "You are viewing automatically generated demo data.",
+    "info": "This data includes a variety of courses, teachers, and fictional subjects for the entire school year. It does not represent a real schedule.",
     "understood": "Got it"
   },
   "yearCalendar": {
