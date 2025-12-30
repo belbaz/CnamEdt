@@ -6,6 +6,10 @@ const CACHE_VERSION = '2.1.12'; // Sera remplacé automatiquement par pre-build.
 const CACHE_NAME = `edt-pwa-${CACHE_VERSION}`;
 const DATA_CACHE_NAME = `edt-data-${CACHE_VERSION}`;
 
+// Compteur de 404 pour détecter les builds obsolètes
+let consecutive404Count = 0;
+const MAX_404_BEFORE_RELOAD = 3; // Après 3 fichiers 404, forcer un rechargement
+
 // Ressources essentielles à mettre en cache immédiatement
 const APP_SHELL = [
   '/',
@@ -121,23 +125,63 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pour les assets Next.js (_next/static/) - Cache-first pour performance
+  // Pour les assets Next.js (_next/static/) - Network-first avec gestion des 404
+  // Important : Si un fichier retourne 404, c'est qu'il a été remplacé par un nouveau build
+  // Il faut supprimer l'entrée du cache obsolète et retourner l'erreur
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
-      caches.match(req)
-        .then((cached) => {
-          if (cached) {
-            return cached;
+      fetch(req)
+        .then((res) => {
+          // Si la requête réussit, mettre à jour le cache
+          if (res && res.ok) {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+            return res;
           }
-          return fetch(req)
-            .then((res) => {
-              if (res && res.ok) {
-                const resClone = res.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-              }
-              return res;
-            })
-            .catch(() => caches.match(req));
+          
+          // Si 404, supprimer l'entrée obsolète du cache et retourner l'erreur
+          if (res && res.status === 404) {
+            console.warn('[SW] Fichier 404 détecté (probablement obsolète):', req.url);
+            caches.open(CACHE_NAME).then((cache) => cache.delete(req));
+            
+            // Incrémenter le compteur de 404
+            consecutive404Count++;
+            
+            // Si trop de 404, c'est probablement un nouveau build - forcer un rechargement
+            if (consecutive404Count >= MAX_404_BEFORE_RELOAD) {
+              console.error('[SW] Trop de fichiers 404 détectés - probable nouveau build. Forcer rechargement...');
+              consecutive404Count = 0; // Reset pour éviter les boucles
+              // Informer tous les clients de recharger
+              self.clients.matchAll().then((clients) => {
+                clients.forEach((client) => {
+                  client.postMessage({ type: 'FORCE_RELOAD', reason: 'build_updated' });
+                });
+              });
+            }
+            
+            return res; // Retourner l'erreur 404 pour que Next.js puisse gérer
+          }
+          
+          // Si la requête réussit, reset le compteur de 404
+          if (res && res.ok) {
+            consecutive404Count = 0;
+          }
+          
+          return res;
+        })
+        .catch((err) => {
+          // En cas d'erreur réseau, essayer le cache en fallback
+          // Mais seulement si on est vraiment hors ligne
+          return caches.match(req).then((cached) => {
+            if (cached) {
+              return cached;
+            }
+            // Si pas de cache et erreur réseau, retourner une erreur
+            return new Response('Network error', { 
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
+          });
         })
     );
     return;
@@ -172,23 +216,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pour les autres ressources (images, fonts, etc.) - Cache-first
+  // Pour les autres ressources (images, fonts, etc.) - Network-first avec gestion 404
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(req)
-        .then((cached) => {
-          if (cached) {
-            return cached;
+      fetch(req)
+        .then((res) => {
+          // Si la requête réussit, mettre à jour le cache
+          if (res && res.ok) {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+            return res;
           }
-          return fetch(req)
-            .then((res) => {
-              if (res && res.ok) {
-                const resClone = res.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-              }
-              return res;
-            })
-            .catch(() => caches.match(req));
+          
+          // Si 404, supprimer l'entrée obsolète du cache
+          if (res && res.status === 404) {
+            console.warn('[SW] Ressource 404 détectée (probablement obsolète):', req.url);
+            caches.open(CACHE_NAME).then((cache) => cache.delete(req));
+            return res;
+          }
+          
+          return res;
+        })
+        .catch((err) => {
+          // En cas d'erreur réseau, essayer le cache en fallback
+          return caches.match(req).then((cached) => {
+            if (cached) {
+              return cached;
+            }
+            // Si pas de cache, retourner une erreur
+            return new Response('Network error', { 
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
+          });
         })
     );
   }

@@ -34,7 +34,7 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
     width: 100%;
-    max-width: 500px;
+    max-width: 570px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;

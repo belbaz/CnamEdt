@@ -690,10 +690,11 @@
     cursor: pointer;
     background: var(--bg-tertiary);
     border: 2px solid var(--border-color);
-    padding: 5px 15px;
+    padding: 6px 12px;
     color: inherit;
     font: inherit;
     text-align: inherit;
+    border-radius: 15px;
 }
 
 /* Affichage de la dernière mise à jour */

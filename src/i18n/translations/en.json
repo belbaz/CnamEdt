@@ -15,7 +15,9 @@
     "timePassedOverlayIntensity": "Time passed overlay intensity:",
     "language": "Language",
     "languageFrench": "Français",
-    "languageEnglish": "English"
+    "languageEnglish": "English",
+    "contactIntroText1": "A question, a problem or a suggestion?",
+    "contactIntroText2": "You can leave a message at any time."
   },
   "navbar": {
     "today": "Back to current week",
@@ -464,7 +466,7 @@
     "errorNetworkHint": "Check your internet connection and try reloading the page.",
     "openGalao": "Open Galao",
     "noCoursesThisWeek": "No courses found for this week",
-    "lastUpdate": "Schedule up to date on:"
+    "lastUpdate": "Updated on:"
   },
   "examens": {
     "loading": "Loading exams...",
@@ -640,6 +642,13 @@
   "pwaUpdate": {
     "newVersion": "New version available",
     "reloadMessage": "Reload to enjoy the latest improvements",
+    "reload": "Reload",
+    "reloading": "Reloading...",
+    "later": "Later"
+  },
+  "updateBanner": {
+    "title": "Update available",
+    "message": "Reload the page to apply the latest changes",
     "reload": "Reload",
     "reloading": "Reloading...",
     "later": "Later"

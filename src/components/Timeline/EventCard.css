@@ -818,6 +818,7 @@
 }
 
 .note-icon {
+    position: relative;
     font-size: 1.2rem;
     line-height: 1;
     display: flex;

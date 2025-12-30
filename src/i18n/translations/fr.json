@@ -15,7 +15,9 @@
     "timePassedOverlayIntensity": "Intensité de l'overlay de temps passé :",
     "language": "Langue",
     "languageFrench": "Français",
-    "languageEnglish": "English"
+    "languageEnglish": "English",
+    "contactIntroText1": "Une question, un problème ou une suggestion ?",
+    "contactIntroText2": "Vous pouvez laisser un message à tout moment."
   },
   "navbar": {
     "today": "Retour à la semaine actuelle",
@@ -737,6 +739,13 @@
   "pwaUpdate": {
     "newVersion": "Nouvelle version disponible",
     "reloadMessage": "Rechargez pour profiter des dernières améliorations",
+    "reload": "Recharger",
+    "reloading": "Rechargement...",
+    "later": "Plus tard"
+  },
+  "updateBanner": {
+    "title": "Mise à jour disponible",
+    "message": "Rechargez la page pour appliquer les dernières modifications",
     "reload": "Recharger",
     "reloading": "Rechargement...",
     "later": "Plus tard"

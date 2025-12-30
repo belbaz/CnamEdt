@@ -378,8 +378,24 @@ export default function PWAUpdateChecker() {
         };
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
+        // Écouter les messages du Service Worker (pour les rechargements forcés)
+        const handleMessage = (event) => {
+            if (event.data && event.data.type === 'FORCE_RELOAD') {
+                console.warn('[PWAUpdateChecker] Message FORCE_RELOAD reçu du Service Worker:', event.data.reason);
+                // Forcer un rechargement immédiat
+                window.location.reload();
+            }
+        };
+        
+        if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+        }
+
         return () => {
             navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.removeEventListener('message', handleMessage);
+            }
         };
     }, [isPageLoaded]);
 

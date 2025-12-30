@@ -83,9 +83,11 @@ export default function SettingsMenu({
     const [showToast, setShowToast] = useState(false);
     const [version, setVersion] = useState(currentVersion || null);
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+    const [showColorPositionDropdown, setShowColorPositionDropdown] = useState(false);
     const copyrightClickCount = useRef(0);
     const copyrightClickTimeout = useRef(null);
     const languageSelectorRef = useRef(null);
+    const colorPositionSelectorRef = useRef(null);
     const devMode = useDevMode();
     
     // Fermer la dropdown de langue quand on clique en dehors
@@ -101,6 +103,21 @@ export default function SettingsMenu({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showLanguageDropdown]);
+
+    // Fermer la dropdown de position de couleur quand on clique en dehors
+    useEffect(() => {
+        if (!showColorPositionDropdown) return;
+        
+        const handleClickOutside = (event) => {
+            if (colorPositionSelectorRef.current && !colorPositionSelectorRef.current.contains(event.target)) {
+                setShowColorPositionDropdown(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showColorPositionDropdown]);
+    
     // Le bouton update reste visible sur mobile/PWA
     const showUpdateButton = devMode ? true : (isMobile || isPWAInstalled);
 
@@ -244,6 +261,69 @@ export default function SettingsMenu({
                                     <div className="settings-tab-panel">
                                         <div className="setting-item">
                                             <label>
+                                                <span style={{marginRight: '0.5rem'}}>{t('settings.language')}</span>
+                                            </label>
+                                            <div className="language-selector-settings" ref={languageSelectorRef}>
+                                                <button
+                                                    type="button"
+                                                    className="language-button-settings"
+                                                    onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                                                    aria-expanded={showLanguageDropdown}
+                                                    aria-haspopup="true"
+                                                >
+                                                    <span className="language-button-text-settings">
+                                                        {language === 'fr' ? t('settings.languageFrench') : t('settings.languageEnglish')}
+                                                    </span>
+                                                    <span className="language-button-icon-settings">
+                                                        {showLanguageDropdown ? '▲' : '▼'}
+                                                    </span>
+                                                </button>
+                                                {showLanguageDropdown && (
+                                                    <div className="language-dropdown-settings">
+                                                        <button
+                                                            type="button"
+                                                            className={`language-option-settings ${language === 'fr' ? 'language-option-active-settings' : ''}`}
+                                                            onClick={() => {
+                                                                setLanguage('fr');
+                                                                setShowLanguageDropdown(false);
+                                                            }}
+                                                        >
+                                                                <span className="language-option-flag-settings">
+                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <rect width="8" height="18" fill="#1E40AF"/>
+                                                                        <rect x="8" width="8" height="18" fill="#FFFFFF"/>
+                                                                        <rect x="16" width="8" height="18" fill="#DC2626"/>
+                                                                    </svg>
+                                                                </span>
+                                                            <span className="language-option-text-settings">{t('settings.languageFrench')}</span>
+                                                            {language === 'fr' && <span className="language-option-check-settings">✓</span>}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`language-option-settings ${language === 'en' ? 'language-option-active-settings' : ''}`}
+                                                            onClick={() => {
+                                                                setLanguage('en');
+                                                                setShowLanguageDropdown(false);
+                                                            }}
+                                                        >
+                                                                <span className="language-option-flag-settings">
+                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <rect width="24" height="18" fill="#1E3A8A"/>
+                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="white" strokeWidth="2.4"/>
+                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="#DC2626" strokeWidth="1.6"/>
+                                                                        <path d="M12 0V18M0 9H24" stroke="white" strokeWidth="3.2"/>
+                                                                        <path d="M12 0V18M0 9H24" stroke="#DC2626" strokeWidth="2"/>
+                                                                    </svg>
+                                                                </span>
+                                                            <span className="language-option-text-settings">{t('settings.languageEnglish')}</span>
+                                                            {language === 'en' && <span className="language-option-check-settings">✓</span>}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="setting-item">
+                                            <label>
                                                 <input
                                                     type="checkbox"
                                                     checked={showTimeLabels}
@@ -288,96 +368,57 @@ export default function SettingsMenu({
                                                 <span>{t('settings.showTooltips')}</span>
                                             </label>
                                         </div>
-
-                                        <div className="setting-item">
-                                            <label>
-                                                <span style={{marginRight: '0.5rem'}}>{t('settings.language')}:</span>
-                                            </label>
-                                            <div className="language-selector-settings" ref={languageSelectorRef}>
-                                                <button
-                                                    type="button"
-                                                    className="language-button-settings"
-                                                    onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                                                    aria-expanded={showLanguageDropdown}
-                                                    aria-haspopup="true"
-                                                >
-                                                    <span className="language-button-text-settings">
-                                                        {language === 'fr' ? t('settings.languageFrench') : t('settings.languageEnglish')}
-                                                    </span>
-                                                    <span className="language-button-icon-settings">
-                                                        {showLanguageDropdown ? '▲' : '▼'}
-                                                    </span>
-                                                </button>
-                                                {showLanguageDropdown && (
-                                                        <div className="language-dropdown-settings">
-                                                            <button
-                                                                type="button"
-                                                                className={`language-option-settings ${language === 'fr' ? 'language-option-active-settings' : ''}`}
-                                                                onClick={() => {
-                                                                    setLanguage('fr');
-                                                                    setShowLanguageDropdown(false);
-                                                                }}
-                                                            >
-                                                                <span className="language-option-flag-settings">
-                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <rect width="8" height="18" fill="#1E40AF"/>
-                                                                        <rect x="8" width="8" height="18" fill="#FFFFFF"/>
-                                                                        <rect x="16" width="8" height="18" fill="#DC2626"/>
-                                                                    </svg>
-                                                                </span>
-                                                                <span className="language-option-text-settings">{t('settings.languageFrench')}</span>
-                                                                {language === 'fr' && <span className="language-option-check-settings">✓</span>}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className={`language-option-settings ${language === 'en' ? 'language-option-active-settings' : ''}`}
-                                                                onClick={() => {
-                                                                    setLanguage('en');
-                                                                    setShowLanguageDropdown(false);
-                                                                }}
-                                                            >
-                                                                <span className="language-option-flag-settings">
-                                                                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <rect width="24" height="18" fill="#1E3A8A"/>
-                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="white" strokeWidth="2.4"/>
-                                                                        <path d="M0 0L24 18M24 0L0 18" stroke="#DC2626" strokeWidth="1.6"/>
-                                                                        <path d="M12 0V18M0 9H24" stroke="white" strokeWidth="3.2"/>
-                                                                        <path d="M12 0V18M0 9H24" stroke="#DC2626" strokeWidth="2"/>
-                                                                    </svg>
-                                                                </span>
-                                                                <span className="language-option-text-settings">{t('settings.languageEnglish')}</span>
-                                                                {language === 'en' && <span className="language-option-check-settings">✓</span>}
-                                                            </button>
-                                                        </div>
-                                                )}
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
 
                                 {activeTab === TABS.COLORS && (
                                     <div className="settings-tab-panel">
                                         <div className="setting-item">
-                                            <label htmlFor="colorPosition-select">
+                                            <label>
                                                 <span style={{marginRight: '0.5rem'}}>{t('settings.colorPosition')}</span>
-                                                <select
-                                                    id="colorPosition-select"
-                                                    value={colorPosition}
-                                                    onChange={(e) => onColorPositionChange && onColorPositionChange(e.target.value)}
-                                                    style={{
-                                                        padding: '0.4rem 0.6rem',
-                                                        borderRadius: '8px',
-                                                        border: '1px solid var(--border-color)',
-                                                        background: 'var(--bg-tertiary)',
-                                                        color: 'var(--text-primary)',
-                                                        fontSize: '0.9rem',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    <option value="top">{t('settings.colorPositionTop')}</option>
-                                                    <option value="background">{t('settings.colorPositionBackground')}</option>
-                                                </select>
                                             </label>
+                                            <div className="language-selector-settings" ref={colorPositionSelectorRef}>
+                                                <button
+                                                    type="button"
+                                                    className="language-button-settings"
+                                                    onClick={() => setShowColorPositionDropdown(!showColorPositionDropdown)}
+                                                    aria-expanded={showColorPositionDropdown}
+                                                    aria-haspopup="true"
+                                                >
+                                                    <span className="language-button-text-settings">
+                                                        {colorPosition === 'top' ? t('settings.colorPositionTop') : t('settings.colorPositionBackground')}
+                                                    </span>
+                                                    <span className="language-button-icon-settings">
+                                                        {showColorPositionDropdown ? '▲' : '▼'}
+                                                    </span>
+                                                </button>
+                                                {showColorPositionDropdown && (
+                                                    <div className="language-dropdown-settings">
+                                                        <button
+                                                            type="button"
+                                                            className={`language-option-settings ${colorPosition === 'top' ? 'language-option-active-settings' : ''}`}
+                                                            onClick={() => {
+                                                                onColorPositionChange && onColorPositionChange('top');
+                                                                setShowColorPositionDropdown(false);
+                                                            }}
+                                                        >
+                                                            <span className="language-option-text-settings">{t('settings.colorPositionTop')}</span>
+                                                            {colorPosition === 'top' && <span className="language-option-check-settings">✓</span>}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={`language-option-settings ${colorPosition === 'background' ? 'language-option-active-settings' : ''}`}
+                                                            onClick={() => {
+                                                                onColorPositionChange && onColorPositionChange('background');
+                                                                setShowColorPositionDropdown(false);
+                                                            }}
+                                                        >
+                                                            <span className="language-option-text-settings">{t('settings.colorPositionBackground')}</span>
+                                                            {colorPosition === 'background' && <span className="language-option-check-settings">✓</span>}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         {colorPosition === 'background' && (
@@ -400,8 +441,8 @@ export default function SettingsMenu({
                                 {activeTab === TABS.CONTACT && (
                                     <div className="settings-tab-panel">
                                         <div className="contact-intro">
-                                            <p>Une question, un problème ou une suggestion ?</p>
-                                            <p>N'hésitez pas à nous contacter !</p>
+                                            <p>{t('settings.contactIntroText1')}</p>
+                                            <p>{t('settings.contactIntroText2')}</p>
                                         </div>
 
                                         <div className="setting-item setting-button-item">

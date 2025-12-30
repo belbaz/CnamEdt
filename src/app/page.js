@@ -26,6 +26,7 @@ import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
 import PWAUpdateChecker from "@/components/PWAUpdateChecker";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import UpdateBanner from "@/components/UpdateBanner";
 import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import SupabaseNotification from "@/components/SupabaseNotification";
@@ -1217,6 +1218,9 @@ function HomeContent({searchParams}) {
         <div className={styles.pageWrapper}>
             {/* Vérification des mises à jour PWA */}
             <PWAUpdateChecker/>
+
+            {/* Bannière de mise à jour (is_update) */}
+            <UpdateBanner/>
 
             {/* Prompt d'installation PWA */}
             <PWAInstallPrompt/>
