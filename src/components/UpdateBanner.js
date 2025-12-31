@@ -30,9 +30,9 @@ function setCookie(name, value, days = 7) {
  * Composant pour afficher une bannière de rechargement
  * S'affiche si :
  * - NEXT_PUBLIC_IS_UPDATE=true (variable d'environnement)
- * - Le cookie is_update existe
- * - window.is_update est défini
- * - Le paramètre URL ?is_update=true est présent
+ * - Le cookie isUpdate existe
+ * - window.isUpdate est défini
+ * - Le paramètre URL ?isUpdate=true est présent
  */
 export default function UpdateBanner() {
     const [isVisible, setIsVisible] = useState(false);
@@ -51,19 +51,19 @@ export default function UpdateBanner() {
 
         // Si la variable d'environnement est définie, définir le cookie
         if (isUpdateFromEnv) {
-            setCookie('is_update', 'true');
+            setCookie('isUpdate', 'true');
         }
 
-        // Vérifier le cookie is_update
-        const cookieValue = getCookie('is_update');
+        // Vérifier le cookie isUpdate
+        const cookieValue = getCookie('isUpdate');
         const isUpdateFromCookie = cookieValue === 'true' || cookieValue !== null;
 
-        // Vérifier aussi si is_update est défini globalement (window.is_update)
-        const isUpdateFromGlobal = typeof window.is_update !== 'undefined' && window.is_update === true;
+        // Vérifier aussi si isUpdate est défini globalement (window.isUpdate)
+        const isUpdateFromGlobal = typeof window.isUpdate !== 'undefined' && window.isUpdate === true;
 
-        // Vérifier aussi dans l'URL (paramètre ?is_update=true)
+        // Vérifier aussi dans l'URL (paramètre ?isUpdate=true)
         const urlParams = new URLSearchParams(window.location.search);
-        const isUpdateFromUrl = urlParams.get('is_update') === 'true';
+        const isUpdateFromUrl = urlParams.get('isUpdate') === 'true';
 
         // Afficher la bannière si l'une des conditions est vraie
         if (isUpdateFromEnv || isUpdateFromCookie || isUpdateFromGlobal || isUpdateFromUrl) {
@@ -82,7 +82,7 @@ export default function UpdateBanner() {
         setIsHiding(true);
         // Supprimer le cookie si présent
         if (typeof document !== 'undefined') {
-            document.cookie = 'is_update=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'isUpdate=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         }
         // Masquer complètement après la fin de l'animation
         setTimeout(() => {
