@@ -276,13 +276,14 @@ function HomeContent({searchParams}) {
 
             if (!isReallyOffline) {
                 // En ligne : on considère que les données sont fraîches
-                // Sauvegarder dans le cache (met à jour le timestamp)
-                saveEventsToCache(eventsData, colorMapping);
+                // Sauvegarder dans le cache (met à jour le timestamp + hash pour détecter les caches obsolètes)
+                const serverHash = meta.hash || null;
+                saveEventsToCache(eventsData, colorMapping, serverHash);
 
                 // Afficher la date actuelle
                 const newTimestamp = new Date().toISOString();
                 setLastUpdateTimestamp(newTimestamp);
-                console.log('[Page] En ligne - Date actuelle:', newTimestamp);
+                console.log('[Page] En ligne - Date actuelle:', newTimestamp, '| Hash:', serverHash);
                 setHasNetworkError(false);
             } else {
                 // Hors ligne : on ne met PAS à jour le cache pour ne pas écraser le timestamp

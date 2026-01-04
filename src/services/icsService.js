@@ -11,16 +11,19 @@ const ACTIVE_CACHE = String(activeCacheEnv).toLowerCase() !== 'false';
 /**
  * Charge les événements depuis le cache localStorage
  * DÉFINI EN PREMIER pour être disponible dans les autres fonctions
+ * Retourne également le hash du cache pour comparaison avec le serveur
  */
 export function loadEventsFromCache() {
     if (!ACTIVE_CACHE || typeof localStorage === 'undefined') return null;
     const saved = localStorage.getItem("events");
     const savedColors = localStorage.getItem("subjectColors");
+    const savedHash = localStorage.getItem("cacheHash");
     
     if (saved && savedColors) {
         return {
             events: JSON.parse(saved),
-            colors: JSON.parse(savedColors)
+            colors: JSON.parse(savedColors),
+            hash: savedHash || null  // Le hash peut être null pour les anciens caches
         };
     }
     
@@ -105,25 +108,46 @@ async function fetchEventsForWeb() {
         let diff = { added: [], updated: [], removed: [] };
         let meta = { source: 'api', fromCache: false, changed: null };
 
-        // Si le serveur dit que rien n'a changé, utiliser le cache localStorage
+        // Si le serveur dit que rien n'a changé, vérifier si le cache local correspond
         if (data && data.unchanged === true) {
             console.log('[ICS Service] Server says unchanged, checking local cache');
             const cached = loadEventsFromCache();
+            const serverHash = data.meta?.hash || null;
+            const localHash = cached?.hash || null;
+            
+            // CORRECTION BUG CACHE : Comparer le hash serveur avec le hash local
+            // Si le hash local ne correspond pas au hash serveur, le cache est obsolète !
+            const hashMatch = serverHash && localHash && serverHash === localHash;
+            const noLocalHash = !localHash && cached?.events?.length > 0;  // Ancien cache sans hash
+            
             if (cached && cached.events && cached.events.length > 0) {
-                console.log('[ICS Service] Using local cache:', cached.events.length, 'events');
-                return {
-                    events: cached.events,
-                    diff: { added: [], updated: [], removed: [] },
-                    meta: {
-                        source: 'local-cache',
-                        fromCache: true,
-                        changed: 0,
-                        ...(data.meta || {})
-                    }
-                };
+                if (hashMatch) {
+                    // Hash identique : le cache local est à jour
+                    console.log('[ICS Service] Using local cache (hash match):', cached.events.length, 'events, hash:', localHash);
+                    return {
+                        events: cached.events,
+                        diff: { added: [], updated: [], removed: [] },
+                        meta: {
+                            source: 'local-cache',
+                            fromCache: true,
+                            changed: 0,
+                            ...(data.meta || {})
+                        }
+                    };
+                } else if (noLocalHash) {
+                    // Ancien cache sans hash → forcer un refetch pour récupérer les données à jour
+                    console.warn('[ICS Service] Cache local sans hash (migration) → refetch forcé');
+                } else {
+                    // Hash différent : le cache local est obsolète !
+                    console.warn('[ICS Service] HASH MISMATCH! Local:', localHash, '| Server:', serverHash);
+                    console.warn('[ICS Service] Cache local obsolète → refetch forcé');
+                }
+            } else {
+                console.warn('[ICS Service] Pas de cache local valide');
             }
-            // Pas de cache local ! Refaire une requête en forçant le parsing
-            console.warn('[ICS Service] No local cache, forcing server to parse ICS');
+            
+            // Pas de cache valide OU hash différent → Refaire une requête en forçant le parsing
+            console.log('[ICS Service] Forcing server to parse ICS (cache invalide ou obsolète)');
             const forceRes = await fetch('/api/fetch-ics?force=true', {
                 headers: { 'Accept': 'application/json' },
                 cache: 'no-cache'
@@ -198,18 +222,27 @@ export async function fetchICSEvents() {
 
 /**
  * Sauvegarde les événements dans le cache localStorage
- * TOUJOURS sauvegarder le timestamp quand on sauvegarde le cache
+ * TOUJOURS sauvegarder le timestamp et le hash quand on sauvegarde le cache
+ * @param {Array} events - Les événements à sauvegarder
+ * @param {Object} colors - Le mapping des couleurs par matière
+ * @param {string|null} hash - Le hash ICS du serveur (pour détecter les caches obsolètes)
  */
-export function saveEventsToCache(events, colors) {
+export function saveEventsToCache(events, colors, hash = null) {
     if (typeof localStorage === 'undefined') return;
     if (!ACTIVE_CACHE) {
         localStorage.removeItem("events");
         localStorage.removeItem("subjectColors");
         localStorage.removeItem("lastUpdateTimestamp");
+        localStorage.removeItem("cacheHash");
         return;
     }
     localStorage.setItem("events", JSON.stringify(events));
     localStorage.setItem("subjectColors", JSON.stringify(colors));
     // TOUJOURS sauvegarder le timestamp quand on sauvegarde le cache
     localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
+    // Sauvegarder le hash pour pouvoir comparer avec le serveur plus tard
+    if (hash) {
+        localStorage.setItem("cacheHash", hash);
+        console.log('[ICS Service] Cache sauvegardé avec hash:', hash);
+    }
 }

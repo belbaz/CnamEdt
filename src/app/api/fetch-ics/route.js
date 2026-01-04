@@ -732,13 +732,18 @@ export async function GET(request) {
 
             console.log('[API fetch-ics] ICS downloaded, length:', text.length);
 
+            // Calculer le hash de l'ICS UNE SEULE FOIS (utilisé pour le cache client)
+            const currentIcsHash = createHash('sha256').update(text).digest('hex');
+            // Extraire les 8 premiers caractères pour le client (suffisant pour détecter les changements)
+            const hashForClient = currentIcsHash.substring(0, 8);
+
             // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible)
             // Si le hash est identique ET que le client n'a pas demandé un force,
             // dire au client d'utiliser son cache localStorage
             // (on n'interroge PAS Supabase pour éviter les requêtes inutiles)
             if (supabaseClient && !forceParser) {
                 try {
-                    const ics_hash = createHash('sha256').update(text).digest('hex');
+                    const ics_hash = currentIcsHash;
                     
                     const { data: lastRows, error: lastErr } = await supabaseClient
                         .from('ics_history')
@@ -1082,7 +1087,8 @@ export async function GET(request) {
                             meta: {
                                 source: 'parsed',
                                 fromCache: false,
-                                changed: diff.added.length + diff.updated.length + diff.removed.length
+                                changed: diff.added.length + diff.updated.length + diff.removed.length,
+                                hash: hashForClient  // Pour que le client puisse sauvegarder le hash du cache
                             }
                         });
                     } catch (verErr) {
@@ -1171,7 +1177,8 @@ export async function GET(request) {
                 meta: {
                     source: 'parsed',
                     fromCache: false,
-                    changed: diff.added.length + diff.updated.length + diff.removed.length
+                    changed: diff.added.length + diff.updated.length + diff.removed.length,
+                    hash: hashForClient  // Pour que le client puisse sauvegarder le hash du cache
                 }
             });
         } catch (icsErr) {
