@@ -122,25 +122,6 @@
     "visitorCannotModify": "Les visiteurs ne peuvent pas modifier de notes",
     "saving": "Enregistrement..."
   },
-  "agenda": {
-    "title": "Agenda",
-    "noEvents": "Aucun événement",
-    "addEntry": "Ajouter une entrée",
-    "removeEntry": "Supprimer l'entrée",
-    "editNotes": "Modifier les notes",
-    "cancelEditing": "Annuler",
-    "saveNotes": "Enregistrer les notes",
-    "visitorCannotEdit": "Les visiteurs ne peuvent pas créer ou modifier de notes",
-    "predefinedLabels": {
-      "control": "Contrôle",
-      "gradedTP": "TP noté",
-      "homework": "Devoir",
-      "exam": "Examen",
-      "link": "Lien",
-      "information": "Information",
-      "remote": "Distanciel"
-    }
-  },
   "footer": {
     "lastUpdate": "Dernière mise à jour",
     "version": "Version"
@@ -550,7 +531,16 @@
     "courseDays": "Jours de cours",
     "allDays": "Tous les jours",
     "today": "Aujourd'hui",
-    "courseHasNotes": "Ce cours a des notes"
+    "courseHasNotes": "Ce cours a des notes",
+    "predefinedLabels": {
+      "control": "Contrôle",
+      "gradedTP": "TP noté",
+      "homework": "Devoir",
+      "exam": "Examen",
+      "link": "Lien",
+      "information": "Information",
+      "remote": "Distanciel"
+    }
   },
   "admin": {
     "loadingUsers": "Chargement des utilisateurs...",

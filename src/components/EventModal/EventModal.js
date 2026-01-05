@@ -300,18 +300,33 @@ export default function EventModal({
         { name: t('agenda.predefinedLabels.remote'),    color: "#06b6d4" }, // Cyan
     ];
 
+    // Fonction pour traduire un label (gère les clés de traduction et les labels traduits)
+    const getTranslatedLabel = (labelName) => {
+        // Si le label est une clé de traduction (commence par "agenda.predefinedLabels.")
+        if (labelName && labelName.startsWith('agenda.predefinedLabels.')) {
+            return t(labelName);
+        }
+        // Sinon, retourner le label tel quel (labels personnalisés ou déjà traduits)
+        return labelName;
+    };
+    
+
     // Fonction pour générer une couleur à partir d'un label
     const getLabelColor = (labelName) => {
+        // Traduire le label si nécessaire pour la comparaison
+        const translatedLabel = getTranslatedLabel(labelName);
+        
         // Chercher dans les labels prédéfinis
-        const predefined = predefinedLabels.find(l => l.name === labelName);
+        const predefined = predefinedLabels.find(l => l.name === translatedLabel);
         if (predefined) {
             return predefined.color;
         }
         
         // Générer une couleur basée sur le hash du nom du label
         let hash = 0;
-        for (let i = 0; i < labelName.length; i++) {
-            hash = labelName.charCodeAt(i) + ((hash << 5) - hash);
+        const labelToHash = translatedLabel || labelName;
+        for (let i = 0; i < labelToHash.length; i++) {
+            hash = labelToHash.charCodeAt(i) + ((hash << 5) - hash);
         }
         
         // Générer une couleur HSL avec une saturation et luminosité fixes pour avoir des couleurs vives
@@ -683,6 +698,7 @@ export default function EventModal({
                                                                     <div className="modal-note-labels-inline">
                                                                         {entryLabelsForIndex.map((label, idx) => {
                                                                             const labelColor = getLabelColor(label);
+                                                                            const translatedLabel = getTranslatedLabel(label);
                                                                             return (
                                                                                 <span
                                                                                     key={idx}
@@ -693,7 +709,7 @@ export default function EventModal({
                                                                                         color: labelColor
                                                                                     }}
                                                                                 >
-                                                                                    {label}
+                                                                                    {translatedLabel}
                                                                                 </span>
                                                                             );
                                                                         })}
@@ -780,6 +796,7 @@ export default function EventModal({
                                                                             <div className="modal-note-labels-inline">
                                                                                 {entryLabelsForIndex.map((label, idx) => {
                                                                                     const labelColor = getLabelColor(label);
+                                                                                    const translatedLabel = getTranslatedLabel(label);
                                                                                     return (
                                                                                         <span
                                                                                             key={idx}
@@ -790,7 +807,7 @@ export default function EventModal({
                                                                                                 color: labelColor
                                                                                             }}
                                                                                         >
-                                                                                            {label}
+                                                                                            {translatedLabel}
                                                                                         </span>
                                                                                     );
                                                                                 })}
@@ -880,6 +897,7 @@ export default function EventModal({
                                                                     {entryLabelsForIndex.length > 0 ? (
                                                                         entryLabelsForIndex.map((label, idx) => {
                                                                             const labelColor = getLabelColor(label);
+                                                                            const translatedLabel = getTranslatedLabel(label);
                                                                             return (
                                                                                 <span 
                                                                                     key={idx} 
@@ -890,7 +908,7 @@ export default function EventModal({
                                                                                         color: labelColor
                                                                                     }}
                                                                                 >
-                                                                                    {label}
+                                                                                    {translatedLabel}
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={() => handleRemoveLabel(index, label)}
@@ -1031,6 +1049,7 @@ export default function EventModal({
                                                                     <div className="modal-note-labels-inline">
                                                                         {entryLabelsForIndex.map((label, idx) => {
                                                                             const labelColor = getLabelColor(label);
+                                                                            const translatedLabel = getTranslatedLabel(label);
                                                                             return (
                                                                                 <span 
                                                                                     key={idx} 
@@ -1041,7 +1060,7 @@ export default function EventModal({
                                                                                         color: labelColor
                                                                                     }}
                                                                                 >
-                                                                                    {label}
+                                                                                    {translatedLabel}
                                                                                 </span>
                                                                             );
                                                                         })}

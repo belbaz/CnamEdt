@@ -535,27 +535,41 @@ function AgendaContent() {
 
     // Labels prédéfinis avec leurs couleurs
     const predefinedLabels = [
-        { name: "Contrôle",       color: "#ef4444" }, // Rouge
-        { name: "TP noté",        color: "#10b981" }, // Vert
-        { name: "Devoir",         color: "#f59e0b" }, // Orange
-        { name: "Examen",         color: "#a855f7" }, // Violet
-        { name: "Lien",           color: "#3b82f6" }, // Bleu
-        { name: "Information",   color: "#fde047" }, // Jaune
-        { name: "Distanciel",    color: "#06b6d4" }, // Cyan
+        { name: t('agenda.predefinedLabels.control'),       color: "#ef4444" }, // Rouge
+        { name: t('agenda.predefinedLabels.gradedTP'),      color: "#10b981" }, // Vert
+        { name: t('agenda.predefinedLabels.homework'),      color: "#f59e0b" }, // Orange
+        { name: t('agenda.predefinedLabels.exam'),          color: "#a855f7" }, // Violet
+        { name: t('agenda.predefinedLabels.link'),          color: "#3b82f6" }, // Bleu
+        { name: t('agenda.predefinedLabels.information'),   color: "#fde047" }, // Jaune
+        { name: t('agenda.predefinedLabels.remote'),        color: "#06b6d4" }, // Cyan
     ];
+
+    // Fonction pour traduire un label (gère les clés de traduction et les labels traduits)
+    const getTranslatedLabel = (labelName) => {
+        // Si le label est une clé de traduction (commence par "agenda.predefinedLabels.")
+        if (labelName && labelName.startsWith('agenda.predefinedLabels.')) {
+            return t(labelName);
+        }
+        // Sinon, retourner le label tel quel (labels personnalisés ou déjà traduits)
+        return labelName;
+    };
 
     // Fonction pour générer une couleur à partir d'un label
     const getLabelColor = (labelName) => {
+        // Traduire le label si nécessaire pour la comparaison
+        const translatedLabel = getTranslatedLabel(labelName);
+        
         // Chercher dans les labels prédéfinis
-        const predefined = predefinedLabels.find(l => l.name === labelName);
+        const predefined = predefinedLabels.find(l => l.name === translatedLabel);
         if (predefined) {
             return predefined.color;
         }
         
         // Générer une couleur basée sur le hash du nom du label
         let hash = 0;
-        for (let i = 0; i < labelName.length; i++) {
-            hash = labelName.charCodeAt(i) + ((hash << 5) - hash);
+        const labelToHash = translatedLabel || labelName;
+        for (let i = 0; i < labelToHash.length; i++) {
+            hash = labelToHash.charCodeAt(i) + ((hash << 5) - hash);
         }
         
         // Générer une couleur HSL avec une saturation et luminosité fixes pour avoir des couleurs vives
@@ -1147,6 +1161,7 @@ function AgendaContent() {
                                                 {entryLabelsForIndex.length > 0 ? (
                                                     entryLabelsForIndex.map((label, idx) => {
                                                         const labelColor = getLabelColor(label);
+                                                        const translatedLabel = getTranslatedLabel(label);
                                                         return (
                                                             <span 
                                                                 key={idx} 
@@ -1157,7 +1172,7 @@ function AgendaContent() {
                                                                     color: labelColor
                                                                 }}
                                                             >
-                                                                {label}
+                                                                {translatedLabel}
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleRemoveLabel(index, label)}
@@ -1327,6 +1342,7 @@ function AgendaContent() {
                                                     >
                                                         {entryLabelsForIndex.map((label, labelIdx) => {
                                                             const labelColor = getLabelColor(label);
+                                                            const translatedLabel = getTranslatedLabel(label);
                                                             return (
                                                                 <span
                                                                     key={labelIdx}
@@ -1337,7 +1353,7 @@ function AgendaContent() {
                                                                         color: labelColor,
                                                                     }}
                                                                 >
-                                                                    {label}
+                                                                    {translatedLabel}
                                                                 </span>
                                                             );
                                                         })}
@@ -1488,6 +1504,7 @@ function AgendaContent() {
                                                     </button>
                                                     {allAvailableLabels.map((label) => {
                                                         const labelColor = getLabelColor(label);
+                                                        const translatedLabel = getTranslatedLabel(label);
                                                         return (
                                                             <button
                                                                 key={label}
@@ -1503,7 +1520,7 @@ function AgendaContent() {
                                                                     color: labelColor
                                                                 }}
                                                             >
-                                                                {label}
+                                                                {translatedLabel}
                                                             </button>
                                                         );
                                                     })}
@@ -1609,6 +1626,7 @@ function AgendaContent() {
                                                                         <div className={styles.publicNoteLabels} style={{ marginBottom: isLabelOnly ? 0 : '0.5rem' }}>
                                                                             {entryLabelsForIndex.map((label, labelIdx) => {
                                                                                 const labelColor = getLabelColor(label);
+                                                                                const translatedLabel = getTranslatedLabel(label);
                                                                                 return (
                                                                                     <span 
                                                                                         key={labelIdx} 
@@ -1619,7 +1637,7 @@ function AgendaContent() {
                                                                                             color: labelColor
                                                                                         }}
                                                                                     >
-                                                                                        {label}
+                                                                                        {translatedLabel}
                                                                                     </span>
                                                                                 );
                                                                             })}
