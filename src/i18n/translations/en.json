@@ -31,7 +31,8 @@
     "expandAllDays": "Expand all days",
     "collapseAllDays": "Collapse all days",
     "clearCache": "Clear cache and cookies (localhost only)",
-    "back": "Back"
+    "back": "Back",
+    "examens": "Upcoming exams"
   },
   "pageHeader": {
     "settings": "Settings",

@@ -1,5 +1,6 @@
 "use client";
 import {useState, useEffect} from "react";
+import {usePathname, useRouter} from "next/navigation";
 import PageHeader from "./PageHeader";
 import WeekPicker from "./WeekPicker";
 import FilterPanel from "./FilterPanel";
@@ -8,6 +9,7 @@ import "./Navbar.css";
 import {useDevMode} from "../utils/env";
 import {getSchoolYearLabel} from "../utils/dateUtils";
 import {useI18n} from "../i18n/I18nContext";
+import {fetchICSEvents, loadEventsFromCache} from "../services/icsService";
 
 export default function Navbar({
                                    darkMode,
@@ -62,11 +64,16 @@ export default function Navbar({
         filter: false,
         options: false,
         history: false,
-        fullYear: false
+        fullYear: false,
+        examens: false
     });
     const [longPressTimer, setLongPressTimer] = useState(null);
+    const [hasUpcomingExams, setHasUpcomingExams] = useState(false);
     const devMode = useDevMode();
     const { t } = useI18n();
+    const pathname = usePathname();
+    const router = useRouter();
+    const isExamensPage = pathname === '/examens';
 
     // Calculer l'année scolaire pour l'afficher dans l'icône
     const schoolYear = getSchoolYearLabel();
@@ -105,6 +112,56 @@ export default function Navbar({
         const interval = setInterval(checkNewHistory, 60000);
         return () => clearInterval(interval);
     }, []);
+
+    // Vérifier s'il y a des examens dans moins d'un mois
+    useEffect(() => {
+        const checkUpcomingExams = async () => {
+            try {
+                // D'abord essayer le cache local
+                const cached = loadEventsFromCache();
+                let events = cached?.events || [];
+
+                // Si pas de cache ou cache vide, récupérer depuis l'API
+                if (!events || events.length === 0) {
+                    try {
+                        const result = await fetchICSEvents();
+                        if (result && result.events) {
+                            events = result.events;
+                        }
+                    } catch (err) {
+                        // Erreur silencieuse, on continue avec le cache vide
+                        console.warn('[Navbar] Erreur lors de la récupération des examens:', err.message);
+                    }
+                }
+
+                // Vérifier s'il y a des examens dans les 30 prochains jours
+                const now = new Date();
+                const oneMonthFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+                const hasExams = events.some(event => {
+                    const description = event.description || "";
+                    const isExam = description.toUpperCase().includes("EXAMEN");
+                    if (!isExam) return false;
+
+                    const examDate = new Date(event.start);
+                    return examDate > now && examDate <= oneMonthFromNow;
+                });
+
+                setHasUpcomingExams(hasExams);
+            } catch (e) {
+                // Erreur silencieuse
+                setHasUpcomingExams(false);
+            }
+        };
+
+        // Ne vérifier que si on n'est pas sur la page examens
+        if (!isExamensPage) {
+            checkUpcomingExams();
+            // Vérifier toutes les heures
+            const interval = setInterval(checkUpcomingExams, 60 * 60 * 1000);
+            return () => clearInterval(interval);
+        }
+    }, [isExamensPage]);
 
     const handleShowHistory = () => {
         // Marquer comme vu en sauvegardant la date actuelle
@@ -254,6 +311,7 @@ export default function Navbar({
                     isLoadingUser={isLoadingUser}
                 />
 
+                {!isExamensPage && (
                 <div className="navbar-controls">
                     {!showFullYear && (
                         <div className="week-picker-container">
@@ -330,6 +388,35 @@ export default function Navbar({
                                         </svg>
                                     </button>
                                 </Tooltip>
+                                {/* Bouton examens si des examens sont proches */}
+                                {hasUpcomingExams && (
+                                    <Tooltip
+                                        text={t('navbar.examens') || "Examens à venir"}
+                                        show={showTooltip.examens}
+                                        enabled={showTooltips}
+                                    >
+                                        <button
+                                            className="view-filter-group-btn"
+                                            onClick={(e) => {
+                                                handleClick('examens');
+                                                router.push('/examens');
+                                            }}
+                                            aria-label={t('navbar.examens') || "Voir les examens"}
+                                            onMouseEnter={() => setShowTooltip(prev => ({...prev, examens: true}))}
+                                            onMouseLeave={() => setShowTooltip(prev => ({...prev, examens: false}))}
+                                            onTouchStart={() => handleLongPressStart('examens')}
+                                            onTouchEnd={() => handleLongPressEnd('examens')}
+                                        >
+                                            <img 
+                                                src="/examen-time.svg" 
+                                                alt={t('navbar.examens') || "Examens"} 
+                                                width="24" 
+                                                height="24"
+                                                style={{ display: 'block' }}
+                                            />
+                                        </button>
+                                    </Tooltip>
+                                )}
                                 {onToggleFullYear && (
                                     <Tooltip
                                         text={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
@@ -543,6 +630,7 @@ export default function Navbar({
                         </div>
                     </div>
                 </div>
+                )}
             </div>
         </div>
     );

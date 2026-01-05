@@ -327,7 +327,7 @@ function ExamensContent() {
                 showFilter={false}
             />
             <main className={styles.main}>
-                <h1 className={styles.title}>⏰ {t('examens.title')}</h1>
+                <h1 className={styles.title}>{t('examens.title')}</h1>
 
                 {upcomingExams.length === 0 ? (
                     <div className={styles.noExamsContainer}>
