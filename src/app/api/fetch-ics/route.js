@@ -1026,7 +1026,19 @@ export async function GET(request) {
                             console.log(`[API fetch-ics] ${updates.length} event(s) updated`);
                         }
 
-                        // DELETE événements supprimés
+                        // ⚠️ IMPORTANT: Migrer les notes orphelines AVANT de supprimer les anciens events
+                        // Sinon, on perd les infos (start, summary, location) nécessaires pour la migration !
+                        // 4) Migration automatique des notes orphelines (si seule la salle a changé)
+                        if (deletes.length > 0 || inserts.length > 0) {
+                            try {
+                                console.log('[API fetch-ics] Migration des notes AVANT suppression des anciens events...');
+                                await migrateOrphanNotes(supabaseClient, events);
+                            } catch (migErr) {
+                                console.warn('[API fetch-ics] Note migration skipped:', migErr.message);
+                            }
+                        }
+
+                        // DELETE événements supprimés (APRÈS la migration des notes)
                         if (deletes.length > 0) {
                             console.log('[API fetch-ics] Deleting', deletes.length, 'event(s)');
                             const { error: delErr } = await supabaseClient
@@ -1042,13 +1054,6 @@ export async function GET(request) {
 
                         if (inserts.length === 0 && updates.length === 0 && deletes.length === 0) {
                             console.log('[API fetch-ics] No changes detected, no DB writes needed');
-                        }
-                        
-                        // 4) Migration automatique des notes orphelines (si seule la salle a changé)
-                        try {
-                            await migrateOrphanNotes(supabaseClient, events);
-                        } catch (migErr) {
-                            console.warn('[API fetch-ics] Note migration skipped:', migErr.message);
                         }
                         
                         // 5) Mettre à jour le timestamp de ics_history si des changements ont été faits

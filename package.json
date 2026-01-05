@@ -1,6 +1,6 @@
 {
   "name": "edt",
-  "version": "2.1.48",
+  "version": "2.1.49",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --experimental-https --experimental-https-key C:\\Users\\Administrateur\\.vite-plugin-mkcert\\dev.pem --experimental-https-cert C:\\Users\\Administrateur\\.vite-plugin-mkcert\\cert.pem",
