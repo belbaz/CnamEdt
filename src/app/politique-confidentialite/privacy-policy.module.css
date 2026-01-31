@@ -1,12 +1,12 @@
-/* ===== Page de confidentialité – mise en page et fond ===== */
+/* ===== Page de confidentialité – même fond que le body (transparent) ===== */
 .container {
     min-height: 100vh;
-    background: var(--bg-primary);
-    padding: 2rem 1.5rem 4rem;
+    /* Pas de background : on hérite du body (--bg-gradient) pour une seule couleur de page */
+    padding: 2rem 1.5rem 2rem;
     margin: 0 auto;
     max-width: 720px;
     color: var(--text-secondary);
-    transition: background 0.3s ease, color 0.3s ease;
+    transition: color 0.3s ease;
 }
 
 /* ===== En-tête (bouton retour + titre) ===== */
