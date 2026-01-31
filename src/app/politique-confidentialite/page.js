@@ -72,7 +72,7 @@ function PrivacyPolicyContent() {
                         <li dangerouslySetInnerHTML={{__html: `<strong>${t('privacy.section1Item2').split(':')[0]}</strong> : ${t('privacy.section1Item2').split(':')[1]}`}} />
                         <li dangerouslySetInnerHTML={{__html: `<strong>${t('privacy.section1Item3').split(':')[0]}</strong> : ${t('privacy.section1Item3').split(':')[1]}`}} />
                     </ul>
-                    <p style={{ marginTop: "1rem" }}>
+                    <p>
                         {t('privacy.section1Text2')}
                     </p>
                 </div>
@@ -92,7 +92,7 @@ function PrivacyPolicyContent() {
                             {t('privacy.section2Item2')}
                         </li>
                     </ul>
-                    <p style={{ marginTop: "1rem" }}>
+                    <p>
                         {t('privacy.section2Text2')}
                     </p>
                 </div>
@@ -110,7 +110,7 @@ function PrivacyPolicyContent() {
                             {t('privacy.section3Item2')}
                         </li>
                     </ul>
-                    <p style={{ marginTop: "1rem" }}>
+                    <p>
                         {t('privacy.section3Text2')}
                     </p>
                 </div>
