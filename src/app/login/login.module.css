@@ -76,6 +76,18 @@
     gap: 0.3rem;
 }
 
+.notePage {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    padding: 1rem;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 .formsPanel {
     display: flex;
     flex-direction: column;
@@ -302,6 +314,33 @@
     box-shadow: none;
 }
 
+.logoutButton {
+    border: none;
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 0 0 1px var(--border-light);
+}
+
+.logoutButton:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #b91c1c;
+    box-shadow: 0 8px 18px rgba(239, 68, 68, 0.18);
+    transform: translateY(-0.5px);
+}
+
+.logoutButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .accentButton {
     background: linear-gradient(135deg, #0ea5e9, #3b82f6);
 }
@@ -483,6 +522,84 @@
     text-align: center;
     line-height: 1.5;
     max-width: 320px;
+}
+
+/* Tableau des notes Galao */
+.notesTableWrapper {
+    margin-top: 0.75rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    padding: 1rem;
+    overflow-x: auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.notesTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    min-width: 780px;
+}
+
+.notesTable thead th {
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #ffffff;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.notesTable tbody tr:nth-child(even) {
+    background: var(--bg-tertiary);
+}
+
+.notesTable tbody tr:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+
+.notesTable td {
+    padding: 0.45rem 0.75rem;
+    border-top: 1px solid var(--border-light);
+    vertical-align: top;
+}
+
+.notesTableSemestre {
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.notesTableUE {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.notesTableCode {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notesTableNote {
+    font-weight: 600;
+}
+
+.notesTableNoteGood {
+    color: #16a34a;
+}
+
+.notesTableNoteBad {
+    color: #dc2626;
+}
+
+.notesTableDetail {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
 }
 
 @media (max-width: 480px) {
