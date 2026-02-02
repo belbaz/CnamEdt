@@ -275,6 +275,10 @@
         "title": "Agenda",
         "description": "View the agenda with all your courses"
       },
+      "notes": {
+        "title": "Galao Grades",
+        "description": "View your grades and academic results"
+      },
       "files": {
         "title": "Course files",
         "description": "Manage uploaded files by course"
@@ -671,6 +675,49 @@
     "coursesOnDay": "{count} courses on {dayName} {day} {month}",
     "coursesOnDate": "{count} courses on {date}",
     "courses": "{count} courses"
+  },
+  "galao": {
+    "title": "Galao Login",
+    "subtitle": "Use your Galao credentials (Username and password).",
+    "username": "Username",
+    "password": "Password",
+    "login": "Login",
+    "loggingIn": "Logging in...",
+    "loginSuccess": "Login successful!",
+    "loginError": "Login error.",
+    "missingCredentials": "Please enter your credentials.",
+    "connectionFailed": "Unable to connect.",
+    "privacyNote": "No data is saved on the server side!",
+    "loading": "Loading grades...",
+    "retry": "Retry",
+    "back": "Back",
+    "results": "Results",
+    "transcript": "Transcript",
+    "downloadPdf": "📥 Download PDF",
+    "logout": "Logout",
+    "logoutSuccess": "Logout successful.",
+    "sessionExpired": "Your Galao session has expired. Please log in again.",
+    "fetchError": "Unable to fetch Galao grades.",
+    "emptyResponse": "Empty Galao response.",
+    "unexpectedError": "Unexpected error loading grades.",
+    "table": {
+      "label": "Label",
+      "grade": "Grade",
+      "min": "Min",
+      "avg": "Avg",
+      "max": "Max",
+      "detail": "Detail",
+      "studentAvg": "Student Average"
+    },
+    "pdf": {
+      "title": "Transcript of Records and Results",
+      "generatedOn": "Generated on",
+      "semester": "Semester:",
+      "all": "All"
+    },
+    "footerCertified": "Certified data from ENT Galao",
+    "studentAvg": "Average",
+    "noGrades": "No grades available.",
+    "checkRegistration": "Check your registrations or try again later."
   }
 }
-

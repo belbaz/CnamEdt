@@ -3,31 +3,37 @@
 import { useEffect, useState } from "react";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
+import { useI18n } from "@/i18n/I18nContext";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 /**
  * Composant client pour la connexion et l'affichage des notes Galao.
  * Gère le parsing HTML, le calcul des coefficients et l'affichage par UE.
  */
 export default function NoteLoginClient() {
+    const { t } = useI18n();
     // --- États du formulaire et de l'utilisateur ---
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uid, setUid] = useState(null);
-    
+
     // --- États de gestion des erreurs et messages ---
     const [errorMessage, setErrorMessage] = useState("");
     const [infoMessage, setInfoMessage] = useState("");
-    
-    // --- États des données (Notes) ---
+
+    // --- États des données (Notes) et UI ---
     const [notesLoading, setNotesLoading] = useState(false);
     const [notesError, setNotesError] = useState("");
     const [notesHtml, setNotesHtml] = useState("");
     const [hasExistingSession, setHasExistingSession] = useState(false);
-    
+    const [isTransitioning, setIsTransitioning] = useState(false); // État pour l'animation de sortie du form
+    const [isLoginSuccess, setIsLoginSuccess] = useState(false);   // État pour le feedback visuel (bouton vert) avant transition
+
     // --- États d'affichage (Parsing & UI) ---
     const [parsedNotes, setParsedNotes] = useState([]);
-    const [ueCreditTotals, setUeCreditTotals] = useState({}); // Pour stocker le total ECTS par UE
+    const [ueAverages, setUeAverages] = useState({}); // Moyennes générales par UE
     const [activeSemester, setActiveSemester] = useState("");
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -44,12 +50,12 @@ export default function NoteLoginClient() {
             const data = await res.json();
 
             if (!res.ok || !data?.success) {
-                throw new Error(data?.error || "Impossible de récupérer les notes Galao.");
+                throw new Error(data?.error || t('galao.fetchError'));
             }
 
             const html = data.html || "";
             if (!html) {
-                setNotesError("Réponse Galao vide.");
+                setNotesError(t('galao.emptyResponse'));
                 return;
             }
 
@@ -58,7 +64,7 @@ export default function NoteLoginClient() {
                 html.includes("ERREUR : requête non acceptée") ||
                 html.includes("syntax error at or near")
             ) {
-                handleSessionExpired("Votre session Galao a expiré. Merci de vous reconnecter.");
+                handleSessionExpired(t('galao.sessionExpired'));
                 return;
             }
 
@@ -66,15 +72,17 @@ export default function NoteLoginClient() {
         } catch (err) {
             console.warn("[NoteLogin] Erreur chargement", err);
             const message = err?.message || "";
-            
+
             if (message.includes("Session Galao manquante")) {
-                handleSessionExpired("Session expirée. Connectez-vous à nouveau.");
+                handleSessionExpired(t('galao.sessionExpired'));
                 return;
             }
 
-            setNotesError(message || "Erreur inattendue lors du chargement des notes.");
+            setNotesError(message || t('galao.unexpectedError'));
         } finally {
             setNotesLoading(false);
+            setIsTransitioning(false); // Fin de transition si erreur ou succès
+            setIsLoginSuccess(false);
         }
     };
 
@@ -94,11 +102,11 @@ export default function NoteLoginClient() {
 
     /**
      * Parsing du HTML reçu pour extraire les données structurées.
-     * C'est ici qu'on nettoie les lignes parasites et qu'on calcule les crédits.
      */
     useEffect(() => {
         if (!notesHtml) {
             setParsedNotes([]);
+            setUeAverages({});
             return;
         }
 
@@ -106,25 +114,7 @@ export default function NoteLoginClient() {
             const parser = new DOMParser();
             const doc = parser.parseFromString(notesHtml, "text/html");
             const result = [];
-
-            // Fonction pour extraire les crédits (ECTS) depuis le texte (Intitulé + Détail)
-            const extractCredits = (rawText) => {
-                if (!rawText) return null;
-                const text = rawText.replace(/\s+/g, " ").trim();
-                const patterns = [
-                    /cr[eé]dits?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)/i,
-                    /(\d+(?:[.,]\d+)?)\s*(?:ects?)/i,
-                ];
-
-                for (const pattern of patterns) {
-                    const match = text.match(pattern);
-                    if (match && match[1]) {
-                        const value = parseFloat(match[1].replace(",", "."));
-                        if (!Number.isNaN(value)) return value;
-                    }
-                }
-                return null;
-            };
+            const averages = {};
 
             const fiches = Array.from(doc.querySelectorAll("#fich1, #fich2"));
 
@@ -132,88 +122,89 @@ export default function NoteLoginClient() {
                 const ueTables = Array.from(fiche.querySelectorAll("table.cadre_1C"));
 
                 ueTables.forEach((table) => {
-                    // Extraction Semestre et UE
+                    // Extraction Semestre (reste global pour le tableau)
                     const semFont = table.querySelector("font.txtmaple12_P127C");
                     const semestre = semFont ? semFont.textContent.replace(/\s+/g, " ").trim() : "";
-
-                    const ueTitleFont = table.querySelector("tr font.txtmaple11_15C");
-                    const ue = ueTitleFont ? ueTitleFont.textContent.replace(/\s+/g, " ").trim() : "";
 
                     const rows = Array.from(table.querySelectorAll("tr"));
                     if (rows.length < 3) return;
 
-                    // On ignore les 2 premières lignes (Titre UE + Headers colonnes)
-                    rows.slice(2).forEach((row) => {
+                    let currentUE = ""; // UE courante, mise à jour au fur et à mesure
+
+                    rows.forEach((row) => {
+                        // Détecter si cette ligne contient un titre d'UE
+                        const ueTitleFont = row.querySelector("font.txtmaple11_15C");
+                        if (ueTitleFont) {
+                            currentUE = ueTitleFont.textContent.replace(/\s+/g, " ").trim();
+                            return; // Cette ligne est juste un titre, on passe à la suivante
+                        }
+
                         const cells = Array.from(row.querySelectorAll("td"));
+                        if (cells.length < 2) return;
+
+                        // Cas ligne spéciale (Moyenne)
+                        const firstCellText = cells[0]?.textContent?.replace(/\s+/g, " ").trim() || "";
+                        if (firstCellText.toLowerCase().startsWith("moyenne")) {
+                            const moyNote = cells[1]?.textContent?.replace(/\s+/g, " ").trim();
+                            if (currentUE && semestre) {
+                                const key = `${semestre}||${currentUE}`;
+                                averages[key] = moyNote || "";
+                            }
+                            return;
+                        }
+
                         if (cells.length !== 6) return;
 
-                        const [intituleCell, noteCell, minCell, moyCell, maxCell, detailCell] = cells;
-                        const intituleText = intituleCell.textContent.replace(/\s+/g, " ").trim();
+                        const [c1, c2, c3, c4, c5, c6] = cells;
+                        const intituleText = c1.textContent.replace(/\s+/g, " ").trim();
 
-                        // --- FILTRES DE NETTOYAGE ---
                         if (!intituleText) return;
-                        if (intituleText === "Intitulé") return; // Ligne d'en-tête répétée
-                        if (intituleText.toLowerCase().startsWith("moyenne")) return; // Ligne de moyenne générale
-                        
-                        // Nettoyage des valeurs
+                        if (intituleText === "Intitulé") return;
+
                         const clean = (el) => {
                             const txt = el.textContent.replace(/\s+/g, " ").trim();
-                            return (txt === "" || txt === "-") ? "–" : txt;
+                            return (txt === "" || txt === "-") ? "" : txt;
                         };
 
-                        let noteValue = clean(noteCell);
-                        if (noteValue === "Note") return; // Sécurité supplémentaire
+                        let noteValue = clean(c2);
+                        if (noteValue === "Note") return;
 
-                        // Séparation Code / Libellé
+                        const colonIndex = intituleText.indexOf(":");
                         let code = "";
                         let label = intituleText;
-                        const colonIndex = intituleText.indexOf(":");
                         if (colonIndex > 0) {
                             code = intituleText.slice(0, colonIndex).trim();
                             label = intituleText.slice(colonIndex + 1).trim();
                         }
 
-                        const detail = clean(detailCell);
-                        // On cherche les crédits dans le titre OU dans le détail
-                        const credits = extractCredits(`${intituleText} ${detail}`);
-
                         result.push({
                             semestre,
-                            ue,
+                            ue: currentUE, // Utiliser l'UE courante
                             code,
                             intitule: label,
+                            fullIntitule: intituleText,
                             note: noteValue,
-                            min: clean(minCell),
-                            moy: clean(moyCell),
-                            max: clean(maxCell),
-                            detail: detail,
-                            credits: credits,
+                            min: clean(c3),
+                            moy: clean(c4),
+                            max: clean(c5),
+                            detail: clean(c6),
                         });
                     });
                 });
             });
 
-            // 1. Calcul des totaux de crédits par UE ET par semestre
-            const totals = {};
-            result.forEach((row) => {
-                if (!row.ue || row.credits == null || Number.isNaN(row.credits)) return;
-                const key = `${row.semestre}||${row.ue}`;
-                totals[key] = (totals[key] || 0) + row.credits;
-            });
-            setUeCreditTotals(totals);
+            setUeAverages(averages);
+            setParsedNotes(result);
 
-            // 2. Calcul du coefficient pour chaque matière (Crédits Matière / Total UE)
-            const enhanced = result.map((row) => {
-                const key = `${row.semestre}||${row.ue}`;
-                const totalCreditsForUe = totals[key];
-                let coef = null;
-                if (totalCreditsForUe && Number.isFinite(totalCreditsForUe) && row.credits != null) {
-                    coef = row.credits / totalCreditsForUe;
-                }
-                return { ...row, coef };
-            });
+            // Debug: afficher le nombre d'UE trouvées
+            const uniqueUEs = [...new Set(result.map(r => r.ue).filter(Boolean))];
+            console.log(`[NoteLogin] ${result.length} notes parsées, ${uniqueUEs.length} UE distinctes:`, uniqueUEs);
 
-            setParsedNotes(enhanced);
+            // Si on a reçu du HTML mais aucune note parsée, la session est probablement expirée
+            if (result.length === 0 && notesHtml && notesHtml.length > 100) {
+                console.warn("[NoteLogin] HTML reçu mais aucune note trouvée - session expirée ?");
+                handleSessionExpired(t('galao.sessionExpired'));
+            }
         } catch (parseError) {
             console.warn("[NoteLogin] Erreur parsing HTML", parseError);
             setParsedNotes([]);
@@ -226,12 +217,11 @@ export default function NoteLoginClient() {
     useEffect(() => {
         if (!parsedNotes.length) return;
         const semesters = Array.from(new Set(parsedNotes.map((r) => r.semestre).filter(Boolean)));
-        
+
         if (!semesters.length) return;
-        
+
         if (!activeSemester || !semesters.includes(activeSemester)) {
-            // Prend le dernier semestre de la liste (souvent le plus récent)
-            setActiveSemester(semesters[semesters.length - 1]);
+            setActiveSemester(semesters[0]);
         }
     }, [parsedNotes, activeSemester]);
 
@@ -247,7 +237,7 @@ export default function NoteLoginClient() {
         setNotesHtml("");
 
         if (!username.trim() || !password.trim()) {
-            setErrorMessage("Merci de renseigner vos identifiants.");
+            setErrorMessage(t('galao.missingCredentials'));
             return;
         }
 
@@ -262,25 +252,142 @@ export default function NoteLoginClient() {
             const payload = await response.json();
 
             if (!response.ok || !payload?.success) {
-                throw new Error(payload?.error || "Impossible de se connecter.");
+                throw new Error(payload?.error || t('galao.connectionFailed'));
             }
 
             setUid(payload.uid || null);
-            setInfoMessage("Connexion réussie.");
-            await loadNotes();
+            setInfoMessage(t('galao.loginSuccess'));
+
+            // --- PHASE 1 : SUCCÈS VISUEL (STABLE) ---
+            setIsLoginSuccess(true);
+
+            // Lancer le chargement immédiatement
+            const loadingPromise = loadNotes();
+
+            // Attendre 400ms avec le formulaire stable (bouton vert)
+            await new Promise(resolve => setTimeout(resolve, 400));
+
+            // --- PHASE 2 : DÉBUT ANIMATION SORTIE ---
+            setIsLoginSuccess(false);
+            setIsTransitioning(true); // Déclenche le fadeOut CSS
+
+            await loadingPromise;
+
         } catch (err) {
-            setErrorMessage(err.message || "Erreur de connexion.");
-        } finally {
-            setIsSubmitting(false);
+            setErrorMessage(err.message || t('galao.loginError'));
+            setIsSubmitting(false); // Retirer l'état de soumission si erreur
+            setIsTransitioning(false);
+            setIsLoginSuccess(false);
         }
     };
 
     /**
      * Déconnexion
      */
+    /**
+     * Export des notes en PDF
+     */
+    const handleExportPDF = async () => {
+        const element = document.getElementById('notes-content');
+        if (!element) return;
+
+        try {
+            // Créer un canvas de l'élément avec un fond blanc forcé pour l'impression
+            const canvas = await html2canvas(element, {
+                scale: 2, // Meilleure qualité
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff', // Fond blanc pour document propre
+                ignoreElements: (element) => element.tagName === 'BUTTON', // Ignorer les boutons
+                onclone: (document) => {
+                    const el = document.getElementById('notes-content');
+                    if (el) {
+                        // Reset container style
+                        el.style.backgroundColor = '#ffffff';
+                        el.style.color = '#000000';
+
+                        // Force black text and white background on EVERYTHING
+                        const allElements = el.querySelectorAll('*');
+                        allElements.forEach(element => {
+                            // Force styles
+                            element.style.color = '#000000';
+                            element.style.backgroundColor = '#ffffff';
+                            element.style.background = '#ffffff'; // Override gradients
+                            element.style.backgroundImage = 'none';
+                            element.style.textShadow = 'none';
+                            element.style.boxShadow = 'none';
+                        });
+                    }
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const imgWidth = 190; // Largeur image (A4 - marges)
+            const pageHeight = 297;
+            const pageWidth = 210;
+            const margin = 10;
+
+            // En-tête personnalisé
+            pdf.setFontSize(18);
+            pdf.setTextColor(40, 40, 40);
+            pdf.text(t('galao.pdf.title'), margin, 20);
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(100, 100, 100);
+            const date = new Date().toLocaleDateString(t('settings.language') === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+            pdf.text(`${t('galao.pdf.generatedOn')} ${date}`, margin, 28);
+            pdf.text(activeSemester || t('galao.pdf.all'), margin, 33);
+
+            pdf.setLineWidth(0.5);
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(margin, 38, pageWidth - margin, 38);
+
+            // Calcul hauteur image
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 45; // Commencer après l'en-tête
+
+            // Ajouter la première page
+            pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+            heightLeft -= (pageHeight - position);
+
+            // Ajouter des pages supplémentaires si nécessaire
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight; // Ajustement position pour page suivante
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', margin, - (imgHeight - heightLeft - margin), imgWidth, imgHeight); // Complex calculation for accurate stitching
+                heightLeft -= (pageHeight - margin * 2);
+            }
+
+            // Télécharger le PDF
+            pdf.save(`Notes_Galao_${activeSemester || 'Tous'}.pdf`);
+        } catch (error) {
+            console.error('Erreur lors de la génération du PDF:', error);
+            alert('Erreur lors de la génération du PDF');
+        }
+    };
+
+    /**
+     * Déconnexion Galao
+     */
     const handleLogout = async () => {
-        setErrorMessage(""); setInfoMessage(""); setNotesError(""); setNotesHtml("");
-        setParsedNotes([]); setActiveSemester(""); setUid(null); setHasExistingSession(false);
+        setErrorMessage("");
+        setInfoMessage("");
+        setNotesError("");
+        setNotesHtml("");
+        setParsedNotes([]);
+        setActiveSemester("");
+        setUid(null);
+        setHasExistingSession(false);
+        setIsSubmitting(false);  // Réinitialiser l'état de soumission
+        setIsTransitioning(false);
+        setIsLoginSuccess(false);
 
         try {
             setIsLoggingOut(true);
@@ -288,7 +395,7 @@ export default function NoteLoginClient() {
             if (typeof document !== "undefined") {
                 document.cookie = "galao_client=; Max-Age=0; path=/";
             }
-            setInfoMessage("Déconnexion réussie.");
+            setInfoMessage(t('galao.logoutSuccess'));
         } catch (err) {
             console.warn("Erreur logout", err);
         } finally {
@@ -309,256 +416,474 @@ export default function NoteLoginClient() {
     }, []);
 
     const showNotesOnly = !notesLoading && !notesError && !!notesHtml;
+    const showLoginOrLoader = !showNotesOnly;
 
     return (
         <div className={styles.page}>
-            <div className={styles.notePage}>
-                <BackButton href="/" title="Retour" />
+            {/* CONTENEUR COMPACT : Login + Loader */}
+            {showLoginOrLoader && (
+                <div className={styles.notePage} style={{
+                    maxWidth: '550px',
+                    transition: 'opacity 0.3s ease'
+                }}>
+                    <BackButton href="/" title="Retour" />
 
-                <div className={styles.formCard}>
-                    {/* --- ÉCRAN DE CONNEXION --- */}
-                    {!showNotesOnly && !hasExistingSession && (
-                        <>
-                            <header className={styles.cardHeader}>
-                                <h2>Connexion Galao (Notes)</h2>
-                                <p className={styles.cardSubhead}>
-                                    Utilisez vos identifiants Cnam (User/Pass).
-                                </p>
-                            </header>
+                    <div className={styles.formCard}>
+                        {/* --- ÉCRAN DE CONNEXION --- */}
+                        {!hasExistingSession && !notesLoading && (isTransitioning || isLoginSuccess || !notesHtml) && (
+                            <div className={isTransitioning ? styles.fadeOut : styles.fadeIn}>
+                                <header className={styles.cardHeader}
+                                    style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                    <div>
+                                        <h2>{t('galao.title')}</h2>
+                                    </div>
+                                    <div>
+                                        <p className={styles.cardSubhead}>
+                                            {t('galao.subtitle')}
+                                        </p>
+                                    </div>
+                                </header>
 
-                            {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
-                            {infoMessage && <div className={styles.successBanner}>{infoMessage}</div>}
+                                {errorMessage && <div className={styles.errorBanner}>{errorMessage}</div>}
+                                {infoMessage && <div className={styles.successBanner}>{infoMessage}</div>}
 
-                            <form className={styles.form} onSubmit={handleSubmit}>
-                                <div className={styles.inputGroup}>
-                                    <label htmlFor="galao-username">Utilisateur</label>
-                                    <input
-                                        id="galao-username"
-                                        type="text"
-                                        placeholder="Nom d'utilisateur"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <div className={styles.inputGroup}>
-                                    <label htmlFor="galao-password">Mot de passe</label>
-                                    <input
-                                        id="galao-password"
-                                        type="password"
-                                        placeholder="Mot de passe"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                                <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-                                    {isSubmitting ? "Connexion..." : "Voir mes notes"}
-                                </button>
-                            </form>
-                            <div className={styles.formFooter}>
-                                <p>Aucune donnée n'est enregistrée sur nos serveurs.</p>
-                            </div>
-                        </>
-                    )}
-
-                    {/* --- AFFICHAGE DES NOTES --- */}
-                    {(notesLoading || notesError || notesHtml) && (
-                        <div style={{ marginTop: "1rem" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                                <h3 style={{ margin: 0 }}>Relevé de notes</h3>
-                                {(hasExistingSession || notesHtml) && (
+                                <form className={styles.form} onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="galao-username">{t('galao.username')}</label>
+                                        <input
+                                            id="galao-username"
+                                            type="text"
+                                            placeholder={t('galao.username')}
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            required
+                                            disabled={isSubmitting || isTransitioning || isLoginSuccess}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label htmlFor="galao-password">{t('galao.password')}</label>
+                                        <input
+                                            id="galao-password"
+                                            type="password"
+                                            placeholder={t('galao.password')}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            disabled={isSubmitting || isTransitioning || isLoginSuccess}
+                                        />
+                                    </div>
                                     <button
-                                        type="button"
-                                        onClick={handleLogout}
-                                        className={styles.logoutButton}
-                                        disabled={isLoggingOut}
+                                        type="submit"
+                                        className={styles.submitButton}
+                                        disabled={isSubmitting || isTransitioning || isLoginSuccess}
+                                        style={(isTransitioning || isLoginSuccess) ? {
+                                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                                            transform: 'scale(1.02)'
+                                        } : {}}
                                     >
-                                        {isLoggingOut ? "..." : "Déconnexion"}
+                                        {(isTransitioning || isLoginSuccess) ? t('galao.loginSuccess') : (isSubmitting ? t('galao.loggingIn') : t('galao.login'))}
                                     </button>
-                                )}
-                            </div>
-
-                            {notesLoading && (
-                                <div className={styles.loadingState}>
-                                    <span className={styles.loader} /> Chargement des notes...
+                                </form>
+                                <div className={styles.formFooter}>
+                                    <p>{t('galao.privacyNote')}</p>
                                 </div>
-                            )}
-                            
-                            {notesError && <p style={{ color: "#b91c1c" }}>{notesError}</p>}
+                            </div>
+                        )}
 
-                            {!notesLoading && !notesError && notesHtml && (
-                                <>
-                                    {parsedNotes.length > 0 ? (
-                                        <>
-                                            {/* 1. Onglets Semestres */}
-                                            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-                                                {Array.from(new Set(parsedNotes.map((r) => r.semestre))).map((sem) => (
-                                                    <button
-                                                        key={sem}
-                                                        onClick={() => setActiveSemester(sem)}
-                                                        className={styles.submitButton}
+                        {/* --- LOADER COMPACT --- */}
+                        {notesLoading && (
+                            <div className={styles.fadeIn} style={{
+                                padding: '2.5rem 1rem',
+                                textAlign: 'center',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '1.5rem'
+                            }}>
+                                <div className={styles.modernLoader}></div>
+                                <div className={styles.loaderText}>{t('galao.loading')}</div>
+                            </div>
+                        )}
+
+                        {/* --- ERREUR --- */}
+                        {notesError && !isTransitioning && !isLoginSuccess && (
+                            <div style={{ padding: '1rem', textAlign: 'center' }}>
+                                <p style={{ color: "#b91c1c", fontWeight: 'bold' }}>{notesError}</p>
+                                <button
+                                    onClick={() => {
+                                        setNotesError("");
+                                        setNotesLoading(false);
+                                    }}
+                                    className={styles.submitButton}
+                                    style={{ marginTop: '1rem', background: 'var(--text-secondary)' }}
+                                >
+                                    {t('galao.retry')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* CONTENEUR LARGE : Affichage des notes */}
+            {showNotesOnly && (
+                <div className={styles.notePage} style={{
+                    maxWidth: '1200px',
+                    background: 'transparent',
+                    boxShadow: 'none',
+                    border: 'none'
+                }}>
+                    <BackButton href="/" title="Retour" />
+
+                    <div className={styles.formCard} style={{
+                        background: 'transparent',
+                        padding: '0',
+                        border: 'none',
+                        boxShadow: 'none'
+                    }}>
+                        {!notesLoading && !notesError && notesHtml && !isTransitioning && !isLoginSuccess && (
+                            <div className={styles.fadeIn}
+                                style={showNotesOnly ? { width: '100%' } : { marginTop: "1rem" }}>
+                                <div style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    marginBottom: "1.5rem"
+                                }}>
+                                    <h3 style={showNotesOnly ? {
+                                        margin: 0,
+                                        color: 'var(--text-primary)',
+                                        fontSize: '1.5rem',
+                                        textAlign: 'left',
+                                        fontWeight: '800'
+                                    } : { margin: 0 }}>
+                                        {showNotesOnly ? `${t('galao.results')} - ${activeSemester}` : t('galao.transcript')}
+                                    </h3>
+
+                                    {showNotesOnly && (
+                                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                            <button
+                                                onClick={handleExportPDF}
+                                                className={styles.submitButton}
+                                                style={{
+                                                    boxShadow: 'var(--shadow-sm)',
+                                                    background: 'var(--primary-color)',
+                                                    padding: '0.5rem 1rem',
+                                                    fontSize: '0.9rem'
+                                                }}
+                                            >
+                                                {t('galao.downloadPdf')}
+                                            </button>
+                                            <button
+                                                onClick={handleLogout}
+                                                className={styles.logoutButton}
+                                                style={{ boxShadow: 'var(--shadow-sm)' }}
+                                            >
+                                                {t('galao.logout')}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {parsedNotes.length > 0 ? (
+                                    <div id="notes-content">
+                                        {/* 1. Onglets Semestres */}
+                                        <div style={{
+                                            display: "flex",
+                                            gap: "0.5rem",
+                                            marginBottom: "2rem",
+                                            overflowX: 'auto',
+                                            paddingTop: '5px'
+                                        }}>
+                                            {Array.from(new Set(parsedNotes.map((r) => r.semestre))).map((sem) => (
+                                                <button
+                                                    key={sem}
+                                                    onClick={() => setActiveSemester(sem)}
+                                                    style={{
+                                                        padding: "0.5rem 1rem",
+                                                        fontSize: "0.9rem",
+                                                        borderRadius: "12px",
+                                                        border: '1px solid',
+                                                        cursor: 'pointer',
+                                                        whiteSpace: 'nowrap',
+                                                        transition: 'all 0.2s',
+                                                        background: activeSemester === sem ? 'var(--primary-color)' : 'var(--bg-secondary)',
+                                                        color: activeSemester === sem ? '#ffffff' : 'var(--text-secondary)',
+                                                        borderColor: activeSemester === sem ? 'var(--primary-color)' : 'var(--border-color)',
+                                                        boxShadow: activeSemester === sem ? 'var(--shadow-md)' : 'none'
+                                                    }}
+                                                >
+                                                    {sem}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* 2. Affichage par UE (Tableaux) */}
+                                        {(() => {
+                                            const rowsForSemester = parsedNotes.filter(r => r.semestre === activeSemester);
+
+                                            // Groupement par UE
+                                            const ueGroups = rowsForSemester.reduce((acc, row) => {
+                                                const key = row.ue || "Autres";
+                                                if (!acc[key]) acc[key] = [];
+                                                acc[key].push(row);
+                                                return acc;
+                                            }, {});
+
+                                            return Object.entries(ueGroups).map(([ueName, rows]) => {
+                                                const ueKey = `${activeSemester}||${ueName}`;
+                                                const average = ueAverages[ueKey]; // Moyenne générale de l'UE
+
+                                                return (
+                                                    <div
+                                                        key={ueName}
                                                         style={{
-                                                            minWidth: "auto",
-                                                            padding: "0.5rem 1rem",
-                                                            fontSize: "0.9rem",
-                                                            opacity: activeSemester === sem ? 1 : 0.6,
-                                                            backgroundColor: activeSemester === sem ? "var(--primary)" : "var(--bg-secondary)",
-                                                            color: activeSemester === sem ? "#fff" : "var(--text-primary)",
-                                                            boxShadow: activeSemester === sem ? "0 4px 10px rgba(0,0,0,0.15)" : "none"
+                                                            marginBottom: "1.5rem",
+                                                            borderRadius: "16px",
+                                                            overflow: "hidden",
+                                                            background: 'var(--bg-secondary)',
+                                                            border: '1px solid var(--border-light)',
+                                                            boxShadow: 'var(--shadow-sm)'
                                                         }}
                                                     >
-                                                        {sem}
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {/* 2. Affichage par UE (Cartes) */}
-                                            {(() => {
-                                                const rowsForSemester = parsedNotes.filter(r => r.semestre === activeSemester);
-                                                
-                                                // Groupement par UE
-                                                const ueGroups = rowsForSemester.reduce((acc, row) => {
-                                                    const key = row.ue || "Autres";
-                                                    if (!acc[key]) acc[key] = [];
-                                                    acc[key].push(row);
-                                                    return acc;
-                                                }, {});
-
-                                                return Object.entries(ueGroups).map(([ueName, rows]) => {
-                                                    // Récupérer le total calculé plus tôt (clé = semestre + UE)
-                                                    const ueKey = `${activeSemester}||${ueName}`;
-                                                    const totalCreditsUE = ueCreditTotals[ueKey] || 0;
-
-                                                    return (
-                                                        <div 
-                                                            key={ueName}
-                                                            style={{
-                                                                marginBottom: "2rem",
-                                                                backgroundColor: "var(--bg-secondary)", 
-                                                                borderRadius: "12px",
-                                                                border: "1px solid var(--border-light)",
-                                                                padding: "1.25rem",
-                                                                boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
-                                                            }}
-                                                        >
-                                                            {/* En-tête de la carte UE */}
-                                                            <div style={{
-                                                                display: 'flex', 
-                                                                justifyContent:'space-between', 
-                                                                alignItems:'center', 
-                                                                marginBottom: '1rem',
-                                                                borderBottom: '1px solid var(--border-light)',
-                                                                paddingBottom: '0.75rem'
+                                                        {/* Titre UE */}
+                                                        <div style={{
+                                                            padding: '1rem 1.25rem',
+                                                            borderBottom: '1px solid var(--border-light)',
+                                                            background: 'var(--bg-tertiary)'
+                                                        }}>
+                                                            <h4 style={{
+                                                                margin: 0,
+                                                                color: 'var(--text-primary)',
+                                                                fontWeight: '700',
+                                                                fontSize: '1rem'
                                                             }}>
-                                                                <h4 style={{ margin: 0, color: "var(--primary)", fontSize: '1.1rem', fontWeight: '600' }}>
-                                                                    {ueName}
-                                                                </h4>
-                                                                {totalCreditsUE > 0 && (
-                                                                    <span style={{ 
-                                                                        fontSize: '0.8rem', 
-                                                                        fontWeight: 'bold', 
-                                                                        color: 'var(--text-secondary)',
-                                                                        backgroundColor: 'var(--bg-tertiary)',
-                                                                        padding: '4px 8px',
-                                                                        borderRadius: '4px'
-                                                                    }}>
-                                                                        Total : {totalCreditsUE} ECTS
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Tableau des modules de l'UE */}
-                                                            <div className={styles.notesTableWrapper}>
-                                                                <table className={styles.notesTable} style={{border:'none', boxShadow:'none'}}>
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th style={{width: '40%'}}>Matière</th>
-                                                                            <th style={{width: '10%'}}>Code</th>
-                                                                            <th style={{width: '15%'}}>Note</th>
-                                                                            <th style={{width: '15%'}}>Min/Max</th>
-                                                                            <th style={{width: '20%', textAlign:'right'}}>Crédits & Coef</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        {rows.map((row, idx) => {
-                                                                            const numericNote = parseFloat((row.note || "").replace(",", "."));
-                                                                            const isNoteValid = !isNaN(numericNote) && row.note !== "–";
-                                                                            const noteClass = isNoteValid 
-                                                                                ? (numericNote >= 10 ? styles.notesTableNoteGood : styles.notesTableNoteBad) 
-                                                                                : "";
-                                                                            
-                                                                            // Affichage Crédits / Total (Coef)
-                                                                            let creditDisplay = <span style={{color:'var(--text-tertiary)'}}>–</span>;
-                                                                            
-                                                                            if (row.credits != null && totalCreditsUE > 0) {
-                                                                                const coefDisplay =
-                                                                                    row.coef != null && Number.isFinite(row.coef)
-                                                                                        ? row.coef.toFixed(2)
-                                                                                        : "?";
-
-                                                                                const formatCredit = (value) => {
-                                                                                    if (value == null || Number.isNaN(value)) {
-                                                                                        return "–";
-                                                                                    }
-                                                                                    return Number.isInteger(value)
-                                                                                        ? value.toString()
-                                                                                        : value.toFixed(1).replace(".", ",");
-                                                                                };
-                                                                                creditDisplay = (
-                                                                                    <div style={{lineHeight: '1.2'}}>
-                                                                                        <span style={{fontWeight:'600'}}>
-                                                                                            {formatCredit(row.credits)}
-                                                                                        </span>
-                                                                                        <span style={{color:'var(--text-tertiary)', fontSize:'0.85em'}}>
-                                                                                            {" "}
-                                                                                            / {formatCredit(totalCreditsUE)}
-                                                                                        </span>
-                                                                                        <div style={{color:'var(--text-secondary)', fontSize:'0.75em', marginTop:'2px'}}>
-                                                                                            Coef: {coefDisplay}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                );
-                                                                            }
-
-                                                                            return (
-                                                                                <tr key={idx} style={{borderBottom: idx === rows.length -1 ? 'none' : '1px solid var(--border-light)'}}>
-                                                                                    <td style={{fontWeight: '500'}}>{row.intitule}</td>
-                                                                                    <td className={styles.notesTableCode} style={{fontSize:'0.85rem'}}>{row.code}</td>
-                                                                                    <td>
-                                                                                        <span className={`${styles.notesTableNote} ${noteClass}`}>
-                                                                                            {row.note}
-                                                                                        </span>
-                                                                                    </td>
-                                                                                    <td style={{fontSize:'0.8em', color:'var(--text-secondary)', lineHeight:'1.4'}}>
-                                                                                        <div>Min: {row.min}</div>
-                                                                                        <div>Max: {row.max}</div>
-                                                                                    </td>
-                                                                                    <td style={{textAlign:'right'}}>
-                                                                                        {creditDisplay}
-                                                                                    </td>
-                                                                                </tr>
-                                                                            );
-                                                                        })}
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
+                                                                {ueName}
+                                                            </h4>
                                                         </div>
-                                                    );
-                                                });
-                                            })()}
-                                        </>
-                                    ) : (
-                                        <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>
-                                            Aucune note trouvée pour ce dossier.
+
+                                                        {/* Tableau */}
+                                                        <div className={styles.notesTableWrapper} style={{
+                                                            margin: 0,
+                                                            padding: 0,
+                                                            boxShadow: 'none',
+                                                            border: 'none',
+                                                            borderRadius: 0
+                                                        }}>
+                                                            <table className={styles.notesTable}>
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em'
+                                                                        }}>{t('galao.table.label')}
+                                                                        </th>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'center'
+                                                                        }}>{t('galao.table.grade')}
+                                                                        </th>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'center'
+                                                                        }}>{t('galao.table.min')}
+                                                                        </th>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'center'
+                                                                        }}>{t('galao.table.avg')}
+                                                                        </th>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'center'
+                                                                        }}>{t('galao.table.max')}
+                                                                        </th>
+                                                                        <th style={{
+                                                                            background: 'var(--bg-secondary)',
+                                                                            color: 'var(--text-muted)',
+                                                                            borderBottom: '1px solid var(--border-color)',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.75rem',
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'right'
+                                                                        }}>{t('galao.table.detail')}
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {rows.map((row, idx) => {
+                                                                        const hasNote = row.note && row.note.trim() !== "";
+                                                                        return (
+                                                                            <tr key={idx}
+                                                                                style={{ borderBottom: '1px solid var(--border-light)' }}>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem 1.25rem',
+                                                                                    fontWeight: '500',
+                                                                                    color: 'var(--text-primary)',
+                                                                                    border: 'none'
+                                                                                }}>
+                                                                                    {row.fullIntitule}
+                                                                                </td>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem',
+                                                                                    textAlign: 'center',
+                                                                                    color: hasNote ? (parseFloat(row.note.replace(',', '.')) >= 10 ? '#10b981' : '#ef4444') : 'inherit',
+                                                                                    fontWeight: '700',
+                                                                                    border: 'none',
+                                                                                    fontSize: '0.95rem'
+                                                                                }}>
+                                                                                    {row.note}
+                                                                                </td>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem',
+                                                                                    textAlign: 'center',
+                                                                                    color: 'var(--text-muted)',
+                                                                                    border: 'none',
+                                                                                    fontSize: '0.85rem'
+                                                                                }}>{row.min}</td>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem',
+                                                                                    textAlign: 'center',
+                                                                                    color: 'var(--text-muted)',
+                                                                                    border: 'none',
+                                                                                    fontSize: '0.85rem'
+                                                                                }}>{row.moy}</td>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem',
+                                                                                    textAlign: 'center',
+                                                                                    color: 'var(--text-muted)',
+                                                                                    border: 'none',
+                                                                                    fontSize: '0.85rem'
+                                                                                }}>{row.max}</td>
+                                                                                <td style={{
+                                                                                    padding: '0.8rem 1.25rem',
+                                                                                    fontSize: '0.85rem',
+                                                                                    color: 'var(--text-secondary)',
+                                                                                    textAlign: 'right',
+                                                                                    border: 'none'
+                                                                                }}>
+                                                                                    {row.detail}
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+
+                                                                    {/* Ligne moyenne calculée */}
+                                                                    {(() => {
+                                                                        const validNotes = rows
+                                                                            .map(r => r.note)
+                                                                            .filter(n => n && n.trim() !== "")
+                                                                            .map(n => parseFloat(n.replace(',', '.')))
+                                                                            .filter(n => !isNaN(n));
+
+                                                                        if (validNotes.length === 0) return null;
+
+                                                                        const studentAvg = (validNotes.reduce((sum, val) => sum + val, 0) / validNotes.length).toFixed(2);
+
+                                                                        return (
+                                                                            <tr style={{
+                                                                                borderTop: '2px solid var(--primary-color)',
+                                                                                background: 'var(--bg-tertiary)'
+                                                                            }}>
+                                                                                <td style={{
+                                                                                    padding: '0.9rem 1.25rem',
+                                                                                    fontWeight: '700',
+                                                                                    color: 'var(--text-primary)',
+                                                                                    fontSize: '0.95rem'
+                                                                                }}>
+                                                                                    {t('galao.studentAvg')}
+                                                                                </td>
+                                                                                <td style={{
+                                                                                    padding: '0.9rem',
+                                                                                    textAlign: 'center',
+                                                                                    fontWeight: '800',
+                                                                                    fontSize: '1rem',
+                                                                                    color: parseFloat(studentAvg) >= 10 ? '#10b981' : '#ef4444'
+                                                                                }}>
+                                                                                    {studentAvg}
+                                                                                </td>
+                                                                                <td colSpan="4" style={{
+                                                                                    padding: '0.9rem 1.25rem',
+                                                                                    color: 'var(--text-muted)',
+                                                                                    fontSize: '0.85rem',
+                                                                                    fontStyle: 'italic'
+                                                                                }}>
+
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })()}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            });
+                                        })()}
+
+                                        <div style={{
+                                            textAlign: 'center',
+                                            marginTop: '2rem',
+                                            paddingBottom: '2rem',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.85rem'
+                                        }}>
+                                            {t('galao.footerCertified')}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        padding: '4rem 2rem',
+                                        textAlign: 'center',
+                                        background: 'var(--bg-secondary)',
+                                        borderRadius: '16px',
+                                        border: '1px solid var(--border-light)'
+                                    }}>
+                                        <p style={{
+                                            color: 'var(--text-secondary)',
+                                            fontSize: '1.1rem',
+                                            fontWeight: '500'
+                                        }}>
+                                            {t('galao.noGrades')}
                                         </p>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    )}
+                                        <p style={{
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.9rem',
+                                            marginTop: '0.5rem'
+                                        }}>
+                                            {t('galao.checkRegistration')}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

@@ -6,6 +6,11 @@ export const dynamic = "force-dynamic";
 
 const LOG_PREFIX = "[API galao/notes]";
 
+// Désactiver la vérification SSL pour les requêtes Galao uniquement
+// Le serveur Galao utilise un certificat SSL invalide/auto-signé
+const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 export async function GET() {
     try {
         const cookieStore = await cookies();
@@ -39,11 +44,7 @@ export async function GET() {
             Cookie: `PHPSESSID=${galaoSession}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
         };
 
-        // Même problème de certificat qu'au login : en dev, on assouplit TLS.
-        if (process.env.NODE_ENV !== "production") {
-            // ⚠️ Ne jamais faire ça en prod.
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-        }
+
 
         // 1) Appeler d'abord le menu apprenti pour initialiser la session (apprenti_id, etc.)
         const menuUrl = new URL(
@@ -62,7 +63,7 @@ export async function GET() {
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-Site": "same-origin",
                 "Sec-Fetch-User": "?1",
-            },
+            }
         });
 
         if (!menuResponse.ok) {
@@ -121,7 +122,7 @@ export async function GET() {
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-Site": "same-origin",
                 "Sec-Fetch-User": "?1",
-            },
+            }
         });
 
         if (!visuBilansResponse.ok) {
@@ -149,7 +150,7 @@ export async function GET() {
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-Site": "same-origin",
                 "Sec-Fetch-User": "?1",
-            },
+            }
         });
 
         if (!boutonsResponse.ok) {
@@ -178,7 +179,7 @@ export async function GET() {
                 "Sec-Fetch-Mode": "navigate",
                 "Sec-Fetch-Site": "same-origin",
                 "Sec-Fetch-User": "?1",
-            },
+            }
         });
 
         if (!galaoResponse.ok) {

@@ -275,6 +275,10 @@
         "title": "Agenda",
         "description": "Consultez l'agenda avec tous vos cours"
       },
+      "notes": {
+        "title": "Notes Galao",
+        "description": "Consultez vos notes et résultats académiques"
+      },
       "files": {
         "title": "Fichiers de cours",
         "description": "Gérez les fichiers uploadés par cours"
@@ -768,6 +772,49 @@
     "coursesOnDay": "{count} cours le {dayName} {day} {month}",
     "coursesOnDate": "{count} cours le {date}",
     "courses": "{count} cours"
+  },
+  "galao": {
+    "title": "Connexion Galao",
+    "subtitle": "Utilisez vos identifiants Galao (Nom d'utilisateur et mot de passe).",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "login": "Connexion",
+    "loggingIn": "Connexion...",
+    "loginSuccess": "Connexion réussie !",
+    "loginError": "Erreur de connexion.",
+    "missingCredentials": "Merci de renseigner vos identifiants.",
+    "connectionFailed": "Impossible de se connecter.",
+    "privacyNote": "Aucune donnée n'est enregistrée coté serveur !",
+    "loading": "Chargement des notes...",
+    "retry": "Réessayer",
+    "back": "Retour",
+    "results": "Résultats",
+    "transcript": "Relevé de notes",
+    "downloadPdf": "📥 Télécharger PDF",
+    "logout": "Déconnexion",
+    "logoutSuccess": "Déconnexion réussie.",
+    "sessionExpired": "Votre session Galao a expiré. Merci de vous reconnecter.",
+    "fetchError": "Impossible de récupérer les notes Galao.",
+    "emptyResponse": "Réponse Galao vide.",
+    "unexpectedError": "Erreur inattendue lors du chargement des notes.",
+    "table": {
+      "label": "Intitulé",
+      "grade": "Note",
+      "min": "Min",
+      "avg": "Moy",
+      "max": "Max",
+      "detail": "Détail",
+      "studentAvg": "Moyenne étudiant"
+    },
+    "pdf": {
+      "title": "Relevé de Notes et Résultats",
+      "generatedOn": "Généré le",
+      "semester": "Semestre :",
+      "all": "Tous"
+    },
+    "footerCertified": "Données certifiées issues de l'ENT Galao",
+    "studentAvg": "Moyenne",
+    "noGrades": "Aucun relevé de notes disponible.",
+    "checkRegistration": "Vérifiez vos inscriptions ou réessayez plus tard."
   }
 }
-

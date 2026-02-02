@@ -1,10 +1,10 @@
 "use client";
 
-import {useState, useEffect} from "react";
-import {useRouter} from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
-import {useI18n} from "@/i18n/I18nContext";
+import { useI18n } from "@/i18n/I18nContext";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
@@ -42,7 +42,7 @@ export default function DashboardPage() {
 
     const loadUserInfo = async () => {
         try {
-            const response = await fetch("/api/user", {cache: "no-store"});
+            const response = await fetch("/api/user", { cache: "no-store" });
             if (response.ok) {
                 const data = await response.json();
                 setUserInfo(data);
@@ -63,10 +63,10 @@ export default function DashboardPage() {
     // Pages disponibles selon le rôle
     const getAvailablePages = () => {
         const basePages = [{
-            title: t('dashboard.pages.schedule.title'), 
-            description: t('dashboard.pages.schedule.description'), 
-            path: "/", 
-            icon: "📅", 
+            title: t('dashboard.pages.schedule.title'),
+            description: t('dashboard.pages.schedule.description'),
+            path: "/",
+            icon: "📅",
             color: "#3b82f6"
         }, {
             title: t('dashboard.pages.agenda.title'),
@@ -74,6 +74,12 @@ export default function DashboardPage() {
             path: "/agenda",
             icon: "📋",
             color: "#10b981"
+        }, {
+            title: t('dashboard.pages.notes.title'),
+            description: t('dashboard.pages.notes.description'),
+            path: "/note",
+            icon: "🎓",
+            color: "#f59e0b"
         }, {
             title: t('dashboard.pages.files.title'),
             description: t('dashboard.pages.files.description'),
@@ -134,7 +140,7 @@ export default function DashboardPage() {
     if (loading) {
         return (<div className={styles.container}>
             <div className={styles.loadingContainer}>
-                <Spinner size="large" variant="border"/>
+                <Spinner size="large" variant="border" />
                 <p suppressHydrationWarning>{t('dashboard.loading')}</p>
             </div>
         </div>);
@@ -149,7 +155,7 @@ export default function DashboardPage() {
     return (<div className={styles.container}>
         <div className={styles.content}>
             <header className={styles.parentHeader}>
-                <BackButton href="/" title={t('dashboard.backToEDT')}/>
+                <BackButton href="/" title={t('dashboard.backToEDT')} />
                 <div className={styles.header}>
                     <h1>{t('dashboard.title')}</h1>
                     <p className={styles.welcomeText}>
@@ -169,10 +175,10 @@ export default function DashboardPage() {
                         key={index}
                         className={styles.pageCard}
                         onClick={() => router.push(targetPath)}
-                        style={{'--card-color': page.color}}
+                        style={{ '--card-color': page.color }}
                     >
-                        <div className={styles.cardIcon} style={{backgroundColor: `${page.color}15`}}>
-                            <span style={{fontSize: '2rem'}}>{page.icon}</span>
+                        <div className={styles.cardIcon} style={{ backgroundColor: `${page.color}15` }}>
+                            <span style={{ fontSize: '2rem' }}>{page.icon}</span>
                         </div>
                         <div className={styles.cardContent}>
                             <h3 className={styles.cardTitle}>{page.title}</h3>
@@ -180,10 +186,10 @@ export default function DashboardPage() {
                         </div>
                         <div className={styles.cardArrow}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                 xmlns="http://www.w3.org/2000/svg">
+                                xmlns="http://www.w3.org/2000/svg">
                                 <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"/>
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round" />
                             </svg>
                         </div>
                     </div>);
@@ -195,7 +201,7 @@ export default function DashboardPage() {
                     className={styles.logoutButton}
                     onClick={async () => {
                         try {
-                            await fetch("/api/logout", {method: "POST"});
+                            await fetch("/api/logout", { method: "POST" });
                             window.location.href = "/";
                         } catch (error) {
                             console.error("[Dashboard] Erreur déconnexion:", error);

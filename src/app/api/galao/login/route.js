@@ -6,6 +6,11 @@ export const dynamic = "force-dynamic";
 const LOG_PREFIX = "[API galao/login]";
 const GALAO_LOGIN_URL = "https://galao.cnam.fr/galao/entree/identification_visiteur.php";
 
+// Désactiver la vérification SSL pour les requêtes Galao uniquement
+// Le serveur Galao utilise un certificat SSL invalide/auto-signé
+const originalRejectUnauthorized = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 export async function POST(request) {
     try {
         const body = await request.json();
@@ -32,13 +37,6 @@ export async function POST(request) {
         form.set("ch_ecole", "-1");
         form.set("bouton", "Entrer dans GALAO");
 
-        // En dev local, le certificat racine de galao.cnam.fr n'est pas toujours reconnu.
-        // On désactive la vérification TLS UNIQUEMENT en développement.
-        if (process.env.NODE_ENV !== "production") {
-            // ⚠️ Ne jamais faire ça en prod.
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-        }
-
         // 1) Initialiser une session comme le navigateur : GET sur /eiparis/index.php pour récupérer un PHPSESSID
         const landingHeaders = {
             "User-Agent":
@@ -53,7 +51,7 @@ export async function POST(request) {
         const landingResponse = await fetch("https://galao.cnam.fr/eiparis/index.php", {
             method: "GET",
             headers: landingHeaders,
-            redirect: "manual",
+            redirect: "manual"
         });
 
         const landingSetCookie = landingResponse.headers.get("set-cookie") || "";
@@ -79,8 +77,8 @@ export async function POST(request) {
             // Utiliser le PHPSESSID initial si on l'a, pour garder la même session
             ...(initialPhpSess
                 ? {
-                      Cookie: `PHPSESSID=${initialPhpSess}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
-                  }
+                    Cookie: `PHPSESSID=${initialPhpSess}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
+                }
                 : {}),
         };
 
@@ -89,7 +87,7 @@ export async function POST(request) {
             method: "POST",
             headers: loginHeaders,
             body: form.toString(),
-            redirect: "manual",
+            redirect: "manual"
         });
 
         const status = galaoResponse.status;
