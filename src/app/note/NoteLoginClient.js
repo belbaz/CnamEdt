@@ -7,6 +7,8 @@ import { useI18n } from "@/i18n/I18nContext";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+const NOTES_LAST_SEMESTER_KEY = "notes_last_semester";
+
 /**
  * Composant client pour la connexion et l'affichage des notes Galao.
  * Gère le parsing HTML, le calcul des coefficients et l'affichage par UE.
@@ -212,7 +214,7 @@ export default function NoteLoginClient() {
     }, [notesHtml]);
 
     /**
-     * Sélectionne automatiquement le dernier semestre disponible par défaut
+     * Sélectionne le dernier semestre (mémorisé) ou le premier par défaut
      */
     useEffect(() => {
         if (!parsedNotes.length) return;
@@ -221,7 +223,12 @@ export default function NoteLoginClient() {
         if (!semesters.length) return;
 
         if (!activeSemester || !semesters.includes(activeSemester)) {
-            setActiveSemester(semesters[0]);
+            let chosen = semesters[0];
+            if (typeof localStorage !== "undefined") {
+                const saved = localStorage.getItem(NOTES_LAST_SEMESTER_KEY);
+                if (saved && semesters.includes(saved)) chosen = saved;
+            }
+            setActiveSemester(chosen);
         }
     }, [parsedNotes, activeSemester]);
 
@@ -598,7 +605,12 @@ export default function NoteLoginClient() {
                                             {Array.from(new Set(parsedNotes.map((r) => r.semestre))).map((sem) => (
                                                 <button
                                                     key={sem}
-                                                    onClick={() => setActiveSemester(sem)}
+                                                    onClick={() => {
+                                                setActiveSemester(sem);
+                                                if (typeof localStorage !== "undefined") {
+                                                    localStorage.setItem(NOTES_LAST_SEMESTER_KEY, sem);
+                                                }
+                                            }}
                                                     style={{
                                                         padding: "0.5rem 1rem",
                                                         fontSize: "0.9rem",
