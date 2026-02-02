@@ -6,9 +6,7 @@ export const dynamic = "force-dynamic";
 
 const LOG_PREFIX = "[API galao/notes]";
 
-// CORRECTION : On remet la variable d'environnement globale.
-// Next.js 'fetch' ne gère pas bien l'option 'agent' locale pour les certificats invalides.
-// C'est la seule façon fiable de contourner l'erreur "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ici.
+// Hack SSL obligatoire pour Next.js (ne pas toucher)
 if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
@@ -21,10 +19,7 @@ export async function GET() {
 
         if (!galaoSession || !galaoUid) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: "Session Galao manquante. Merci de vous connecter d'abord.",
-                },
+                { success: false, error: "Session manquante." },
                 { status: 401 }
             );
         }
@@ -44,22 +39,24 @@ export async function GET() {
 
         // --- PRÉPARATION DES URLS ---
 
+        // 1. Menu
         const menuUrl = new URL("https://galao.cnam.fr/galao/menus/menu_apprenti.php");
         menuUrl.searchParams.set("uid", galaoUid);
         menuUrl.searchParams.set("annee", "0");
         menuUrl.searchParams.set("no_fiche", "1");
 
+        // 2. Visu Bilans (OBLIGATOIRE apparemment !)
         const visuBilansUrl = new URL("https://galao.cnam.fr/galao/bilans/visu_bilans.php");
         visuBilansUrl.searchParams.set("uid", galaoUid);
         visuBilansUrl.searchParams.set("bilan", "planning_individuel");
         visuBilansUrl.searchParams.set("liste", "un");
         visuBilansUrl.searchParams.set("no_fiche", "1");
 
-        // --- EXÉCUTION PARALLÈLE (Optimisation) ---
-        // On garde Promise.all car c'est lui qui donne la vitesse.
-        // On a retiré l'agent qui causait le bug.
+        // --- OPTIMISATION : PARALLÈLE ---
+        // On lance les deux requêtes de "chauffe" en même temps.
+        // C'est le seul moyen de gagner du temps sans casser la session.
 
-        const [menuResponse, visuBilansResponse] = await Promise.all([
+        await Promise.all([
             fetch(menuUrl.toString(), {
                 method: "GET",
                 headers: {
@@ -76,11 +73,7 @@ export async function GET() {
             })
         ]);
 
-        // Vérification silencieuse pour les logs
-        if (!menuResponse.ok) console.warn(`${LOG_PREFIX} Menu statut: ${menuResponse.status}`);
-        if (!visuBilansResponse.ok) console.warn(`${LOG_PREFIX} Visu statut: ${visuBilansResponse.status}`);
-
-        // --- APPEL FINAL (Récupération des notes) ---
+        // --- ÉTAPE FINALE : Récupération des notes ---
 
         const bilanUrl = new URL("https://galao.cnam.fr/galao/bilans/affiche_onglets_bilans_result.php");
         bilanUrl.searchParams.set("uid", galaoUid);
@@ -90,6 +83,7 @@ export async function GET() {
             method: "GET",
             headers: {
                 ...baseHeaders,
+                // Le referer pointe vers l'étape précédente (visu_bilans ou boutons_bilans)
                 Referer: `https://galao.cnam.fr/galao/bilans/affiche_boutons_bilans.php?uid=${encodeURIComponent(galaoUid)}`,
             }
         });
@@ -104,6 +98,14 @@ export async function GET() {
 
         const html = await galaoResponse.text();
 
+        // Vérification ultime : si le HTML contient "Session expired", on renvoie une erreur 401
+        if (html.includes("Session has expired") || html.includes("connexion")) {
+            return NextResponse.json(
+                { success: false, error: "Session Galao expirée côté serveur." },
+                { status: 401 }
+            );
+        }
+
         return NextResponse.json({
             success: true,
             html,
@@ -112,7 +114,7 @@ export async function GET() {
     } catch (error) {
         console.error(`${LOG_PREFIX} Erreur inattendue`, error);
         return NextResponse.json(
-            { success: false, error: "Erreur interne lors de la récupération." },
+            { success: false, error: "Erreur interne." },
             { status: 500 }
         );
     }
