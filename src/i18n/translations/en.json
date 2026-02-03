@@ -32,7 +32,8 @@
     "collapseAllDays": "Collapse all days",
     "clearCache": "Clear cache and cookies (localhost only)",
     "back": "Back",
-    "examens": "Upcoming exams"
+    "examens": "Upcoming exams",
+    "notes": "My notes"
   },
   "pageHeader": {
     "settings": "Settings",

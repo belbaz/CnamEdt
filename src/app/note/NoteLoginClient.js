@@ -7,6 +7,8 @@ import { useI18n } from "@/i18n/I18nContext";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+import KeepAlive from "@/components/KeepAlive";
+
 const NOTES_LAST_SEMESTER_KEY = "notes_last_semester";
 
 /**
@@ -594,6 +596,7 @@ export default function NoteLoginClient() {
 
                                 {parsedNotes.length > 0 ? (
                                     <div id="notes-content">
+                                        <KeepAlive />
                                         {/* 1. Onglets Semestres */}
                                         <div style={{
                                             display: "flex",
@@ -606,11 +609,11 @@ export default function NoteLoginClient() {
                                                 <button
                                                     key={sem}
                                                     onClick={() => {
-                                                setActiveSemester(sem);
-                                                if (typeof localStorage !== "undefined") {
-                                                    localStorage.setItem(NOTES_LAST_SEMESTER_KEY, sem);
-                                                }
-                                            }}
+                                                        setActiveSemester(sem);
+                                                        if (typeof localStorage !== "undefined") {
+                                                            localStorage.setItem(NOTES_LAST_SEMESTER_KEY, sem);
+                                                        }
+                                                    }}
                                                     style={{
                                                         padding: "0.5rem 1rem",
                                                         fontSize: "0.9rem",

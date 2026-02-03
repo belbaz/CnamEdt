@@ -194,7 +194,7 @@ export async function POST(request) {
             sameSite: "lax",
             secure,
             path: "/",
-            maxAge: 60 * 60 * 2, // 2 heures par défaut
+            maxAge: 60 * 60 * 24 * 30, // 30 Jours
         });
 
         // UID Galao pour réutilisation rapide côté backend
@@ -205,7 +205,7 @@ export async function POST(request) {
             sameSite: "lax",
             secure,
             path: "/",
-            maxAge: 60 * 60 * 2,
+            maxAge: 60 * 60 * 24 * 30,
         });
 
         // Indicateur côté navigateur pour savoir si une session Galao existe
@@ -217,7 +217,7 @@ export async function POST(request) {
             sameSite: "lax",
             secure,
             path: "/",
-            maxAge: 60 * 60 * 2,
+            maxAge: 60 * 60 * 24 * 30,
         });
 
         return response;

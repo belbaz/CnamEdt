@@ -32,7 +32,8 @@
     "collapseAllDays": "Replier tous les jours",
     "clearCache": "Vider le cache et les cookies (localhost uniquement)",
     "back": "Retour",
-    "examens": "Examens à venir"
+    "examens": "Examens à venir",
+    "notes": "Mes notes"
   },
   "pageHeader": {
     "settings": "Paramètres",
