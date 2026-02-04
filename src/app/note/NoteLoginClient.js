@@ -417,12 +417,48 @@ export default function NoteLoginClient() {
      */
     useEffect(() => {
         if (typeof document === "undefined") return;
-        const hasClientFlag = document.cookie.split(";").some((c) => c.trim().startsWith("galao_client="));
+        const hasClientFlag = document.cookie.split(";").some((c) =>
+            c.trim().startsWith("galao_client="),
+        );
         if (hasClientFlag) {
             setHasExistingSession(true);
             loadNotes();
         }
     }, []);
+
+    /**
+     * Heartbeat : ping régulier de Galao pour garder la session PHP active
+     * Tant qu'on a des notes affichées, on appelle /api/galao/ping toutes les 5 minutes.
+     */
+    useEffect(() => {
+        if (!notesHtml) return;
+
+        let cancelled = false;
+
+        const keepAlive = async () => {
+            try {
+                const res = await fetch("/api/galao/ping");
+                if (!res.ok) {
+                    // Si la session est perdue, on laisse la prochaine requête de notes gérer l'expiration
+                    console.warn("[NoteLogin] Heartbeat Galao inactif (status)", res.status);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    console.warn("[NoteLogin] Erreur heartbeat Galao", e);
+                }
+            }
+        };
+
+        // Premier ping immédiat (optionnel mais utile si la page reste longtemps ouverte)
+        keepAlive();
+
+        const intervalId = setInterval(keepAlive, 5 * 60 * 1000); // toutes les 5 minutes
+
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
+    }, [notesHtml]);
 
     const showNotesOnly = !notesLoading && !notesError && !!notesHtml;
     const showLoginOrLoader = !showNotesOnly;
@@ -614,7 +650,7 @@ export default function NoteLoginClient() {
                                                             localStorage.setItem(NOTES_LAST_SEMESTER_KEY, sem);
                                                         }
                                                     }}
-                                                    style={{
+                                                        style={{
                                                         padding: "0.5rem 1rem",
                                                         fontSize: "0.9rem",
                                                         borderRadius: "12px",
