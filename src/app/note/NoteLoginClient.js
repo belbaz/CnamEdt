@@ -413,7 +413,9 @@ export default function NoteLoginClient() {
     };
 
     /**
-     * Vérification automatique de la session au chargement
+     * Vérification automatique de la session au chargement :
+     * si le cookie navigateur "galao_client" est présent, on tente
+     * automatiquement de recharger les notes avec la session existante.
      */
     useEffect(() => {
         if (typeof document === "undefined") return;
