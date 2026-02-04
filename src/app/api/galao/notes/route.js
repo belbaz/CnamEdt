@@ -1,20 +1,33 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+// 1. CONFIGURATION VERCEL CRITIQUE
+// Empêche Vercel de mettre en cache la réponse (sinon il sert des cookies périmés)
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 const LOG_PREFIX = "[API galao/notes]";
 
-// Hack SSL obligatoire pour Next.js sur vieux serveurs
+// Hack SSL pour les vieux serveurs (comme Galao)
 if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
+// Petite fonction utilitaire pour trouver un cookie spécifique dans les headers
+function getCookieValue(setCookieHeader, cookieName) {
+    if (!setCookieHeader) return null;
+    // On cherche "PHPSESSID=quelquechose;"
+    const regex = new RegExp(`${cookieName}=([^;]+)`);
+    const match = setCookieHeader.match(regex);
+    return match ? match[1] : null;
 }
 
 export async function GET() {
     try {
         const cookieStore = await cookies();
-        const galaoSession = cookieStore.get("galao_session")?.value || null;
+        let galaoSession = cookieStore.get("galao_session")?.value || null;
         const galaoUid = cookieStore.get("galao_uid")?.value || null;
 
         if (!galaoSession || !galaoUid) {
@@ -25,55 +38,45 @@ export async function GET() {
         }
 
         const baseHeaders = {
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            Connection: "keep-alive", // Vital pour la vitesse
-            DNT: "1",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Connection": "keep-alive",
+            "DNT": "1",
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-            "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="144"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-            // On injecte directement les cookies que 'fonction.js' aurait créés
-            Cookie: `PHPSESSID=${galaoSession}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
         };
 
-        // --- TENTATIVE OPTIMISATION MAXIMALE ---
-        // On supprime l'appel au MENU.
-        // On attaque directement "Visu Bilans". Si le serveur est bien codé,
-        // il verra l'UID et initialisera la session ici.
-
-        // 1. Visu Bilans (Le "Setup" obligatoire)
-        const visuBilansUrl = new URL("https://galao.cnam.fr/galao/bilans/visu_bilans.php");
-        visuBilansUrl.searchParams.set("uid", galaoUid);
-        visuBilansUrl.searchParams.set("bilan", "planning_individuel");
-        visuBilansUrl.searchParams.set("liste", "un");
-        visuBilansUrl.searchParams.set("no_fiche", "1");
-
-        const setupResponse = await fetch(visuBilansUrl.toString(), {
+        // --- ÉTAPE 1 : Setup (Visu Bilans) ---
+        // On initialise la session côté serveur Galao
+        const setupResponse = await fetch(`https://galao.cnam.fr/galao/bilans/visu_bilans.php?uid=${galaoUid}&bilan=planning_individuel&liste=un&no_fiche=1`, {
             method: "GET",
             headers: {
                 ...baseHeaders,
-                // On met le referer "comme si" on venait du menu, pour tromper le serveur
-                Referer: `https://galao.cnam.fr/galao/menus/menu_apprenti.php?uid=${encodeURIComponent(galaoUid)}&type=retour&no_fiche=1`,
+                "Cookie": `PHPSESSID=${galaoSession}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
+                "Referer": `https://galao.cnam.fr/galao/menus/menu_apprenti.php?uid=${encodeURIComponent(galaoUid)}`
             }
         });
 
-        // On ne bloque pas si non-200, mais c'est mauvais signe
-        if (!setupResponse.ok) {
-            console.warn(`${LOG_PREFIX} Setup warning: ${setupResponse.status}`);
+        // VÉRIFICATION DE ROTATION DE COOKIE (ÉTAPE 1)
+        // Si le serveur nous donne un nouveau cookie ici, on doit le capturer !
+        const setCookie1 = setupResponse.headers.get("set-cookie");
+        const newSession1 = getCookieValue(setCookie1, "PHPSESSID");
+
+        if (newSession1 && newSession1 !== galaoSession) {
+            console.log(`${LOG_PREFIX} Changement de session détecté (étape 1) : ${newSession1}`);
+            galaoSession = newSession1; // On met à jour la variable pour l'étape suivante
         }
 
-        // 2. Récupération des notes (Le Résultat)
-        const bilanUrl = new URL("https://galao.cnam.fr/galao/bilans/affiche_onglets_bilans_result.php");
-        bilanUrl.searchParams.set("uid", galaoUid);
-        bilanUrl.searchParams.set("bilan", "academique_courant");
+        // --- ÉTAPE 2 : Récupération des notes ---
+        // On utilise 'galaoSession' qui est peut-être le NOUVEAU cookie
+        const bilanUrl = `https://galao.cnam.fr/galao/bilans/affiche_onglets_bilans_result.php?uid=${galaoUid}&bilan=academique_courant`;
 
-        const galaoResponse = await fetch(bilanUrl.toString(), {
+        const galaoResponse = await fetch(bilanUrl, {
             method: "GET",
             headers: {
                 ...baseHeaders,
-                Referer: `https://galao.cnam.fr/galao/bilans/affiche_boutons_bilans.php?uid=${encodeURIComponent(galaoUid)}`,
+                "Cookie": `PHPSESSID=${galaoSession}; juryType=; soutType=; idChamp=id_acc; bilan=academique_courant`,
+                "Referer": `https://galao.cnam.fr/galao/bilans/affiche_boutons_bilans.php?uid=${encodeURIComponent(galaoUid)}`,
             }
         });
 
@@ -86,20 +89,40 @@ export async function GET() {
 
         const html = await galaoResponse.text();
 
-        // Vérification si l'absence du menu a cassé la session
+        // Vérification erreur
         if (html.includes("Session has expired") || html.includes("connexion")) {
-            // Si tu vois cette erreur, c'est que l'étape 1 (Menu) est OBLIGATOIRE.
-            // Dans ce cas, ton code précédent (avec Promise.all) est la perfection absolue.
             return NextResponse.json(
-                { success: false, error: "Optimisation échouée : Le menu est obligatoire." },
+                { success: false, error: "La session a expiré (Blocage IP probable)." },
                 { status: 401 }
             );
         }
 
-        return NextResponse.json({
+        // --- ÉTAPE FINALE : Synchronisation avec le navigateur ---
+        const response = NextResponse.json({
             success: true,
             html,
         });
+
+        // On regarde si un nouveau cookie est arrivé à l'étape 2 aussi
+        const setCookie2 = galaoResponse.headers.get("set-cookie");
+        const newSession2 = getCookieValue(setCookie2, "PHPSESSID");
+
+        // Si on a un nouveau cookie (soit de l'étape 1, soit de l'étape 2),
+        // on force le navigateur de l'utilisateur à le sauvegarder.
+        const finalSession = newSession2 || (newSession1 !== galaoSession ? galaoSession : null);
+
+        if (finalSession) {
+            console.log(`${LOG_PREFIX} Mise à jour du cookie utilisateur : ${finalSession}`);
+            response.cookies.set("galao_session", finalSession, {
+                httpOnly: true,
+                secure: true, // Très important pour Vercel (HTTPS)
+                sameSite: "lax",
+                path: "/",
+                maxAge: 60 * 60 * 2 // 2 heures
+            });
+        }
+
+        return response;
 
     } catch (error) {
         console.error(`${LOG_PREFIX} Erreur`, error);
