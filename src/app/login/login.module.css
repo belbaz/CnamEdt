@@ -621,6 +621,80 @@
     color: var(--text-secondary);
 }
 
+/* Libellé de matière : couper proprement sur 2 lignes max */
+.notesTableLabel {
+    max-width: 260px;
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.25;
+}
+
+/* Boutons de choix sur le portail Galao */
+.galaoChoiceGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: center;
+    margin-top: 0.8rem;
+}
+
+.galaoChoiceButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background:
+        radial-gradient(circle at top left, rgba(148, 163, 184, 0.15), transparent 55%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.8));
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 14px 35px rgba(15, 23, 42, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    min-width: 210px;
+    letter-spacing: 0.02em;
+}
+
+.galaoChoiceButtonAccent {
+    background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 55%),
+        linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #f9fafb;
+    border-color: rgba(59, 130, 246, 0.6);
+}
+
+.galaoChoiceButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.7);
+}
+
+.galaoChoiceButton:active {
+    transform: translateY(0);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.55);
+}
+
+.galaoChoiceIcon {
+    font-size: 1.1rem;
+}
+
+.galaoChoiceLabel {
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .galaoChoiceButton {
+        width: 100%;
+        justify-content: center;
+        min-width: 0;
+    }
+}
+
 @media (max-width: 480px) {
     .successActions {
         margin-top: 1.25rem;

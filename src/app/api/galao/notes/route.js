@@ -114,13 +114,42 @@ export async function GET() {
 
         const html = await finalResp.text();
 
-        // Vérification ultime
+        // Vérification ultime : session expirée / redirigée vers l'écran de connexion Galao
         if (html.includes("Session has expired") || html.includes('name="form_ident"')) {
             console.error(`${LOG_PREFIX} ECHEC : Session expirée malgré les efforts.`);
-            return NextResponse.json({
-                success: false,
-                error: "Session Vercel instable. Rafraichissez la page."
-            }, { status: 401 });
+
+            const expiredResponse = NextResponse.json(
+                {
+                    success: false,
+                    error: "Votre session Galao a expiré. Merci de vous reconnecter.",
+                },
+                { status: 401 },
+            );
+
+            // On nettoie les cookies de session côté serveur + flag client
+            expiredResponse.cookies.set("galao_session", "", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: 0,
+            });
+            expiredResponse.cookies.set("galao_uid", "", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: 0,
+            });
+            expiredResponse.cookies.set("galao_client", "", {
+                httpOnly: false,
+                secure: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: 0,
+            });
+
+            return expiredResponse;
         }
 
         // ============================================================

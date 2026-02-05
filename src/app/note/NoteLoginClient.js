@@ -53,8 +53,16 @@ export default function NoteLoginClient() {
             const res = await fetch("/api/galao/notes");
             const data = await res.json();
 
+            // Si le backend signale explicitement une session expirée (401),
+            // on nettoie les infos côté client et on affiche le message.
+            if (res.status === 401) {
+                const msg = data?.error || t("galao.sessionExpired");
+                handleSessionExpired(msg);
+                return;
+            }
+
             if (!res.ok || !data?.success) {
-                throw new Error(data?.error || t('galao.fetchError'));
+                throw new Error(data?.error || t("galao.fetchError"));
             }
 
             const html = data.html || "";
@@ -793,12 +801,15 @@ export default function NoteLoginClient() {
                                                                         return (
                                                                             <tr key={idx}
                                                                                 style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                                                <td style={{
-                                                                                    padding: '0.8rem 1.25rem',
-                                                                                    fontWeight: '500',
-                                                                                    color: 'var(--text-primary)',
-                                                                                    border: 'none'
-                                                                                }}>
+                                                                                <td
+                                                                                    className={styles.notesTableLabel}
+                                                                                    style={{
+                                                                                        padding: '0.8rem 1.25rem',
+                                                                                        fontWeight: '500',
+                                                                                        color: 'var(--text-primary)',
+                                                                                        border: 'none'
+                                                                                    }}
+                                                                                >
                                                                                     {row.fullIntitule}
                                                                                 </td>
                                                                                 <td style={{
