@@ -1229,7 +1229,7 @@ function HomeContent({searchParams}) {
             {/* Bouton de scroll to top */}
             <ScrollToTop/>
 
-            <Navbar
+                <Navbar
                 darkMode={darkMode}
                 oledMode={oledMode}
                 onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -1268,7 +1268,7 @@ function HomeContent({searchParams}) {
                 onSubjectsChange={setSelectedSubjects}
                 showOnlyExams={showOnlyExams}
                 onShowOnlyExamsChange={setShowOnlyExams}
-                showFilter={!loading && allEvents.length > 0}
+                showFilter={true}
                 userInfo={userInfo}
                 isLoadingUser={isLoadingUser}
                 showFullYear={showFullYear}
