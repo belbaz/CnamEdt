@@ -33,7 +33,11 @@
     "clearCache": "Vider le cache et les cookies (localhost uniquement)",
     "back": "Retour",
     "examens": "Examens à venir",
-    "notes": "Mes notes"
+    "notes": "Galao"
+  },
+  "orientation": {
+    "switchToLandscape": "Passer en mode paysage",
+    "ariaLabel": "Basculer en mode paysage"
   },
   "pageHeader": {
     "settings": "Paramètres",
@@ -277,8 +281,8 @@
         "description": "Consultez l'agenda avec tous vos cours"
       },
       "notes": {
-        "title": "Notes Galao",
-        "description": "Consultez vos notes et résultats académiques"
+        "title": "Galao",
+        "description": "Consultez vos notes, résultats et absences"
       },
       "files": {
         "title": "Fichiers de cours",
@@ -712,6 +716,15 @@
     "backToDashboard": "Retour au dashboard",
     "autoCheck": "Vérification automatique",
     "autoCheckDescription": "Les modifications de l'emploi du temps sont détectées automatiquement grace à un bot:",
+    "autoCheckDayRange": "9h-19h",
+    "autoCheckDayFrequency": "toutes les 20 minutes",
+    "autoCheckDayDescription": "Période active de la journée",
+    "autoCheckNightRange": "1h-7h",
+    "autoCheckNightFrequency": "aucune vérification",
+    "autoCheckNightDescription": "Pause nocturne",
+    "autoCheckStandardLabel": "Le reste du temps",
+    "autoCheckStandardFrequency": "toutes les heures",
+    "autoCheckStandardDescription": "Période standard",
     "noTitle": "Sans titre"
   },
   "offline": {
@@ -775,47 +788,93 @@
     "courses": "{count} cours"
   },
   "galao": {
-    "title": "Connexion Galao",
-    "subtitle": "Utilisez vos identifiants Galao (Nom d'utilisateur et mot de passe).",
-    "username": "Nom d'utilisateur",
-    "password": "Mot de passe",
-    "login": "Connexion",
-    "loggingIn": "Connexion...",
-    "loginSuccess": "Connexion réussie !",
-    "loginError": "Erreur de connexion.",
-    "missingCredentials": "Merci de renseigner vos identifiants.",
-    "connectionFailed": "Impossible de se connecter.",
-    "privacyNote": "Aucune donnée n'est enregistrée coté serveur !",
-    "loading": "Chargement des notes...",
-    "retry": "Réessayer",
-    "back": "Retour",
-    "results": "Résultats",
-    "transcript": "Relevé de notes",
-    "downloadPdf": "📥 Télécharger PDF",
-    "logout": "Déconnexion",
-    "logoutSuccess": "Déconnexion réussie.",
-    "sessionExpired": "Votre session Galao a expiré. Merci de vous reconnecter.",
-    "fetchError": "Impossible de récupérer les notes Galao.",
-    "emptyResponse": "Réponse Galao vide.",
-    "unexpectedError": "Erreur inattendue lors du chargement des notes.",
-    "table": {
-      "label": "Intitulé",
-      "grade": "Note",
-      "min": "Min",
-      "avg": "Moy",
-      "max": "Max",
-      "detail": "Détail",
-      "studentAvg": "Moyenne étudiant"
+    "portal": {
+      "title": "Portail Galao",
+      "subtitle": "Connecte-toi à Galao puis choisis de consulter tes <strong>notes</strong> ou tes <strong>absences</strong>.",
+      "usernameLabel": "Identifiant Galao",
+      "usernamePlaceholder": "Identifiant Galao",
+      "passwordLabel": "Mot de passe Galao",
+      "passwordPlaceholder": "Mot de passe Galao",
+      "loginButton": "Se connecter à Galao",
+      "loggingIn": "Connexion en cours...",
+      "privacyNote": "Tes identifiants ne sont pas stockés, ils sont uniquement utilisés pour ouvrir une session Galao.",
+      "loginSuccess": "Connexion réussie !",
+      "logoutButton": "Se déconnecter",
+      "chooseSection": "Que souhaitez-vous consulter ?"
     },
-    "pdf": {
-      "title": "Relevé de Notes et Résultats",
-      "generatedOn": "Généré le",
-      "semester": "Semestre :",
-      "all": "Tous"
+    "choices": {
+      "notes": {
+        "title": "Mes notes",
+        "description": "Résultats et moyennes"
+      },
+      "absences": {
+        "title": "Mes absences",
+        "description": "Historique d'absences"
+      }
     },
-    "footerCertified": "Données certifiées issues de l'ENT Galao",
-    "studentAvg": "Moyenne",
-    "noGrades": "Aucun relevé de notes disponible.",
-    "checkRegistration": "Vérifiez vos inscriptions ou réessayez plus tard."
+    "notes": {
+      "title": "Connexion Galao",
+      "subtitle": "Utilisez vos identifiants Galao (Nom d'utilisateur et mot de passe).",
+      "username": "Nom d'utilisateur",
+      "password": "Mot de passe",
+      "login": "Connexion",
+      "loggingIn": "Connexion...",
+      "loginSuccess": "Connexion réussie !",
+      "loginError": "Erreur de connexion.",
+      "missingCredentials": "Merci de renseigner vos identifiants.",
+      "connectionFailed": "Impossible de se connecter.",
+      "privacyNote": "Aucune donnée n'est enregistrée coté serveur !",
+      "loading": "Chargement des notes...",
+      "retry": "Réessayer",
+      "back": "Retour",
+      "backToGalao": "Retour au portail Galao",
+      "results": "Résultats",
+      "transcript": "Relevé de notes",
+      "downloadPdf": "📥 Télécharger PDF",
+      "logout": "Déconnexion",
+      "logoutSuccess": "Déconnexion réussie.",
+      "sessionExpired": "Votre session Galao a expiré. Merci de vous reconnecter.",
+      "fetchError": "Impossible de récupérer les notes Galao.",
+      "emptyResponse": "Réponse Galao vide.",
+      "unexpectedError": "Erreur inattendue lors du chargement des notes.",
+      "table": {
+        "label": "Intitulé",
+        "grade": "Note",
+        "min": "Min",
+        "avg": "Moy",
+        "max": "Max",
+        "detail": "Détail",
+        "studentAvg": "Moyenne étudiant"
+      },
+      "pdf": {
+        "title": "Relevé de Notes et Résultats",
+        "generatedOn": "Généré le",
+        "semester": "Semestre :",
+        "all": "Tous"
+      },
+      "footerCertified": "Données certifiées issues de l'ENT Galao",
+      "studentAvg": "Moyenne",
+      "noGrades": "Aucun relevé de notes disponible.",
+      "checkRegistration": "Vérifiez vos inscriptions ou réessayez plus tard."
+    },
+    "absences": {
+      "title": "Historique des absences",
+      "subtitle": "Données lues en temps réel depuis Galao (lecture seule).",
+      "loading": "Chargement des absences Galao...",
+      "noAbsences": "Aucune absence n'a été trouvée pour ce dossier Galao.",
+      "count": "absence",
+      "countPlural": "absences",
+      "found": "trouvée",
+      "foundPlural": "trouvées",
+      "back": "Retour à l'emploi du temps",
+      "backToGalao": "Retour au portail Galao",
+      "table": {
+        "description": "Description",
+        "justification": "Justification",
+        "pj": "P.J.",
+        "dateJustification": "Date justification",
+        "operator": "Opérateur"
+      }
+    }
   }
 }

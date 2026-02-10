@@ -35,6 +35,7 @@ import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
 import YearCalendar from "@/components/YearCalendar";
+import OrientationManager from "@/components/OrientationManager";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -1403,9 +1404,31 @@ function HomeContent({searchParams}) {
                             Object.entries(groupByDay).map(([day, evs], index) => {
                                 const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
                                 const isToday = dayDate.toDateString() === new Date().toDateString();
+                                const isFirstDay = index === 0;
 
                                 return (
-                                    <div key={day}>
+                                    <div key={day} style={{margin: '.3rem', position: 'relative'}}>
+                                        {/* Bouton à droite du premier jour */}
+                                        {isFirstDay && viewMode === 'horizontal' && (
+                                            <button
+                                                onClick={() => handleToggleAllDays()}
+                                                className={styles.dayOptionsButton}
+                                                aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                    {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
+                                                        <path d="M6 9l6 6 6-6" stroke="currentColor"
+                                                            strokeWidth="2.2" strokeLinecap="round"
+                                                            strokeLinejoin="round" />
+                                                    ) : (
+                                                        <path d="M6 15l6-6 6 6" stroke="currentColor"
+                                                            strokeWidth="2.2" strokeLinecap="round"
+                                                            strokeLinejoin="round" />
+                                                    )}
+                                                </svg>
+                                            </button>
+                                        )}
                                         <DayBlock
                                             ref={isToday ? todayRef : null}
                                             day={day}
@@ -1566,6 +1589,9 @@ function HomeContent({searchParams}) {
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}
             <DevToolsButton/>
+
+            {/* Gestionnaire d'orientation pour mobile */}
+            <OrientationManager/>
         </div>
     );
 }

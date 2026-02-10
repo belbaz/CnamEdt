@@ -77,7 +77,7 @@ export default function DashboardPage() {
         }, {
             title: t('dashboard.pages.notes.title'),
             description: t('dashboard.pages.notes.description'),
-            path: "/note",
+            path: "/galao",
             icon: "🎓",
             color: "#f59e0b"
         }, {

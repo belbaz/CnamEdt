@@ -58,15 +58,14 @@ export default function Navbar({
 }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [newHistoryCount, setNewHistoryCount] = useState(0);
-    const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
     const [showTooltip, setShowTooltip] = useState({
         today: false,
         filter: false,
-        options: false,
         history: false,
         fullYear: false,
         examens: false,
-        notes: false
+        notes: false,
+        viewMode: false
     });
     const [longPressTimer, setLongPressTimer] = useState(null);
     const [hasUpcomingExams, setHasUpcomingExams] = useState(false);
@@ -234,21 +233,6 @@ export default function Navbar({
         return () => window.removeEventListener('scroll', handleScroll);
     }, [isScrolled]);
 
-    // Fermer le menu options quand on clique en dehors
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (isOptionsMenuOpen && !event.target.closest('.options-menu-container')) {
-                setIsOptionsMenuOpen(false);
-            }
-        };
-
-        if (isOptionsMenuOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => {
-                document.removeEventListener('mousedown', handleClickOutside);
-            };
-        }
-    }, [isOptionsMenuOpen]);
 
     // Gestion du long press pour les tooltips sur mobile
     const handleLongPressStart = (buttonId) => {
@@ -398,7 +382,7 @@ export default function Navbar({
                                             className="view-filter-group-btn"
                                             onClick={(e) => {
                                                 handleClick('notes');
-                                                router.push('/note');
+                                                router.push('/galao');
                                             }}
                                             aria-label={t('navbar.notes')}
                                             onMouseEnter={() => setShowTooltip(prev => ({ ...prev, notes: true }))}
@@ -409,6 +393,52 @@ export default function Navbar({
                                             <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>🎓</span>
                                         </button>
                                     </Tooltip>
+                                    {/* Bouton pour changer la vue (horizontal/vertical) */}
+                                    {onViewModeChange && (
+                                        <Tooltip
+                                            text={viewMode === 'horizontal' ? t('navbar.verticalView') : t('navbar.horizontalView')}
+                                            show={showTooltip.viewMode}
+                                            enabled={showTooltips}
+                                        >
+                                            <button
+                                                className="view-filter-group-btn"
+                                                onClick={(e) => {
+                                                    handleClick('viewMode');
+                                                    onViewModeChange(viewMode === 'horizontal' ? 'vertical' : 'horizontal');
+                                                }}
+                                                aria-label={viewMode === 'horizontal' ? t('navbar.verticalView') : t('navbar.horizontalView')}
+                                                onMouseEnter={() => setShowTooltip(prev => ({ ...prev, viewMode: true }))}
+                                                onMouseLeave={() => setShowTooltip(prev => ({ ...prev, viewMode: false }))}
+                                                onTouchStart={() => handleLongPressStart('viewMode')}
+                                                onTouchEnd={() => handleLongPressEnd('viewMode')}
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                    {viewMode === 'horizontal' ? (
+                                                        // Icône pour passer en vue verticale - lignes verticales simples
+                                                        <>
+                                                            <line x1="7" y1="4" x2="7" y2="20" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            <line x1="12" y1="4" x2="12" y2="20" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            <line x1="17" y1="4" x2="17" y2="20" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                        </>
+                                                    ) : (
+                                                        // Icône pour passer en vue horizontale - lignes horizontales simples
+                                                        <>
+                                                            <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor"
+                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                        </>
+                                                    )}
+                                                </svg>
+                                            </button>
+                                        </Tooltip>
+                                    )}
                                     {/* Bouton examens si des examens sont proches */}
                                     {hasUpcomingExams && (
                                         <Tooltip
@@ -552,89 +582,6 @@ export default function Navbar({
                                         :
                                         ''
                                     }
-                                    {/* Menu déroulant pour toutes les options */}
-                                    <div className="options-menu-container">
-                                        <Tooltip
-                                            text={t('navbar.options')}
-                                            show={showTooltip.options && !isOptionsMenuOpen}
-                                            enabled={showTooltips}
-                                        >
-                                            <button
-                                                className="options-menu-toggle"
-                                                onClick={(e) => {
-                                                    handleClick('options');
-                                                    setIsOptionsMenuOpen(!isOptionsMenuOpen);
-                                                }}
-                                                aria-label={t('navbar.options')}
-                                                aria-expanded={isOptionsMenuOpen}
-                                                onMouseEnter={() => setShowTooltip(prev => ({ ...prev, options: true }))}
-                                                onMouseLeave={() => setShowTooltip(prev => ({ ...prev, options: false }))}
-                                                onTouchStart={() => handleLongPressStart('options')}
-                                                onTouchEnd={() => handleLongPressEnd('options')}
-                                            >
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                    <circle cx="12" cy="5" r="1.5" fill="currentColor" />
-                                                    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                                                    <circle cx="12" cy="19" r="1.5" fill="currentColor" />
-                                                </svg>
-                                            </button>
-                                        </Tooltip>
-                                        {isOptionsMenuOpen && (
-                                            <div className="options-menu-dropdown">
-                                                <button
-                                                    className="options-menu-item"
-                                                    onClick={() => {
-                                                        onViewModeChange && onViewModeChange(viewMode === 'horizontal' ? 'vertical' : 'horizontal');
-                                                        setIsOptionsMenuOpen(false);
-                                                    }}
-                                                >
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                        {viewMode === 'horizontal' ? (
-                                                            <>
-                                                                <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor"
-                                                                    strokeWidth="2" strokeLinecap="round" />
-                                                                <path d="M9 3v18M15 3v18" stroke="currentColor"
-                                                                    strokeWidth="2" strokeLinecap="round" />
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <path d="M12 3v18M6 3v18M18 3v18" stroke="currentColor"
-                                                                    strokeWidth="2" strokeLinecap="round" />
-                                                                <path d="M3 9h18M3 15h18" stroke="currentColor"
-                                                                    strokeWidth="2" strokeLinecap="round" />
-                                                            </>
-                                                        )}
-                                                    </svg>
-                                                    <span>{viewMode === 'horizontal' ? t('navbar.verticalView') : t('navbar.horizontalView')}</span>
-                                                </button>
-                                                {viewMode === 'horizontal' && (
-                                                    <button
-                                                        className="options-menu-item"
-                                                        onClick={() => {
-                                                            onToggleAllDays();
-                                                            setIsOptionsMenuOpen(false);
-                                                        }}
-                                                    >
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                                            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                            {allDaysCollapsed ? (
-                                                                <path d="M6 9l6 6 6-6" stroke="currentColor"
-                                                                    strokeWidth="2.2" strokeLinecap="round"
-                                                                    strokeLinejoin="round" />
-                                                            ) : (
-                                                                <path d="M6 15l6-6 6 6" stroke="currentColor"
-                                                                    strokeWidth="2.2" strokeLinecap="round"
-                                                                    strokeLinejoin="round" />
-                                                            )}
-                                                        </svg>
-                                                        <span>{allDaysCollapsed ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}</span>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                                 {devMode && (
                                     <div>

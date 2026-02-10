@@ -313,14 +313,19 @@ function HistoContent() {
                                     fontWeight: 600,
                                     marginBottom: "0.25rem"
                                 }}>
-                                    <span style={{color: "var(--primary-color)"}}>9h-19h</span> : toutes les <strong
-                                    style={{color: "#10b981"}}>20 minutes</strong>
+                                    <span style={{color: "var(--primary-color)"}}>
+                                        {t('histo.autoCheckDayRange')}
+                                    </span>
+                                    {" : "}
+                                    <strong style={{color: "#10b981"}}>
+                                        {t('histo.autoCheckDayFrequency')}
+                                    </strong>
                                 </div>
                                 <div style={{
                                     color: "var(--text-secondary)",
                                     fontSize: "0.85rem"
                                 }}>
-                                    Période active de la journée
+                                    {t('histo.autoCheckDayDescription')}
                                 </div>
                             </div>
                         </div>
@@ -359,14 +364,19 @@ function HistoContent() {
                                     fontWeight: 600,
                                     marginBottom: "0.25rem"
                                 }}>
-                                    <span style={{color: "#6b7280"}}>1h-7h</span> : <strong style={{color: "#6b7280"}}>aucune
-                                    vérification</strong>
+                                    <span style={{color: "#6b7280"}}>
+                                        {t('histo.autoCheckNightRange')}
+                                    </span>
+                                    {" : "}
+                                    <strong style={{color: "#6b7280"}}>
+                                        {t('histo.autoCheckNightFrequency')}
+                                    </strong>
                                 </div>
                                 <div style={{
                                     color: "var(--text-secondary)",
                                     fontSize: "0.85rem"
                                 }}>
-                                    Pause nocturne
+                                    {t('histo.autoCheckNightDescription')}
                                 </div>
                             </div>
                         </div>
@@ -405,14 +415,19 @@ function HistoContent() {
                                     fontWeight: 600,
                                     marginBottom: "0.25rem"
                                 }}>
-                                    <span style={{color: "#f59e0b"}}>Le reste du temps</span> : toutes les <strong
-                                    style={{color: "#f59e0b"}}>heures</strong>
+                                    <span style={{color: "#f59e0b"}}>
+                                        {t('histo.autoCheckStandardLabel')}
+                                    </span>
+                                    {" : "}
+                                    <strong style={{color: "#f59e0b"}}>
+                                        {t('histo.autoCheckStandardFrequency')}
+                                    </strong>
                                 </div>
                                 <div style={{
                                     color: "var(--text-secondary)",
                                     fontSize: "0.85rem"
                                 }}>
-                                    Période standard
+                                    {t('histo.autoCheckStandardDescription')}
                                 </div>
                             </div>
                         </div>

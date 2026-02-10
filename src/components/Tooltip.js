@@ -23,10 +23,10 @@ export default function Tooltip({ children, text, show, enabled = true }) {
             // Calculer la position du centre du bouton (ne change pas)
             const buttonCenterX = wrapperRect.left + (wrapperRect.width / 2);
             
-            // Position par défaut : au-dessus, centré
-            let top = wrapperRect.top - tooltipRect.height - margin;
+            // Position par défaut : en dessous, centré
+            let top = wrapperRect.bottom + margin;
             let left = wrapperRect.left + (wrapperRect.width / 2) - (tooltipRect.width / 2);
-            let placement = 'top';
+            let placement = 'bottom';
             
             // Ajuster horizontalement si ça dépasse à gauche
             if (left < margin) {
@@ -38,14 +38,14 @@ export default function Tooltip({ children, text, show, enabled = true }) {
                 left = viewportWidth - tooltipRect.width - margin;
             }
 
-            // Si ça dépasse en haut, mettre en dessous
-            if (top < margin) {
-                top = wrapperRect.bottom + margin;
-                placement = 'bottom';
+            // Si ça dépasse en bas, mettre au-dessus
+            if (top + tooltipRect.height > viewportHeight - margin) {
+                top = wrapperRect.top - tooltipRect.height - margin;
+                placement = 'top';
             }
 
-            // Si ça dépasse toujours en bas, coller en haut de l'écran
-            if (top + tooltipRect.height > viewportHeight - margin) {
+            // Si ça dépasse toujours en haut, coller en haut de l'écran
+            if (top < margin) {
                 top = margin;
                 placement = 'top';
             }

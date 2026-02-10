@@ -1,0 +1,105 @@
+.orientationButtonContainer {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    z-index: 9999;
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.orientationButton {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.orientationButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.orientationButton:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+}
+
+.rotateIcon {
+    animation: rotateAnimation 2s ease-in-out infinite;
+}
+
+@keyframes rotateAnimation {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(90deg);
+    }
+}
+
+.buttonText {
+    white-space: nowrap;
+}
+
+/* Animation de sortie (optionnelle) */
+.orientationButtonContainer.hiding {
+    animation: slideOutToRight 0.3s ease-in forwards;
+}
+
+@keyframes slideOutToRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Mode sombre */
+:global(.dark-mode) .orientationButton {
+    background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    box-shadow: 0 4px 15px rgba(91, 33, 182, 0.4);
+}
+
+:global(.dark-mode) .orientationButton:hover {
+    box-shadow: 0 6px 20px rgba(91, 33, 182, 0.5);
+}
+
+/* Responsive - ajuster pour petits écrans */
+@media (max-width: 480px) {
+    .orientationButtonContainer {
+        bottom: 80px;
+        right: 15px;
+    }
+    
+    .orientationButton {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+    
+    .buttonText {
+        font-size: 13px;
+    }
+}

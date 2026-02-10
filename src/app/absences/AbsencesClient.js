@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
+import KeepAlive from "@/components/KeepAlive";
+import { useI18n } from "@/i18n/I18nContext";
 
 /**
  * Page client pour l'affichage des absences Galao,
  * basée sur la même session (cookies) que les notes.
  */
 export default function AbsencesClient() {
+    const router = useRouter();
+    const { t } = useI18n();
     const [html, setHtml] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -18,6 +23,7 @@ export default function AbsencesClient() {
         exclusions: "",
         late: "",
     });
+    const [backUrl, setBackUrl] = useState("/");
 
     const loadAbsences = async () => {
         try {
@@ -28,26 +34,26 @@ export default function AbsencesClient() {
             const data = await res.json();
 
             if (res.status === 401) {
-                setError(data?.error || "Votre session Galao a expiré. Merci de vous reconnecter via la page des notes.");
+                setError(data?.error || t('galao.notes.sessionExpired'));
                 setHtml("");
                 setAbsences([]);
                 return;
             }
 
             if (!res.ok || !data?.success) {
-                throw new Error(data?.error || "Impossible de récupérer les absences depuis Galao.");
+                throw new Error(data?.error || t('galao.notes.fetchError'));
             }
 
             const rawHtml = data.html || "";
             if (!rawHtml) {
-                setError("Réponse d'absences vide ou invalide.");
+                setError(t('galao.notes.emptyResponse'));
                 return;
             }
 
             setHtml(rawHtml);
         } catch (e) {
             console.warn("[Absences] Erreur de chargement", e);
-            setError(e?.message || "Erreur inattendue lors du chargement des absences.");
+            setError(e?.message || t('galao.notes.unexpectedError'));
         } finally {
             setLoading(false);
         }
@@ -142,21 +148,49 @@ export default function AbsencesClient() {
     const totalAbsences = useMemo(() => absences.length, [absences]);
 
     useEffect(() => {
+        // Vérifier si on vient de /galao
+        if (typeof sessionStorage !== "undefined") {
+            const fromGalao = sessionStorage.getItem("from_galao");
+            if (fromGalao === "true") {
+                setBackUrl("/galao");
+            }
+        }
+        
+        // Vérifier s'il y a une session Galao active
+        if (typeof document !== "undefined") {
+            const hasClientFlag = document.cookie.split(";").some((c) =>
+                c.trim().startsWith("galao_client="),
+            );
+            
+            if (!hasClientFlag) {
+                // Pas de session Galao, rediriger vers /galao pour se connecter
+                console.log("[Absences] Pas de session Galao détectée, redirection vers /galao");
+                router.push("/galao");
+                return;
+            }
+        }
+        
         // Chargement initial
         loadAbsences();
-    }, []);
+    }, [router]);
 
     return (
         <div className={styles.page}>
+            {/* KeepAlive pour maintenir la session Galao active */}
+            {!loading && !error && absences.length > 0 && <KeepAlive />}
+            
             <div className={styles.notePage} style={{ maxWidth: "780px", margin: "0 auto" }}>
-                <BackButton href="/" title="Retour à l'emploi du temps" />
+                <BackButton 
+                    href={backUrl} 
+                    title={backUrl === "/galao" ? t('galao.absences.backToGalao') : t('galao.absences.back')} 
+                />
 
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
                         <div>
-                            <h2>Historique des absences</h2>
+                            <h2>{t('galao.absences.title')}</h2>
                             <p className={styles.cardSubhead}>
-                                Données lues en temps réel depuis Galao (lecture seule).
+                                {t('galao.absences.subtitle')}
                             </p>
                         </div>
                         {totalAbsences > 0 && (
@@ -168,8 +202,8 @@ export default function AbsencesClient() {
                                 }}
                             >
                                 <strong>{totalAbsences}</strong>{" "}
-                                absence{totalAbsences > 1 ? "s" : ""} trouvée
-                                {totalAbsences > 1 ? "s" : ""}.
+                                {totalAbsences > 1 ? t('galao.absences.countPlural') : t('galao.absences.count')}{" "}
+                                {totalAbsences > 1 ? t('galao.absences.foundPlural') : t('galao.absences.found')}.
                             </div>
                         )}
                     </header>
@@ -180,7 +214,7 @@ export default function AbsencesClient() {
                         <div className={styles.loaderContainer}>
                             <div className={styles.modernLoader} />
                             <div className={styles.loaderText}>
-                                Chargement des absences Galao...
+                                {t('galao.absences.loading')}
                             </div>
                         </div>
                     )}
@@ -193,7 +227,7 @@ export default function AbsencesClient() {
                                 marginTop: "0.75rem",
                             }}
                         >
-                            Aucune absence n'a été trouvée pour ce dossier Galao.
+                            {t('galao.absences.noAbsences')}
                         </p>
                     )}
 
@@ -217,14 +251,14 @@ export default function AbsencesClient() {
                                 </div>
                             )}
                         <div className={styles.notesTableWrapper} style={{ marginTop: "1rem" }}>
-                            <table className={styles.notesTable}>
+                            <table className={`${styles.notesTable} ${styles.absencesTable}`}>
                                 <thead>
                                 <tr>
-                                    <th>Description</th>
-                                    <th>Justification</th>
-                                    <th>P.J.</th>
-                                    <th>Date justification</th>
-                                    <th>Opérateur</th>
+                                    <th>{t('galao.absences.table.description')}</th>
+                                    <th>{t('galao.absences.table.justification')}</th>
+                                    <th style={{ textAlign: "center" }}>{t('galao.absences.table.pj')}</th>
+                                    <th>{t('galao.absences.table.dateJustification')}</th>
+                                    <th>{t('galao.absences.table.operator')}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -232,20 +266,20 @@ export default function AbsencesClient() {
                                     <tr key={abs.id || idx}>
                                         <td
                                             className={styles.notesTableLabel}
-                                            style={{ fontSize: "0.85rem" }}
+                                            style={{ fontSize: "0.85rem", padding: "0.7rem 0.6rem" }}
                                         >
                                             {abs.description}
                                         </td>
-                                        <td style={{ fontSize: "0.85rem" }}>
+                                        <td style={{ fontSize: "0.85rem", padding: "0.7rem 0.6rem" }}>
                                             {abs.justification || "—"}
                                         </td>
-                                        <td style={{ textAlign: "center", fontSize: "0.85rem" }}>
+                                        <td style={{ textAlign: "center", fontSize: "0.85rem", padding: "0.7rem 0.6rem" }}>
                                             {abs.pj || "—"}
                                         </td>
-                                        <td style={{ fontSize: "0.85rem" }}>
+                                        <td style={{ fontSize: "0.85rem", padding: "0.7rem 0.6rem" }}>
                                             {abs.dateJustification || "—"}
                                         </td>
-                                        <td style={{ fontSize: "0.85rem" }}>
+                                        <td style={{ fontSize: "0.85rem", padding: "0.7rem 0.6rem" }}>
                                             {abs.operateur || "—"}
                                         </td>
                                     </tr>

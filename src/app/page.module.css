@@ -13,6 +13,8 @@
 @media (min-width: 640px) {
     .container {
         padding: 0 1rem 1rem 1rem;
+        /* Ajouter du padding à droite pour le bouton d'options */
+        padding-right: calc(1rem + 40px);
     }
 }
 
@@ -438,6 +440,92 @@
     flex-direction: column;
     min-height: 100vh;
     width: 100%;
+}
+
+/* Position relative pour le parent */
+.weekContent {
+    position: relative;
+}
+
+/* Bouton d'options à droite du premier jour */
+.dayOptionsButton {
+    position: absolute;
+    top: .1px;
+    right: -54px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: rgba(66, 153, 225, 0.08);
+    border: 2px solid rgba(66, 153, 225, 0.25);
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: #4299e1;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+}
+
+.dayOptionsButton:hover {
+    background: rgba(66, 153, 225, 0.15);
+    border-color: rgba(66, 153, 225, 0.4);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    color: #3182ce;
+    transform: translateY(-2px) scale(1.03);
+}
+
+.dayOptionsButton:active {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 2px 6px rgba(66, 153, 225, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Mode sombre */
+.dark-mode .dayOptionsButton {
+    background: rgba(66, 153, 225, 0.12);
+    border-color: rgba(66, 153, 225, 0.3);
+    color: #63b3ed;
+}
+
+.dark-mode .dayOptionsButton:hover {
+    background: rgba(66, 153, 225, 0.2);
+    border-color: rgba(66, 153, 225, 0.45);
+    color: #90cdf4;
+}
+
+/* Tablette et petit écran */
+@media (max-width: 768px) {
+    .dayOptionsButton {
+        width: 40px;
+        height: 40px;
+        right: -48px;
+        border-radius: 20px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+    .dayOptionsButton {
+        width: 38px;
+        height: 38px;
+        right: -44px;
+        border-radius: 19px;
+    }
+    
+    .dayOptionsButton svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Sur mobile : ajuster le padding pour la taille réduite du bouton */
+@media (max-width: 639px) {
+    .container {
+        padding-right: 41px !important;
+    }
 }
 
 /* Bloc d'erreur */

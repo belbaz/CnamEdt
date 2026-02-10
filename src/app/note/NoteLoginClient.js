@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
 import { useI18n } from "@/i18n/I18nContext";
@@ -17,6 +18,7 @@ const NOTES_LAST_SEMESTER_KEY = "notes_last_semester";
  */
 export default function NoteLoginClient() {
     const { t } = useI18n();
+    const router = useRouter();
     // --- États du formulaire et de l'utilisateur ---
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -40,6 +42,7 @@ export default function NoteLoginClient() {
     const [ueAverages, setUeAverages] = useState({}); // Moyennes générales par UE
     const [activeSemester, setActiveSemester] = useState("");
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [backUrl, setBackUrl] = useState("/");
 
     /**
      * Charge les notes depuis l'API (qui fait le scraping).
@@ -67,7 +70,7 @@ export default function NoteLoginClient() {
 
             const html = data.html || "";
             if (!html) {
-                setNotesError(t('galao.emptyResponse'));
+                setNotesError(t('galao.notes.emptyResponse'));
                 return;
             }
 
@@ -76,7 +79,7 @@ export default function NoteLoginClient() {
                 html.includes("ERREUR : requête non acceptée") ||
                 html.includes("syntax error at or near")
             ) {
-                handleSessionExpired(t('galao.sessionExpired'));
+                handleSessionExpired(t('galao.notes.sessionExpired'));
                 return;
             }
 
@@ -86,11 +89,11 @@ export default function NoteLoginClient() {
             const message = err?.message || "";
 
             if (message.includes("Session Galao manquante")) {
-                handleSessionExpired(t('galao.sessionExpired'));
+                handleSessionExpired(t('galao.notes.sessionExpired'));
                 return;
             }
 
-            setNotesError(message || t('galao.unexpectedError'));
+            setNotesError(message || t('galao.notes.unexpectedError'));
         } finally {
             setNotesLoading(false);
             setIsTransitioning(false); // Fin de transition si erreur ou succès
@@ -215,7 +218,7 @@ export default function NoteLoginClient() {
             // Si on a reçu du HTML mais aucune note parsée, la session est probablement expirée
             if (result.length === 0 && notesHtml && notesHtml.length > 100) {
                 console.warn("[NoteLogin] HTML reçu mais aucune note trouvée - session expirée ?");
-                handleSessionExpired(t('galao.sessionExpired'));
+                handleSessionExpired(t('galao.notes.sessionExpired'));
             }
         } catch (parseError) {
             console.warn("[NoteLogin] Erreur parsing HTML", parseError);
@@ -254,7 +257,7 @@ export default function NoteLoginClient() {
         setNotesHtml("");
 
         if (!username.trim() || !password.trim()) {
-            setErrorMessage(t('galao.missingCredentials'));
+            setErrorMessage(t('galao.notes.missingCredentials'));
             return;
         }
 
@@ -269,11 +272,11 @@ export default function NoteLoginClient() {
             const payload = await response.json();
 
             if (!response.ok || !payload?.success) {
-                throw new Error(payload?.error || t('galao.connectionFailed'));
+                throw new Error(payload?.error || t('galao.notes.connectionFailed'));
             }
 
             setUid(payload.uid || null);
-            setInfoMessage(t('galao.loginSuccess'));
+            setInfoMessage(t('galao.notes.loginSuccess'));
 
             // --- PHASE 1 : SUCCÈS VISUEL (STABLE) ---
             setIsLoginSuccess(true);
@@ -291,7 +294,7 @@ export default function NoteLoginClient() {
             await loadingPromise;
 
         } catch (err) {
-            setErrorMessage(err.message || t('galao.loginError'));
+            setErrorMessage(err.message || t('galao.notes.loginError'));
             setIsSubmitting(false); // Retirer l'état de soumission si erreur
             setIsTransitioning(false);
             setIsLoginSuccess(false);
@@ -353,13 +356,13 @@ export default function NoteLoginClient() {
             // En-tête personnalisé
             pdf.setFontSize(18);
             pdf.setTextColor(40, 40, 40);
-            pdf.text(t('galao.pdf.title'), margin, 20);
+            pdf.text(t('galao.notes.pdf.title'), margin, 20);
 
             pdf.setFontSize(10);
             pdf.setTextColor(100, 100, 100);
             const date = new Date().toLocaleDateString(t('settings.language') === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-            pdf.text(`${t('galao.pdf.generatedOn')} ${date}`, margin, 28);
-            pdf.text(activeSemester || t('galao.pdf.all'), margin, 33);
+            pdf.text(`${t('galao.notes.pdf.generatedOn')} ${date}`, margin, 28);
+            pdf.text(activeSemester || t('galao.notes.pdf.all'), margin, 33);
 
             pdf.setLineWidth(0.5);
             pdf.setDrawColor(200, 200, 200);
@@ -412,7 +415,7 @@ export default function NoteLoginClient() {
             if (typeof document !== "undefined") {
                 document.cookie = "galao_client=; Max-Age=0; path=/";
             }
-            setInfoMessage(t('galao.logoutSuccess'));
+            setInfoMessage(t('galao.notes.logoutSuccess'));
         } catch (err) {
             console.warn("Erreur logout", err);
         } finally {
@@ -424,17 +427,31 @@ export default function NoteLoginClient() {
      * Vérification automatique de la session au chargement :
      * si le cookie navigateur "galao_client" est présent, on tente
      * automatiquement de recharger les notes avec la session existante.
+     * Sinon, rediriger vers /galao pour se connecter.
      */
     useEffect(() => {
+        // Vérifier si on vient de /galao
+        if (typeof sessionStorage !== "undefined") {
+            const fromGalao = sessionStorage.getItem("from_galao");
+            if (fromGalao === "true") {
+                setBackUrl("/galao");
+            }
+        }
+        
         if (typeof document === "undefined") return;
         const hasClientFlag = document.cookie.split(";").some((c) =>
             c.trim().startsWith("galao_client="),
         );
+        
         if (hasClientFlag) {
             setHasExistingSession(true);
             loadNotes();
+        } else {
+            // Pas de session Galao, rediriger vers /galao pour se connecter
+            console.log("[NoteLogin] Pas de session Galao détectée, redirection vers /galao");
+            router.push("/galao");
         }
-    }, []);
+    }, [router]);
 
     /**
      * Heartbeat : ping régulier de Galao pour garder la session PHP active
@@ -481,7 +498,10 @@ export default function NoteLoginClient() {
                     maxWidth: '550px',
                     transition: 'opacity 0.3s ease'
                 }}>
-                    <BackButton href="/" title="Retour" />
+                    <BackButton 
+                        href={backUrl} 
+                        title={backUrl === "/galao" ? "Retour au portail Galao" : "Retour"} 
+                    />
 
                     <div className={styles.formCard}>
                         {/* --- ÉCRAN DE CONNEXION --- */}
@@ -490,11 +510,11 @@ export default function NoteLoginClient() {
                                 <header className={styles.cardHeader}
                                     style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
                                     <div>
-                                        <h2>{t('galao.title')}</h2>
+                                        <h2>{t('galao.notes.title')}</h2>
                                     </div>
                                     <div>
                                         <p className={styles.cardSubhead}>
-                                            {t('galao.subtitle')}
+                                            {t('galao.notes.subtitle')}
                                         </p>
                                     </div>
                                 </header>
@@ -504,11 +524,11 @@ export default function NoteLoginClient() {
 
                                 <form className={styles.form} onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
                                     <div className={styles.inputGroup}>
-                                        <label htmlFor="galao-username">{t('galao.username')}</label>
+                                        <label htmlFor="galao-username">{t('galao.notes.username')}</label>
                                         <input
                                             id="galao-username"
                                             type="text"
-                                            placeholder={t('galao.username')}
+                                            placeholder={t('galao.notes.username')}
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
                                             required
@@ -516,11 +536,11 @@ export default function NoteLoginClient() {
                                         />
                                     </div>
                                     <div className={styles.inputGroup}>
-                                        <label htmlFor="galao-password">{t('galao.password')}</label>
+                                        <label htmlFor="galao-password">{t('galao.notes.password')}</label>
                                         <input
                                             id="galao-password"
                                             type="password"
-                                            placeholder={t('galao.password')}
+                                            placeholder={t('galao.notes.password')}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
@@ -536,11 +556,11 @@ export default function NoteLoginClient() {
                                             transform: 'scale(1.02)'
                                         } : {}}
                                     >
-                                        {(isTransitioning || isLoginSuccess) ? t('galao.loginSuccess') : (isSubmitting ? t('galao.loggingIn') : t('galao.login'))}
+                                        {(isTransitioning || isLoginSuccess) ? t('galao.notes.loginSuccess') : (isSubmitting ? t('galao.notes.loggingIn') : t('galao.notes.login'))}
                                     </button>
                                 </form>
                                 <div className={styles.formFooter}>
-                                    <p>{t('galao.privacyNote')}</p>
+                                    <p>{t('galao.notes.privacyNote')}</p>
                                 </div>
                             </div>
                         )}
@@ -556,7 +576,7 @@ export default function NoteLoginClient() {
                                 gap: '1.5rem'
                             }}>
                                 <div className={styles.modernLoader}></div>
-                                <div className={styles.loaderText}>{t('galao.loading')}</div>
+                                <div className={styles.loaderText}>{t('galao.notes.loading')}</div>
                             </div>
                         )}
 
@@ -572,7 +592,7 @@ export default function NoteLoginClient() {
                                     className={styles.submitButton}
                                     style={{ marginTop: '1rem', background: 'var(--text-secondary)' }}
                                 >
-                                    {t('galao.retry')}
+                                    {t('galao.notes.retry')}
                                 </button>
                             </div>
                         )}
@@ -588,7 +608,10 @@ export default function NoteLoginClient() {
                     boxShadow: 'none',
                     border: 'none'
                 }}>
-                    <BackButton href="/" title="Retour" />
+                    <BackButton 
+                        href={backUrl} 
+                        title={backUrl === "/galao" ? "Retour au portail Galao" : "Retour"} 
+                    />
 
                     <div className={styles.formCard} style={{
                         background: 'transparent',
@@ -612,7 +635,7 @@ export default function NoteLoginClient() {
                                         textAlign: 'left',
                                         fontWeight: '800'
                                     } : { margin: 0 }}>
-                                        {showNotesOnly ? `${t('galao.results')} - ${activeSemester}` : t('galao.transcript')}
+                                        {showNotesOnly ? `${t('galao.notes.results')} - ${activeSemester}` : t('galao.notes.transcript')}
                                     </h3>
 
                                     {showNotesOnly && (
@@ -627,14 +650,14 @@ export default function NoteLoginClient() {
                                                     fontSize: '0.9rem'
                                                 }}
                                             >
-                                                {t('galao.downloadPdf')}
+                                                {t('galao.notes.downloadPdf')}
                                             </button>
                                             <button
                                                 onClick={handleLogout}
                                                 className={styles.logoutButton}
                                                 style={{ boxShadow: 'var(--shadow-sm)' }}
                                             >
-                                                {t('galao.logout')}
+                                                {t('galao.notes.logout')}
                                             </button>
                                         </div>
                                     )}
@@ -740,8 +763,9 @@ export default function NoteLoginClient() {
                                                                             borderBottom: '1px solid var(--border-color)',
                                                                             fontWeight: '600',
                                                                             fontSize: '0.75rem',
-                                                                            letterSpacing: '0.05em'
-                                                                        }}>{t('galao.table.label')}
+                                                                            letterSpacing: '0.05em',
+                                                                            textAlign: 'left'
+                                                                        }}>{t('galao.notes.table.label')}
                                                                         </th>
                                                                         <th style={{
                                                                             background: 'var(--bg-secondary)',
@@ -751,7 +775,7 @@ export default function NoteLoginClient() {
                                                                             fontSize: '0.75rem',
                                                                             letterSpacing: '0.05em',
                                                                             textAlign: 'center'
-                                                                        }}>{t('galao.table.grade')}
+                                                                        }}>{t('galao.notes.table.grade')}
                                                                         </th>
                                                                         <th style={{
                                                                             background: 'var(--bg-secondary)',
@@ -761,7 +785,7 @@ export default function NoteLoginClient() {
                                                                             fontSize: '0.75rem',
                                                                             letterSpacing: '0.05em',
                                                                             textAlign: 'center'
-                                                                        }}>{t('galao.table.min')}
+                                                                        }}>{t('galao.notes.table.min')}
                                                                         </th>
                                                                         <th style={{
                                                                             background: 'var(--bg-secondary)',
@@ -771,7 +795,7 @@ export default function NoteLoginClient() {
                                                                             fontSize: '0.75rem',
                                                                             letterSpacing: '0.05em',
                                                                             textAlign: 'center'
-                                                                        }}>{t('galao.table.avg')}
+                                                                        }}>{t('galao.notes.table.avg')}
                                                                         </th>
                                                                         <th style={{
                                                                             background: 'var(--bg-secondary)',
@@ -781,7 +805,7 @@ export default function NoteLoginClient() {
                                                                             fontSize: '0.75rem',
                                                                             letterSpacing: '0.05em',
                                                                             textAlign: 'center'
-                                                                        }}>{t('galao.table.max')}
+                                                                        }}>{t('galao.notes.table.max')}
                                                                         </th>
                                                                         <th style={{
                                                                             background: 'var(--bg-secondary)',
@@ -790,8 +814,8 @@ export default function NoteLoginClient() {
                                                                             fontWeight: '600',
                                                                             fontSize: '0.75rem',
                                                                             letterSpacing: '0.05em',
-                                                                            textAlign: 'right'
-                                                                        }}>{t('galao.table.detail')}
+                                                                            textAlign: 'left'
+                                                                        }}>{t('galao.notes.table.detail')}
                                                                         </th>
                                                                     </tr>
                                                                 </thead>
@@ -804,7 +828,7 @@ export default function NoteLoginClient() {
                                                                                 <td
                                                                                     className={styles.notesTableLabel}
                                                                                     style={{
-                                                                                        padding: '0.8rem 1.25rem',
+                                                                                        padding: '0.7rem 0.6rem',
                                                                                         fontWeight: '500',
                                                                                         color: 'var(--text-primary)',
                                                                                         border: 'none'
@@ -813,7 +837,7 @@ export default function NoteLoginClient() {
                                                                                     {row.fullIntitule}
                                                                                 </td>
                                                                                 <td style={{
-                                                                                    padding: '0.8rem',
+                                                                                    padding: '0.7rem 0.6rem',
                                                                                     textAlign: 'center',
                                                                                     color: hasNote ? (parseFloat(row.note.replace(',', '.')) >= 10 ? '#10b981' : '#ef4444') : 'inherit',
                                                                                     fontWeight: '700',
@@ -823,31 +847,31 @@ export default function NoteLoginClient() {
                                                                                     {row.note}
                                                                                 </td>
                                                                                 <td style={{
-                                                                                    padding: '0.8rem',
+                                                                                    padding: '0.7rem 0.6rem',
                                                                                     textAlign: 'center',
                                                                                     color: 'var(--text-muted)',
                                                                                     border: 'none',
                                                                                     fontSize: '0.85rem'
                                                                                 }}>{row.min}</td>
                                                                                 <td style={{
-                                                                                    padding: '0.8rem',
+                                                                                    padding: '0.7rem 0.6rem',
                                                                                     textAlign: 'center',
                                                                                     color: 'var(--text-muted)',
                                                                                     border: 'none',
                                                                                     fontSize: '0.85rem'
                                                                                 }}>{row.moy}</td>
                                                                                 <td style={{
-                                                                                    padding: '0.8rem',
+                                                                                    padding: '0.7rem 0.6rem',
                                                                                     textAlign: 'center',
                                                                                     color: 'var(--text-muted)',
                                                                                     border: 'none',
                                                                                     fontSize: '0.85rem'
                                                                                 }}>{row.max}</td>
                                                                                 <td style={{
-                                                                                    padding: '0.8rem 1.25rem',
+                                                                                    padding: '0.7rem 0.6rem',
                                                                                     fontSize: '0.85rem',
                                                                                     color: 'var(--text-secondary)',
-                                                                                    textAlign: 'right',
+                                                                                    textAlign: 'left',
                                                                                     border: 'none'
                                                                                 }}>
                                                                                     {row.detail}
@@ -874,15 +898,15 @@ export default function NoteLoginClient() {
                                                                                 background: 'var(--bg-tertiary)'
                                                                             }}>
                                                                                 <td style={{
-                                                                                    padding: '0.9rem 1.25rem',
+                                                                                    padding: '0.8rem 0.6rem',
                                                                                     fontWeight: '700',
                                                                                     color: 'var(--text-primary)',
-                                                                                    fontSize: '0.95rem'
+                                                                                    fontSize: '0.9rem'
                                                                                 }}>
-                                                                                    {t('galao.studentAvg')}
+                                                                                    {t('galao.notes.studentAvg')}
                                                                                 </td>
                                                                                 <td style={{
-                                                                                    padding: '0.9rem',
+                                                                                    padding: '0.8rem 0.6rem',
                                                                                     textAlign: 'center',
                                                                                     fontWeight: '800',
                                                                                     fontSize: '1rem',
@@ -891,7 +915,7 @@ export default function NoteLoginClient() {
                                                                                     {studentAvg}
                                                                                 </td>
                                                                                 <td colSpan="4" style={{
-                                                                                    padding: '0.9rem 1.25rem',
+                                                                                    padding: '0.8rem 0.6rem',
                                                                                     color: 'var(--text-muted)',
                                                                                     fontSize: '0.85rem',
                                                                                     fontStyle: 'italic'
@@ -916,7 +940,7 @@ export default function NoteLoginClient() {
                                             color: 'var(--text-muted)',
                                             fontSize: '0.85rem'
                                         }}>
-                                            {t('galao.footerCertified')}
+                                            {t('galao.notes.footerCertified')}
                                         </div>
                                     </div>
                                 ) : (
@@ -932,14 +956,14 @@ export default function NoteLoginClient() {
                                             fontSize: '1.1rem',
                                             fontWeight: '500'
                                         }}>
-                                            {t('galao.noGrades')}
+                                            {t('galao.notes.noGrades')}
                                         </p>
                                         <p style={{
                                             color: 'var(--text-muted)',
                                             fontSize: '0.9rem',
                                             marginTop: '0.5rem'
                                         }}>
-                                            {t('galao.checkRegistration')}
+                                            {t('galao.notes.checkRegistration')}
                                         </p>
                                     </div>
                                 )}

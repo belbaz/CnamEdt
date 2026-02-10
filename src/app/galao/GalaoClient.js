@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
+import KeepAlive from "@/components/KeepAlive";
+import { useI18n } from "@/i18n/I18nContext";
 
 /**
  * Page centrale Galao :
@@ -12,6 +14,7 @@ import styles from "../login/login.module.css";
  */
 export default function GalaoClient() {
     const router = useRouter();
+    const { t } = useI18n();
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -31,7 +34,7 @@ export default function GalaoClient() {
         if (hasClientFlag) {
             setHasExistingSession(true);
             setIsLoggedIn(true);
-            setInfoMessage("Connexion Galao déjà active.");
+            setInfoMessage(t('galao.portal.loginSuccess'));
         }
     }, []);
 
@@ -41,7 +44,7 @@ export default function GalaoClient() {
         setInfoMessage("");
 
         if (!username.trim() || !password.trim()) {
-            setErrorMessage("Merci de renseigner vos identifiants Galao.");
+            setErrorMessage(t('galao.notes.missingCredentials'));
             return;
         }
 
@@ -56,41 +59,78 @@ export default function GalaoClient() {
             const payload = await response.json();
 
             if (!response.ok || !payload?.success) {
-                throw new Error(payload?.error || "Impossible de se connecter à Galao.");
+                throw new Error(payload?.error || t('galao.notes.connectionFailed'));
             }
 
             setIsLoggedIn(true);
             setHasExistingSession(true);
-            setInfoMessage("Connexion à Galao réussie. Choisissez une rubrique ci-dessous.");
+            setInfoMessage(t('galao.portal.loginSuccess'));
         } catch (err) {
-            setErrorMessage(err.message || "Erreur inattendue lors de la connexion à Galao.");
+            setErrorMessage(err.message || t('galao.notes.loginError'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleGoNotes = () => {
+        // Marquer dans sessionStorage qu'on vient de /galao
+        if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem("from_galao", "true");
+        }
         router.push("/note");
     };
 
     const handleGoAbsences = () => {
+        // Marquer dans sessionStorage qu'on vient de /galao
+        if (typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem("from_galao", "true");
+        }
         router.push("/absences");
+    };
+
+    const handleLogout = async () => {
+        setErrorMessage("");
+        setInfoMessage("");
+        setIsLoggedIn(false);
+        setHasExistingSession(false);
+
+        try {
+            await fetch("/api/galao/logout", { method: "POST" });
+            if (typeof document !== "undefined") {
+                document.cookie = "galao_client=; Max-Age=0; path=/";
+            }
+            setInfoMessage(t('galao.notes.logoutSuccess'));
+        } catch (err) {
+            console.warn("[Galao] Erreur lors de la déconnexion", err);
+        }
     };
 
     return (
         <div className={styles.page}>
+            {/* KeepAlive pour maintenir la session Galao active */}
+            {isLoggedIn && <KeepAlive />}
+            
             <div className={styles.notePage}>
                 <BackButton href="/" title="Retour à l'emploi du temps" />
 
                 <div className={styles.formCard}>
                     <header className={styles.cardHeader}>
-                        <div>
-                            <h2>Portail Galao</h2>
-                            <p className={styles.cardSubhead}>
-                                Connecte-toi à Galao puis choisis de consulter tes{" "}
-                                <strong>notes</strong> ou tes <strong>absences</strong>.
-                            </p>
+                        <div style={{ flex: 1 }}>
+                            <h2>{t('galao.portal.title')}</h2>
+                            <p 
+                                className={styles.cardSubhead}
+                                dangerouslySetInnerHTML={{ __html: t('galao.portal.subtitle') }}
+                            />
                         </div>
+                        {isLoggedIn && (
+                            <button
+                                onClick={handleLogout}
+                                className={styles.logoutButton}
+                                style={{ alignSelf: 'flex-start' }}
+                            >
+                                {t('galao.portal.logoutButton')}
+                            </button>
+                        )}
                     </header>
 
                     {!isLoggedIn && (
@@ -104,12 +144,12 @@ export default function GalaoClient() {
 
                             <form className={styles.form} onSubmit={handleSubmit}>
                                 <div className={styles.inputGroup}>
-                                    <label htmlFor="galao-username">Identifiant Galao</label>
+                                    <label htmlFor="galao-username">{t('galao.portal.usernameLabel')}</label>
                                     <input
                                         id="galao-username"
                                         type="text"
                                         autoComplete="username"
-                                        placeholder="Identifiant Galao"
+                                        placeholder={t('galao.portal.usernamePlaceholder')}
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         required
@@ -118,12 +158,12 @@ export default function GalaoClient() {
                                 </div>
 
                                 <div className={styles.inputGroup}>
-                                    <label htmlFor="galao-password">Mot de passe Galao</label>
+                                    <label htmlFor="galao-password">{t('galao.portal.passwordLabel')}</label>
                                     <input
                                         id="galao-password"
                                         type="password"
                                         autoComplete="current-password"
-                                        placeholder="Mot de passe Galao"
+                                        placeholder={t('galao.portal.passwordPlaceholder')}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -136,21 +176,21 @@ export default function GalaoClient() {
                                     className={styles.submitButton}
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? "Connexion en cours..." : "Se connecter à Galao"}
+                                    {isSubmitting ? t('galao.portal.loggingIn') : t('galao.portal.loginButton')}
                                 </button>
                             </form>
 
                             <div className={styles.formFooter}>
                                 <p>
-                                    Tes identifiants ne sont pas stockés, ils sont uniquement utilisés
-                                    pour ouvrir une session Galao.
+                                    {t('galao.portal.privacyNote')}
                                 </p>
                             </div>
                         </>
                     )}
 
                     {isLoggedIn && (
-                        <div style={{ marginTop: "1.5rem" }}>
+                        <div>
+                            {/* Message de succès */}
                             {infoMessage && (
                                 <div
                                     className={styles.successBanner}
@@ -159,35 +199,167 @@ export default function GalaoClient() {
                                     {infoMessage}
                                 </div>
                             )}
-                            <p
-                                style={{
-                                    fontSize: "0.9rem",
-                                    color: "var(--text-secondary)",
-                                    marginBottom: "0.75rem",
-                                }}
-                            >
-                                Choisis maintenant ce que tu veux consulter :
-                            </p>
-                            <div className={styles.galaoChoiceGrid}>
+
+                            {/* Boutons Notes et Absences en ligne */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                flexWrap: 'wrap'
+                            }}>
+                                {/* Bouton Notes */}
                                 <button
                                     type="button"
-                                    className={styles.galaoChoiceButton}
                                     onClick={handleGoNotes}
+                                    style={{
+                                        all: 'unset',
+                                        cursor: 'pointer',
+                                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.08))',
+                                        border: '2px solid rgba(59, 130, 246, 0.2)',
+                                        borderRadius: '14px',
+                                        padding: '1rem 1.25rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.85rem',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                        flex: '1',
+                                        minWidth: '200px'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-3px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(59, 130, 246, 0.18)';
+                                        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.12))';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                                        e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.08))';
+                                    }}
                                 >
-                                    <span className={styles.galaoChoiceIcon}>📊</span>
-                                    <span className={styles.galaoChoiceLabel}>
-                                        Voir mes notes
-                                    </span>
+                                    <div style={{
+                                        width: '52px',
+                                        height: '52px',
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.6rem',
+                                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                                        flexShrink: 0
+                                    }}>
+                                        📊
+                                    </div>
+                                    <div style={{ textAlign: 'left', flex: 1 }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            fontSize: '0.95rem',
+                                            fontWeight: '700',
+                                            color: 'var(--text-primary)',
+                                            marginBottom: '0.2rem'
+                                        }}>
+                                            {t('galao.choices.notes.title')}
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: '0.75rem',
+                                            color: 'var(--text-secondary)',
+                                            lineHeight: '1.3'
+                                        }}>
+                                            {t('galao.choices.notes.description')}
+                                        </p>
+                                    </div>
+                                    <svg 
+                                        width="18" 
+                                        height="18" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2"
+                                        style={{ color: '#3b82f6', flexShrink: 0 }}
+                                    >
+                                        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
                                 </button>
+
+                                {/* Bouton Absences */}
                                 <button
                                     type="button"
-                                    className={`${styles.galaoChoiceButton} ${styles.galaoChoiceButtonAccent}`}
                                     onClick={handleGoAbsences}
+                                    style={{
+                                        all: 'unset',
+                                        cursor: 'pointer',
+                                        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(251, 146, 60, 0.08))',
+                                        border: '2px solid rgba(245, 158, 11, 0.2)',
+                                        borderRadius: '14px',
+                                        padding: '1rem 1.25rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.85rem',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                        flex: '1',
+                                        minWidth: '200px'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-3px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(245, 158, 11, 0.18)';
+                                        e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 146, 60, 0.12))';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+                                        e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(251, 146, 60, 0.08))';
+                                    }}
                                 >
-                                    <span className={styles.galaoChoiceIcon}>🕒</span>
-                                    <span className={styles.galaoChoiceLabel}>
-                                        Voir mes absences
-                                    </span>
+                                    <div style={{
+                                        width: '52px',
+                                        height: '52px',
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, #f59e0b, #fb923c)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.6rem',
+                                        boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                                        flexShrink: 0
+                                    }}>
+                                        🕒
+                                    </div>
+                                    <div style={{ textAlign: 'left', flex: 1 }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            fontSize: '0.95rem',
+                                            fontWeight: '700',
+                                            color: 'var(--text-primary)',
+                                            marginBottom: '0.2rem'
+                                        }}>
+                                            {t('galao.choices.absences.title')}
+                                        </h3>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: '0.75rem',
+                                            color: 'var(--text-secondary)',
+                                            lineHeight: '1.3'
+                                        }}>
+                                            {t('galao.choices.absences.description')}
+                                        </p>
+                                    </div>
+                                    <svg 
+                                        width="18" 
+                                        height="18" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2"
+                                        style={{ color: '#f59e0b', flexShrink: 0 }}
+                                    >
+                                        <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
                                 </button>
                             </div>
                         </div>
