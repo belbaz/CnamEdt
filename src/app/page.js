@@ -1276,7 +1276,7 @@ function HomeContent({searchParams}) {
                 onToggleFullYear={handleToggleFullYear}
             />
 
-            <main className={styles.container}>
+            <main className={`${styles.container} ${viewMode === 'vertical' ? styles.containerVertical : ''}`}>
                 {/* Affichage détaillé de l'erreur uniquement en mode dev (desktop) */}
                 {error && devMode && !isSmallScreen && (
                     <div className={styles.errorContainer}>
@@ -1366,10 +1366,11 @@ function HomeContent({searchParams}) {
                     />
                 ) : (
                     (!loading || events.length > 0) && events.length > 0 && (
-                    <div
+                    <div style={viewMode === 'vertical' ? {margin: '.3rem'} : {margin: '0'}}
                         key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
                         className={
                             `${styles.weekContent} ` +
+                            (viewMode === 'vertical' ? styles.weekContentVertical : '') + ' ' +
                             (weekTransitionDirection === 'next'
                                 ? styles.slideLeft
                                 : weekTransitionDirection === 'prev'

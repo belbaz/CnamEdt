@@ -1,6 +1,6 @@
 .orientationButtonContainer {
     position: fixed;
-    bottom: 100px;
+    bottom: 15px;
     right: 20px;
     z-index: 9999;
     animation: slideInFromRight 0.3s ease-out;
@@ -79,8 +79,8 @@
 
 /* Mode sombre */
 :global(.dark-mode) .orientationButton {
-    background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
-    box-shadow: 0 4px 15px rgba(91, 33, 182, 0.4);
+    background: linear-gradient(135deg, #2563eb 0%, #23a120 100%);
+    /*box-shadow: 0 4px 15px rgba(91, 33, 182, 0.4);*/
 }
 
 :global(.dark-mode) .orientationButton:hover {

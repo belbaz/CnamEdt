@@ -23,6 +23,12 @@
     will-change: transform, opacity;
 }
 
+/* En mode vertical, s'assurer qu'il n'y a pas de padding/margin qui gêne */
+.weekContentVertical {
+    padding: 0;
+    margin: 0;
+}
+
 .slideLeft {
     animation: weekSlideLeft 180ms ease-out;
 }
@@ -44,6 +50,13 @@
 /* Permettre le scroll horizontal pour la vue verticale du planning */
 .container:has(.vertical-schedule-container) {
     overflow-x: visible;
+}
+
+/* En mode vertical, supprimer le padding-right supplémentaire pour le bouton */
+@media (min-width: 640px) {
+    .containerVertical {
+        padding: 0 1rem 1rem 1rem !important;
+    }
 }
 
 /* Tablettes */
@@ -521,9 +534,14 @@
     }
 }
 
-/* Sur mobile : ajuster le padding pour la taille réduite du bouton */
+/* Masquer le bouton en mode vertical */
+.container:has(.vertical-schedule-container) .dayOptionsButton {
+    display: none;
+}
+
+/* Sur mobile : ajuster le padding pour la taille réduite du bouton (uniquement en mode horizontal) */
 @media (max-width: 639px) {
-    .container {
+    .container:not(.containerVertical) {
         padding-right: 41px !important;
     }
 }
