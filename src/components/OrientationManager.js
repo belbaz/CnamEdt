@@ -5,77 +5,66 @@ import styles from "./OrientationManager.module.css";
 
 /**
  * Composant qui gère l'orientation de l'écran sur mobile
- * - FORCE le verrouillage en portrait par défaut
+ * - FORCE l'affichage en portrait par défaut (via CSS transform)
  * - Affiche un bouton pendant 4s quand le téléphone PHYSIQUE est en position horizontale
  * - L'orientation ne change QUE si on appuie sur le bouton
  * - Revient automatiquement en portrait quand on remet le téléphone vertical
+ * 
+ * IMPORTANT: Cette solution fonctionne dans les navigateurs web (pas besoin d'app native)
+ * Elle utilise CSS transform pour forcer l'orientation visuelle
  */
 export default function OrientationManager() {
     const { t } = useI18n();
     const [showRotateButton, setShowRotateButton] = useState(false);
     const [manualLandscape, setManualLandscape] = useState(false);
+    const [isPhysicallyLandscape, setIsPhysicallyLandscape] = useState(false);
     const hideButtonTimeoutRef = useRef(null);
-    const orientationLockedRef = useRef(false);
+
+    // Appliquer/retirer la classe CSS sur le body pour forcer l'orientation
+    useEffect(() => {
+        const body = document.body;
+        
+        // Déterminer si on doit forcer le mode portrait
+        const shouldForcePortrait = isPhysicallyLandscape && !manualLandscape;
+        
+        if (shouldForcePortrait) {
+            body.classList.add('force-portrait-orientation');
+            console.log('[OrientationManager] Mode portrait forcé via CSS');
+        } else if (manualLandscape && isPhysicallyLandscape) {
+            body.classList.remove('force-portrait-orientation');
+            body.classList.add('allow-landscape-orientation');
+            console.log('[OrientationManager] Mode paysage autorisé');
+        } else {
+            body.classList.remove('force-portrait-orientation');
+            body.classList.remove('allow-landscape-orientation');
+        }
+        
+        return () => {
+            body.classList.remove('force-portrait-orientation');
+            body.classList.remove('allow-landscape-orientation');
+        };
+    }, [isPhysicallyLandscape, manualLandscape]);
 
     useEffect(() => {
         // Vérifier si on est sur mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (!isMobile) return;
 
-        // FORCER le verrouillage en portrait au démarrage
-        const lockPortrait = async () => {
-            try {
-                if (window.screen?.orientation?.lock) {
-                    await window.screen.orientation.lock('portrait');
-                    orientationLockedRef.current = true;
-                    console.log('[OrientationManager] Orientation verrouillée en portrait');
-                }
-            } catch (err) {
-                console.warn('[OrientationManager] Impossible de verrouiller en portrait:', err);
-            }
-        };
-
-        // Fonction pour verrouiller en paysage
-        const lockLandscape = async () => {
-            try {
-                if (window.screen?.orientation?.lock) {
-                    await window.screen.orientation.lock('landscape');
-                    console.log('[OrientationManager] Orientation verrouillée en paysage');
-                }
-            } catch (err) {
-                console.warn('[OrientationManager] Impossible de verrouiller en paysage:', err);
-            }
-        };
-
-        // Fonction pour revenir en portrait
-        const returnToPortrait = async () => {
-            try {
-                if (window.screen?.orientation?.lock) {
-                    await window.screen.orientation.lock('portrait');
-                    console.log('[OrientationManager] Retour en portrait');
-                }
-            } catch (err) {
-                console.warn('[OrientationManager] Impossible de revenir en portrait:', err);
-            }
-        };
-
-        // Fonction pour détecter l'orientation PHYSIQUE du téléphone (pas l'orientation de l'écran)
+        // Fonction pour détecter l'orientation PHYSIQUE du téléphone
         const handleOrientationChange = () => {
             // Détection basée sur les dimensions de la fenêtre
-            const isPhysicallyLandscape = window.innerWidth > window.innerHeight;
+            const isLandscape = window.innerWidth > window.innerHeight;
+            setIsPhysicallyLandscape(isLandscape);
             
             console.log('[OrientationManager] Changement détecté:', {
-                isPhysicallyLandscape,
+                isLandscape,
                 manualLandscape,
                 width: window.innerWidth,
                 height: window.innerHeight
             });
 
             // Si le téléphone est physiquement en position horizontale et qu'on n'a pas activé le mode paysage manuellement
-            if (isPhysicallyLandscape && !manualLandscape) {
-                // Forcer le retour en portrait pour empêcher la rotation automatique
-                lockPortrait();
-                
+            if (isLandscape && !manualLandscape) {
                 // Afficher le bouton
                 setShowRotateButton(true);
                 
@@ -90,7 +79,7 @@ export default function OrientationManager() {
                 }, 4000);
             } 
             // Si le téléphone revient en position verticale
-            else if (!isPhysicallyLandscape) {
+            else if (!isLandscape) {
                 // Cacher le bouton immédiatement
                 setShowRotateButton(false);
                 if (hideButtonTimeoutRef.current) {
@@ -100,7 +89,6 @@ export default function OrientationManager() {
                 // Si on était en mode paysage manuel, revenir en portrait
                 if (manualLandscape) {
                     setManualLandscape(false);
-                    returnToPortrait();
                 }
             }
         };
@@ -110,14 +98,10 @@ export default function OrientationManager() {
             console.log('[OrientationManager] Bouton cliqué - Passage en mode paysage');
             setManualLandscape(true);
             setShowRotateButton(false);
-            lockLandscape();
         };
 
         // Stocker la fonction pour pouvoir la retirer plus tard
         window.__handleRotateClick = handleRotateClick;
-
-        // IMPORTANT: Verrouiller en portrait dès le démarrage
-        lockPortrait();
 
         // Écouter les changements de taille de fenêtre pour détecter la rotation physique
         window.addEventListener('resize', handleOrientationChange);

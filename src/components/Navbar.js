@@ -415,24 +415,35 @@ export default function Navbar({
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                                                     xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                                     {viewMode === 'horizontal' ? (
-                                                        // Icône pour passer en vue verticale - lignes verticales simples
+                                                        // Icône calendrier grille (vue verticale planning)
                                                         <>
-                                                            <line x1="7" y1="4" x2="7" y2="20" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
-                                                            <line x1="12" y1="4" x2="12" y2="20" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
-                                                            <line x1="17" y1="4" x2="17" y2="20" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            {/* Cadre du calendrier */}
+                                                            <rect x="3" y="4" width="18" height="17" rx="2"
+                                                                stroke="currentColor" strokeWidth="2" fill="none" />
+                                                            {/* Ligne de séparation en-tête */}
+                                                            <line x1="3" y1="8" x2="21" y2="8" stroke="currentColor"
+                                                                strokeWidth="2" />
+                                                            {/* Grille de colonnes verticales (jours) */}
+                                                            <line x1="9" y1="8" x2="9" y2="21" stroke="currentColor"
+                                                                strokeWidth="1.5" opacity="0.6" />
+                                                            <line x1="15" y1="8" x2="15" y2="21" stroke="currentColor"
+                                                                strokeWidth="1.5" opacity="0.6" />
                                                         </>
                                                     ) : (
-                                                        // Icône pour passer en vue horizontale - lignes horizontales simples
+                                                        // Icône liste (vue horizontale par jours)
                                                         <>
-                                                            <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
-                                                            <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
-                                                            <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor"
-                                                                strokeWidth="2.5" strokeLinecap="round" />
+                                                            {/* Trois éléments de liste avec puces */}
+                                                            <circle cx="5" cy="6" r="1.5" fill="currentColor" />
+                                                            <line x1="9" y1="6" x2="20" y2="6" stroke="currentColor"
+                                                                strokeWidth="2" strokeLinecap="round" />
+                                                            
+                                                            <circle cx="5" cy="12" r="1.5" fill="currentColor" />
+                                                            <line x1="9" y1="12" x2="20" y2="12" stroke="currentColor"
+                                                                strokeWidth="2" strokeLinecap="round" />
+                                                            
+                                                            <circle cx="5" cy="18" r="1.5" fill="currentColor" />
+                                                            <line x1="9" y1="18" x2="20" y2="18" stroke="currentColor"
+                                                                strokeWidth="2" strokeLinecap="round" />
                                                         </>
                                                     )}
                                                 </svg>

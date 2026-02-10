@@ -1170,111 +1170,192 @@
 }
 
 /* ============================================
-   DARK MODE SUPPORT
+   DARK MODE (BASÉ SUR LES CLASSES DE L'APP)
    ============================================ */
 
-@media (prefers-color-scheme: dark) {
-    .analytics-container {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: #e2e8f0;
-    }
+.dark-mode .analytics-container,
+[data-theme="dark"] .analytics-container,
+.oled-mode .analytics-container {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #e2e8f0;
+}
 
-    .analytics-header,
-    .stat-card,
-    .chart-card,
-    .filters-panel,
-    .sessions-controls,
-    .sessions-table-container,
-    .user-info-card,
-    .user-stats-card,
-    .user-sessions-list,
-    .analytics-loading,
-    .analytics-error,
-    .loading-state,
-    .error-state {
-        background: #1e293b;
-        border-color: #334155;
-        color: #e2e8f0;
-    }
+.dark-mode .analytics-header,
+[data-theme="dark"] .analytics-header,
+.oled-mode .analytics-header,
+.dark-mode .stat-card,
+[data-theme="dark"] .stat-card,
+.oled-mode .stat-card,
+.dark-mode .chart-card,
+[data-theme="dark"] .chart-card,
+.oled-mode .chart-card,
+.dark-mode .filters-panel,
+[data-theme="dark"] .filters-panel,
+.oled-mode .filters-panel,
+.dark-mode .sessions-controls,
+[data-theme="dark"] .sessions-controls,
+.oled-mode .sessions-controls,
+.dark-mode .sessions-table-container,
+[data-theme="dark"] .sessions-table-container,
+.oled-mode .sessions-table-container,
+.dark-mode .user-info-card,
+[data-theme="dark"] .user-info-card,
+.oled-mode .user-info-card,
+.dark-mode .user-stats-card,
+[data-theme="dark"] .user-stats-card,
+.oled-mode .user-stats-card,
+.dark-mode .user-sessions-list,
+[data-theme="dark"] .user-sessions-list,
+.oled-mode .user-sessions-list,
+.dark-mode .analytics-loading,
+[data-theme="dark"] .analytics-loading,
+.oled-mode .analytics-loading,
+.dark-mode .analytics-error,
+[data-theme="dark"] .analytics-error,
+.oled-mode .analytics-error,
+.dark-mode .loading-state,
+[data-theme="dark"] .loading-state,
+.oled-mode .loading-state,
+.dark-mode .error-state,
+[data-theme="dark"] .error-state,
+.oled-mode .error-state {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
 
-    .analytics-header h1 {
-        background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
+.dark-mode .analytics-tabs,
+[data-theme="dark"] .analytics-tabs,
+.oled-mode .analytics-tabs {
+    background: #111827;
+    border-color: #1f2937;
+}
 
-    .analytics-header p {
-        color: #94a3b8;
-    }
+.dark-mode .analytics-header h1,
+[data-theme="dark"] .analytics-header h1,
+.oled-mode .analytics-header h1 {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-    .stat-card h3,
-    .chart-card h3,
-    .filters-panel h3,
-    .user-info-card h3,
-    .user-stats-card h3,
-    .user-sessions-list h3 {
-        color: #e2e8f0;
-    }
+.dark-mode .analytics-header p,
+[data-theme="dark"] .analytics-header p,
+.oled-mode .analytics-header p {
+    color: #94a3b8;
+}
 
-    .stat-card .stat-value {
-        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
+.dark-mode .stat-card h3,
+[data-theme="dark"] .stat-card h3,
+.oled-mode .stat-card h3,
+.dark-mode .chart-card h3,
+[data-theme="dark"] .chart-card h3,
+.oled-mode .chart-card h3,
+.dark-mode .filters-panel h3,
+[data-theme="dark"] .filters-panel h3,
+.oled-mode .filters-panel h3,
+.dark-mode .user-info-card h3,
+[data-theme="dark"] .user-info-card h3,
+.oled-mode .user-info-card h3,
+.dark-mode .user-stats-card h3,
+[data-theme="dark"] .user-stats-card h3,
+.oled-mode .user-stats-card h3,
+.dark-mode .user-sessions-list h3,
+[data-theme="dark"] .user-sessions-list h3,
+.oled-mode .user-sessions-list h3 {
+    color: #e2e8f0;
+}
 
-    .filter-input,
-    .filter-select,
-    .controls-left select {
-        background: #334155;
-        border-color: #475569;
-        color: #e2e8f0;
-    }
+.dark-mode .stat-card .stat-value,
+[data-theme="dark"] .stat-card .stat-value,
+.oled-mode .stat-card .stat-value {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-    .filter-input:focus,
-    .filter-select:focus {
-        background: #475569;
-    }
+.dark-mode .filter-input,
+[data-theme="dark"] .filter-input,
+.oled-mode .filter-input,
+.dark-mode .filter-select,
+[data-theme="dark"] .filter-select,
+.oled-mode .filter-select,
+.dark-mode .controls-left select,
+[data-theme="dark"] .controls-left select,
+.oled-mode .controls-left select {
+    background: #334155;
+    border-color: #475569;
+    color: #e2e8f0;
+}
 
-    .sessions-table {
-        background: #1e293b;
-    }
+.dark-mode .filter-input:focus,
+[data-theme="dark"] .filter-input:focus,
+.oled-mode .filter-input:focus,
+.dark-mode .filter-select:focus,
+[data-theme="dark"] .filter-select:focus,
+.oled-mode .filter-select:focus {
+    background: #475569;
+}
 
-    .sessions-table tbody tr:hover {
-        background: #334155;
-    }
+.dark-mode .sessions-table,
+[data-theme="dark"] .sessions-table,
+.oled-mode .sessions-table {
+    background: #1e293b;
+}
 
-    .sessions-table td {
-        border-bottom-color: #334155;
-        color: #cbd5e1;
-    }
+.dark-mode .sessions-table tbody tr:hover,
+[data-theme="dark"] .sessions-table tbody tr:hover,
+.oled-mode .sessions-table tbody tr:hover {
+    background: #334155;
+}
 
-    .device-type,
-    .time-last {
-        color: #e2e8f0;
-    }
+.dark-mode .sessions-table td,
+[data-theme="dark"] .sessions-table td,
+.oled-mode .sessions-table td {
+    border-bottom-color: #334155;
+    color: #cbd5e1;
+}
 
-    .info-item {
-        background: #334155;
-        border-left-color: #818cf8;
-    }
+.dark-mode .device-type,
+[data-theme="dark"] .device-type,
+.oled-mode .device-type,
+.dark-mode .time-last,
+[data-theme="dark"] .time-last,
+.oled-mode .time-last {
+    color: #e2e8f0;
+}
 
-    .info-value {
-        color: #e2e8f0;
-    }
+.dark-mode .info-item,
+[data-theme="dark"] .info-item,
+.oled-mode .info-item {
+    background: #334155;
+    border-left-color: #818cf8;
+}
 
-    .stat-box {
-        background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-        border-color: #475569;
-    }
+.dark-mode .info-value,
+[data-theme="dark"] .info-value,
+.oled-mode .info-value {
+    color: #e2e8f0;
+}
 
-    .stat-box-value {
-        background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
+.dark-mode .stat-box,
+[data-theme="dark"] .stat-box,
+.oled-mode .stat-box {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    border-color: #475569;
+}
 
-    .no-results {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        border-color: #475569;
-    }
+.dark-mode .stat-box-value,
+[data-theme="dark"] .stat-box-value,
+.oled-mode .stat-box-value {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.dark-mode .no-results,
+[data-theme="dark"] .no-results,
+.oled-mode .no-results {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-color: #475569;
 }

@@ -1409,26 +1409,52 @@ function HomeContent({searchParams}) {
 
                                 return (
                                     <div key={day} style={{margin: '.3rem', position: 'relative'}}>
-                                        {/* Bouton à droite du premier jour */}
+                                        {/* Bouton à droite du premier jour + hint personnalisé */}
                                         {isFirstDay && viewMode === 'horizontal' && (
-                                            <button
-                                                onClick={() => handleToggleAllDays()}
-                                                className={styles.dayOptionsButton}
-                                                aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
-                                            >
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                    {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
-                                                        <path d="M6 9l6 6 6-6" stroke="currentColor"
-                                                            strokeWidth="2.2" strokeLinecap="round"
-                                                            strokeLinejoin="round" />
-                                                    ) : (
-                                                        <path d="M6 15l6-6 6 6" stroke="currentColor"
-                                                            strokeWidth="2.2" strokeLinecap="round"
-                                                            strokeLinejoin="round" />
-                                                    )}
-                                                </svg>
-                                            </button>
+                                            <div className={styles.dayOptionsButtonWrapper}>
+                                                <button
+                                                    onClick={() => handleToggleAllDays()}
+                                                    className={styles.dayOptionsButton}
+                                                    aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
+                                                >
+                                                    <svg
+                                                        width="20"
+                                                        height="20"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        aria-hidden="true"
+                                                    >
+                                                        {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
+                                                            <path
+                                                                d="M6 9l6 6 6-6"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2.2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            />
+                                                        ) : (
+                                                            <path
+                                                                d="M6 15l6-6 6 6"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2.2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            />
+                                                        )}
+                                                    </svg>
+                                                </button>
+                                                {showTooltips && (
+                                                    <div
+                                                        className={styles.dayOptionsHint}
+                                                        aria-hidden="true"
+                                                    >
+                                                        {Object.keys(groupByDay).every(d => collapsedDays[d])
+                                                            ? t('navbar.expandAllDays')
+                                                            : t('navbar.collapseAllDays')}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                         <DayBlock
                                             ref={isToday ? todayRef : null}

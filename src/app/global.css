@@ -330,3 +330,34 @@ button:disabled {
     background: var(--bg-gradient) !important;
     background-color: var(--bg-primary) !important;
 }
+
+/* =========================================
+   GESTION DE L'ORIENTATION SUR MOBILE
+   ========================================= */
+
+/* Forcer le mode portrait même quand le téléphone est en paysage */
+body.force-portrait-orientation {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vh !important;
+    height: 100vw !important;
+    transform-origin: top left !important;
+    transform: rotate(90deg) translateY(-100%) !important;
+    overflow: hidden !important;
+}
+
+/* Annuler les transformations quand on autorise le mode paysage */
+body.allow-landscape-orientation {
+    position: static !important;
+    transform: none !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: auto !important;
+}
+
+/* S'assurer que le contenu s'adapte correctement en mode portrait forcé */
+body.force-portrait-orientation > * {
+    width: 100% !important;
+    height: 100% !important;
+}
