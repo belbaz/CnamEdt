@@ -87,6 +87,12 @@ export default function DashboardPage() {
             icon: "📄",
             color: "#ec4899"
         }, {
+            title: t('dashboard.pages.exams.title'),
+            description: t('dashboard.pages.exams.description'),
+            path: "/examens",
+            icon: "📝",
+            color: "#ef4444"
+        }, {
             title: t('dashboard.pages.history.title'),
             description: t('dashboard.pages.history.description'),
             path: "/histo",

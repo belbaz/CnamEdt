@@ -311,6 +311,10 @@
       "roomMapper": {
         "title": "Room Mapper",
         "description": "Mapper les salles sur le plan SVG"
+      },
+      "exams": {
+        "title": "Examens",
+        "description": "Consultez les examens à venir avec compte à rebours"
       }
     }
   },
@@ -466,7 +470,8 @@
     "unknownSubject": "Matière inconnue",
     "noExamsTitle": "Relax, pas encore d'examen !",
     "noExamsText": "Aucun examen à venir pour le moment. Profite de ce répit ! 🎉",
-    "upcomingExams": "{count} examen{plural} à venir"
+    "upcomingExams": "{count} examen{plural} à venir",
+    "backToDashboard": "Retour au dashboard"
   },
   "agenda": {
     "loading": "Chargement de l'agenda",

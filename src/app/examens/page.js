@@ -6,7 +6,7 @@ import { getEventTitle } from "@/utils/eventUtils";
 import { createSubjectColorMapping } from "@/utils/eventUtils";
 import { generateEventKey } from "@/utils/eventModalUtils";
 import {useI18n} from "@/i18n/I18nContext";
-import Navbar from "@/components/Navbar";
+import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import Footer from "@/components/Footer";
 import styles from "./page.module.css";
@@ -19,8 +19,6 @@ function ExamensContent() {
     const [error, setError] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [subjectColors, setSubjectColors] = useState({});
-    const [darkMode, setDarkMode] = useState(false);
-    const [oledMode, setOledMode] = useState(false);
 
     // Appliquer le dark mode immédiatement au chargement (avant React)
     useEffect(() => {
@@ -31,58 +29,21 @@ function ExamensContent() {
             const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
             if (dark) {
                 document.documentElement.classList.add('dark-mode');
-                setDarkMode(true);
             } else {
                 document.documentElement.classList.remove('dark-mode');
-                setDarkMode(false);
             }
 
             // Vérifier aussi le mode OLED
             const oled = localStorage.getItem('oledMode') === 'true';
             if (oled && dark) {
                 document.documentElement.classList.add('oled-mode');
-                setOledMode(true);
             } else {
                 document.documentElement.classList.remove('oled-mode');
-                setOledMode(false);
             }
         } catch (e) {
             // Erreur silencieuse
         }
     }, []);
-
-    // Fonction pour toggle le dark mode
-    const handleToggleDarkMode = () => {
-        const newDarkMode = !darkMode;
-        setDarkMode(newDarkMode);
-        
-        if (newDarkMode) {
-            document.documentElement.classList.add('dark-mode');
-            localStorage.setItem('darkMode', 'true');
-            document.cookie = 'darkMode=true; path=/; max-age=31536000'; // 1 an
-        } else {
-            document.documentElement.classList.remove('dark-mode');
-            document.documentElement.classList.remove('oled-mode');
-            localStorage.setItem('darkMode', 'false');
-            localStorage.setItem('oledMode', 'false');
-            document.cookie = 'darkMode=false; path=/; max-age=31536000';
-            setOledMode(false);
-        }
-    };
-
-    // Fonction pour toggle le mode OLED
-    const handleToggleOledMode = () => {
-        const newOledMode = !oledMode;
-        setOledMode(newOledMode);
-        
-        if (newOledMode) {
-            document.documentElement.classList.add('oled-mode');
-            localStorage.setItem('oledMode', 'true');
-        } else {
-            document.documentElement.classList.remove('oled-mode');
-            localStorage.setItem('oledMode', 'false');
-        }
-    };
 
     // Mettre à jour l'heure actuelle toutes les secondes
     useEffect(() => {
@@ -271,17 +232,6 @@ function ExamensContent() {
     if (loading) {
         return (
             <div className={styles.container}>
-                <Navbar
-                    darkMode={darkMode}
-                    oledMode={oledMode}
-                    onToggleDarkMode={handleToggleDarkMode}
-                    onToggleOledMode={handleToggleOledMode}
-                    availableWeeks={[]}
-                    selectedWeek={null}
-                    onWeekChange={() => {}}
-                    showRefreshButton={false}
-                    showFilter={false}
-                />
                 <div className={styles.loadingContainer}>
                     <Spinner size="large" variant="border" />
                     <p>{t('examens.loading')}</p>
@@ -294,17 +244,6 @@ function ExamensContent() {
     if (error) {
         return (
             <div className={styles.container}>
-                <Navbar
-                    darkMode={darkMode}
-                    oledMode={oledMode}
-                    onToggleDarkMode={handleToggleDarkMode}
-                    onToggleOledMode={handleToggleOledMode}
-                    availableWeeks={[]}
-                    selectedWeek={null}
-                    onWeekChange={() => {}}
-                    showRefreshButton={false}
-                    showFilter={false}
-                />
                 <div className={styles.errorContainer}>
                     <p className={styles.errorMessage}>❌ {error}</p>
                 </div>
@@ -315,19 +254,11 @@ function ExamensContent() {
 
     return (
         <div className={styles.container}>
-            <Navbar
-                darkMode={darkMode}
-                oledMode={oledMode}
-                onToggleDarkMode={handleToggleDarkMode}
-                onToggleOledMode={handleToggleOledMode}
-                availableWeeks={[]}
-                selectedWeek={null}
-                onWeekChange={() => {}}
-                showRefreshButton={false}
-                showFilter={false}
-            />
             <main className={styles.main}>
-                <h1 className={styles.title}>{t('examens.title')}</h1>
+                <div className={styles.header}>
+                    <BackButton href="/dashboard" title={t('examens.backToDashboard')} />
+                    <h1 className={styles.title}>{t('examens.title')}</h1>
+                </div>
 
                 {upcomingExams.length === 0 ? (
                     <div className={styles.noExamsContainer}>

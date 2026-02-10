@@ -311,6 +311,10 @@
       "roomMapper": {
         "title": "Room Mapper",
         "description": "Map rooms on the SVG plan"
+      },
+      "exams": {
+        "title": "Exams",
+        "description": "View upcoming exams with countdown timer"
       }
     }
   },
@@ -466,7 +470,8 @@
     "unknownSubject": "Unknown subject",
     "noExamsTitle": "Relax, no exam yet!",
     "noExamsText": "No upcoming exams at the moment. Enjoy this break! 🎉",
-    "upcomingExams": "{count} exam{plural} upcoming"
+    "upcomingExams": "{count} exam{plural} upcoming",
+    "backToDashboard": "Back to dashboard"
   },
   "agenda": {
     "loading": "Loading agenda",
