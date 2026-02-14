@@ -22,13 +22,14 @@ export async function GET() {
         process.env.NEXT_BUILD_ID ||
         Date.now().toString();
 
-    // Date du dernier commit déployé connue par Vercel (provenant de GitHub, même pour un repo privé)
-    // On essaie dans l'ordre :
-    // 1) Variable fournie automatiquement par Vercel (si dispo)
-    // 2) Variable BUILD_TIMESTAMP (si tu décides de la définir manuellement dans Vercel)
-    // 3) Fichier généré au build à partir de git (scripts/pre-build.js), sans token GitHub
-    // 4) En local uniquement : récupération directe via git log
+    // Date du dernier commit déployé (ordre de priorité) :
+    // 1) LAST_COMMIT_TIMESTAMP — variable d'env à définir (Vercel, .env) au format ISO 8601, ex: 2026-02-15T14:30:00+01:00
+    // 2) VERCEL_GIT_COMMIT_TIMESTAMP — fournie par Vercel si dispo
+    // 3) BUILD_TIMESTAMP — alias / ancienne convention
+    // 4) build-info.js — généré à chaque build par scripts/pre-build.js (git log -1 --format=%cI)
+    // 5) En local uniquement : git log -1 en direct
     let commitTimestamp =
+        process.env.LAST_COMMIT_TIMESTAMP ||
         process.env.VERCEL_GIT_COMMIT_TIMESTAMP ||
         process.env.BUILD_TIMESTAMP ||
         buildCommitTimestamp ||
@@ -52,7 +53,8 @@ export async function GET() {
         }
     }
 
-    // Logs de debug pour vérifier les valeurs réellement fournies par Vercel en production
+    // Logs de debug
+    console.log('[build-id] LAST_COMMIT_TIMESTAMP (env) =', process.env.LAST_COMMIT_TIMESTAMP ? '(défini)' : '(non défini)');
     console.log('[build-id] VERCEL_GIT_COMMIT_TIMESTAMP =', process.env.VERCEL_GIT_COMMIT_TIMESTAMP);
     console.log('[build-id] BUILD_TIMESTAMP =', process.env.BUILD_TIMESTAMP);
     console.log('[build-id] buildCommitTimestamp (fallback git) =', buildCommitTimestamp);

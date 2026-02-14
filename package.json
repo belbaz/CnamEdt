@@ -1,11 +1,12 @@
 {
   "name": "edt",
-  "version": "2.1.71",
+  "version": "2.1.72",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --experimental-https --experimental-https-key C:\\Users\\Administrateur\\.vite-plugin-mkcert\\dev.pem --experimental-https-cert C:\\Users\\Administrateur\\.vite-plugin-mkcert\\cert.pem",
     "prebuild": "node scripts/pre-build.js",
-    "build": "next build",
+    "build": "node scripts/pre-build.js; next build",
+    "postinstall": "node scripts/pre-build.js",
     "start": "next start",
     "icons:web": "node scripts/generate-favicons.js",
     "test:automation": "node scripts/test-automation.js",
