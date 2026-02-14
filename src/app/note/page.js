@@ -1,20 +1,15 @@
 import { Suspense } from "react";
 import NoteLoginClient from "./NoteLoginClient";
-
-import LoadingSpinner from "@/components/LoadingSpinner";
+import NoteFallback from "./NoteFallback";
 
 export const metadata = {
     title: "Accès Galao",
     description: "Saisissez vos identifiants Galao (nom d'utilisateur et mot de passe) pour accéder aux fonctionnalités de notes.",
 };
 
-function NoteLoginFallback() {
-    return <LoadingSpinner />;
-}
-
 export default function NotePage() {
     return (
-        <Suspense fallback={<NoteLoginFallback />}>
+        <Suspense fallback={<NoteFallback />}>
             <NoteLoginClient />
         </Suspense>
     );

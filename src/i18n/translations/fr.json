@@ -801,7 +801,8 @@
       "privacyNote": "Tes identifiants ne sont pas stockés, ils sont uniquement utilisés pour ouvrir une session Galao.",
       "loginSuccess": "Connexion réussie !",
       "logoutButton": "Se déconnecter",
-      "chooseSection": "Que souhaitez-vous consulter ?"
+      "chooseSection": "Que souhaitez-vous consulter ?",
+      "loading": "Chargement du portail Galao..."
     },
     "choices": {
       "notes": {
@@ -862,6 +863,7 @@
       "title": "Historique des absences",
       "subtitle": "Données lues en temps réel depuis Galao (lecture seule).",
       "loading": "Chargement des absences Galao...",
+      "loadingPage": "Chargement de la fiche des absences Galao...",
       "noAbsences": "Aucune absence n'a été trouvée pour ce dossier Galao.",
       "count": "absence",
       "countPlural": "absences",

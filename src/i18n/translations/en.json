@@ -802,7 +802,8 @@
       "privacyNote": "Your credentials are not stored, they are only used to open a Galao session.",
       "loginSuccess": "Login successful!",
       "logoutButton": "Log out",
-      "chooseSection": "What would you like to view?"
+      "chooseSection": "What would you like to view?",
+      "loading": "Loading Galao portal..."
     },
     "choices": {
       "notes": {
@@ -863,6 +864,7 @@
       "title": "Absence History",
       "subtitle": "Data read in real-time from Galao (read-only).",
       "loading": "Loading Galao absences...",
+      "loadingPage": "Loading Galao absences page...",
       "noAbsences": "No absences found for this Galao account.",
       "count": "absence",
       "countPlural": "absences",
