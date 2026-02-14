@@ -35,7 +35,6 @@ import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
 import YearCalendar from "@/components/YearCalendar";
-import OrientationManager from "@/components/OrientationManager";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -1617,8 +1616,6 @@ function HomeContent({searchParams}) {
             {/* Bouton des outils de développement (uniquement en mode dev) */}
             <DevToolsButton/>
 
-            {/* Gestionnaire d'orientation pour mobile */}
-            <OrientationManager/>
         </div>
     );
 }

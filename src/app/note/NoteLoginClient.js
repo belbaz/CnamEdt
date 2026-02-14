@@ -620,14 +620,9 @@ export default function NoteLoginClient() {
                         boxShadow: 'none'
                     }}>
                         {!notesLoading && !notesError && notesHtml && !isTransitioning && !isLoginSuccess && (
-                            <div className={styles.fadeIn}
+                                <div className={styles.fadeIn}
                                 style={showNotesOnly ? { width: '100%' } : { marginTop: "1rem" }}>
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    marginBottom: "1.5rem"
-                                }}>
+                                <div className={styles.notesHeader}>
                                     <h3 style={showNotesOnly ? {
                                         margin: 0,
                                         color: 'var(--text-primary)',
@@ -639,7 +634,7 @@ export default function NoteLoginClient() {
                                     </h3>
 
                                     {showNotesOnly && (
-                                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        <div className={styles.notesHeaderActions}>
                                             <button
                                                 onClick={handleExportPDF}
                                                 className={styles.submitButton}
@@ -880,7 +875,7 @@ export default function NoteLoginClient() {
                                                                         );
                                                                     })}
 
-                                                                    {/* Ligne moyenne calculée */}
+                                                                    {/* Ligne moyenne calculée - la note prend toute la largeur restante (colspan 5) */}
                                                                     {(() => {
                                                                         const validNotes = rows
                                                                             .map(r => r.note)
@@ -893,11 +888,11 @@ export default function NoteLoginClient() {
                                                                         const studentAvg = (validNotes.reduce((sum, val) => sum + val, 0) / validNotes.length).toFixed(2);
 
                                                                         return (
-                                                                            <tr style={{
+                                                                            <tr className={styles.notesAvgRow} style={{
                                                                                 borderTop: '2px solid var(--primary-color)',
                                                                                 background: 'var(--bg-tertiary)'
                                                                             }}>
-                                                                                <td style={{
+                                                                                <td className={styles.notesAvgLabel} style={{
                                                                                     padding: '0.8rem 0.6rem',
                                                                                     fontWeight: '700',
                                                                                     color: 'var(--text-primary)',
@@ -905,22 +900,14 @@ export default function NoteLoginClient() {
                                                                                 }}>
                                                                                     {t('galao.notes.studentAvg')}
                                                                                 </td>
-                                                                                <td style={{
+                                                                                <td colSpan="5" className={styles.notesAvgValue} style={{
                                                                                     padding: '0.8rem 0.6rem',
-                                                                                    textAlign: 'center',
+                                                                                    textAlign: 'left',
                                                                                     fontWeight: '800',
                                                                                     fontSize: '1rem',
                                                                                     color: parseFloat(studentAvg) >= 10 ? '#10b981' : '#ef4444'
                                                                                 }}>
                                                                                     {studentAvg}
-                                                                                </td>
-                                                                                <td colSpan="4" style={{
-                                                                                    padding: '0.8rem 0.6rem',
-                                                                                    color: 'var(--text-muted)',
-                                                                                    fontSize: '0.85rem',
-                                                                                    fontStyle: 'italic'
-                                                                                }}>
-
                                                                                 </td>
                                                                             </tr>
                                                                         );

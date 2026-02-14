@@ -35,10 +35,6 @@
     "examens": "Upcoming exams",
     "notes": "Galao"
   },
-  "orientation": {
-    "switchToLandscape": "Switch to landscape mode",
-    "ariaLabel": "Switch to landscape mode"
-  },
   "pageHeader": {
     "settings": "Settings",
     "agenda": "Agenda",
