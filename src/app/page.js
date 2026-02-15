@@ -76,7 +76,7 @@ function HomeContent({searchParams}) {
     const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
     const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
     const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
-    const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.75); // Opacité du background (0 à 1, par défaut: 0.6)
+    const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.8); // Opacité du background (0 à 1, par défaut: 0.8)
     const [timePassedOverlayIntensity, setTimePassedOverlayIntensity] = useState(0.5); // Intensité de l'overlay de temps passé (0.1 à 0.9, par défaut: 0.5)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
@@ -97,6 +97,8 @@ function HomeContent({searchParams}) {
     const [buildTimestamp, setBuildTimestamp] = useState(null);
     const [isLoadingBuildTimestamp, setIsLoadingBuildTimestamp] = useState(false);
     const supportUrl = process.env.NEXT_PUBLIC_ERROR_HELP_URL;
+    const [dayOptionsHintAlignLeft, setDayOptionsHintAlignLeft] = useState(false);
+    const dayOptionsHintRef = useRef(null);
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -1098,7 +1100,24 @@ function HomeContent({searchParams}) {
     const handleToggleFullYear = () => handlers.handleToggleFullYear(!showFullYear, setShowFullYear);
     const handleToggleDay = handlers.handleToggleDay;
     const handleToggleAllDays = handlers.handleToggleAllDays;
-    
+
+    const handleDayOptionsHintPosition = () => {
+        if (typeof window === 'undefined' || window.innerWidth < 640) return;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const hint = dayOptionsHintRef.current;
+                if (!hint) return;
+                const rect = hint.getBoundingClientRect();
+                const margin = 12;
+                setDayOptionsHintAlignLeft(rect.right > window.innerWidth - margin);
+            });
+        });
+    };
+
+    const handleDayOptionsHintReset = () => {
+        setDayOptionsHintAlignLeft(false);
+    };
+
     // Wrapper pour handleToday qui supprime le paramètre eventKey de l'URL
     const handleToday = () => {
         // Désactiver le mode année scolaire si actif
@@ -1382,6 +1401,60 @@ function HomeContent({searchParams}) {
                                 {getTimeRemainingText}
                             </div>
                         )}
+                        {viewMode === 'horizontal' && (
+                            <div
+                                className={styles.dayOptionsButtonWrapper}
+                                data-hint-align={dayOptionsHintAlignLeft ? 'left' : undefined}
+                                onMouseEnter={handleDayOptionsHintPosition}
+                                onMouseLeave={handleDayOptionsHintReset}
+                            >
+                                <button
+                                    onClick={() => handleToggleAllDays()}
+                                    className={styles.dayOptionsButton}
+                                    aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
+                                    onFocus={handleDayOptionsHintPosition}
+                                    onBlur={handleDayOptionsHintReset}
+                                >
+                                    <svg
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        aria-hidden="true"
+                                    >
+                                        {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
+                                            <path
+                                                d="M6 9l6 6 6-6"
+                                                stroke="currentColor"
+                                                strokeWidth="2.2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        ) : (
+                                            <path
+                                                d="M6 15l6-6 6 6"
+                                                stroke="currentColor"
+                                                strokeWidth="2.2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        )}
+                                    </svg>
+                                </button>
+                                {showTooltips && (
+                                    <div
+                                        ref={dayOptionsHintRef}
+                                        className={styles.dayOptionsHint}
+                                        aria-hidden="true"
+                                    >
+                                        {Object.keys(groupByDay).every(d => collapsedDays[d])
+                                            ? t('navbar.expandAllDays')
+                                            : t('navbar.collapseAllDays')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {viewMode === 'vertical' ? (
                             <VerticalSchedule
                                 events={events}
@@ -1404,57 +1477,9 @@ function HomeContent({searchParams}) {
                             Object.entries(groupByDay).map(([day, evs], index) => {
                                 const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
                                 const isToday = dayDate.toDateString() === new Date().toDateString();
-                                const isFirstDay = index === 0;
 
                                 return (
                                     <div key={day} style={{margin: '.3rem', position: 'relative'}}>
-                                        {/* Bouton à droite du premier jour + hint personnalisé */}
-                                        {isFirstDay && viewMode === 'horizontal' && (
-                                            <div className={styles.dayOptionsButtonWrapper}>
-                                                <button
-                                                    onClick={() => handleToggleAllDays()}
-                                                    className={styles.dayOptionsButton}
-                                                    aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
-                                                >
-                                                    <svg
-                                                        width="20"
-                                                        height="20"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        aria-hidden="true"
-                                                    >
-                                                        {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
-                                                            <path
-                                                                d="M6 9l6 6 6-6"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2.2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                            />
-                                                        ) : (
-                                                            <path
-                                                                d="M6 15l6-6 6 6"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2.2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                            />
-                                                        )}
-                                                    </svg>
-                                                </button>
-                                                {showTooltips && (
-                                                    <div
-                                                        className={styles.dayOptionsHint}
-                                                        aria-hidden="true"
-                                                    >
-                                                        {Object.keys(groupByDay).every(d => collapsedDays[d])
-                                                            ? t('navbar.expandAllDays')
-                                                            : t('navbar.collapseAllDays')}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
                                         <DayBlock
                                             ref={isToday ? todayRef : null}
                                             day={day}

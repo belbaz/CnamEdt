@@ -207,6 +207,29 @@
     color: var(--text-primary);
     transition: background 0.2s ease;
     border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.week-dropdown-item.today-week {
+    border-left: 3px solid #2563eb;
+    background: rgba(37, 99, 235, 0.06);
+}
+
+.week-dropdown-item.today-week:hover {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.week-dropdown-item.today-week.selected {
+    border-left-color: rgba(255, 255, 255, 0.9);
+}
+
+.week-today-badge {
+    color: #2563eb;
+    font-size: 0.6rem;
+    flex-shrink: 0;
 }
 
 .week-dropdown-item:first-child {
@@ -230,6 +253,10 @@
     font-weight: 600;
 }
 
+.week-dropdown-item.selected .week-today-badge {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .week-dropdown-item.selected:hover {
     background: var(--primary-color);
     opacity: 0.9;
@@ -244,6 +271,19 @@
 .dark-mode .week-dropdown-item.selected:hover {
     background: var(--primary-color);
     opacity: 0.85;
+}
+
+.dark-mode .week-dropdown-item.today-week {
+    border-left-color: #60a5fa;
+    background: rgba(96, 165, 250, 0.08);
+}
+
+.dark-mode .week-dropdown-item.today-week:hover {
+    background: rgba(96, 165, 250, 0.12);
+}
+
+.dark-mode .week-today-badge {
+    color: #60a5fa;
 }
 
 .today-btn {

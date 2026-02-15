@@ -782,6 +782,7 @@
     "plannerView": "📅 Planning",
     "calendarView": "🗓️ Calendrier",
     "dayWithCourse": "Jour avec cours",
+    "today": "Aujourd'hui",
     "weekend": "Weekend",
     "noCourse": "Pas de cours",
     "coursesOnDay": "{count} cours le {dayName} {day} {month}",

@@ -415,35 +415,25 @@ export default function Navbar({
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                                                     xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                                     {viewMode === 'horizontal' ? (
-                                                        // Icône calendrier grille (vue verticale planning)
+                                                        // Icône grille (vue verticale : colonnes jours côte à côte)
                                                         <>
-                                                            {/* Cadre du calendrier */}
                                                             <rect x="3" y="4" width="18" height="17" rx="2"
-                                                                stroke="currentColor" strokeWidth="2" fill="none" />
-                                                            {/* Ligne de séparation en-tête */}
-                                                            <line x1="3" y1="8" x2="21" y2="8" stroke="currentColor"
-                                                                strokeWidth="2" />
-                                                            {/* Grille de colonnes verticales (jours) */}
-                                                            <line x1="9" y1="8" x2="9" y2="21" stroke="currentColor"
-                                                                strokeWidth="1.5" opacity="0.6" />
-                                                            <line x1="15" y1="8" x2="15" y2="21" stroke="currentColor"
-                                                                strokeWidth="1.5" opacity="0.6" />
+                                                                stroke="currentColor" strokeWidth="1.5" fill="none" />
+                                                            <line x1="3" y1="8" x2="21" y2="8" stroke="currentColor" strokeWidth="1.5" />
+                                                            {/* Colonnes avec couleurs pastel */}
+                                                            <rect x="4" y="9" width="4.5" height="11" rx="0.5" fill="#60a5fa" fillOpacity="0.6" stroke="#2563eb" strokeWidth="1" opacity="0.9" />
+                                                            <rect x="9.75" y="9" width="4.5" height="11" rx="0.5" fill="#4ade80" fillOpacity="0.6" stroke="#16a34a" strokeWidth="1" opacity="0.9" />
+                                                            <rect x="15.5" y="9" width="4.5" height="11" rx="0.5" fill="#ef4444" fillOpacity="0.85" stroke="#dc2626" strokeWidth="1" opacity="0.9" />
                                                         </>
                                                     ) : (
-                                                        // Icône liste (vue horizontale par jours)
+                                                        // Icône liste (vue horizontale : lignes empilées)
                                                         <>
-                                                            {/* Trois éléments de liste avec puces */}
-                                                            <circle cx="5" cy="6" r="1.5" fill="currentColor" />
-                                                            <line x1="9" y1="6" x2="20" y2="6" stroke="currentColor"
-                                                                strokeWidth="2" strokeLinecap="round" />
-                                                            
-                                                            <circle cx="5" cy="12" r="1.5" fill="currentColor" />
-                                                            <line x1="9" y1="12" x2="20" y2="12" stroke="currentColor"
-                                                                strokeWidth="2" strokeLinecap="round" />
-                                                            
-                                                            <circle cx="5" cy="18" r="1.5" fill="currentColor" />
-                                                            <line x1="9" y1="18" x2="20" y2="18" stroke="currentColor"
-                                                                strokeWidth="2" strokeLinecap="round" />
+                                                            <rect x="4" y="4" width="3" height="4" rx="0.5" fill="#60a5fa" fillOpacity="0.6" stroke="#2563eb" strokeWidth="1" />
+                                                            <line x1="9" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                                            <rect x="4" y="10" width="3" height="4" rx="0.5" fill="#4ade80" fillOpacity="0.6" stroke="#16a34a" strokeWidth="1" />
+                                                            <line x1="9" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                                            <rect x="4" y="16" width="3" height="4" rx="0.5" fill="#ef4444" fillOpacity="0.85" stroke="#dc2626" strokeWidth="1" />
+                                                            <line x1="9" y1="18" x2="20" y2="18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                                                         </>
                                                     )}
                                                 </svg>

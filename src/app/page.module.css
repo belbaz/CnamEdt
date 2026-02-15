@@ -491,9 +491,10 @@
 
 .dayOptionsHint {
     position: absolute;
-    top: calc(100% + 28px);
-    left: auto;
-    transform: translateY(0);
+    top: calc(100% + 8px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(0);
     background: var(--bg-secondary);
     color: var(--text-primary);
     border-radius: 8px;
@@ -527,7 +528,45 @@
 .dayOptionsButtonWrapper:focus-within .dayOptionsHint {
     opacity: 1;
     visibility: visible;
-    transform: translateY(-50%);
+    transform: translateX(-50%) translateY(0);
+}
+
+/* PC : centré par défaut ; ancré à gauche si débordement (détecté via JS + data-hint-align) */
+@media (min-width: 640px) {
+    .dayOptionsHint {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .dayOptionsButtonWrapper:hover .dayOptionsHint,
+    .dayOptionsButtonWrapper:focus-within .dayOptionsHint {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .dayOptionsHint::after {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) rotate(45deg);
+    }
+
+    /* Si débordement, ancrer à gauche */
+    .dayOptionsButtonWrapper[data-hint-align="left"] .dayOptionsHint {
+        left: auto;
+        right: 0;
+        transform: translateY(0);
+    }
+
+    .dayOptionsButtonWrapper[data-hint-align="left"]:hover .dayOptionsHint,
+    .dayOptionsButtonWrapper[data-hint-align="left"]:focus-within .dayOptionsHint {
+        transform: translateY(0);
+    }
+
+    .dayOptionsButtonWrapper[data-hint-align="left"] .dayOptionsHint::after {
+        left: auto;
+        right: 20px;
+        transform: translateX(0) rotate(45deg);
+    }
 }
 
 .dayOptionsButton:hover {
@@ -569,10 +608,14 @@
     }
 }
 
-/* Mobile */
+/* Mobile : bouton en haut pour ne pas réduire la largeur des colonnes de jours */
 @media (max-width: 639px) {
     .dayOptionsButtonWrapper {
-        right: -44px;
+        position: relative;
+        right: auto;
+        top: auto;
+        margin-bottom: 0.5rem;
+        justify-content: center;
     }
 
     .dayOptionsButton {
@@ -585,6 +628,28 @@
         width: 18px;
         height: 18px;
     }
+
+    /* Hint en dessous du bouton, centré */
+    .dayOptionsHint {
+        top: calc(100% + 8px);
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .dayOptionsButtonWrapper:hover .dayOptionsHint,
+    .dayOptionsButtonWrapper:focus-within .dayOptionsHint {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .dayOptionsHint::after {
+        top: -4px;
+        bottom: auto;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) rotate(45deg);
+    }
 }
 
 /* Masquer le bouton en mode vertical */
@@ -592,12 +657,6 @@
     display: none;
 }
 
-/* Sur mobile : ajuster le padding pour la taille réduite du bouton (uniquement en mode horizontal) */
-@media (max-width: 639px) {
-    .container:not(.containerVertical) {
-        padding-right: 41px !important;
-    }
-}
 
 /* Bloc d'erreur */
 .errorContainer {

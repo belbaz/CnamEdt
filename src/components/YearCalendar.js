@@ -271,6 +271,10 @@ const YearCalendar = ({ events, onDateClick }) => {
                     <span>{t('yearCalendar.dayWithCourse')}</span>
                 </div>
                 <div className={styles['legend-item']}>
+                    <div className={`${styles['legend-color']} ${styles['legend-today']}`}></div>
+                    <span>{t('yearCalendar.today')}</span>
+                </div>
+                <div className={styles['legend-item']}>
                     <div className={`${styles['legend-color']} ${styles['legend-weekend']}`}></div>
                     <span>{t('yearCalendar.weekend')}</span>
                 </div>

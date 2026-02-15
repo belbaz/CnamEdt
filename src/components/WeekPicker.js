@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Tooltip from "./Tooltip";
 import {useI18n} from "@/i18n/I18nContext";
+import { getCurrentWeek } from "@/utils/dateUtils";
 import "./WeekPicker.css";
 
 // Hook pour gérer le long press sur mobile
@@ -273,14 +274,18 @@ export default function WeekPicker({
                         <div className="week-dropdown-content">
                             {availableWeeks.map((week, index) => {
                                 const isSelected = selectedWeek && week.monday.getTime() === selectedWeek.getTime();
+                                const isCurrentWeek = week.monday.getTime() === getCurrentWeek().getTime();
                                 return (
                                     <div
                                         key={index}
                                         ref={isSelected ? selectedWeekRef : null}
-                                        className={`week-dropdown-item ${isSelected ? 'selected' : ''}`}
+                                        className={`week-dropdown-item ${isSelected ? 'selected' : ''} ${isCurrentWeek ? 'today-week' : ''}`}
                                         onClick={() => handleWeekSelect(week.monday)}
                                     >
                                         {week.label}
+                                        {isCurrentWeek && !isSelected && (
+                                            <span className="week-today-badge" aria-hidden="true">●</span>
+                                        )}
                                     </div>
                                 );
                             })}

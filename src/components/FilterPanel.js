@@ -106,8 +106,8 @@ export default function FilterPanel({
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                      aria-hidden="true">
-                    <path d="M3 4h18M7 8h10M11 12h2M9 16h6" stroke="currentColor" strokeWidth="2"
-                          strokeLinecap="round"/>
+                    <path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="17" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
                 </svg>
                 {hasAnyFilter && (
                     <span className="filter-badge" aria-label={`Filtres actifs`}>
