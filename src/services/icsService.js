@@ -75,7 +75,8 @@ async function fetchEventsForWeb() {
     console.log('[ICS Service] Fetching from web API route');
     
     try {
-        const res = await fetch('/api/fetch-ics', {
+        const lang = typeof localStorage !== 'undefined' ? (localStorage.getItem('language') || 'fr') : 'fr';
+        const res = await fetch(`/api/fetch-ics?lang=${encodeURIComponent(lang)}`, {
             headers: {
                 'Accept': 'application/json',
             },
@@ -148,7 +149,8 @@ async function fetchEventsForWeb() {
             
             // Pas de cache valide OU hash différent → Refaire une requête en forçant le parsing
             console.log('[ICS Service] Forcing server to parse ICS (cache invalide ou obsolète)');
-            const forceRes = await fetch('/api/fetch-ics?force=true', {
+            const lang = typeof localStorage !== 'undefined' ? (localStorage.getItem('language') || 'fr') : 'fr';
+            const forceRes = await fetch(`/api/fetch-ics?force=true&lang=${encodeURIComponent(lang)}`, {
                 headers: { 'Accept': 'application/json' },
                 cache: 'no-cache'
             });

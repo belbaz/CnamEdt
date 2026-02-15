@@ -72,9 +72,12 @@ export async function GET(request) {
         if (isDemoMode) {
             console.log(`${LOG_PREFIX} Mode démo activé, retour des notes de démo`);
             try {
-                // Importer dynamiquement le service de démo
+                const url = new URL(request.url);
+                const langParam = url.searchParams.get('lang');
+                const acceptLang = request.headers.get('accept-language') || '';
+                const lang = langParam || (acceptLang.toLowerCase().startsWith('en') ? 'en' : 'fr');
                 const { generateDemoYearData } = await import('@/services/demoDataService');
-                const demoData = generateDemoYearData();
+                const demoData = generateDemoYearData(lang);
                 
                 // Convertir les notes Map en format compatible avec l'API
                 // Les notes utilisent l'UID de l'événement comme clé (course_uid)

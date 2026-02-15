@@ -70,28 +70,100 @@ const DEMO_LOCATIONS = [
     '30.2.12', '6.1.10', '8.2.15', '10.3.20', '12.1.05', '14.2.08', '17.0.12'
 ];
 
+/** Durées de cours autorisées : 1h30, 2h ou 3h uniquement */
+const DEMO_DURATIONS = [1.5, 2, 3];
+
 /**
- * Horaires de cours possibles (début en heures)
+ * Pauses déjeuner possibles : au moins 1h, max 1h30.
+ * Début : 12h00, 12h15 ou 12h30. Fin : 13h00, 13h15 ou 13h30.
+ * Chaque entrée : { startMin, endMin } (minutes depuis minuit).
  */
-const DEMO_TIME_SLOTS = [
-    { start: [7, 30], duration: 2 },   // 7h30-9h30
-    { start: [8, 0], duration: 2 },    // 8h-10h
-    { start: [8, 30], duration: 2.5 },  // 8h30-11h
-    { start: [9, 0], duration: 3 },     // 9h-12h
-    { start: [9, 30], duration: 2 },    // 9h30-11h30
-    { start: [10, 0], duration: 2.5 },  // 10h-12h30
-    { start: [10, 30], duration: 2 },   // 10h30-12h30
-    { start: [11, 30], duration: 3 },   // 11h30-14h30
-    { start: [13, 0], duration: 2 },    // 13h-15h
-    { start: [13, 30], duration: 2.5 }, // 13h30-16h
-    { start: [14, 0], duration: 3 },    // 14h-17h
-    { start: [14, 30], duration: 2 },   // 14h30-16h30
-    { start: [15, 0], duration: 2.5 },  // 15h-17h30
-    { start: [15, 30], duration: 2 },   // 15h30-17h30
-    { start: [16, 30], duration: 2 },   // 16h30-18h30
-    { start: [18, 0], duration: 2 },    // 18h-20h
-    { start: [18, 30], duration: 1.5 }  // 18h30-20h
+const DEMO_LUNCH_BREAKS = [
+    { startMin: 12 * 60 + 0, endMin: 13 * 60 + 0 },   // 12h-13h (1h)
+    { startMin: 12 * 60 + 0, endMin: 13 * 60 + 15 },  // 12h-13h15 (1h15)
+    { startMin: 12 * 60 + 0, endMin: 13 * 60 + 30 },  // 12h-13h30 (1h30)
+    { startMin: 12 * 60 + 15, endMin: 13 * 60 + 15 }, // 12h15-13h15 (1h)
+    { startMin: 12 * 60 + 15, endMin: 13 * 60 + 30 }, // 12h15-13h30 (1h15)
+    { startMin: 12 * 60 + 30, endMin: 13 * 60 + 30 }, // 12h30-13h30 (1h)
 ];
+
+/**
+ * Générateur pseudo-aléatoire déterministe
+ */
+function rnd(seed) {
+    return (seed * 9301 + 49297) % 233280;
+}
+
+/** Découpe un total de minutes en durées 90, 120 ou 180. Retourne null si impossible. */
+function decomposeToDurations(totalMin, dateSeed) {
+    const durs = [90, 120, 180];
+    if (totalMin === 0) return [];
+    const order = (rnd(dateSeed) / 233280) < 0.33 ? [90, 120, 180] : (rnd(dateSeed + 1) / 233280) < 0.5 ? [180, 120, 90] : [120, 90, 180];
+    for (const d of order) {
+        if (totalMin >= d) {
+            const rest = decomposeToDurations(totalMin - d, dateSeed + d);
+            if (rest !== null) return [d / 60, ...rest];
+        }
+    }
+    return null;
+}
+
+/**
+ * Paires (début matin, début pause) pour lesquelles le matin se remplit exactement sans trou.
+ * Totaux fillables avec 1.5h, 2h, 3h : 90, 120, 180, 210, 240, 270 min.
+ */
+const VALID_MORNING_CONFIGS = [
+    [8 * 60, 12 * 60], [8 * 60, 12 * 60 + 30],                 // 8h -> 12h (240), 12h30 (270)
+    [8 * 60 + 30, 12 * 60], [8 * 60 + 30, 12 * 60 + 30],
+    [9 * 60, 12 * 60], [9 * 60, 12 * 60 + 30],
+    [7 * 60 + 45, 12 * 60 + 15], [8 * 60 + 15, 12 * 60 + 15], // pause 12h15
+    [10 * 60 + 30, 12 * 60], [10 * 60 + 30, 12 * 60 + 30],   // 10h30 (rare)
+];
+
+/**
+ * Construit une journée : cours enchaînés sans aucun espace.
+ * Le dernier cours du matin finit exactement quand la pause commence.
+ * 10h30 en début : rare (1 jour / semaine max).
+ */
+function buildBackToBackSlots(pauseStartMin, pauseEndMin, dateSeed, useRareStart = false) {
+    const slots = [];
+    const endAfternoonMax = 18 * 60 + 30;
+
+    let configs = VALID_MORNING_CONFIGS.filter(([start, pStart]) => {
+        if (pStart !== pauseStartMin) return false;
+        if (start === 10 * 60 + 30) return useRareStart;
+        return !useRareStart;
+    });
+    if (configs.length === 0) {
+        configs = VALID_MORNING_CONFIGS.filter(([start, pStart]) => pStart === pauseStartMin && start !== 10 * 60 + 30);
+    }
+    if (configs.length === 0) {
+        configs = VALID_MORNING_CONFIGS.filter(([, pStart]) => pStart === pauseStartMin);
+    }
+    if (configs.length === 0) {
+        configs = VALID_MORNING_CONFIGS.filter(([start]) => start !== 10 * 60 + 30).slice(0, 3);
+    }
+    const [mornStart, actualPauseStart] = configs[Math.floor((rnd(dateSeed) / 233280) * configs.length)];
+
+    const morningTotal = actualPauseStart - mornStart;
+    const morningDurations = decomposeToDurations(morningTotal, dateSeed);
+    let currentMin = mornStart;
+    for (const dur of morningDurations) {
+        slots.push({ start: [Math.floor(currentMin / 60), currentMin % 60], duration: dur });
+        currentMin += dur * 60;
+    }
+
+    currentMin = pauseEndMin;
+    while (currentMin + 90 <= endAfternoonMax) {
+        const durIdx = Math.floor((rnd(dateSeed + currentMin + 5000) / 233280) * DEMO_DURATIONS.length);
+        const dur = DEMO_DURATIONS[durIdx];
+        const endMin = currentMin + dur * 60;
+        if (endMin > endAfternoonMax) break;
+        slots.push({ start: [Math.floor(currentMin / 60), currentMin % 60], duration: dur });
+        currentMin = endMin;
+    }
+    return slots;
+}
 
 /**
  * Génère un UID unique pour un événement
@@ -123,86 +195,52 @@ function shouldBeExam(date, eventIndex) {
 }
 
 /**
- * Détermine si un cours doit être en distanciel (environ 12% des cours)
+ * Détermine si un cours doit être en distanciel (probabilité de base, utilisée une fois les 3 obligatoires par semaine assurées)
  */
 function shouldBeDistanciel(date, eventIndex) {
-    const seed = date.getTime() + eventIndex + 20000; // Offset différent pour éviter la corrélation
+    const seed = date.getTime() + eventIndex + 20000;
     const random = (seed * 9301 + 49297) % 233280;
-    return (random / 233280) < 0.12; // 12% des cours sont en distanciel
+    return (random / 233280) < 0.15;
 }
 
+/** Textes des notes démo (FR/EN) */
+const DEMO_NOTE_TEMPLATES = [
+    { fr: 'Réviser les chapitres 3 et 4 pour le prochain cours.', en: 'Review chapters 3 and 4 for the next class.', labels: { fr: ['Révision'], en: ['Revision'] } },
+    { fr: 'TP à rendre pour la semaine prochaine.', en: 'Lab report due next week.', labels: { fr: ['TP', 'Devoir'], en: ['Lab', 'Assignment'] } },
+    { fr: 'Contrôle prévu dans 2 semaines.', en: 'Test scheduled in 2 weeks.', labels: { fr: ['Examen'], en: ['Exam'] } },
+    { fr: 'Penser à préparer la présentation orale.', en: 'Remember to prepare the oral presentation.', labels: { fr: ['Présentation'], en: ['Presentation'] } },
+    { fr: 'Devoir à faire : exercices 5 à 10.', en: 'Assignment: exercises 5 to 10.', labels: { fr: ['Devoir'], en: ['Assignment'] } },
+    { fr: 'Réunion projet le vendredi prochain.', en: 'Project meeting next Friday.', labels: { fr: ['Projet', 'Réunion'], en: ['Project', 'Meeting'] } },
+    { fr: 'TP noté à préparer pour le prochain cours.', en: 'Graded lab to prepare for next class.', labels: { fr: ['TP', 'Examen'], en: ['Lab', 'Exam'] } },
+    { fr: 'Devoir maison à rendre.', en: 'Homework to hand in.', labels: { fr: ['Devoir'], en: ['Assignment'] } },
+    { fr: 'Présentation de projet en groupe. Deadline : semaine prochaine.', en: 'Group project presentation. Deadline: next week.', labels: { fr: ['Projet', 'Présentation', 'Urgent'], en: ['Project', 'Presentation', 'Urgent'] } },
+    { fr: 'TP pratique à faire.', en: 'Practical lab to complete.', labels: { fr: ['TP'], en: ['Lab'] } },
+    { fr: 'Réviser les bases avant le prochain cours.', en: 'Review the basics before the next class.', labels: { fr: ['Révision'], en: ['Revision'] } },
+    { fr: 'Contrôle continu prévu.', en: 'Continuous assessment scheduled.', labels: { fr: ['Examen'], en: ['Exam'] } },
+    { fr: 'Préparer les slides pour la prochaine séance.', en: 'Prepare the slides for the next session.', labels: { fr: ['Présentation'], en: ['Presentation'] } },
+    { fr: 'Rendre le compte-rendu avant vendredi.', en: 'Submit the report before Friday.', labels: { fr: ['Devoir', 'TP'], en: ['Assignment', 'Lab'] } }
+];
+
 /**
- * Génère une note de démo avec des labels appropriés
- * Retourne un objet avec entries (tableau) et entry_labels (objet)
+ * Génère une note de démo avec des labels appropriés (bilingue).
+ * Retourne un objet avec entries (tableau de textes) et entry_labels (objet).
+ * 3/5 des notes ont 2 entrées, 1/6 ont 3 entrées, le reste 1 entrée.
  */
-function generateDemoNote(subject, prof) {
-    const noteTemplates = [
-        {
-            text: `Réviser les chapitres 3 et 4 pour le prochain cours.`,
-            labels: ['Révision']
-        },
-        {
-            text: `TP à rendre pour la semaine prochaine.`,
-            labels: ['TP', 'Devoir']
-        },
-        {
-            text: `Contrôle prévu dans 2 semaines.`,
-            labels: ['Examen']
-        },
-        {
-            text: `Penser à préparer la présentation orale.`,
-            labels: ['Présentation']
-        },
-        {
-            text: `Devoir à faire : exercices 5 à 10.`,
-            labels: ['Devoir']
-        },
-        {
-            text: `Réunion projet le vendredi prochain.`,
-            labels: ['Projet', 'Réunion']
-        },
-        {
-            text: `TP noté à préparer pour le prochain cours.`,
-            labels: ['TP', 'Examen']
-        },
-        {
-            text: `Devoir maison à rendre.`,
-            labels: ['Devoir']
-        },
-        {
-            text: `Présentation de projet en groupe. Deadline : semaine prochaine.`,
-            labels: ['Projet', 'Présentation', 'Urgent']
-        },
-        {
-            text: `TP pratique à faire.`,
-            labels: ['TP']
-        },
-        {
-            text: `Réviser les bases avant le prochain cours.`,
-            labels: ['Révision']
-        },
-        {
-            text: `Contrôle continu prévu.`,
-            labels: ['Examen']
-        }
-    ];
-    const seed = subject.length + prof.length;
-    const random = (seed * 9301 + 49297) % 233280;
-    const template = noteTemplates[Math.floor((random / 233280) * noteTemplates.length)];
-    
-    // Une seule entrée par note
-    const entries = [template.text];
-    
-    // Construire entry_labels : objet avec index (string) -> tableau de labels
+function generateDemoNote(subject, prof, entrySeed, lang = 'fr') {
+    const langKey = lang === 'en' ? 'en' : 'fr';
+    const seed = subject.length + prof.length + entrySeed;
+    const r = (seed * 9301 + 49297) % 233280;
+    const numEntries = (r / 233280) < 7 / 30 ? 1 : (r / 233280) < 25 / 30 ? 2 : 3;
+
+    const entries = [];
     const entryLabels = {};
-    if (template.labels.length > 0) {
-        entryLabels['0'] = template.labels;
+    for (let i = 0; i < numEntries; i++) {
+        const idx = Math.floor(((seed + i * 111 + r) * 9301 + 49297) % 233280 / 233280 * DEMO_NOTE_TEMPLATES.length);
+        const t = DEMO_NOTE_TEMPLATES[idx];
+        entries.push(t[langKey]);
+        if (t.labels[langKey]?.length > 0) entryLabels[String(i)] = t.labels[langKey];
     }
-    
-    return {
-        entries: entries,
-        entry_labels: entryLabels
-    };
+    return { entries, entry_labels: entryLabels };
 }
 
 /**
@@ -221,7 +259,7 @@ function isHoliday(date) {
  * Génère des événements de démo pour toute l'année scolaire
  * Année scolaire : septembre à juin
  */
-export function generateDemoYearData() {
+export function generateDemoYearData(lang = 'fr') {
     console.log('[Demo Data] Génération des données de démo pour toute l\'année scolaire');
     
     const events = [];
@@ -271,91 +309,39 @@ export function generateDemoYearData() {
     // Parcourir tous les jours de l'année scolaire
     const currentDate = new Date(startDate);
     let eventIndex = 0;
-    let currentWeekStart = null; // Pour suivre le début de chaque semaine
-    let hasNoteThisWeek = false; // Pour garantir au moins une note par semaine
-    let hasDistancielThisWeek = false; // Pour garantir au moins un cours en distanciel par semaine
-    
+    let currentWeekStart = null;
+    /** Jours de la semaine (lun=1..ven=5) ayant déjà au moins une note cette semaine */
+    let notesDaysThisWeek = new Set();
+    /** Nombre de cours en distanciel déjà placés cette semaine */
+    let distancielCountThisWeek = 0;
+
     while (currentDate <= endDate) {
         const dayOfWeek = currentDate.getDay(); // 0 = dimanche, 6 = samedi
-        
-        // Détecter le début d'une nouvelle semaine (lundi)
+
         const weekKey = getWeekNumber(currentDate);
         if (currentWeekStart !== weekKey) {
             currentWeekStart = weekKey;
-            hasNoteThisWeek = false; // Réinitialiser pour la nouvelle semaine
-            hasDistancielThisWeek = false; // Réinitialiser pour la nouvelle semaine
+            notesDaysThisWeek = new Set();
+            distancielCountThisWeek = 0;
         }
-        
-        // Générer des cours uniquement du lundi au vendredi (pas le samedi ni le dimanche)
+
         if (dayOfWeek >= 1 && dayOfWeek <= 5 && !isHoliday(currentDate)) {
-            // Nombre de cours par jour : variable (3 à 7 cours pour avoir plus de cours)
-            // Utiliser un générateur pseudo-aléatoire déterministe basé sur la date
             const dateSeed = currentDate.getTime();
-            const random1 = (dateSeed * 9301 + 49297) % 233280;
-            const numCourses = Math.floor((random1 / 233280) * 5) + 3; // 3 à 7 cours
-            
-            // Fonction pour vérifier si un créneau chevauche avec les créneaux déjà sélectionnés
-            const doesOverlap = (slot, selectedSlots) => {
-                const slotStartMin = slot.start[0] * 60 + slot.start[1];
-                const slotEndMin = slotStartMin + (slot.duration * 60);
-                
-                for (const selectedSlot of selectedSlots) {
-                    const selectedStartMin = selectedSlot.start[0] * 60 + selectedSlot.start[1];
-                    const selectedEndMin = selectedStartMin + (selectedSlot.duration * 60);
-                    
-                    // Vérifier le chevauchement : le nouveau créneau ne doit pas commencer avant la fin d'un créneau existant
-                    // et ne doit pas finir après le début d'un créneau existant
-                    if (!(slotEndMin <= selectedStartMin || slotStartMin >= selectedEndMin)) {
-                        return true; // Il y a chevauchement
-                    }
-                }
-                return false; // Pas de chevauchement
-            };
-            
-            // Sélectionner des créneaux horaires sans chevauchement (avec des trous)
-            const selectedSlots = [];
-            const availableSlots = [...DEMO_TIME_SLOTS];
-            
-            // Trier d'abord les créneaux disponibles par heure de début pour faciliter la sélection
-            availableSlots.sort((a, b) => {
-                const timeA = a.start[0] * 60 + a.start[1];
-                const timeB = b.start[0] * 60 + b.start[1];
-                return timeA - timeB;
-            });
-            
-            // Sélectionner les créneaux un par un en évitant les chevauchements
-            let attempts = 0;
-            const maxAttempts = availableSlots.length * 2; // Limite pour éviter une boucle infinie
-            
-            while (selectedSlots.length < numCourses && availableSlots.length > 0 && attempts < maxAttempts) {
-                const slotSeed = dateSeed + selectedSlots.length * 1000 + attempts;
-                const random2 = (slotSeed * 9301 + 49297) % 233280;
-                const randomIndex = Math.floor((random2 / 233280) * availableSlots.length);
-                const candidateSlot = availableSlots[randomIndex];
-                
-                // Vérifier si ce créneau chevauche avec ceux déjà sélectionnés
-                if (!doesOverlap(candidateSlot, selectedSlots)) {
-                    // Pas de chevauchement, on peut l'ajouter
-                    selectedSlots.push(candidateSlot);
-                    availableSlots.splice(randomIndex, 1);
-                } else {
-                    // Il y a chevauchement, on essaie le suivant
-                    attempts++;
-                }
-            }
-            
-            // Trier les créneaux sélectionnés par heure de début (déjà fait mais on s'assure)
-            selectedSlots.sort((a, b) => {
-                const timeA = a.start[0] * 60 + a.start[1];
-                const timeB = b.start[0] * 60 + b.start[1];
-                return timeA - timeB;
-            });
-            
-            // Générer les cours pour ce jour
-            // Utiliser le numéro de semaine pour varier les matières/profs par semaine
-            const weekSeed = currentWeekStart ? currentWeekStart.split('-W')[1] : '0';
-            const weekSeedNum = parseInt(weekSeed) || 0;
-            
+            let notesCountThisDay = 0;
+
+            // Pause déjeuner variée pour ce jour (12h-13h, 12h15-13h30, etc.)
+            const lunchIndex = Math.floor((dateSeed * 17) % DEMO_LUNCH_BREAKS.length);
+            const lunch = DEMO_LUNCH_BREAKS[lunchIndex];
+            const weekSeedNum = currentWeekStart ? parseInt(currentWeekStart.split('-W')[1], 10) || 0 : 0;
+            const useRareStart = (dayOfWeek === ((weekSeedNum % 5) + 1)); // 10h30 max 1 jour / semaine
+            const selectedSlots = buildBackToBackSlots(lunch.startMin, lunch.endMin, dateSeed, useRareStart);
+            // 3/5 → 2 notes, 1/6 → 3 notes, le reste → 1 note (plafonné au nb de cours)
+            const numCourses = selectedSlots.length;
+            const r = rnd(dateSeed + 60000) / 233280;
+            const rawMax = r < 7 / 30 ? 1 : r < 25 / 30 ? 2 : 3;
+            const maxNotesThisDay = Math.min(rawMax, numCourses);
+
+            // Générer les cours pour ce jour (weekSeedNum déjà défini plus haut)
             selectedSlots.forEach((slot, slotIndex) => {
                 // Sélectionner aléatoirement une matière, un prof et une salle (déterministe)
                 // Ajouter le numéro de semaine pour varier par semaine
@@ -383,22 +369,17 @@ export function generateDemoYearData() {
                 // Générer l'UID
                 const uid = generateEventUID(currentDate, subject, eventIndex);
                 
-                // Déterminer si ce cours est un examen ou en distanciel
                 const isExam = shouldBeExam(currentDate, eventIndex);
-                
-                // Garantir au moins un cours en distanciel par semaine
+
+                // Garantir au moins 3 cours en distanciel par semaine (lun, mar, mer : 1er cours du jour)
                 let isDistanciel = false;
-                if (!hasDistancielThisWeek && (dayOfWeek === 4 || dayOfWeek === 5)) {
-                    // Si on n'a pas encore de cours en distanciel cette semaine et qu'on est jeudi ou vendredi, forcer un cours en distanciel
+                if (distancielCountThisWeek < 3 && slotIndex === 0 && dayOfWeek <= 3) {
                     isDistanciel = true;
-                } else {
-                    // Sinon, utiliser la probabilité normale (12%)
+                }
+                if (!isDistanciel) {
                     isDistanciel = shouldBeDistanciel(currentDate, eventIndex);
                 }
-                
-                if (isDistanciel) {
-                    hasDistancielThisWeek = true; // Marquer qu'on a un cours en distanciel cette semaine
-                }
+                if (isDistanciel) distancielCountThisWeek++;
                 
                 // Construire la description avec le prof
                 let description = `Professeur : - ${prof}`;
@@ -432,24 +413,30 @@ export function generateDemoYearData() {
                 
                 events.push(event);
                 
-                // Générer une note pour certains cours
-                // Garantir au moins une note par semaine
-                let shouldAddNote = false;
-                
-                // Si on n'a pas encore de note cette semaine et qu'on est jeudi ou vendredi, forcer une note
-                if (!hasNoteThisWeek && (dayOfWeek === 4 || dayOfWeek === 5)) {
-                    shouldAddNote = true;
-                } else {
-                    // Sinon, utiliser la probabilité normale (25%)
-                    shouldAddNote = shouldHaveNote(currentDate, eventIndex);
-                }
-                
-                if (shouldAddNote) {
-                    const noteData = generateDemoNote(subject, prof);
-                    // Utiliser l'UID de l'événement comme clé (course_uid)
-                    // Stocker l'objet complet avec entries et entry_labels
-                    notes.set(uid, noteData);
-                    hasNoteThisWeek = true; // Marquer qu'on a une note cette semaine
+                // Au moins 3 notes par semaine sur des jours différents ; 3/5 → 2 notes, 1/6 → 3 notes
+                if (notesCountThisDay < maxNotesThisDay) {
+                    const thisDayHasNote = notesDaysThisWeek.has(dayOfWeek);
+                    const needMoreDaysWithNote = 3 - notesDaysThisWeek.size;
+                    let shouldAddNote = false;
+                    if (notesCountThisDay === 0) {
+                        if (!thisDayHasNote && needMoreDaysWithNote > 0 && slotIndex === 0) {
+                            shouldAddNote = true;
+                        } else if (!thisDayHasNote && needMoreDaysWithNote > 0) {
+                            const rn = rnd(currentDate.getTime() + slotIndex + 40000) / 233280;
+                            shouldAddNote = rn < 0.5;
+                        } else {
+                            shouldAddNote = shouldHaveNote(currentDate, eventIndex);
+                        }
+                    } else {
+                        // 2e ou 3e note du jour : forte proba pour atteindre maxNotesThisDay (3/5 et 1/6)
+                        const rn = rnd(currentDate.getTime() + slotIndex + 50000) / 233280;
+                        shouldAddNote = rn < 0.85;
+                    }
+                    if (shouldAddNote) {
+                        notes.set(uid, generateDemoNote(subject, prof, eventIndex, lang));
+                        notesDaysThisWeek.add(dayOfWeek);
+                        notesCountThisDay++;
+                    }
                 }
                 
                 eventIndex++;

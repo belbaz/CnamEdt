@@ -1,24 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { parseStoredNoteValue } from "@/utils/noteEntries";
+import { useI18n } from "@/i18n/I18nContext";
 
 /**
  * Hook pour charger et gérer les notes des cours
  * Retourne une Map<course_uid, note> pour accès rapide
  */
 export function useCourseNotes() {
+    const { language } = useI18n();
     const [notes, setNotes] = useState(new Map());
     const [loading, setLoading] = useState(true);
     const [authenticated, setAuthenticated] = useState(false);
 
-    useEffect(() => {
-        loadNotes();
-    }, []);
-
-    const loadNotes = async () => {
+    const loadNotes = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await fetch("/api/agenda", {
+            const lang = language || (typeof localStorage !== 'undefined' ? localStorage.getItem('language') : null) || 'fr';
+            const res = await fetch(`/api/agenda?lang=${encodeURIComponent(lang)}`, {
                 cache: "no-store",
             });
 
@@ -60,7 +59,11 @@ export function useCourseNotes() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [language]);
+
+    useEffect(() => {
+        loadNotes();
+    }, [loadNotes]);
 
     return {
         notes,

@@ -646,9 +646,12 @@ export async function GET(request) {
     if (isDemoMode) {
         console.log('[API fetch-ics] Mode démo activé, génération de données de démo');
         try {
-            // Importer dynamiquement le service de démo (évite les erreurs si le fichier n'existe pas)
+            const url = new URL(request.url);
+            const langParam = url.searchParams.get('lang');
+            const acceptLang = request.headers.get('accept-language') || '';
+            const lang = langParam || (acceptLang.toLowerCase().startsWith('en') ? 'en' : 'fr');
             const { generateDemoYearData } = await import('@/services/demoDataService');
-            const demoData = generateDemoYearData();
+            const demoData = generateDemoYearData(lang);
             
             // Convertir les notes Map en format compatible
             const notesArray = Array.from(demoData.notes.entries()).map(([key, noteData]) => {
