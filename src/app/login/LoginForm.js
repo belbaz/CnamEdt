@@ -253,6 +253,12 @@ export default function LoginForm({ onSuccess, embedded = false }) {
                     </Link>
                 </p>
             </div>
+
+            <div className={styles.testAccessLink}>
+                <Link href="/contact?from=login-demo" className={styles.testLink}>
+                    {t('signup.requestDemo')}
+                </Link>
+            </div>
         </>
     );
 
