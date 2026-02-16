@@ -34,6 +34,13 @@ function getInitialLanguage() {
     // Erreur silencieuse si localStorage n'est pas disponible
   }
   
+  // Site démo : anglais par défaut (demo-edt.vercel.app)
+  const isDemoSite = window.location?.hostname === 'demo-edt.vercel.app' ||
+    (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_MODE_DEMO === 'true');
+  if (isDemoSite) {
+    return 'en';
+  }
+  
   return 'fr';
 }
 

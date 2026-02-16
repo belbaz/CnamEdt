@@ -1183,7 +1183,7 @@ function HomeContent({searchParams}) {
         return todayEvents[0];
     }, [allEvents, currentTime]);
 
-    // Calculer le temps restant avant la fin du cours
+    // Calculer le temps restant avant la fin du cours (traduit)
     const getTimeRemainingText = useMemo(() => {
         if (!showTimeRemaining || !isCurrentWeekSelected || !getNextOngoingCourse) return null;
 
@@ -1201,12 +1201,17 @@ function HomeContent({searchParams}) {
 
         if (remainingHours > 0) {
             if (minutes === 0) {
-                return `${remainingHours}h avant la fin du cours`;
+                return t('timeRemaining.hoursOnly').replace('{hours}', remainingHours);
             }
-            return `${remainingHours}h${String(minutes).padStart(2, '0')} avant la fin du cours`;
+            return t('timeRemaining.hoursMinutes')
+                .replace('{hours}', remainingHours)
+                .replace('{minutes}', String(minutes).padStart(2, '0'));
         }
-        return `${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''} avant la fin du cours`;
-    }, [getNextOngoingCourse, currentTime, isCurrentWeekSelected, showTimeRemaining]);
+        if (remainingMinutes === 1) {
+            return t('timeRemaining.minute');
+        }
+        return t('timeRemaining.minutes').replace('{count}', remainingMinutes);
+    }, [getNextOngoingCourse, currentTime, isCurrentWeekSelected, showTimeRemaining, t]);
 
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {

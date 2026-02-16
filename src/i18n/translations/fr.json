@@ -760,6 +760,12 @@
     "reloading": "Rechargement...",
     "later": "Plus tard"
   },
+  "timeRemaining": {
+    "hoursOnly": "{hours}h avant la fin du cours",
+    "hoursMinutes": "{hours}h{minutes} avant la fin du cours",
+    "minute": "1 minute avant la fin du cours",
+    "minutes": "{count} minutes avant la fin du cours"
+  },
   "cookieConsent": {
     "text": "Ce site utilise des cookies et du stockage local pour fonctionner correctement et améliorer votre expérience.",
     "noTracking": "Aucun suivi publicitaire n'est réalisé. Vous pouvez accepter ou refuser les cookies qui ne sont pas strictement nécessaires.",

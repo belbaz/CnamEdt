@@ -761,6 +761,12 @@
     "reloading": "Reloading...",
     "later": "Later"
   },
+  "timeRemaining": {
+    "hoursOnly": "{hours}h before the end of the course",
+    "hoursMinutes": "{hours}h{minutes} before the end of the course",
+    "minute": "1 minute before the end of the course",
+    "minutes": "{count} minutes before the end of the course"
+  },
   "cookieConsent": {
     "text": "This site uses cookies and local storage to function properly and improve your experience.",
     "noTracking": "No advertising tracking is performed. You can accept or decline cookies that are not strictly necessary.",

@@ -94,11 +94,15 @@ export function getEventTitle(ev) {
         return { matiere, prof, description, splitGroup };
     }
 
-    // Mode normal: extraire le professeur depuis "Professeur : ..."
-    const match = description.match(/Professeur\s*:\s*-?\s*(.*)$/i);
+    // Mode normal: extraire le professeur depuis "Professeur : ..." ou "Professor : ..."
+    const match = description.match(/(?:Professeur|Professor)\s*:\s*-?\s*(.*)$/im);
     if (match) {
-        prof = match[1].trim();
+        prof = match[1].trim().replace(/^-\s*/, "").trim();
         prof = prof.replace(/^(Madame|Monsieur|Mme|M\.)\s+/i, "").trim();
+    }
+    // Fallback : propriété prof directe (ex. événements démo)
+    if (!prof && ev.prof) {
+        prof = ev.prof;
     }
     return { matiere, prof, description };
 }

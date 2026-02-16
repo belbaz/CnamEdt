@@ -3,35 +3,33 @@
  * Utilisé quand MODE_DEMO=true dans les variables d'environnement
  */
 
-/**
- * Liste de matières variées pour le mode démo
- */
+/** Matières démo (FR / EN) */
 const DEMO_SUBJECTS = [
-    'Mathématiques Appliquées',
-    'Informatique Théorique',
-    'Base de Données',
-    'Développement Web',
-    'Architecture Logicielle',
-    'Intelligence Artificielle',
-    'Sécurité Informatique',
-    'Algorithmique',
-    'Réseaux',
-    'Systèmes d\'Exploitation',
-    'Machine Learning',
-    'Programmation Python',
-    'Cloud Computing',
-    'DevOps et CI/CD',
-    'Cryptographie',
-    'Gestion de Projet',
-    'Atelier Web Avancé',
-    'TP Réseaux',
-    'TP Sécurité',
-    'Séminaire Tech',
-    'Conférence Innovation',
-    'Architecture Microservices',
-    'Big Data',
-    'Blockchain',
-    'IoT et Systèmes Embarqués'
+    { fr: 'Mathématiques Appliquées', en: 'Applied Mathematics' },
+    { fr: 'Informatique Théorique', en: 'Theoretical Computer Science' },
+    { fr: 'Base de Données', en: 'Databases' },
+    { fr: 'Développement Web', en: 'Web Development' },
+    { fr: 'Architecture Logicielle', en: 'Software Architecture' },
+    { fr: 'Intelligence Artificielle', en: 'Artificial Intelligence' },
+    { fr: 'Sécurité Informatique', en: 'Computer Security' },
+    { fr: 'Algorithmique', en: 'Algorithms' },
+    { fr: 'Réseaux', en: 'Networks' },
+    { fr: 'Systèmes d\'Exploitation', en: 'Operating Systems' },
+    { fr: 'Machine Learning', en: 'Machine Learning' },
+    { fr: 'Programmation Python', en: 'Python Programming' },
+    { fr: 'Cloud Computing', en: 'Cloud Computing' },
+    { fr: 'DevOps et CI/CD', en: 'DevOps and CI/CD' },
+    { fr: 'Cryptographie', en: 'Cryptography' },
+    { fr: 'Gestion de Projet', en: 'Project Management' },
+    { fr: 'Atelier Web Avancé', en: 'Advanced Web Workshop' },
+    { fr: 'TP Réseaux', en: 'Networks Lab' },
+    { fr: 'TP Sécurité', en: 'Security Lab' },
+    { fr: 'Séminaire Tech', en: 'Tech Seminar' },
+    { fr: 'Conférence Innovation', en: 'Innovation Conference' },
+    { fr: 'Architecture Microservices', en: 'Microservices Architecture' },
+    { fr: 'Big Data', en: 'Big Data' },
+    { fr: 'Blockchain', en: 'Blockchain' },
+    { fr: 'IoT et Systèmes Embarqués', en: 'IoT and Embedded Systems' }
 ];
 
 /**
@@ -350,12 +348,13 @@ export function generateDemoYearData(lang = 'fr') {
                 const random4 = ((selectionSeed + 1000) * 9301 + 49297) % 233280;
                 const random5 = ((selectionSeed + 2000) * 9301 + 49297) % 233280;
                 
-                // Varier les matières par semaine en utilisant le numéro de semaine comme offset
+                // Varier les matières par semaine (traduites selon la langue)
+                const langKey = lang === 'en' ? 'en' : 'fr';
                 const subjectIndex = (Math.floor((random3 / 233280) * DEMO_SUBJECTS.length) + weekSeedNum) % DEMO_SUBJECTS.length;
                 const profIndex = (Math.floor((random4 / 233280) * DEMO_PROFESSORS.length) + weekSeedNum) % DEMO_PROFESSORS.length;
                 const locationIndex = (Math.floor((random5 / 233280) * DEMO_LOCATIONS.length) + weekSeedNum) % DEMO_LOCATIONS.length;
                 
-                const subject = DEMO_SUBJECTS[subjectIndex];
+                const subject = DEMO_SUBJECTS[subjectIndex][langKey];
                 const prof = DEMO_PROFESSORS[profIndex];
                 const location = DEMO_LOCATIONS[locationIndex];
                 
@@ -381,12 +380,12 @@ export function generateDemoYearData(lang = 'fr') {
                 }
                 if (isDistanciel) distancielCountThisWeek++;
                 
-                // Construire la description avec le prof
-                let description = `Professeur : - ${prof}`;
-                
-                // Ajouter "EXAMEN" dans la description si c'est un examen
+                // Construire la description avec le prof (traduite)
+                const profLabel = langKey === 'en' ? 'Professor' : 'Professeur';
+                let description = `${profLabel} : - ${prof}`;
                 if (isExam) {
-                    description = `EXAMEN - ${description}`;
+                    const examLabel = langKey === 'en' ? 'EXAM' : 'EXAMEN';
+                    description = `${examLabel} - ${description}`;
                 }
                 
                 // Modifier la localisation si c'est en distanciel
