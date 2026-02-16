@@ -326,12 +326,39 @@ export default function PWAUpdateChecker() {
                     }, 1500);
                 };
 
+                /**
+                 * Vérifie auprès de l'API si une mise à jour réelle existe avant d'afficher la bannière.
+                 * Évite les faux positifs (reg.waiting sans vraie nouvelle version, ex: CDN/cache).
+                 */
+                const verifyAndShowUpdate = async (waitingWorker) => {
+                    if (!waitingWorker) return;
+                    if (isUpdateInProgress()) {
+                        clearUpdateFlag();
+                        return;
+                    }
+                    try {
+                        const response = await fetch('/api/version?t=' + Date.now(), { cache: 'no-store' });
+                        if (!response.ok) return;
+                        const data = await response.json();
+                        const serverVersion = (data.version || '').trim();
+                        const localVer = (localVersion || '').trim();
+                        if (serverVersion && serverVersion !== localVer) {
+                            console.log(`[PWAUpdateChecker] Mise à jour confirmée: ${localVer || '(vide)'} → ${serverVersion}`);
+                            setWaitingWorker(waitingWorker);
+                            setUpdateAvailable(true);
+                            showNotification();
+                        } else {
+                            console.log('[PWAUpdateChecker] Faux positif ignoré (versions identiques:', localVer || '(vide)', '===', serverVersion, ')');
+                            waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    } catch (err) {
+                        console.debug('[PWAUpdateChecker] Impossible de vérifier la version, bannière ignorée:', err);
+                    }
+                };
+
                 // Vérifier si un nouveau Service Worker est en attente
-                // Ne pas afficher la popup si on vient de faire une mise à jour
                 if (reg.waiting && !isUpdateInProgress()) {
-                    setWaitingWorker(reg.waiting);
-                    setUpdateAvailable(true);
-                    showNotification();
+                    verifyAndShowUpdate(reg.waiting);
                 } else if (reg.waiting && isUpdateInProgress()) {
                     console.log('[PWAUpdateChecker] Waiting worker détecté mais mise à jour en cours, ignoré');
                     clearUpdateFlag();
@@ -344,17 +371,12 @@ export default function PWAUpdateChecker() {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
-                                    // Nouveau Service Worker installé et prêt (mise à jour)
-                                    // Ne pas afficher si une mise à jour est déjà en cours
                                     if (!isUpdateInProgress()) {
-                                        setWaitingWorker(newWorker);
-                                        setUpdateAvailable(true);
-                                        showNotification();
+                                        verifyAndShowUpdate(newWorker);
                                     } else {
                                         console.log('[PWAUpdateChecker] Nouveau SW installé mais mise à jour en cours, ignoré');
                                     }
                                 } else {
-                                    // Première installation
                                     console.log('[PWAUpdateChecker] Service Worker installé pour la première fois');
                                 }
                             }
