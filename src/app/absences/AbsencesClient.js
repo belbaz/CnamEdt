@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
 import KeepAlive from "@/components/KeepAlive";
@@ -12,7 +11,6 @@ import { useI18n } from "@/i18n/I18nContext";
  * basée sur la même session (cookies) que les notes.
  */
 export default function AbsencesClient() {
-    const router = useRouter();
     const { t } = useI18n();
     const [html, setHtml] = useState("");
     const [loading, setLoading] = useState(false);
@@ -33,26 +31,22 @@ export default function AbsencesClient() {
             const res = await fetch("/api/galao/absences");
             const data = await res.json();
 
-            if (res.status === 401) {
-                router.replace("/galao");
-                return;
-            }
-
-            if (!res.ok || !data?.success) {
-                router.replace("/galao");
+            if (res.status === 401 || !res.ok || !data?.success) {
+                window.location.replace("/galao");
                 return;
             }
 
             const rawHtml = data.html || "";
             if (!rawHtml) {
-                router.replace("/galao");
+                window.location.replace("/galao");
                 return;
             }
 
             setHtml(rawHtml);
         } catch (e) {
             console.warn("[Absences] Erreur de chargement, redirection vers /galao", e);
-            router.replace("/galao");
+            window.location.replace("/galao");
+            return;
         } finally {
             setLoading(false);
         }
@@ -162,16 +156,14 @@ export default function AbsencesClient() {
             );
             
             if (!hasClientFlag) {
-                // Pas de session Galao, rediriger vers /galao pour se connecter
-                console.log("[Absences] Pas de session Galao détectée, redirection vers /galao");
-                router.push("/galao");
+                window.location.replace("/galao");
                 return;
             }
         }
         
         // Chargement initial
         loadAbsences();
-    }, [router]);
+    }, []);
 
     return (
         <div className={styles.page}>
