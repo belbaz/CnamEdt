@@ -9,6 +9,9 @@
     "postinstall": "node scripts/pre-build.js",
     "start": "next start",
     "icons:web": "node scripts/generate-favicons.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:automation": "node scripts/test-automation.js",
     "test:automation:prod": "node scripts/test-automation.js https://votre-domaine.vercel.app"
   },
@@ -32,12 +35,15 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
+    "@vitest/coverage-v8": "^4.1.0",
     "autoprefixer": "^10.4.22",
     "cross-env": "^7.0.3",
+    "jsdom": "^27.0.1",
     "png-to-ico": "^2.1.8",
     "postcss": "^8.5.6",
     "sharp": "^0.34.4",
     "tailwindcss": "^4.1.17",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }

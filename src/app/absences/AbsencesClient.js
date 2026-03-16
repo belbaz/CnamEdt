@@ -34,26 +34,25 @@ export default function AbsencesClient() {
             const data = await res.json();
 
             if (res.status === 401) {
-                setError(data?.error || t('galao.notes.sessionExpired'));
-                setHtml("");
-                setAbsences([]);
+                router.replace("/galao");
                 return;
             }
 
             if (!res.ok || !data?.success) {
-                throw new Error(data?.error || t('galao.notes.fetchError'));
+                router.replace("/galao");
+                return;
             }
 
             const rawHtml = data.html || "";
             if (!rawHtml) {
-                setError(t('galao.notes.emptyResponse'));
+                router.replace("/galao");
                 return;
             }
 
             setHtml(rawHtml);
         } catch (e) {
-            console.warn("[Absences] Erreur de chargement", e);
-            setError(e?.message || t('galao.notes.unexpectedError'));
+            console.warn("[Absences] Erreur de chargement, redirection vers /galao", e);
+            router.replace("/galao");
         } finally {
             setLoading(false);
         }

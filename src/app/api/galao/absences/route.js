@@ -77,8 +77,23 @@ export async function GET() {
         );
         currentCookies = mergeCookies(currentCookies, menuResp.headers.get("set-cookie"));
 
-        // 2) Fiche des absences
-        console.log(`${LOG_PREFIX} 2. Récupération fiche absences`);
+        // 2) visu_bilans : initialise la session pour le contexte "absence" (comme notes fait avec planning_individuel)
+        // Sans cette étape, Galao peut refuser l'accès aux absences si on n'a pas "visitée" une page bilans avant
+        console.log(`${LOG_PREFIX} 2. Setup visu_bilans (bilan=absence)`);
+        const setupResp = await fetch(
+            `https://galao.cnam.fr/galao/bilans/visu_bilans.php?uid=${encodeURIComponent(galaoUid)}&bilan=absence&liste=un&no_fiche=1`,
+            {
+                headers: {
+                    ...commonHeaders,
+                    Cookie: currentCookies,
+                    Referer: `https://galao.cnam.fr/galao/menus/menu_apprenti.php?uid=${encodeURIComponent(galaoUid)}`,
+                },
+            },
+        );
+        currentCookies = mergeCookies(currentCookies, setupResp.headers.get("set-cookie"));
+
+        // 3) Fiche des absences
+        console.log(`${LOG_PREFIX} 3. Récupération fiche absences`);
         const absUrl = new URL(
             "https://galao.cnam.fr/galao/fiche_perso/affiche_infos_absences_appren.php",
         );
