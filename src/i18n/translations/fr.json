@@ -33,7 +33,8 @@
     "clearCache": "Vider le cache et les cookies (localhost uniquement)",
     "back": "Retour",
     "examens": "Examens à venir",
-    "notes": "Galao"
+    "notes": "Galao",
+    "message": "Message"
   },
   "pageHeader": {
     "settings": "Paramètres",
