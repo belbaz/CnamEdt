@@ -6,7 +6,7 @@ import WeekPicker from "./WeekPicker";
 import FilterPanel from "./FilterPanel";
 import Tooltip from "./Tooltip";
 import "./Navbar.css";
-import {useDevMode} from "../utils/env";
+import {IS_DEV_MODE, isDevMode, useDevMode} from "../utils/env";
 import {getSchoolYearLabel} from "../utils/dateUtils";
 import {useI18n} from "../i18n/I18nContext";
 import {fetchICSEvents, loadEventsFromCache} from "../services/icsService";
@@ -56,6 +56,7 @@ export default function Navbar({
                                    showFullYear = false,
                                    onToggleFullYear = null
                                }) {
+    const [isDev, setIsDev] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [newHistoryCount, setNewHistoryCount] = useState(0);
     const [showTooltip, setShowTooltip] = useState({
@@ -163,6 +164,10 @@ export default function Navbar({
             return () => clearInterval(interval);
         }
     }, [isExamensPage]);
+
+    useEffect(()=>{
+        setIsDev(isDevMode());
+    }, [])
 
     const handleShowHistory = () => {
         // Marquer comme vu en sauvegardant la date actuelle
@@ -375,61 +380,64 @@ export default function Navbar({
                                         </button>
                                     </Tooltip>
                                     {/*bouton message privé*/}
-                                    <Tooltip
-                                        text={t('navbar.message')}
-                                        show={showTooltip.message}
-                                        enabled={showTooltips}>
-                                        <button
-                                            className="view-filter-group-btn"
-                                            onClick={(e) => {
-                                                handleClick('message');
-                                                router.push('/message');
-                                            }}
-                                            aria-label={t('navbar.message')}
-                                            onMouseEnter={() => setShowTooltip(prev => ({...prev, message: true}))}
-                                            onMouseLeave={() => setShowTooltip(prev => ({...prev, message: false}))}
-                                            onTouchStart={() => handleLongPressStart('message')}
-                                            onTouchEnd={() => handleLongPressEnd('message')}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                 viewBox="0 0 256 256">
-                                                <defs>
-                                                    <radialGradient id="b" cx="24" cy="24" r="3"
-                                                                    gradientUnits="userSpaceOnUse">
-                                                        <stop offset="0" stopColor="#fff"/>
-                                                        <stop offset="1" stopOpacity="0"/>
-                                                    </radialGradient>
-                                                    <radialGradient id="c" cx="32" cy="24" r="3"
-                                                                    gradientUnits="userSpaceOnUse">
-                                                        <stop offset="0" stopColor="#fff"/>
-                                                        <stop offset="1" stopOpacity="0"/>
-                                                    </radialGradient>
-                                                    <radialGradient id="d" cx="16" cy="24" r="3"
-                                                                    gradientUnits="userSpaceOnUse">
-                                                        <stop offset="0" stopColor="#fff"/>
-                                                        <stop offset="1" stopOpacity="0"/>
-                                                    </radialGradient>
-                                                    <linearGradient id="a" x1="13.798" x2="38.051" y1="6.794"
-                                                                    y2="47.698" gradientUnits="userSpaceOnUse">
-                                                        <stop offset="0" stopColor="#33f0a0"/>
-                                                        <stop offset="1" stopColor="#0a85d9"/>
-                                                    </linearGradient>
-                                                </defs>
-                                                <g fill="none" strokeMiterlimit="10" fontFamily="none"
-                                                   fontSize="none" fontWeight="none"
-                                                   textAnchor="none" transform="scale(5.33333)">
-                                                    <path fill="url(#a)"
-                                                          d="M24 4c11.046 0 20 8.954 20 20 0 3.637-.986 7.037-2.682 9.975l4.564 10.384c.506 1.151-.711 2.3-1.831 1.73l-9.754-4.967A19.9 19.9 0 0 1 24 44C12.954 44 4 35.046 4 24S12.954 4 24 4"/>
-                                                    <circle cx="24" cy="24" r="3" fill="url(#b)" opacity=".3"/>
-                                                    <circle cx="24" cy="24" r="2" fill="#fff"/>
-                                                    <circle cx="32" cy="24" r="3" fill="url(#c)" opacity=".3"/>
-                                                    <circle cx="32" cy="24" r="2" fill="#fff"/>
-                                                    <circle cx="16" cy="24" r="3" fill="url(#d)" opacity=".3"/>
-                                                    <circle cx="16" cy="24" r="2" fill="#fff"/>
-                                                </g>
-                                            </svg>
-                                        </button>
-                                    </Tooltip>
+                                    <div
+                                        style={{display: isDev ? "block" : "none"}}>
+                                        <Tooltip
+                                            text={t('navbar.message')}
+                                            show={showTooltip.message}
+                                            enabled={showTooltips}>
+                                            <button
+                                                className="view-filter-group-btn"
+                                                onClick={(e) => {
+                                                    handleClick('message');
+                                                    router.push('/message');
+                                                }}
+                                                aria-label={t('navbar.message')}
+                                                onMouseEnter={() => setShowTooltip(prev => ({...prev, message: true}))}
+                                                onMouseLeave={() => setShowTooltip(prev => ({...prev, message: false}))}
+                                                onTouchStart={() => handleLongPressStart('message')}
+                                                onTouchEnd={() => handleLongPressEnd('message')}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                     viewBox="0 0 256 256">
+                                                    <defs>
+                                                        <radialGradient id="b" cx="24" cy="24" r="3"
+                                                                        gradientUnits="userSpaceOnUse">
+                                                            <stop offset="0" stopColor="#fff"/>
+                                                            <stop offset="1" stopOpacity="0"/>
+                                                        </radialGradient>
+                                                        <radialGradient id="c" cx="32" cy="24" r="3"
+                                                                        gradientUnits="userSpaceOnUse">
+                                                            <stop offset="0" stopColor="#fff"/>
+                                                            <stop offset="1" stopOpacity="0"/>
+                                                        </radialGradient>
+                                                        <radialGradient id="d" cx="16" cy="24" r="3"
+                                                                        gradientUnits="userSpaceOnUse">
+                                                            <stop offset="0" stopColor="#fff"/>
+                                                            <stop offset="1" stopOpacity="0"/>
+                                                        </radialGradient>
+                                                        <linearGradient id="a" x1="13.798" x2="38.051" y1="6.794"
+                                                                        y2="47.698" gradientUnits="userSpaceOnUse">
+                                                            <stop offset="0" stopColor="#33f0a0"/>
+                                                            <stop offset="1" stopColor="#0a85d9"/>
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <g fill="none" strokeMiterlimit="10" fontFamily="none"
+                                                       fontSize="none" fontWeight="none"
+                                                       textAnchor="none" transform="scale(5.33333)">
+                                                        <path fill="url(#a)"
+                                                              d="M24 4c11.046 0 20 8.954 20 20 0 3.637-.986 7.037-2.682 9.975l4.564 10.384c.506 1.151-.711 2.3-1.831 1.73l-9.754-4.967A19.9 19.9 0 0 1 24 44C12.954 44 4 35.046 4 24S12.954 4 24 4"/>
+                                                        <circle cx="24" cy="24" r="3" fill="url(#b)" opacity=".3"/>
+                                                        <circle cx="24" cy="24" r="2" fill="#fff"/>
+                                                        <circle cx="32" cy="24" r="3" fill="url(#c)" opacity=".3"/>
+                                                        <circle cx="32" cy="24" r="2" fill="#fff"/>
+                                                        <circle cx="16" cy="24" r="3" fill="url(#d)" opacity=".3"/>
+                                                        <circle cx="16" cy="24" r="2" fill="#fff"/>
+                                                    </g>
+                                                </svg>
+                                            </button>
+                                        </Tooltip>
+                                    </div>
                                     <Tooltip
                                         text={t('navbar.notes')}
                                         show={showTooltip.notes}
