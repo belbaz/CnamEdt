@@ -8,12 +8,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.js', 'src/**/*.spec.js'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/utils/**/*.js', 'src/services/**/*.js'],
-      exclude: ['**/*.test.js', '**/*.spec.js', '**/node_modules/**'],
+      include: ['src/utils/**/*.ts', 'src/utils/**/*.tsx', 'src/services/**/*.ts', 'src/services/**/*.tsx'],
+      exclude: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx', '**/node_modules/**'],
     },
   },
   resolve: {
