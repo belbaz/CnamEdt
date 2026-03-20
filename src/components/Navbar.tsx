@@ -50,6 +50,8 @@ export default function Navbar(props: any) {
         onTimePassedOverlayIntensityChange = null,
         showCourseProgressPercent = false,
         onToggleShowCourseProgressPercent = null,
+        courseProgressPercentDecimals = 2,
+        onToggleCourseProgressPercentDecimals = null,
         subjects = [],
         selectedSubjects = [],
         onSubjectsChange = null,
@@ -308,6 +310,8 @@ export default function Navbar(props: any) {
                     onTimePassedOverlayIntensityChange={onTimePassedOverlayIntensityChange}
                     showCourseProgressPercent={showCourseProgressPercent}
                     onToggleShowCourseProgressPercent={onToggleShowCourseProgressPercent}
+                    courseProgressPercentDecimals={courseProgressPercentDecimals}
+                    onToggleCourseProgressPercentDecimals={onToggleCourseProgressPercentDecimals}
                     userInfo={userInfo}
                     isLoadingUser={isLoadingUser}
                 />

@@ -38,6 +38,8 @@ export default function PageHeader({
                                        onToggleCurrentTimeIndicator = null,
                                        showCourseProgressPercent = false,
                                        onToggleShowCourseProgressPercent = null,
+                                       courseProgressPercentDecimals = 2,
+                                       onToggleCourseProgressPercentDecimals = null,
                                        userInfo = null,
                                        isLoadingUser = false
                                    }) {
@@ -426,6 +428,8 @@ export default function PageHeader({
                                 onTimePassedOverlayIntensityChange={onTimePassedOverlayIntensityChange}
                                 showCourseProgressPercent={showCourseProgressPercent}
                                 onToggleShowCourseProgressPercent={onToggleShowCourseProgressPercent}
+                                courseProgressPercentDecimals={courseProgressPercentDecimals}
+                                onToggleCourseProgressPercentDecimals={onToggleCourseProgressPercentDecimals}
                             />
                         </div>
                     </Tooltip>

@@ -8,6 +8,7 @@ export default function TimePassedOverlay({
     intensity = 0.5,
     events = null,
     showCourseProgressPercent = false,
+    courseProgressPercentDecimals = 2,
 }) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
 
@@ -31,7 +32,11 @@ export default function TimePassedOverlay({
                     className="time-passed-overlay-percentage"
                     style={isMobile ? {top: `${currentPos}%`} : {left: `${currentPos}%`}}
                 >
-                    <AnimatedCourseProgressLabel events={events} fallbackPercent={currentPos} />
+                    <AnimatedCourseProgressLabel
+                        events={events}
+                        fallbackPercent={currentPos}
+                        decimals={courseProgressPercentDecimals}
+                    />
                 </div>
             )}
         </>

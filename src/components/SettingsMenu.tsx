@@ -79,7 +79,9 @@ export default function SettingsMenu({
                                          timePassedOverlayIntensity = 0.5,
                                          onTimePassedOverlayIntensityChange = null,
                                          showCourseProgressPercent = false,
-                                         onToggleShowCourseProgressPercent = null
+                                         onToggleShowCourseProgressPercent = null,
+                                         courseProgressPercentDecimals = 2,
+                                         onToggleCourseProgressPercentDecimals = null
                                      }) {
     const { t, language, setLanguage } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
@@ -394,7 +396,33 @@ export default function SettingsMenu({
                                                     checked={showCourseProgressPercent}
                                                     onChange={(e) => onToggleShowCourseProgressPercent && onToggleShowCourseProgressPercent(e.target.checked)}
                                                 />
-                                                <span>{t('settings.showCourseProgressPercent')}</span>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                                                    <span>{t('settings.showCourseProgressPercent')}</span>
+                                                    <select
+                                                        value={courseProgressPercentDecimals}
+                                                        disabled={!showCourseProgressPercent}
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={(e) => {
+                                                            const parsed = parseInt(e.target.value, 10);
+                                                            if (onToggleCourseProgressPercentDecimals) {
+                                                                onToggleCourseProgressPercentDecimals(parsed);
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            fontSize: "0.75rem",
+                                                            padding: "0.15rem 0.3rem",
+                                                            borderRadius: "6px",
+                                                            cursor: showCourseProgressPercent ? "pointer" : "not-allowed"
+                                                        }}
+                                                    >
+                                                        {[0, 1, 2, 3, 4, 5].map((n) => (
+                                                            <option key={n} value={n}>
+                                                                {n}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </span>
                                             </label>
                                         </div>
                                     </div>

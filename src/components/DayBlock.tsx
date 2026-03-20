@@ -21,7 +21,8 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
     timePassedOverlayIntensity = 0.5,
-    showCourseProgressPercent = false
+    showCourseProgressPercent = false,
+    courseProgressPercentDecimals = 2
 }, ref) => {
     // Mémoriser les calculs pour éviter de les refaire à chaque rendu
     const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
@@ -125,6 +126,7 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                     colorBackgroundOpacity={colorBackgroundOpacity}
                     timePassedOverlayIntensity={timePassedOverlayIntensity}
                     showCourseProgressPercent={showCourseProgressPercent}
+                    courseProgressPercentDecimals={courseProgressPercentDecimals}
                 />
             )}
         </div>

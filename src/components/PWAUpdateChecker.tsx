@@ -26,6 +26,7 @@ const LOCALSTORAGE_KEYS_TO_KEEP = [
     'showTimeRemaining',
     'showTooltips',
     'showCourseProgressPercent',
+    'courseProgressPercentDecimals',
     'colorPosition',
     'colorBackgroundOpacity',
     'showFullYear',

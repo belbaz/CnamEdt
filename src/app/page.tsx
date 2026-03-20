@@ -81,6 +81,7 @@ function HomeContent({searchParams}) {
     const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.8); // Opacité du background (0 à 1, par défaut: 0.8)
     const [timePassedOverlayIntensity, setTimePassedOverlayIntensity] = useState(0.5); // Intensité de l'overlay de temps passé (0.1 à 0.9, par défaut: 0.5)
     const [showCourseProgressPercent, setShowCourseProgressPercent] = useState(false); // Pourcentage de progression du jour (durée des cours)
+    const [courseProgressPercentDecimals, setCourseProgressPercentDecimals] = useState(2); // 0 à 5 chiffres après la virgule
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -966,6 +967,15 @@ function HomeContent({searchParams}) {
             setShowCourseProgressPercent(savedShowCourseProgressPercent === "true");
         }
 
+        const savedCourseProgressPercentDecimals = localStorage.getItem("courseProgressPercentDecimals");
+        if (savedCourseProgressPercentDecimals !== null) {
+            const parsed = parseInt(savedCourseProgressPercentDecimals, 10);
+            if (!isNaN(parsed)) {
+                const clamped = Math.max(0, Math.min(5, parsed));
+                setCourseProgressPercentDecimals(clamped);
+            }
+        }
+
         const savedShowFullYear = localStorage.getItem("showFullYear");
         if (savedShowFullYear === 'true') setShowFullYear(true);
     }, []);
@@ -1121,6 +1131,8 @@ function HomeContent({searchParams}) {
         handlers.handleToggleCurrentTimeIndicator(enabled, setShowCurrentTimeIndicator);
     const handleToggleShowCourseProgressPercent = (enabled) =>
         handlers.handleToggleShowCourseProgressPercent(enabled, setShowCourseProgressPercent);
+    const handleToggleCourseProgressPercentDecimals = (value) =>
+        handlers.handleToggleCourseProgressPercentDecimals(value, setCourseProgressPercentDecimals);
     const handleColorPositionChange = (position) => handlers.handleColorPositionChange(position, setColorPosition);
     const handleColorBackgroundOpacityChange = (opacity) => handlers.handleColorBackgroundOpacityChange(opacity, setColorBackgroundOpacity);
     const handleTimePassedOverlayIntensityChange = (intensity) => handlers.handleTimePassedOverlayIntensityChange(intensity, setTimePassedOverlayIntensity);
@@ -1318,6 +1330,8 @@ function HomeContent({searchParams}) {
                 onTimePassedOverlayIntensityChange={handleTimePassedOverlayIntensityChange}
                 showCourseProgressPercent={showCourseProgressPercent}
                 onToggleShowCourseProgressPercent={handleToggleShowCourseProgressPercent}
+                courseProgressPercentDecimals={courseProgressPercentDecimals}
+                onToggleCourseProgressPercentDecimals={handleToggleCourseProgressPercentDecimals}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
@@ -1510,6 +1524,7 @@ function HomeContent({searchParams}) {
                                 colorBackgroundOpacity={colorBackgroundOpacity}
                                 timePassedOverlayIntensity={timePassedOverlayIntensity}
                                 showCourseProgressPercent={showCourseProgressPercent}
+                                courseProgressPercentDecimals={courseProgressPercentDecimals}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {
@@ -1538,6 +1553,7 @@ function HomeContent({searchParams}) {
                                             colorBackgroundOpacity={colorBackgroundOpacity}
                                             timePassedOverlayIntensity={timePassedOverlayIntensity}
                                             showCourseProgressPercent={showCourseProgressPercent}
+                                            courseProgressPercentDecimals={courseProgressPercentDecimals}
                                         />
                                         {isToday && (
                                             <div

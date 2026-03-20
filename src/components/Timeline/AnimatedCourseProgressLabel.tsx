@@ -8,12 +8,12 @@ import "./AnimatedCourseProgressLabel.css";
 const LERP = 0.2;
 const SNAP = 0.0008;
 
-function formatProgressPercent(value, language) {
+function formatProgressPercent(value, language, fractionDigits) {
     const locale = language === "en" ? "en-US" : "fr-FR";
     return (
         new Intl.NumberFormat(locale, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits,
         }).format(value) + "\u00a0%"
     );
 }
@@ -22,7 +22,12 @@ function formatProgressPercent(value, language) {
  * Progression des cours du jour (durée réelle + cours en cours), rAF + lerp.
  * textContent direct : pas de setState à chaque frame. Clé stable sur le contenu des events.
  */
-export default function AnimatedCourseProgressLabel({ events, fallbackPercent = 0, className = "" }) {
+export default function AnimatedCourseProgressLabel({
+    events,
+    fallbackPercent = 0,
+    decimals = 2,
+    className = ""
+}) {
     const { language } = useI18n();
     const spanRef = useRef(null);
     const smoothRef = useRef(null);
@@ -46,8 +51,8 @@ export default function AnimatedCourseProgressLabel({ events, fallbackPercent = 
         const target = targetRaw != null ? targetRaw : fallbackPercent;
         const clamped = Math.min(100, Math.max(0, target));
         smoothRef.current = clamped;
-        el.textContent = formatProgressPercent(clamped, language);
-    }, [eventsSerialized, language, fallbackPercent]);
+        el.textContent = formatProgressPercent(clamped, language, decimals);
+    }, [eventsSerialized, language, fallbackPercent, decimals]);
 
     useEffect(() => {
         let rafId = 0;
@@ -89,7 +94,7 @@ export default function AnimatedCourseProgressLabel({ events, fallbackPercent = 
 
             const el = spanRef.current;
             if (el) {
-                el.textContent = formatProgressPercent(smoothRef.current, language);
+                el.textContent = formatProgressPercent(smoothRef.current, language, decimals);
             }
 
             rafId = requestAnimationFrame(tick);
@@ -100,7 +105,7 @@ export default function AnimatedCourseProgressLabel({ events, fallbackPercent = 
             cancelled = true;
             clearTimers();
         };
-    }, [eventsSerialized, language]);
+    }, [eventsSerialized, language, decimals]);
 
     return (
         <span

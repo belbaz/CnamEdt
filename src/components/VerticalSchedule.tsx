@@ -24,7 +24,8 @@ export default function VerticalSchedule({
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
     timePassedOverlayIntensity = 0.5,
-    showCourseProgressPercent = false
+    showCourseProgressPercent = false,
+    courseProgressPercentDecimals = 2
 }) {
     const { language } = useI18n();
     const locale = getLocale(language);
@@ -446,6 +447,7 @@ export default function VerticalSchedule({
                                                     <AnimatedCourseProgressLabel
                                                         events={dayEvents}
                                                         fallbackPercent={currentPos}
+                                                        decimals={courseProgressPercentDecimals}
                                                     />
                                                 </div>
                                             )}
