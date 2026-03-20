@@ -25,6 +25,7 @@ const LOCALSTORAGE_KEYS_TO_KEEP = [
     'hide15MinSpacing',
     'showTimeRemaining',
     'showTooltips',
+    'showCourseProgressPercent',
     'colorPosition',
     'colorBackgroundOpacity',
     'showFullYear',

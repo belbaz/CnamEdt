@@ -9,7 +9,6 @@ import { useI18n } from "@/i18n/I18nContext";
 import EventCard from "./Timeline/EventCard";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
-import { useDevMode } from "@/utils/env";
 
 export default function VerticalSchedule({
     events,
@@ -24,7 +23,8 @@ export default function VerticalSchedule({
     courseNotes = null,
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
-    timePassedOverlayIntensity = 0.5
+    timePassedOverlayIntensity = 0.5,
+    showCourseProgressPercent = false
 }) {
     const { language } = useI18n();
     const locale = getLocale(language);
@@ -81,8 +81,6 @@ export default function VerticalSchedule({
 
     const [isMobile, setIsMobile] = useState(false);
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
-    const devMode = useDevMode();
-
     // Détecter un petit écran (mobile) OU app native
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -440,7 +438,7 @@ export default function VerticalSchedule({
                                                 className="vertical-time-passed-overlay"
                                                 style={{ height: `${currentPos}%`, opacity: timePassedOverlayIntensity }}
                                             />
-                                            {devMode && (
+                                            {showCourseProgressPercent && (
                                                 <div
                                                     className="vertical-time-passed-overlay-percentage"
                                                     style={{ top: `${currentPos}%` }}

@@ -77,7 +77,9 @@ export default function SettingsMenu({
                                          colorBackgroundOpacity = 0.6,
                                          onColorBackgroundOpacityChange = null,
                                          timePassedOverlayIntensity = 0.5,
-                                         onTimePassedOverlayIntensityChange = null
+                                         onTimePassedOverlayIntensityChange = null,
+                                         showCourseProgressPercent = false,
+                                         onToggleShowCourseProgressPercent = null
                                      }) {
     const { t, language, setLanguage } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
@@ -381,6 +383,18 @@ export default function SettingsMenu({
                                                     onChange={(e) => onToggleCurrentTimeIndicator && onToggleCurrentTimeIndicator(e.target.checked)}
                                                 />
                                                 <span>{t('settings.showCurrentTimeIndicator')}</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="showCourseProgressPercent-checkbox">
+                                                <input
+                                                    id="showCourseProgressPercent-checkbox"
+                                                    type="checkbox"
+                                                    checked={showCourseProgressPercent}
+                                                    onChange={(e) => onToggleShowCourseProgressPercent && onToggleShowCourseProgressPercent(e.target.checked)}
+                                                />
+                                                <span>{t('settings.showCourseProgressPercent')}</span>
                                             </label>
                                         </div>
                                     </div>

@@ -23,7 +23,8 @@ export default function TimelineWrapper({
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
     showCurrentTimeIndicator = true,
-    timePassedOverlayIntensity = 0.5
+    timePassedOverlayIntensity = 0.5,
+    showCourseProgressPercent = false
 }) {
     // Mémoriser le calcul isMobile pour éviter les recalculs inutiles
     const isMobile = useMemo(() => {
@@ -43,7 +44,12 @@ export default function TimelineWrapper({
                 showTimeLabels={showTimeLabels}
             />
 
-            <TimePassedOverlay currentPos={currentPos} intensity={timePassedOverlayIntensity} events={events}/>
+            <TimePassedOverlay
+                currentPos={currentPos}
+                intensity={timePassedOverlayIntensity}
+                events={events}
+                showCourseProgressPercent={showCourseProgressPercent}
+            />
 
             {showCurrentTimeIndicator && <CurrentTimeIndicator currentPos={currentPos}/>}
 

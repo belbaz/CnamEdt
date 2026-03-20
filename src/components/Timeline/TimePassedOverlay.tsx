@@ -1,12 +1,15 @@
 // @ts-nocheck
 "use client";
 import "./TimePassedOverlay.css";
-import { useDevMode } from "@/utils/env";
 import AnimatedCourseProgressLabel from "./AnimatedCourseProgressLabel";
 
-export default function TimePassedOverlay({currentPos, intensity = 0.5, events = null}) {
+export default function TimePassedOverlay({
+    currentPos,
+    intensity = 0.5,
+    events = null,
+    showCourseProgressPercent = false,
+}) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
-    const devMode = useDevMode();
 
     if (currentPos === null) return null;
 
@@ -23,7 +26,7 @@ export default function TimePassedOverlay({currentPos, intensity = 0.5, events =
                         : {width: `${currentPos}%`, opacity: opacity}
                 }
             />
-            {devMode && (
+            {showCourseProgressPercent && (
                 <div
                     className="time-passed-overlay-percentage"
                     style={isMobile ? {top: `${currentPos}%`} : {left: `${currentPos}%`}}

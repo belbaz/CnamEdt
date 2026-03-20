@@ -48,6 +48,8 @@ export default function Navbar(props: any) {
         onColorBackgroundOpacityChange = null,
         timePassedOverlayIntensity = 0.5,
         onTimePassedOverlayIntensityChange = null,
+        showCourseProgressPercent = false,
+        onToggleShowCourseProgressPercent = null,
         subjects = [],
         selectedSubjects = [],
         onSubjectsChange = null,
@@ -304,6 +306,8 @@ export default function Navbar(props: any) {
                     onColorBackgroundOpacityChange={onColorBackgroundOpacityChange}
                     timePassedOverlayIntensity={timePassedOverlayIntensity}
                     onTimePassedOverlayIntensityChange={onTimePassedOverlayIntensityChange}
+                    showCourseProgressPercent={showCourseProgressPercent}
+                    onToggleShowCourseProgressPercent={onToggleShowCourseProgressPercent}
                     userInfo={userInfo}
                     isLoadingUser={isLoadingUser}
                 />

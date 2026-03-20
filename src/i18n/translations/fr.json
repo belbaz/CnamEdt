@@ -9,6 +9,7 @@
     "showTimeRemaining": "Afficher le temps restant du cours",
     "showTooltips": "Afficher les indications des boutons",
     "showCurrentTimeIndicator": "Afficher l'indicateur de temps",
+    "showCourseProgressPercent": "Afficher le pourcentage de progression du jour (cours)",
     "showVerticalCurrentTimeIndicator": "Afficher l'indicateur de temps (vertical)",
     "showHorizontalCurrentTimeIndicator": "Afficher l'indicateur de temps (horizontal)",
     "colorPosition": "Position de la couleur du cours :",

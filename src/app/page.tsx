@@ -80,6 +80,7 @@ function HomeContent({searchParams}) {
     const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
     const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.8); // Opacité du background (0 à 1, par défaut: 0.8)
     const [timePassedOverlayIntensity, setTimePassedOverlayIntensity] = useState(0.5); // Intensité de l'overlay de temps passé (0.1 à 0.9, par défaut: 0.5)
+    const [showCourseProgressPercent, setShowCourseProgressPercent] = useState(false); // Pourcentage de progression du jour (durée des cours)
     // Animation de transition de semaine: 'next' | 'prev' | null
     const [weekTransitionDirection, setWeekTransitionDirection] = useState(null);
     const previousWeekIndexRef = useRef(null);
@@ -960,6 +961,11 @@ function HomeContent({searchParams}) {
             }
         }
 
+        const savedShowCourseProgressPercent = localStorage.getItem("showCourseProgressPercent");
+        if (savedShowCourseProgressPercent !== null) {
+            setShowCourseProgressPercent(savedShowCourseProgressPercent === "true");
+        }
+
         const savedShowFullYear = localStorage.getItem("showFullYear");
         if (savedShowFullYear === 'true') setShowFullYear(true);
     }, []);
@@ -1113,6 +1119,8 @@ function HomeContent({searchParams}) {
     const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
     const handleToggleCurrentTimeIndicator = (enabled) =>
         handlers.handleToggleCurrentTimeIndicator(enabled, setShowCurrentTimeIndicator);
+    const handleToggleShowCourseProgressPercent = (enabled) =>
+        handlers.handleToggleShowCourseProgressPercent(enabled, setShowCourseProgressPercent);
     const handleColorPositionChange = (position) => handlers.handleColorPositionChange(position, setColorPosition);
     const handleColorBackgroundOpacityChange = (opacity) => handlers.handleColorBackgroundOpacityChange(opacity, setColorBackgroundOpacity);
     const handleTimePassedOverlayIntensityChange = (intensity) => handlers.handleTimePassedOverlayIntensityChange(intensity, setTimePassedOverlayIntensity);
@@ -1308,6 +1316,8 @@ function HomeContent({searchParams}) {
                 onColorBackgroundOpacityChange={handleColorBackgroundOpacityChange}
                 timePassedOverlayIntensity={timePassedOverlayIntensity}
                 onTimePassedOverlayIntensityChange={handleTimePassedOverlayIntensityChange}
+                showCourseProgressPercent={showCourseProgressPercent}
+                onToggleShowCourseProgressPercent={handleToggleShowCourseProgressPercent}
                 subjects={subjects}
                 selectedSubjects={selectedSubjects}
                 onSubjectsChange={setSelectedSubjects}
@@ -1499,6 +1509,7 @@ function HomeContent({searchParams}) {
                                 colorPosition={colorPosition}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
                                 timePassedOverlayIntensity={timePassedOverlayIntensity}
+                                showCourseProgressPercent={showCourseProgressPercent}
                             />
                         ) : (
                             Object.entries(groupByDay).map(([day, evs], index) => {
@@ -1526,6 +1537,7 @@ function HomeContent({searchParams}) {
                                             colorPosition={colorPosition}
                                             colorBackgroundOpacity={colorBackgroundOpacity}
                                             timePassedOverlayIntensity={timePassedOverlayIntensity}
+                                            showCourseProgressPercent={showCourseProgressPercent}
                                         />
                                         {isToday && (
                                             <div

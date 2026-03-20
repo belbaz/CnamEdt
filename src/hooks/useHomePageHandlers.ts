@@ -72,6 +72,11 @@ export function useHomePageHandlers({
         localStorage.setItem('showCurrentTimeIndicator', enabled.toString());
     };
 
+    const handleToggleShowCourseProgressPercent = (enabled, setShowCourseProgressPercent) => {
+        setShowCourseProgressPercent(enabled);
+        localStorage.setItem('showCourseProgressPercent', enabled.toString());
+    };
+
     const handleColorPositionChange = (position, setColorPosition) => {
         setColorPosition(position);
         localStorage.setItem('colorPosition', position);
@@ -277,6 +282,7 @@ export function useHomePageHandlers({
         handleToggleTimeRemaining,
         handleToggleTooltips,
         handleToggleCurrentTimeIndicator,
+        handleToggleShowCourseProgressPercent,
         handleColorPositionChange,
         handleColorBackgroundOpacityChange,
         handleTimePassedOverlayIntensityChange,
