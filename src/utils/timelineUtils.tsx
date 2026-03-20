@@ -82,6 +82,24 @@ export function getCurrentTimePosition(dayDate, startMinutes, endMinutes) {
 }
 
 /**
+ * Progression du jour au prisme des cours : part des séances déjà terminées (fin <= maintenant).
+ * Ex. 4 cours, 3 finis → 75 % (pas la part de la journée civile ni celle de la plage 9h–18h).
+ */
+export function getDayCoursesCompletedPercent(dayEvents, now = new Date()) {
+    if (!dayEvents || dayEvents.length === 0) return null;
+    const total = dayEvents.length;
+    let completed = 0;
+    for (const ev of dayEvents) {
+        const endRaw = ev.end_time || ev.end;
+        if (!endRaw) continue;
+        const end = new Date(endRaw);
+        if (isNaN(end.getTime())) continue;
+        if (end.getTime() <= now.getTime()) completed += 1;
+    }
+    return (completed / total) * 100;
+}
+
+/**
  * Calcule la position horizontale d'un événement (desktop)
  */
 export function getEventPosition(startTime, endTime, dayStart, dayEnd, previousEventEnd = null, nextEventStart = null, hide15MinSpacing = false) {

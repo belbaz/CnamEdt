@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 import { useMemo, useEffect, useState, useRef } from "react";
-import { getDayTimeRange, generateTimeMarkers, getCurrentTimePosition } from "@/utils/timelineUtils";
+import { getDayTimeRange, generateTimeMarkers, getDayCoursesCompletedPercent } from "@/utils/timelineUtils";
 import { groupEventsByDay } from "@/utils/eventUtils";
 import { isToday, getLocale } from "@/utils/dateUtils";
 import { useI18n } from "@/i18n/I18nContext";
@@ -17,6 +17,7 @@ export default function VerticalSchedule({
     compactMode = 5,
     showTimeLabels = true,
     hide15MinSpacing = false,
+    showCurrentTimeIndicator = true,
     isPWAInstalled = false,
     monthFormat = 'long',
     courseNotes = null,
@@ -421,16 +422,14 @@ export default function VerticalSchedule({
                                     className={`vertical-day-column ${isTodayDay ? 'today' : ''}`}
                                 >
                                     {/* Indicateur de temps actuel */}
-                                    {currentPos !== null && (
-                                        <div>
+                                    {showCurrentTimeIndicator && currentPos !== null && (
+                                        <div
+                                            className="vertical-current-time-indicator"
+                                            style={{ top: `${currentPos}%` }}
+                                        >
+                                            <div className="vertical-current-time-line"></div>
+                                            <div className="vertical-current-time-dot"></div>
                                         </div>
-                                        // <div
-                                        //     className="vertical-current-time-indicator"
-                                        //     style={{ top: `${currentPos}%` }}
-                                        // >
-                                        //     <div className="vertical-current-time-line"></div>
-                                        //     <div className="vertical-current-time-dot"></div>
-                                        // </div>
                                     )}
 
                                     {/* Ligne de temps passée */}
@@ -445,7 +444,7 @@ export default function VerticalSchedule({
                                                     className="vertical-time-passed-overlay-percentage"
                                                     style={{ top: `${currentPos}%` }}
                                                 >
-                                                    {currentPos.toFixed(1)}%
+                                                    {(getDayCoursesCompletedPercent(dayEvents) ?? currentPos).toFixed(1)}%
                                                 </div>
                                             )}
                                         </>

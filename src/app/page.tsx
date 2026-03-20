@@ -76,6 +76,7 @@ function HomeContent({searchParams}) {
     const [hide15MinSpacing, setHide15MinSpacing] = useState(false); // Masquer l'espacement visuel de 15 minutes
     const [showTimeRemaining, setShowTimeRemaining] = useState(true); // Afficher le temps restant du cours
     const [showTooltips, setShowTooltips] = useState(true); // Afficher les indications des boutons (tooltips)
+    const [showCurrentTimeIndicator, setShowCurrentTimeIndicator] = useState(true); // Indicateur de temps (vertical + horizontal)
     const [colorPosition, setColorPosition] = useState('background'); // Position de la couleur: 'top' ou 'background' (par défaut: background)
     const [colorBackgroundOpacity, setColorBackgroundOpacity] = useState(0.8); // Opacité du background (0 à 1, par défaut: 0.8)
     const [timePassedOverlayIntensity, setTimePassedOverlayIntensity] = useState(0.5); // Intensité de l'overlay de temps passé (0.1 à 0.9, par défaut: 0.5)
@@ -918,6 +919,21 @@ function HomeContent({searchParams}) {
         const savedShowTooltips = localStorage.getItem("showTooltips");
         if (savedShowTooltips !== null) setShowTooltips(savedShowTooltips === "true");
 
+        const savedShowCurrentTimeIndicator = localStorage.getItem("showCurrentTimeIndicator");
+        if (savedShowCurrentTimeIndicator !== null) {
+            setShowCurrentTimeIndicator(savedShowCurrentTimeIndicator === "true");
+        } else {
+            // Compatibilité avec d'anciennes clés (vertical/horizontal)
+            const savedShowVerticalCurrentTimeIndicator = localStorage.getItem("showVerticalCurrentTimeIndicator");
+            const savedShowHorizontalCurrentTimeIndicator = localStorage.getItem("showHorizontalCurrentTimeIndicator");
+
+            if (savedShowVerticalCurrentTimeIndicator !== null) {
+                setShowCurrentTimeIndicator(savedShowVerticalCurrentTimeIndicator === "true");
+            } else if (savedShowHorizontalCurrentTimeIndicator !== null) {
+                setShowCurrentTimeIndicator(savedShowHorizontalCurrentTimeIndicator === "true");
+            }
+        }
+
         const savedColorPosition = localStorage.getItem("colorPosition");
         if (savedColorPosition === 'top' || savedColorPosition === 'background') {
             setColorPosition(savedColorPosition);
@@ -1095,6 +1111,8 @@ function HomeContent({searchParams}) {
     const handleToggle15MinSpacing = (enabled) => handlers.handleToggle15MinSpacing(enabled, setHide15MinSpacing);
     const handleToggleTimeRemaining = (enabled) => handlers.handleToggleTimeRemaining(enabled, setShowTimeRemaining);
     const handleToggleTooltips = (enabled) => handlers.handleToggleTooltips(enabled, setShowTooltips);
+    const handleToggleCurrentTimeIndicator = (enabled) =>
+        handlers.handleToggleCurrentTimeIndicator(enabled, setShowCurrentTimeIndicator);
     const handleColorPositionChange = (position) => handlers.handleColorPositionChange(position, setColorPosition);
     const handleColorBackgroundOpacityChange = (opacity) => handlers.handleColorBackgroundOpacityChange(opacity, setColorBackgroundOpacity);
     const handleTimePassedOverlayIntensityChange = (intensity) => handlers.handleTimePassedOverlayIntensityChange(intensity, setTimePassedOverlayIntensity);
@@ -1282,6 +1300,8 @@ function HomeContent({searchParams}) {
                 onToggleTimeRemaining={handleToggleTimeRemaining}
                 showTooltips={showTooltips}
                 onToggleTooltips={handleToggleTooltips}
+                showCurrentTimeIndicator={showCurrentTimeIndicator}
+                onToggleCurrentTimeIndicator={handleToggleCurrentTimeIndicator}
                 colorPosition={colorPosition}
                 onColorPositionChange={handleColorPositionChange}
                 colorBackgroundOpacity={colorBackgroundOpacity}
@@ -1472,6 +1492,7 @@ function HomeContent({searchParams}) {
                                 compactMode={compactMode}
                                 showTimeLabels={showTimeLabels}
                                 hide15MinSpacing={hide15MinSpacing}
+                                showCurrentTimeIndicator={showCurrentTimeIndicator}
                                 isPWAInstalled={isInstalled}
                                 monthFormat={'short'}
                                 courseNotes={courseNotes}
@@ -1501,6 +1522,7 @@ function HomeContent({searchParams}) {
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}
                                             courseNotes={courseNotes}
+                                            showCurrentTimeIndicator={showCurrentTimeIndicator}
                                             colorPosition={colorPosition}
                                             colorBackgroundOpacity={colorBackgroundOpacity}
                                             timePassedOverlayIntensity={timePassedOverlayIntensity}

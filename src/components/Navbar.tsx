@@ -40,6 +40,8 @@ export default function Navbar(props: any) {
         onToggleTimeRemaining = null,
         showTooltips = true,
         onToggleTooltips = null,
+        showCurrentTimeIndicator = true,
+        onToggleCurrentTimeIndicator = null,
         colorPosition = 'background',
         onColorPositionChange = null,
         colorBackgroundOpacity = 0.6,
@@ -294,6 +296,8 @@ export default function Navbar(props: any) {
                     onToggleTimeRemaining={onToggleTimeRemaining}
                     showTooltips={showTooltips}
                     onToggleTooltips={onToggleTooltips}
+                    showCurrentTimeIndicator={showCurrentTimeIndicator}
+                    onToggleCurrentTimeIndicator={onToggleCurrentTimeIndicator}
                     colorPosition={colorPosition}
                     onColorPositionChange={onColorPositionChange}
                     colorBackgroundOpacity={colorBackgroundOpacity}

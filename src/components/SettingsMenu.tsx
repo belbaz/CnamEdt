@@ -70,6 +70,8 @@ export default function SettingsMenu({
                                          onToggleTimeRemaining = null,
                                          showTooltips = true,
                                          onToggleTooltips = null,
+                                         showCurrentTimeIndicator = true,
+                                         onToggleCurrentTimeIndicator = null,
                                          colorPosition = 'background',
                                          onColorPositionChange = null,
                                          colorBackgroundOpacity = 0.6,
@@ -367,6 +369,18 @@ export default function SettingsMenu({
                                                     onChange={(e) => onToggleTooltips && onToggleTooltips(e.target.checked)}
                                                 />
                                                 <span>{t('settings.showTooltips')}</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="setting-item">
+                                            <label htmlFor="showCurrentTimeIndicator-checkbox">
+                                                <input
+                                                    id="showCurrentTimeIndicator-checkbox"
+                                                    type="checkbox"
+                                                    checked={showCurrentTimeIndicator}
+                                                    onChange={(e) => onToggleCurrentTimeIndicator && onToggleCurrentTimeIndicator(e.target.checked)}
+                                                />
+                                                <span>{t('settings.showCurrentTimeIndicator')}</span>
                                             </label>
                                         </div>
                                     </div>

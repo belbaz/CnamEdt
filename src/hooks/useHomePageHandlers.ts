@@ -67,6 +67,11 @@ export function useHomePageHandlers({
         localStorage.setItem('showTooltips', enabled.toString());
     };
 
+    const handleToggleCurrentTimeIndicator = (enabled, setShowCurrentTimeIndicator) => {
+        setShowCurrentTimeIndicator(enabled);
+        localStorage.setItem('showCurrentTimeIndicator', enabled.toString());
+    };
+
     const handleColorPositionChange = (position, setColorPosition) => {
         setColorPosition(position);
         localStorage.setItem('colorPosition', position);
@@ -271,6 +276,7 @@ export function useHomePageHandlers({
         handleToggle15MinSpacing,
         handleToggleTimeRemaining,
         handleToggleTooltips,
+        handleToggleCurrentTimeIndicator,
         handleColorPositionChange,
         handleColorBackgroundOpacityChange,
         handleTimePassedOverlayIntensityChange,

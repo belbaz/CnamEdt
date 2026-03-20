@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getDayTimeRange,
   generateTimeMarkers,
-  getCurrentTimePosition,
+  getDayCoursesCompletedPercent,
   getEventPosition,
   getEventPositionVertical,
 } from './timelineUtils';
@@ -46,6 +46,29 @@ describe('timelineUtils', () => {
       const result = getDayTimeRange(events);
       expect(result.startMinutes).toBeLessThanOrEqual(7 * 60 + 30);
       expect(result.endMinutes).toBeGreaterThanOrEqual(19 * 60);
+    });
+  });
+
+  describe('getDayCoursesCompletedPercent', () => {
+    const makeEvent = (dateStr, sh, sm, eh, em) => ({
+      start: makeDate(dateStr, sh, sm),
+      end: makeDate(dateStr, eh, em),
+    });
+
+    it('3 cours terminés sur 4 => 75 %', () => {
+      const day = '2025-06-15';
+      const evs = [
+        makeEvent(day, 9, 0, 10, 30),
+        makeEvent(day, 11, 0, 12, 30),
+        makeEvent(day, 14, 0, 15, 30),
+        makeEvent(day, 17, 0, 18, 30),
+      ];
+      const now = makeDate(day, 16, 0);
+      expect(getDayCoursesCompletedPercent(evs, now)).toBe(75);
+    });
+
+    it('liste vide => null', () => {
+      expect(getDayCoursesCompletedPercent([], makeDate('2025-06-15', 12, 0))).toBe(null);
     });
   });
 

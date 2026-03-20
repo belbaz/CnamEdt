@@ -22,6 +22,7 @@ export default function TimelineWrapper({
     courseNotes = null,
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
+    showCurrentTimeIndicator = true,
     timePassedOverlayIntensity = 0.5
 }) {
     // Mémoriser le calcul isMobile pour éviter les recalculs inutiles
@@ -42,9 +43,9 @@ export default function TimelineWrapper({
                 showTimeLabels={showTimeLabels}
             />
 
-            <TimePassedOverlay currentPos={currentPos} intensity={timePassedOverlayIntensity}/>
+            <TimePassedOverlay currentPos={currentPos} intensity={timePassedOverlayIntensity} events={events}/>
 
-            <CurrentTimeIndicator currentPos={currentPos}/>
+            {showCurrentTimeIndicator && <CurrentTimeIndicator currentPos={currentPos}/>}
 
             <EventsList
                 events={events}

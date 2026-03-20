@@ -34,6 +34,8 @@ export default function PageHeader({
                                        onColorBackgroundOpacityChange = null,
                                        timePassedOverlayIntensity = 0.5,
                                        onTimePassedOverlayIntensityChange = null,
+                                       showCurrentTimeIndicator = true,
+                                       onToggleCurrentTimeIndicator = null,
                                        userInfo = null,
                                        isLoadingUser = false
                                    }) {
@@ -412,6 +414,8 @@ export default function PageHeader({
                                 onToggleTimeRemaining={onToggleTimeRemaining}
                                 showTooltips={showTooltips}
                                 onToggleTooltips={onToggleTooltips}
+                                    showCurrentTimeIndicator={showCurrentTimeIndicator}
+                                    onToggleCurrentTimeIndicator={onToggleCurrentTimeIndicator}
                                 colorPosition={colorPosition}
                                 onColorPositionChange={onColorPositionChange}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
