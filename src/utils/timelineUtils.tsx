@@ -82,21 +82,36 @@ export function getCurrentTimePosition(dayDate, startMinutes, endMinutes) {
 }
 
 /**
- * Progression du jour au prisme des cours : part des séances déjà terminées (fin <= maintenant).
- * Ex. 4 cours, 3 finis → 75 % (pas la part de la journée civile ni celle de la plage 9h–18h).
+ * Progression du jour sur la durée totale des cours (ms), y compris la fraction du cours en cours.
+ * Les pauses entre cours ne comptent pas dans le dénominateur : le % reste stable pendant les creux.
  */
-export function getDayCoursesCompletedPercent(dayEvents, now = new Date()) {
+export function getDayCoursesTimeProgressPercent(dayEvents, now = new Date()) {
     if (!dayEvents || dayEvents.length === 0) return null;
-    const total = dayEvents.length;
-    let completed = 0;
+
+    const nowMs = now.getTime();
+    let totalMs = 0;
+    let progressMs = 0;
+
     for (const ev of dayEvents) {
+        const start = new Date(ev.start);
         const endRaw = ev.end_time || ev.end;
         if (!endRaw) continue;
         const end = new Date(endRaw);
-        if (isNaN(end.getTime())) continue;
-        if (end.getTime() <= now.getTime()) completed += 1;
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) continue;
+
+        const dur = end.getTime() - start.getTime();
+        if (dur <= 0) continue;
+
+        totalMs += dur;
+        if (nowMs >= end.getTime()) {
+            progressMs += dur;
+        } else if (nowMs > start.getTime()) {
+            progressMs += nowMs - start.getTime();
+        }
     }
-    return (completed / total) * 100;
+
+    if (totalMs <= 0) return null;
+    return (progressMs / totalMs) * 100;
 }
 
 /**

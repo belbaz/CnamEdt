@@ -1,0 +1,52 @@
+/* Chiffres stables + léger relief pour lecture en temps réel */
+.animated-course-progress-label {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: 0.01em;
+    animation: courseProgressGlow 2.8s ease-in-out infinite;
+}
+
+@keyframes courseProgressGlow {
+    0%,
+    100% {
+        text-shadow: 0 0 0 transparent;
+        transform: translateZ(0) scale(1);
+    }
+    40% {
+        text-shadow: 0 0 6px rgba(66, 153, 225, 0.45);
+        transform: translateZ(0) scale(1.02);
+    }
+    60% {
+        text-shadow: 0 0 3px rgba(66, 153, 225, 0.25);
+        transform: translateZ(0) scale(1.01);
+    }
+}
+
+.dark-mode .animated-course-progress-label {
+    animation-name: courseProgressGlowDark;
+}
+
+@keyframes courseProgressGlowDark {
+    0%,
+    100% {
+        text-shadow: 0 0 0 transparent;
+        transform: translateZ(0) scale(1);
+    }
+    40% {
+        text-shadow: 0 0 8px rgba(147, 197, 253, 0.5);
+        transform: translateZ(0) scale(1.02);
+    }
+    60% {
+        text-shadow: 0 0 4px rgba(147, 197, 253, 0.3);
+        transform: translateZ(0) scale(1.01);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animated-course-progress-label {
+        animation: none;
+        text-shadow: none;
+        transform: none;
+    }
+}

@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getDayTimeRange,
   generateTimeMarkers,
-  getDayCoursesCompletedPercent,
+  getDayCoursesTimeProgressPercent,
   getEventPosition,
   getEventPositionVertical,
 } from './timelineUtils';
@@ -49,13 +49,13 @@ describe('timelineUtils', () => {
     });
   });
 
-  describe('getDayCoursesCompletedPercent', () => {
+  describe('getDayCoursesTimeProgressPercent', () => {
     const makeEvent = (dateStr, sh, sm, eh, em) => ({
       start: makeDate(dateStr, sh, sm),
       end: makeDate(dateStr, eh, em),
     });
 
-    it('3 cours terminés sur 4 => 75 %', () => {
+    it('3 cours terminés sur 4 (durées égales) => 75 %', () => {
       const day = '2025-06-15';
       const evs = [
         makeEvent(day, 9, 0, 10, 30),
@@ -64,11 +64,23 @@ describe('timelineUtils', () => {
         makeEvent(day, 17, 0, 18, 30),
       ];
       const now = makeDate(day, 16, 0);
-      expect(getDayCoursesCompletedPercent(evs, now)).toBe(75);
+      expect(getDayCoursesTimeProgressPercent(evs, now)).toBe(75);
+    });
+
+    it('à mi-parcours du 3e cours (4 × 1h30) => 62,5 %', () => {
+      const day = '2025-06-15';
+      const evs = [
+        makeEvent(day, 9, 0, 10, 30),
+        makeEvent(day, 11, 0, 12, 30),
+        makeEvent(day, 14, 0, 15, 30),
+        makeEvent(day, 17, 0, 18, 30),
+      ];
+      const now = makeDate(day, 14, 45);
+      expect(getDayCoursesTimeProgressPercent(evs, now)).toBeCloseTo(62.5, 5);
     });
 
     it('liste vide => null', () => {
-      expect(getDayCoursesCompletedPercent([], makeDate('2025-06-15', 12, 0))).toBe(null);
+      expect(getDayCoursesTimeProgressPercent([], makeDate('2025-06-15', 12, 0))).toBe(null);
     });
   });
 

@@ -1,22 +1,14 @@
 // @ts-nocheck
 "use client";
-import { useMemo } from "react";
 import "./TimePassedOverlay.css";
 import { useDevMode } from "@/utils/env";
-import { getDayCoursesCompletedPercent } from "@/utils/timelineUtils";
+import AnimatedCourseProgressLabel from "./AnimatedCourseProgressLabel";
 
 export default function TimePassedOverlay({currentPos, intensity = 0.5, events = null}) {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
     const devMode = useDevMode();
 
-    const coursesCompletedPercent = useMemo(
-        () => getDayCoursesCompletedPercent(events),
-        [events, currentPos]
-    );
-
     if (currentPos === null) return null;
-
-    const devDisplayPercent = coursesCompletedPercent ?? currentPos;
 
     // Calculer l'opacité en fonction de l'intensité (0 à 1)
     const opacity = intensity;
@@ -36,7 +28,7 @@ export default function TimePassedOverlay({currentPos, intensity = 0.5, events =
                     className="time-passed-overlay-percentage"
                     style={isMobile ? {top: `${currentPos}%`} : {left: `${currentPos}%`}}
                 >
-                    {devDisplayPercent.toFixed(1)}%
+                    <AnimatedCourseProgressLabel events={events} fallbackPercent={currentPos} />
                 </div>
             )}
         </>

@@ -1,7 +1,8 @@
 // @ts-nocheck
 "use client";
 import { useMemo, useEffect, useState, useRef } from "react";
-import { getDayTimeRange, generateTimeMarkers, getDayCoursesCompletedPercent } from "@/utils/timelineUtils";
+import { getDayTimeRange, generateTimeMarkers } from "@/utils/timelineUtils";
+import AnimatedCourseProgressLabel from "@/components/Timeline/AnimatedCourseProgressLabel";
 import { groupEventsByDay } from "@/utils/eventUtils";
 import { isToday, getLocale } from "@/utils/dateUtils";
 import { useI18n } from "@/i18n/I18nContext";
@@ -444,7 +445,10 @@ export default function VerticalSchedule({
                                                     className="vertical-time-passed-overlay-percentage"
                                                     style={{ top: `${currentPos}%` }}
                                                 >
-                                                    {(getDayCoursesCompletedPercent(dayEvents) ?? currentPos).toFixed(1)}%
+                                                    <AnimatedCourseProgressLabel
+                                                        events={dayEvents}
+                                                        fallbackPercent={currentPos}
+                                                    />
                                                 </div>
                                             )}
                                         </>
