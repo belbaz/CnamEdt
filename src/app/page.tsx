@@ -22,6 +22,8 @@ import {useCourseNotes} from "@/hooks/useCourseNotes";
 import {useHomePageHandlers} from "@/hooks/useHomePageHandlers";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Spinner from "@/components/Spinner";
+import Toast from "@/components/Toast";
 import DayBlock from "@/components/DayBlock";
 import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -41,6 +43,16 @@ import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
 import {parseStoredNoteValue} from "@/utils/noteEntries";
 import {generateEventKey} from "@/utils/eventModalUtils";
+
+/**
+ * Délai max sur UNE tentative de `fetchICSEvents()` → `/api/fetch-ics` uniquement.
+ * (Ne s'applique pas à `/api/version` ni aux autres requêtes.)
+ */
+const FETCH_ICS_TIMEOUT_MS = 4000;
+/** Durée min. d’affichage du libellé « Chargement de l'emploi du temps » (pas de cache). */
+const MIN_DISPLAY_MS_EDT_LOADING_FIRST = 1000;
+/** Durée min. d’affichage du libellé « Vérification des mises à jour… » (cache présent). */
+const MIN_DISPLAY_MS_EDT_WAIT_SYNC = 500;
 
 function HomeContent({searchParams}) {
     const { t, language } = useI18n();
@@ -103,6 +115,22 @@ function HomeContent({searchParams}) {
     const supportUrl = process.env.NEXT_PUBLIC_ERROR_HELP_URL;
     const [dayOptionsHintAlignLeft, setDayOptionsHintAlignLeft] = useState(false);
     const dayOptionsHintRef = useRef(null);
+    /** Indique qu'un cache local a déjà été appliqué (évite un flash de chargement plein écran au sync). */
+    const cachePrimedRef = useRef(false);
+    const [edtRemoteUpdateOverlay, setEdtRemoteUpdateOverlay] = useState(false);
+    const [showEdtChangeToast, setShowEdtChangeToast] = useState(false);
+    /** Animation d'entrée des cartes cours au premier affichage de l'EDT (une fois par visite). */
+    const [entranceAnimationActive, setEntranceAnimationActive] = useState(false);
+    const hasPlayedHomeEntranceRef = useRef(false);
+    /** Flag pour savoir si on peut afficher les cartes (évite le flash avant animation) */
+    const [canShowCards, setCanShowCards] = useState(false);
+    /** Texte chargement EDT : même valeur SSR/client au 1er rendu (évite mismatch d’hydratation), puis sync après montage. */
+    const [edtInitialLoadingText, setEdtInitialLoadingText] = useState(() => t('page.edtLoadingFirst'));
+    /** Début de l’écran de chargement plein écran (pour durée mini. d’affichage du texte). */
+    const blockingLoadStartRef = useRef(null);
+    /** Au moment du chargement : avait-on déjà des cours en cache local ? */
+    const blockingLoadHadCacheRef = useRef(false);
+    const blockingLoadEndTimerRef = useRef(null);
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -125,6 +153,43 @@ function HomeContent({searchParams}) {
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
+
+    const finishBlockingLoading = () => {
+        if (typeof window === 'undefined') {
+            setLoading(false);
+            return;
+        }
+        if (blockingLoadEndTimerRef.current) {
+            clearTimeout(blockingLoadEndTimerRef.current);
+            blockingLoadEndTimerRef.current = null;
+        }
+        const start = blockingLoadStartRef.current;
+        if (start == null) {
+            setLoading(false);
+            return;
+        }
+        const minMs = blockingLoadHadCacheRef.current
+            ? MIN_DISPLAY_MS_EDT_WAIT_SYNC
+            : MIN_DISPLAY_MS_EDT_LOADING_FIRST;
+        const elapsed = Date.now() - start;
+        const wait = Math.max(0, minMs - elapsed);
+        blockingLoadEndTimerRef.current = window.setTimeout(() => {
+            blockingLoadEndTimerRef.current = null;
+            blockingLoadStartRef.current = null;
+            blockingLoadHadCacheRef.current = false;
+            
+            if (!hasPlayedHomeEntranceRef.current) {
+                hasPlayedHomeEntranceRef.current = true;
+                setEntranceAnimationActive(true);
+                // Permettre l'affichage des cartes maintenant
+                setCanShowCards(true);
+            } else {
+                // Pas de première animation, afficher directement
+                setCanShowCards(true);
+            }
+            setLoading(false);
+        }, wait);
+    };
 
     // Fonction utilitaire pour charger le cache et mettre à jour l'état
     const loadCacheAndUpdateState = (cached) => {
@@ -155,22 +220,25 @@ function HomeContent({searchParams}) {
             }
         }
 
-        setLoading(false);
         setError(null);
         setDebugInfo(null);
         setShowSupabaseNotification(false);
         setSupabaseSource(null);
+        cachePrimedRef.current = true;
         return true;
     };
 
     const fetchEvents = async () => {
         try {
-            // Mémoriser si on avait déjà des événements (pour éviter de recharger au premier chargement)
-            const hadEventsBefore = allEvents.length > 0;
+            // Inclut le cache chargé juste avant le premier fetch (évite un faux « pas de données »).
+            const hadEventsBefore = allEvents.length > 0 || cachePrimedRef.current;
 
-            // Ne pas remettre loading à true si on a déjà des données à afficher
+            // Spinner plein écran tant qu'aucun événement n'est affiché (sync init ou pas de cache)
             if (allEvents.length === 0) {
                 setLoading(true);
+                blockingLoadStartRef.current = Date.now();
+                blockingLoadHadCacheRef.current =
+                    typeof window !== 'undefined' && !!(loadEventsFromCache()?.events?.length);
             }
             setError(null);
             setDebugInfo(null);
@@ -186,12 +254,26 @@ function HomeContent({searchParams}) {
             };
 
             let response;
+            let icsTimeoutId = null;
             try {
-                // Essayer de récupérer les données (ICS ou Supabase en fallback)
-                response = await fetchICSEvents();
+                const fetchPromise = fetchICSEvents({
+                    onStaleCache: () => setEdtRemoteUpdateOverlay(true)
+                });
+                const timeoutPromise = new Promise((_, reject) => {
+                    icsTimeoutId = setTimeout(
+                        () => reject(new Error('FETCH_ICS_TIMEOUT')),
+                        FETCH_ICS_TIMEOUT_MS
+                    );
+                });
+                response = await Promise.race([fetchPromise, timeoutPromise]);
             } catch (fetchError) {
-                // En cas d'erreur réseau, utiliser le cache
-                const isNetworkError = !isOnline ||
+                const isTimeout = fetchError?.message === 'FETCH_ICS_TIMEOUT';
+                if (isTimeout) {
+                    console.warn('[Page] Timeout synchro ICS — repli sur le cache si disponible');
+                }
+                // En cas d'erreur réseau ou timeout, utiliser le cache
+                const isNetworkError = isTimeout ||
+                    !isOnline ||
                     fetchError.message.includes('Failed to fetch') ||
                     fetchError.message.includes('réseau') ||
                     fetchError.message.includes('network') ||
@@ -210,6 +292,8 @@ function HomeContent({searchParams}) {
                 debug.fetchStack = fetchError.stack;
                 setDebugInfo(debug);
                 throw fetchError;
+            } finally {
+                if (icsTimeoutId) clearTimeout(icsTimeoutId);
             }
 
             const eventsData = Array.isArray(response?.events)
@@ -281,15 +365,24 @@ function HomeContent({searchParams}) {
             }
 
             if (!isReallyOffline) {
-                // En ligne : on considère que les données sont fraîches
-                // Sauvegarder dans le cache (met à jour le timestamp + hash pour détecter les caches obsolètes)
                 const serverHash = meta.hash || null;
-                saveEventsToCache(eventsData, colorMapping, serverHash);
+                const unchangedLocal =
+                    meta.source === 'local-cache' && meta.fromCache === true;
 
-                // Afficher la date actuelle
-                const newTimestamp = new Date().toISOString();
-                setLastUpdateTimestamp(newTimestamp);
-                console.log('[Page] En ligne - Date actuelle:', newTimestamp, '| Hash:', serverHash);
+                if (!unchangedLocal) {
+                    // Données nouvellement synchronisées : mettre à jour cache + date affichée
+                    saveEventsToCache(eventsData, colorMapping, serverHash);
+                    const newTimestamp = new Date().toISOString();
+                    setLastUpdateTimestamp(newTimestamp);
+                    console.log('[Page] En ligne - Date actuelle:', newTimestamp, '| Hash:', serverHash);
+                } else {
+                    // Hash ICS inchangé : ne pas fausser la « dernière mise à jour » affichée
+                    if (typeof window !== 'undefined') {
+                        const ts = localStorage.getItem('lastUpdateTimestamp');
+                        if (ts) setLastUpdateTimestamp(ts);
+                    }
+                    console.log('[Page] ICS inchangé (hash = cache local), date de MAJ conservée | Hash:', serverHash);
+                }
                 setHasNetworkError(false);
             } else {
                 // Hors ligne : on ne met PAS à jour le cache pour ne pas écraser le timestamp
@@ -310,22 +403,11 @@ function HomeContent({searchParams}) {
             // Historiser les matières détectées si elles ont changé
             await saveSnapshotIfChanged(eventsData, {skip: shouldSkipHistory});
 
-            // Vérifier s'il y a des changements et recharger la page si nécessaire
             const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
 
-            // Recharger automatiquement si des changements sont détectés ET qu'on avait déjà des événements
-            // (pour éviter de recharger au premier chargement)
             if (totalChanges > 0 && hadEventsBefore && !isReallyOffline) {
                 console.log(`[Page] Changements détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
-                console.log('[Page] Rechargement automatique de la page dans 2 secondes...');
-
-                // Attendre 2 secondes pour laisser le temps à l'utilisateur de voir les changements
-                setTimeout(() => {
-                    if (typeof window !== 'undefined') {
-                        console.log('[Page] Rechargement de la page...');
-                        window.location.reload();
-                    }
-                }, 2000);
+                setShowEdtChangeToast(true);
             }
 
             // Afficher une notification de debug en mode dev
@@ -410,7 +492,8 @@ function HomeContent({searchParams}) {
                 });
             }
         } finally {
-            setLoading(false);
+            finishBlockingLoading();
+            setEdtRemoteUpdateOverlay(false);
         }
     };
 
@@ -546,68 +629,69 @@ function HomeContent({searchParams}) {
         if (currentIndex !== -1) previousWeekIndexRef.current = currentIndex;
     }, [selectedWeek, availableWeeks]);
 
-    // Chargement initial : cache puis fetch si en ligne
+    // Chargement initial : en ligne → attendre la synchro hash / ICS avant d'afficher l'EDT ; hors ligne → cache tout de suite
     useEffect(() => {
-        // Pas besoin d'attendre Capacitor pour PWA
-
-        // Initialiser le mode test
         setTestModeState(isTestModeEnabled());
         setTestWeekModeState(isTestWeekEnabled());
 
-        // 1. Charger le cache immédiatement (si disponible)
         const cached = loadEventsFromCache();
-        if (cached && cached.events && cached.events.length > 0) {
-            console.log('[Page] Chargement depuis le cache:', cached.events.length, 'événements');
-            setAllEvents(cached.events);
-            setSubjectColors(cached.colors);
-            const weeks = extractAvailableWeeks(cached.events, language);
-            setAvailableWeeks(weeks);
-            if (!eventKeyParam && weeks.length > 0) {
-                const weekToSelect = selectBestWeek(weeks);
-                setSelectedWeek(weekToSelect?.monday);
-            }
+        cachePrimedRef.current = !!(cached && cached.events && cached.events.length > 0);
 
-            // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
-            // IMPORTANT: Toujours charger depuis localStorage pour avoir la vraie date du cache
-            if (typeof window !== 'undefined') {
-                const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
-                if (cachedTimestamp) {
-                    console.log('[Page] Timestamp du cache chargé:', cachedTimestamp);
-                    setLastUpdateTimestamp(cachedTimestamp);
-                } else {
-                    // Si le timestamp n'existe pas, c'est probablement un ancien cache créé avant cette fonctionnalité
-                    // On ne crée pas de timestamp ici pour éviter d'afficher une date incorrecte
-                    // Le timestamp sera créé lors de la prochaine mise à jour réussie
-                    console.warn('[Page] Aucun timestamp trouvé dans le cache (ancien cache probablement)');
-                    setLastUpdateTimestamp(null);
+        if (!isOnline) {
+            console.log('[Page] Mode hors ligne — affichage immédiat depuis le cache');
+            if (blockingLoadStartRef.current === null) {
+                blockingLoadStartRef.current = Date.now();
+                blockingLoadHadCacheRef.current = !!(cached?.events?.length);
+            }
+            if (cached && cached.events && cached.events.length > 0) {
+                setAllEvents(cached.events);
+                setSubjectColors(cached.colors);
+                const weeks = extractAvailableWeeks(cached.events, language);
+                setAvailableWeeks(weeks);
+                if (!eventKeyParam && weeks.length > 0) {
+                    const weekToSelect = selectBestWeek(weeks);
+                    setSelectedWeek(weekToSelect?.monday);
                 }
-            }
-
-            setLoading(false);
-        }
-
-        // 2. Si en ligne, fetch pour mettre à jour (le cache reste affiché pendant le fetch)
-        // 3. Si hors ligne, utiliser le cache uniquement
-        if (isOnline) {
-            fetchEvents();
-        } else {
-            console.log('[Page] Mode hors ligne - Utilisation du cache uniquement');
-            if (!cached || !cached.events || cached.events.length === 0) {
-                setError('Mode hors ligne\n\nAucune sauvegarde en cache');
-                setHasNetworkError(true);
-            } else {
-                setHasNetworkError(true); // Notification hors ligne
-                // S'assurer que le timestamp du cache est bien chargé
                 if (typeof window !== 'undefined') {
                     const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
-                    if (cachedTimestamp && cachedTimestamp !== lastUpdateTimestamp) {
-                        console.log('[Page] Timestamp du cache restauré:', cachedTimestamp);
+                    if (cachedTimestamp) {
                         setLastUpdateTimestamp(cachedTimestamp);
+                    } else {
+                        setLastUpdateTimestamp(null);
                     }
                 }
+                setHasNetworkError(true);
+                finishBlockingLoading();
+            } else {
+                setError('Mode hors ligne\n\nAucune sauvegarde en cache');
+                setHasNetworkError(true);
+                finishBlockingLoading();
             }
+            return;
         }
+
+        // En ligne : NE PAS afficher l'EDT depuis le cache dans l'UI — attendre la réponse serveur
+        // Le cache sert uniquement au comparatif de hash côté icsService
+        console.log('[Page] En ligne — attente de la vérification ICS / hash avant affichage');
+        // NE PAS charger le cache ici pour éviter le double affichage
+        fetchEvents();
     }, [isOnline]);
+
+    useEffect(() => {
+        return () => {
+            if (blockingLoadEndTimerRef.current) {
+                clearTimeout(blockingLoadEndTimerRef.current);
+                blockingLoadEndTimerRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        const cached = loadEventsFromCache();
+        setEdtInitialLoadingText(
+            cached?.events?.length > 0 ? t('page.edtWaitSync') : t('page.edtLoadingFirst')
+        );
+    }, [t]);
 
     // Charger les infos utilisateur
     useEffect(() => {
@@ -1102,6 +1186,14 @@ function HomeContent({searchParams}) {
     // Calculer groupByDay avant de l'utiliser dans le hook
     const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short', language), [events, viewMode, language]);
 
+    useEffect(() => {
+        if (!entranceAnimationActive || events.length === 0) return;
+        // Durée : 800ms animation + 600ms délai max + marge
+        const durationMs = 800 + 600 + 200;
+        const t = window.setTimeout(() => setEntranceAnimationActive(false), durationMs);
+        return () => clearTimeout(t);
+    }, [entranceAnimationActive, events.length]);
+
     // Utiliser le hook pour les handlers
     const handlers = useHomePageHandlers({
         availableWeeks,
@@ -1277,9 +1369,21 @@ function HomeContent({searchParams}) {
         }
     };
 
-
     return (
         <div className={styles.pageWrapper}>
+            <Toast
+                message={t('page.edtChangeDetected')}
+                isVisible={showEdtChangeToast}
+                onClose={() => setShowEdtChangeToast(false)}
+            />
+            {edtRemoteUpdateOverlay && (
+                <div className={styles.edtRemoteUpdateOverlay} role="status" aria-live="polite">
+                    <div className={styles.edtRemoteUpdateOverlayInner}>
+                        <Spinner size="large" variant="border" ariaLabel={t('page.edtUpdatingOverlay')}/>
+                        <p className={styles.edtRemoteUpdateOverlayText}>{t('page.edtUpdatingOverlay')}</p>
+                    </div>
+                </div>
+            )}
             {/* Vérification des mises à jour PWA */}
             <PWAUpdateChecker/>
 
@@ -1415,7 +1519,12 @@ function HomeContent({searchParams}) {
                     </div>
                 )}
 
-                {loading && events.length === 0 && <LoadingSpinner/>}
+                {loading && events.length === 0 && (
+                    <div className={styles.edtInitialLoading}>
+                        <Spinner size="large" variant="border" ariaLabel={edtInitialLoadingText}/>
+                        <p className={styles.edtInitialLoadingHint}>{edtInitialLoadingText}</p>
+                    </div>
+                )}
 
                 {!loading && events.length === 0 && allEvents.length > 0 && availableWeeks.length > 0 && selectedWeek && eventsCalculated && (
                     <div className={styles.noCoursesMessage}>
@@ -1433,7 +1542,7 @@ function HomeContent({searchParams}) {
                         }}
                     />
                 ) : (
-                    (!loading || events.length > 0) && events.length > 0 && (
+                    (!loading || events.length > 0) && events.length > 0 && canShowCards && (
                     <div style={viewMode === 'vertical' ? {margin: '.3rem'} : {margin: '0'}}
                         key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
                         className={
@@ -1509,6 +1618,7 @@ function HomeContent({searchParams}) {
                             <VerticalSchedule
                                 events={events}
                                 subjectColors={subjectColors}
+                                entranceAnimationActive={entranceAnimationActive}
                                 onOpenEventDetails={(ev, position) => {
                                     setEventClickPosition(position);
                                     setSelectedEvent(ev);
@@ -1544,6 +1654,7 @@ function HomeContent({searchParams}) {
                                                 setEventClickPosition(position);
                                                 setSelectedEvent(ev);
                                             }}
+                                            entranceAnimationActive={entranceAnimationActive}
                                             compactMode={compactMode}
                                             showTimeLabels={showTimeLabels}
                                             hide15MinSpacing={hide15MinSpacing}

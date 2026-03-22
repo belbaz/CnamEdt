@@ -455,6 +455,64 @@
     width: 100%;
 }
 
+/* Sync ICS : hash local ≠ serveur, refetch forcé (le cache reste visible en dessous) */
+.edtRemoteUpdateOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(3px);
+}
+
+.edtRemoteUpdateOverlayInner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    background: var(--bg-secondary, #fff);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+    box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.15));
+}
+
+.edtRemoteUpdateOverlayText {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary, #111);
+    text-align: center;
+    max-width: 280px;
+}
+
+/* Chargement initial en ligne : avant affichage de l'EDT (hash / ICS) */
+.edtInitialLoading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    gap: 1.25rem;
+    box-sizing: border-box;
+}
+
+.edtInitialLoadingHint {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-align: center;
+    max-width: 22rem;
+}
+
+@media (max-width: 650px) {
+    .edtInitialLoading {
+        padding: 3rem 1rem;
+    }
+}
+
 /* Position relative pour le parent */
 .weekContent {
     position: relative;

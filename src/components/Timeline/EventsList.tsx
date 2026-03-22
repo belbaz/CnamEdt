@@ -18,7 +18,8 @@ export default function EventsList({
     hide15MinSpacing = false,
     courseNotes = null,
     colorPosition = 'background',
-    colorBackgroundOpacity = 0.6
+    colorBackgroundOpacity = 0.6,
+    entranceAnimationActive = false
 }) {
     const { dayHeightFactor, cardTopPadding, eventsContainerPadding } = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
@@ -221,6 +222,7 @@ export default function EventsList({
                                 nonDistancielLabels={nonDistancielLabels}
                                 colorPosition={colorPosition}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
+                                entranceAnimationActive={entranceAnimationActive}
                             />
                         );
                     });

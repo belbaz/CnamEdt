@@ -9,6 +9,17 @@ const ICS_URL = process.env.NEXT_PUBLIC_ICS_URL;
 const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
 const ACTIVE_CACHE = String(activeCacheEnv).toLowerCase() !== 'false';
 
+/** Dev / test : forcer le chemin « cache obsolète » comme si le hash ICS avait changé */
+function shouldSimulateStaleCache() {
+    if (typeof window === 'undefined') return false;
+    if (process.env.NEXT_PUBLIC_SIMULATE_EDT_CHANGE === 'true') return true;
+    try {
+        return localStorage.getItem('DEV_SIMULATE_EDT_CHANGE') === '1';
+    } catch {
+        return false;
+    }
+}
+
 /**
  * Charge les événements depuis le cache localStorage
  * DÉFINI EN PREMIER pour être disponible dans les autres fonctions
@@ -71,8 +82,10 @@ function parseICSContent(icsContent) {
 
 /**
  * Récupère les événements ICS depuis l'API route
+ * @param {{ onStaleCache?: () => void }} [options] — appelé avant un refetch forcé (hash local ≠ serveur)
  */
-async function fetchEventsForWeb() {
+async function fetchEventsForWeb(options = {}) {
+    const { onStaleCache } = options;
     console.log('[ICS Service] Fetching from web API route');
     
     try {
@@ -119,12 +132,13 @@ async function fetchEventsForWeb() {
             
             // CORRECTION BUG CACHE : Comparer le hash serveur avec le hash local
             // Si le hash local ne correspond pas au hash serveur, le cache est obsolète !
+            const simulateStale = shouldSimulateStaleCache();
             const hashMatch = serverHash && localHash && serverHash === localHash;
             const noLocalHash = !localHash && cached?.events?.length > 0;  // Ancien cache sans hash
             
             if (cached && cached.events && cached.events.length > 0) {
-                if (hashMatch) {
-                    // Hash identique : le cache local est à jour
+                if (hashMatch && !simulateStale) {
+                    // Hash identique : le cache local est à jour (sauf simulation dev)
                     console.log('[ICS Service] Using local cache (hash match):', cached.events.length, 'events, hash:', localHash);
                     return {
                         events: cached.events,
@@ -136,11 +150,12 @@ async function fetchEventsForWeb() {
                             ...(data.meta || {})
                         }
                     };
+                }
+                if (simulateStale && hashMatch) {
+                    console.warn('[ICS Service] DEV_SIMULATE_EDT_CHANGE / NEXT_PUBLIC_SIMULATE_EDT_CHANGE → refetch forcé');
                 } else if (noLocalHash) {
-                    // Ancien cache sans hash → forcer un refetch pour récupérer les données à jour
                     console.warn('[ICS Service] Cache local sans hash (migration) → refetch forcé');
                 } else {
-                    // Hash différent : le cache local est obsolète !
                     console.warn('[ICS Service] HASH MISMATCH! Local:', localHash, '| Server:', serverHash);
                     console.warn('[ICS Service] Cache local obsolète → refetch forcé');
                 }
@@ -149,6 +164,9 @@ async function fetchEventsForWeb() {
             }
             
             // Pas de cache valide OU hash différent → Refaire une requête en forçant le parsing
+            if (cached && cached.events && cached.events.length > 0) {
+                onStaleCache?.();
+            }
             console.log('[ICS Service] Forcing server to parse ICS (cache invalide ou obsolète)');
             const lang = typeof localStorage !== 'undefined' ? (localStorage.getItem('language') || 'fr') : 'fr';
             const forceRes = await fetch(`/api/fetch-ics?force=true&lang=${encodeURIComponent(lang)}`, {
@@ -218,9 +236,10 @@ async function fetchEventsForWeb() {
 
 /**
  * Fonction principale : récupère les événements depuis l'API
+ * @param {{ onStaleCache?: () => void }} [options]
  */
-export async function fetchICSEvents() {
-    return await fetchEventsForWeb();
+export async function fetchICSEvents(options = {}) {
+    return await fetchEventsForWeb(options);
 }
 
 /**

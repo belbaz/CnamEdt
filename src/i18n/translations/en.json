@@ -462,7 +462,11 @@
     "errorNetworkHint": "Check your internet connection and try reloading the page.",
     "openGalao": "Open Galao",
     "noCoursesThisWeek": "No courses found for this week",
-    "lastUpdate": "Updated on:"
+    "lastUpdate": "Updated on:",
+    "edtChangeDetected": "A change was detected for this week.",
+    "edtUpdatingOverlay": "Updating the schedule...",
+    "edtWaitSync": "Checking for schedule updates...",
+    "edtLoadingFirst": "Loading your schedule..."
   },
   "examens": {
     "loading": "Loading exams...",

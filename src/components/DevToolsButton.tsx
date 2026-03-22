@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDevMode } from '@/utils/env';
 import styles from './DevToolsButton.module.css';
 
@@ -14,6 +14,12 @@ export default function DevToolsButton() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [testResults, setTestResults] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [simulateEdtChange, setSimulateEdtChange] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        setSimulateEdtChange(localStorage.getItem('DEV_SIMULATE_EDT_CHANGE') === '1');
+    }, [isModalOpen]);
 
     // Ne rien afficher si pas en mode dev
     if (!devMode) {
@@ -51,6 +57,22 @@ export default function DevToolsButton() {
             alert('✅ Cache vidé avec succès !');
             window.location.reload();
         }
+    };
+
+    const handleToggleSimulateEdtChange = () => {
+        if (typeof window === 'undefined') return;
+        const next = localStorage.getItem('DEV_SIMULATE_EDT_CHANGE') !== '1';
+        if (next) {
+            localStorage.setItem('DEV_SIMULATE_EDT_CHANGE', '1');
+        } else {
+            localStorage.removeItem('DEV_SIMULATE_EDT_CHANGE');
+        }
+        setSimulateEdtChange(next);
+        alert(
+            next
+                ? 'Simulation activée : au prochain chargement, l’app se comportera comme si le cache était obsolète (overlay + sync). Rechargez la page /.'
+                : 'Simulation désactivée.'
+        );
     };
 
     const handleCopyEnv = () => {
@@ -126,7 +148,18 @@ NEXT_PUBLIC_APP_VERSION=1.0.0`;
                                     <button onClick={() => handleTestAPI('/api/test-update')} className={styles.actionBtn}>
                                         🧪 Test Update
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleSimulateEdtChange}
+                                        className={styles.actionBtn}
+                                        title="Force le chemin « hash obsolète » comme en prod quand l’ICS change"
+                                    >
+                                        {simulateEdtChange ? '✅ Simuler changement EDT (actif)' : '🔁 Simuler changement EDT'}
+                                    </button>
                                 </div>
+                                <p style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>
+                                    Ou variable <code>NEXT_PUBLIC_SIMULATE_EDT_CHANGE=true</code> dans <code>.env.local</code>.
+                                </p>
                             </section>
 
                             {/* Résultats de test */}

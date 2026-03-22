@@ -48,7 +48,8 @@ export default function EventCard({
     notePreviewItems = [],
     nonDistancielLabels = [],
     colorPosition = 'background',
-    colorBackgroundOpacity = 0.6
+    colorBackgroundOpacity = 0.6,
+    entranceAnimationActive = false
 }) {
     const {matiere, prof, description, splitGroup} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
@@ -214,9 +215,12 @@ export default function EventCard({
         : undefined;
     
 
+    const entranceClass =
+        entranceAnimationActive ? ' event-card--home-entrance' : '';
+
     return (
         <li
-            className={`event-card ${colorPosition === 'background' ? 'color-background' : 'color-top'}`}
+            className={`event-card ${colorPosition === 'background' ? 'color-background' : 'color-top'}${entranceClass}`}
             style={{
                 ...stylePos,
                 ...(colorPosition === 'background' && {

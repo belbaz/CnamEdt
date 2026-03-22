@@ -25,7 +25,8 @@ export default function VerticalSchedule({
     colorBackgroundOpacity = 0.6,
     timePassedOverlayIntensity = 0.5,
     showCourseProgressPercent = false,
-    courseProgressPercentDecimals = 2
+    courseProgressPercentDecimals = 2,
+    entranceAnimationActive = false
 }) {
     const { language } = useI18n();
     const locale = getLocale(language);
@@ -542,6 +543,7 @@ export default function VerticalSchedule({
                                                         nonDistancielLabels={nonDistancielLabels}
                                                         colorPosition={colorPosition}
                                                         colorBackgroundOpacity={colorBackgroundOpacity}
+                                                        entranceAnimationActive={entranceAnimationActive}
                                                     />
                                                 );
                                             });

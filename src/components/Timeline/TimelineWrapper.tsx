@@ -25,7 +25,8 @@ export default function TimelineWrapper({
     showCurrentTimeIndicator = true,
     timePassedOverlayIntensity = 0.5,
     showCourseProgressPercent = false,
-    courseProgressPercentDecimals = 2
+    courseProgressPercentDecimals = 2,
+    entranceAnimationActive = false
 }) {
     // Mémoriser le calcul isMobile pour éviter les recalculs inutiles
     const isMobile = useMemo(() => {
@@ -67,6 +68,7 @@ export default function TimelineWrapper({
                 courseNotes={courseNotes}
                 colorPosition={colorPosition}
                 colorBackgroundOpacity={colorBackgroundOpacity}
+                entranceAnimationActive={entranceAnimationActive}
             />
         </div>
     );

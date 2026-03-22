@@ -462,7 +462,11 @@
     "errorNetworkHint": "Vérifiez votre connexion internet puis essayez de recharger la page.",
     "openGalao": "Ouvrir Galao",
     "noCoursesThisWeek": "Pas de cours trouvé pour cette semaine",
-    "lastUpdate": "EDT à jour le :"
+    "lastUpdate": "EDT à jour le :",
+    "edtChangeDetected": "Un changement a été détecté cette semaine.",
+    "edtUpdatingOverlay": "Mise à jour de l'emploi du temps…",
+    "edtWaitSync": "Vérification des mises à jour de l'emploi du temps…",
+    "edtLoadingFirst": "Chargement de l'emploi du temps..."
   },
   "examens": {
     "loading": "Chargement des examens...",

@@ -1,3 +1,20 @@
+/* 1. Définition de l'animation avec perspective et flou */
+@keyframes eventCardEntrance {
+    0% {
+        opacity: 0;
+        /* translateY un peu plus court (30px) pour plus de subtilité */
+        /* rotateX(15deg) donne un effet de bascule vers l'avant */
+        transform: translateY(30px) scale(0.95) rotateX(15deg);
+        filter: blur(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotateX(0);
+        filter: blur(0);
+    }
+}
+
+/* 2. Style de base de la carte */
 .event-card {
     display: flex;
     flex-direction: column;
@@ -5,7 +22,6 @@
     padding: 0.575rem 0.65rem 0.625rem;
     border-radius: 10px;
     background: var(--bg-tertiary);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid var(--border-color);
     position: absolute;
     overflow: visible;
@@ -13,7 +29,54 @@
     box-sizing: border-box;
     margin: 0;
     cursor: pointer;
-    transform-origin: center;
+    
+    /* Optimisation pour les animations complexes */
+    transform-origin: center bottom;
+    backface-visibility: hidden;
+    will-change: transform, opacity, filter;
+    
+    /* Transition fluide pour le survol (hover) */
+    transition: 
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.3s ease,
+        border-color 0.2s ease;
+}
+
+/* 3. Déclenchement de l'animation */
+.event-card.event-card--home-entrance {
+    /* Courbe "Quint" pour une entrée rapide qui ralentit avec élégance */
+    animation: eventCardEntrance 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 4. Gestion des délais (Stagger effect) */
+.event-card--home-entrance:nth-child(1) { animation-delay: 0.05s; }
+.event-card--home-entrance:nth-child(2) { animation-delay: 0.10s; }
+.event-card--home-entrance:nth-child(3) { animation-delay: 0.15s; }
+.event-card--home-entrance:nth-child(4) { animation-delay: 0.20s; }
+.event-card--home-entrance:nth-child(5) { animation-delay: 0.25s; }
+.event-card--home-entrance:nth-child(6) { animation-delay: 0.30s; }
+.event-card--home-entrance:nth-child(7) { animation-delay: 0.35s; }
+.event-card--home-entrance:nth-child(8) { animation-delay: 0.40s; }
+.event-card--home-entrance:nth-child(9) { animation-delay: 0.45s; }
+.event-card--home-entrance:nth-child(10) { animation-delay: 0.50s; }
+.event-card--home-entrance:nth-child(n+11) { animation-delay: 0.55s; }
+
+/* 5. Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+    .event-card.event-card--home-entrance {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+    }
+}
+
+/* 6. Bonus : Effet de survol cohérent */
+.event-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: var(--accent-color, #3b82f6);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    z-index: 10;
 }
 
 .event-card:active {
