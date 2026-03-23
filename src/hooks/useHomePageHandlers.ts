@@ -19,7 +19,9 @@ export function useHomePageHandlers({
     setTestModeState,
     setTestMode,
     setTestWeekModeState,
-    setTestWeekMode
+    setTestWeekMode,
+    setShowDayWarningToast,
+    language
 }) {
     const handleRefresh = () => {
         fetchEvents();
@@ -104,9 +106,29 @@ export function useHomePageHandlers({
     };
 
     const handleToggleDay = (day) => {
+        // Vérifier si on essaie de fermer le dernier jour ouvert
+        const willBeCollapsed = !collapsedDays[day];
+        
+        if (willBeCollapsed) {
+            // Compter combien de jours sont actuellement ouverts
+            const dayKeys = Object.keys(groupByDay);
+            const openDaysCount = dayKeys.filter(d => !collapsedDays[d]).length;
+            
+            // Si c'est le dernier jour ouvert, ne pas le fermer
+            if (openDaysCount <= 1) {
+                console.log('[HandleToggleDay] Impossible de fermer le dernier jour ouvert');
+                // Afficher le toast d'avertissement
+                if (setShowDayWarningToast) {
+                    setShowDayWarningToast(true);
+                    setTimeout(() => setShowDayWarningToast(false), 3000);
+                }
+                return; // Ne rien faire
+            }
+        }
+        
         const newCollapsedDays = {
             ...collapsedDays,
-            [day]: !collapsedDays[day]
+            [day]: willBeCollapsed
         };
         setCollapsedDays(newCollapsedDays);
         localStorage.setItem('collapsedDays', JSON.stringify(newCollapsedDays));
@@ -115,11 +137,41 @@ export function useHomePageHandlers({
     const handleToggleAllDays = () => {
         const dayKeys = Object.keys(groupByDay);
         if (dayKeys.length === 0) return;
+        
         const someExpanded = dayKeys.some(d => !collapsedDays[d]);
         const nextCollapsed = {};
-        for (const d of dayKeys) {
-            nextCollapsed[d] = someExpanded; // if any expanded -> collapse all; else expand all
+        
+        if (someExpanded) {
+            // Si certains jours sont ouverts, on veut tous les fermer SAUF un
+            // Garder ouvert le jour actuel s'il existe, sinon le premier jour
+            const today = new Date();
+            const todayDateString = today.toDateString();
+            
+            let todayKey = null;
+            for (const dayKey of dayKeys) {
+                const dayEvents = groupByDay[dayKey];
+                if (dayEvents && dayEvents.length > 0) {
+                    const firstEventDate = new Date(dayEvents[0].start);
+                    if (firstEventDate.toDateString() === todayDateString) {
+                        todayKey = dayKey;
+                        break;
+                    }
+                }
+            }
+            
+            // Si aujourd'hui n'existe pas dans cette semaine, garder le premier jour ouvert
+            const dayToKeepOpen = todayKey || dayKeys[0];
+            
+            for (const d of dayKeys) {
+                nextCollapsed[d] = (d !== dayToKeepOpen); // Fermer tous sauf celui qu'on garde
+            }
+        } else {
+            // Si tous les jours sont fermés, ouvrir tous les jours
+            for (const d of dayKeys) {
+                nextCollapsed[d] = false;
+            }
         }
+        
         setCollapsedDays(nextCollapsed);
         localStorage.setItem('collapsedDays', JSON.stringify(nextCollapsed));
     };

@@ -61,3 +61,5 @@ local.properties
 *.keystore 
 android/keystore.properties 
 edt-cnam-release-key.keystore 
+
+certificates

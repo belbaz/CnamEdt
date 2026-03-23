@@ -17,7 +17,8 @@
 
 .subject-hours-info-button:hover {
     background: var(--bg-primary);
-    border-color: var(--border-color);
+    border-color: var(--text-secondary);
+    transform: translateY(-1px);
     transform: scale(1.05);
 }
 

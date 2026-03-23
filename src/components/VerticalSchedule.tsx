@@ -28,7 +28,7 @@ export default function VerticalSchedule({
     courseProgressPercentDecimals = 2,
     entranceAnimationActive = false
 }) {
-    const { language } = useI18n();
+    const { language, t } = useI18n();
     const locale = getLocale(language);
     // Grouper les événements par jour
     const groupByDay = useMemo(() => groupEventsByDay(events, monthFormat, language), [events, monthFormat, language]);
@@ -42,6 +42,56 @@ export default function VerticalSchedule({
         });
         return sortedDays;
     }, [groupByDay]);
+
+    // État pour gérer les jours réduits/développés avec restauration depuis le cache
+    const [collapsedDays, setCollapsedDays] = useState(() => {
+        if (typeof window === 'undefined') return {};
+        try {
+            const saved = localStorage.getItem('verticalCollapsedDays');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.warn('[VerticalSchedule] Erreur lors du chargement des jours réduits:', e);
+            return {};
+        }
+    });
+
+    // État pour le toast d'avertissement
+    const [showWarningToast, setShowWarningToast] = useState(false);
+
+    // Fonction pour basculer un jour
+    const toggleDay = (day) => {
+        setCollapsedDays(prev => {
+            // Vérifier si on essaie de fermer le dernier jour ouvert
+            const willBeCollapsed = !prev[day];
+            if (willBeCollapsed) {
+                // Compter combien de jours sont actuellement ouverts
+                const openDaysCount = days.filter(d => !prev[d]).length;
+                
+                // Si c'est le dernier jour ouvert, ne pas le fermer
+                if (openDaysCount <= 1) {
+                    console.log('[VerticalSchedule] Impossible de fermer le dernier jour ouvert');
+                    // Afficher le toast d'avertissement
+                    setShowWarningToast(true);
+                    // Masquer automatiquement après 3 secondes
+                    setTimeout(() => setShowWarningToast(false), 3000);
+                    return prev; // Ne rien changer
+                }
+            }
+            
+            const newState = {
+                ...prev,
+                [day]: willBeCollapsed
+            };
+            
+            // Sauvegarder dans le localStorage
+            try {
+                localStorage.setItem('verticalCollapsedDays', JSON.stringify(newState));
+            } catch (e) {
+                console.warn('[VerticalSchedule] Erreur lors de la sauvegarde des jours réduits:', e);
+            }
+            return newState;
+        });
+    };
 
     // Calculer la plage horaire globale pour tous les jours
     // Affiche toujours au minimum de 9h à 18h, mais s'étend si des cours sont en dehors de cette plage
@@ -186,7 +236,8 @@ export default function VerticalSchedule({
             const minRequiredWidth = timeColumnWidth + (days.length * minColumnWidth) + gaps;
 
             // Si la largeur minimale nécessaire dépasse la largeur disponible, activer le scroll
-            setNeedsScroll(minRequiredWidth > containerWidth);
+            const needsScrollValue = minRequiredWidth > containerWidth;
+            setNeedsScroll(needsScrollValue);
         };
 
         // Attendre que le DOM soit complètement rendu
@@ -345,6 +396,19 @@ export default function VerticalSchedule({
 
     return (
         <div>
+            {/* Toast d'avertissement */}
+            {showWarningToast && (
+                <div className="vertical-warning-toast">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>
+                        {language === 'fr' 
+                            ? 'Impossible de fermer tous les jours' 
+                            : 'Cannot close all days'}
+                    </span>
+                </div>
+            )}
             <div
                 ref={containerRef}
                 className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
@@ -359,18 +423,60 @@ export default function VerticalSchedule({
                 >
                     {/* En-tête avec les jours */}
                     {days.length > 0 && (
-                        <div className={`vertical-schedule-header ${!showTimeLabels ? 'no-time-column' : ''}`}>
+                        <div 
+                            className={`vertical-schedule-header ${!showTimeLabels ? 'no-time-column' : ''}`}
+                            style={{
+                                gridTemplateColumns: `${showTimeLabels ? '35px' : ''} ${days.map(day => 
+                                    collapsedDays[day] ? '50px' : 'minmax(180px, 1fr)'
+                                ).join(' ')}`
+                            }}
+                        >
                             {showTimeLabels && <div className="vertical-time-column-header"></div>}
                             {days.map((day, idx) => {
                                 const dayEvents = groupByDay[day];
                                 const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
                                 const isTodayDay = isToday(dayDate);
+                                const isCollapsed = collapsedDays[day] || false;
+                                
+                                // Extraire les informations du jour pour l'affichage réduit
+                                const dayParts = day.split(' '); // Ex: ["Lundi", "30", "mars"]
+                                const shortDayName = dayParts[0].slice(0, 3); // "Lun"
+                                const dayNumber = dayParts[1] || ''; // "30"
+                                const monthName = dayParts[2] ? dayParts[2].slice(0, 3) : ''; // "mar"
+                                
                                 return (
                                     <div
                                         key={idx}
-                                        className={`vertical-day-header ${isTodayDay ? 'today' : ''}`}
+                                        className={`vertical-day-header ${isTodayDay ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                                        onClick={() => toggleDay(day)}
+                                        style={{ cursor: 'pointer' }}
+                                        title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
+                                        aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
                                     >
-                                        <h3>{isTodayDay ? `${day}📍` : day}</h3>
+                                        {isCollapsed ? (
+                                            <div className="vertical-day-header-collapsed-content">
+                                                <span className="vertical-day-header-short">{shortDayName}</span>
+                                                <span className="vertical-day-header-date">{dayNumber}</span>
+                                                <span className="vertical-day-header-month">{monthName}</span>
+                                            </div>
+                                        ) : (
+                                            <h3>{isTodayDay ? `${day}📍` : day}</h3>
+                                        )}
+                                        {!isCollapsed && (
+                                            <button
+                                                className="vertical-day-collapse-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleDay(day);
+                                                }}
+                                                aria-label={t('navbar.clickToCollapseDay')}
+                                                title={t('navbar.clickToCollapseDay')}
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -378,10 +484,17 @@ export default function VerticalSchedule({
                     )}
 
                     {/* Corps du planning */}
-                    <div className={`vertical-schedule-body ${!showTimeLabels ? 'no-time-column' : ''}`}>
-                        {/* Colonne des heures */}
-                        {showTimeLabels && (
-                            <div className="vertical-time-column">
+                    <div 
+                        className={`vertical-schedule-body ${!showTimeLabels ? 'no-time-column' : ''}`}
+                        style={{
+                            gridTemplateColumns: `${showTimeLabels ? '35px' : ''} ${days.map(day => 
+                                collapsedDays[day] ? '50px' : 'minmax(180px, 1fr)'
+                            ).join(' ')}`
+                        }}
+                    >
+                            {/* Colonne des heures */}
+                            {showTimeLabels && (
+                                <div className="vertical-time-column">
                                 {timeMarkers.filter(m => m.isHour).map((marker, idx, array) => {
                                     // On vérifie si c'est le dernier élément du tableau filtré
                                     const isLast = idx === array.length - 1;
@@ -413,6 +526,7 @@ export default function VerticalSchedule({
                             const dayEvents = groupByDay[day];
                             const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
                             const isTodayDay = isToday(dayDate);
+                            const isCollapsed = collapsedDays[day] || false;
                             const currentPos = isTodayDay && currentTimePercent !== null
                                 ? currentTimePercent
                                 : null;
@@ -420,135 +534,164 @@ export default function VerticalSchedule({
                             return (
                                 <div
                                     key={dayIdx}
-                                    className={`vertical-day-column ${isTodayDay ? 'today' : ''}`}
+                                    className={`vertical-day-column ${isTodayDay ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                                    onClick={() => isCollapsed && toggleDay(day)}
+                                    style={{ cursor: isCollapsed ? 'pointer' : 'default' }}
+                                    title={isCollapsed ? t('navbar.clickToExpandDay') : ''}
+                                    aria-label={isCollapsed ? t('navbar.clickToExpandDay') : undefined}
                                 >
-                                    {/* Indicateur de temps actuel */}
-                                    {showCurrentTimeIndicator && currentPos !== null && (
-                                        <div
-                                            className="vertical-current-time-indicator"
-                                            style={{ top: `${currentPos}%` }}
-                                        >
-                                            <div className="vertical-current-time-line"></div>
-                                            <div className="vertical-current-time-dot"></div>
-                                        </div>
-                                    )}
-
-                                    {/* Ligne de temps passée */}
-                                    {currentPos !== null && (
+                                    {!isCollapsed ? (
                                         <>
-                                            <div
-                                                className="vertical-time-passed-overlay"
-                                                style={{ height: `${currentPos}%`, opacity: timePassedOverlayIntensity }}
-                                            />
-                                            {showCourseProgressPercent && (
+                                            {/* Indicateur de temps actuel */}
+                                            {showCurrentTimeIndicator && currentPos !== null && (
                                                 <div
-                                                    className="vertical-time-passed-overlay-percentage"
+                                                    className="vertical-current-time-indicator"
                                                     style={{ top: `${currentPos}%` }}
                                                 >
-                                                    <AnimatedCourseProgressLabel
-                                                        events={dayEvents}
-                                                        fallbackPercent={currentPos}
-                                                        decimals={courseProgressPercentDecimals}
-                                                    />
+                                                    <div className="vertical-current-time-line"></div>
+                                                    <div className="vertical-current-time-dot"></div>
                                                 </div>
                                             )}
-                                        </>
-                                    )}
 
-                                    {/* Marqueurs de temps */}
-                                    <div
-                                        className="vertical-time-markers"
-                                        style={{ height: `${totalMinutes}px` }}
-                                    >
-                                        {timeMarkers.map((marker, idx) => (
-                                            <div
-                                                key={idx}
-                                                className={`vertical-time-marker ${marker.isHour ? 'hour' : ''}`}
-                                                style={{
-                                                    top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    {/* Événements */}
-                                    <div
-                                        className="vertical-events-container"
-                                        style={{ height: `${totalMinutes}px` }}
-                                    >
-                                        {(() => {
-                                            // Trier les événements une seule fois par heure de début
-                                            const sortedEvents = [...dayEvents].sort((a, b) => new Date(a.start) - new Date(b.start));
-                                            return sortedEvents.map((ev, evIdx) => {
-                                                // Trouver l'événement précédent (trié par heure de début)
-                                                const previousEvent = evIdx > 0 ? sortedEvents[evIdx - 1] : null;
-                                                const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
-
-                                                // Trouver l'événement suivant (trié par heure de début)
-                                                const nextEvent = evIdx < sortedEvents.length - 1 ? sortedEvents[evIdx + 1] : null;
-                                                const nextEventStart = nextEvent ? nextEvent.start : null;
-
-                                                const pos = getEventVerticalPosition(ev.start, ev.end_time || ev.end, previousEventEnd, nextEventStart);
-                                                const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
-                                                const noteEntries = courseNote
-                                                    ? (Array.isArray(courseNote.entries)
-                                                        ? courseNote.entries
-                                                        : parseStoredNoteValue(courseNote.notes))
-                                                    : [];
-
-                                                // Déterminer si ce cours est marqué comme distanciel via un label
-                                                const hasDistancielLabel = courseNote && courseNote.entry_labels
-                                                    ? Object.values(courseNote.entry_labels).some((labelsArray) =>
-                                                        Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
-                                                    )
-                                                    : false;
-
-                                                // Extraire tous les labels non-Distanciel pour affichage dans le tooltip (dédupliqués)
-                                                const nonDistancielLabels = courseNote && courseNote.entry_labels
-                                                    ? [...new Set(
-                                                        Object.values(courseNote.entry_labels)
-                                                            .flat()
-                                                            .filter((label) => 
-                                                                typeof label === "string" && 
-                                                                label.trim() !== "" && 
-                                                                label !== "Distanciel"
-                                                            )
-                                                    )]
-                                                    : [];
-
-                                                // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
-                                                const notePreviewItems = noteEntries.filter(
-                                                    (entry) =>
-                                                        typeof entry === "string" &&
-                                                        entry !== HIDDEN_LABEL_PLACEHOLDER &&
-                                                        entry.trim().length > 0
-                                                );
-                                                return (
-                                                    <EventCard
-                                                        key={evIdx}
-                                                        event={ev}
-                                                        stylePos={{
-                                                            ...pos,
-                                                            position: 'absolute',
-                                                            left: '0',
-                                                            right: '0',
-                                                            width: '100%'
-                                                        }}
-                                                        subjectColors={subjectColors}
-                                                        onOpenEventDetails={onOpenEventDetails}
-                                                        noteEntries={noteEntries}
-                                                        fileCount={fileCounts[ev.uid] || 0}
-                                                        notePreviewItems={notePreviewItems}
-                                                        isDistanciel={hasDistancielLabel}
-                                                        nonDistancielLabels={nonDistancielLabels}
-                                                        colorPosition={colorPosition}
-                                                        colorBackgroundOpacity={colorBackgroundOpacity}
-                                                        entranceAnimationActive={entranceAnimationActive}
+                                            {/* Ligne de temps passée */}
+                                            {currentPos !== null && (
+                                                <>
+                                                    <div
+                                                        className="vertical-time-passed-overlay"
+                                                        style={{ height: `${currentPos}%`, opacity: timePassedOverlayIntensity }}
                                                     />
-                                                );
-                                            });
-                                        })()}
-                                    </div>
+                                                    {showCourseProgressPercent && (
+                                                        <div
+                                                            className="vertical-time-passed-overlay-percentage"
+                                                            style={{ top: `${currentPos}%` }}
+                                                        >
+                                                            <AnimatedCourseProgressLabel
+                                                                events={dayEvents}
+                                                                fallbackPercent={currentPos}
+                                                                decimals={courseProgressPercentDecimals}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+
+                                            {/* Marqueurs de temps */}
+                                            <div
+                                                className="vertical-time-markers"
+                                                style={{ height: `${totalMinutes}px` }}
+                                            >
+                                                {timeMarkers.map((marker, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className={`vertical-time-marker ${marker.isHour ? 'hour' : ''}`}
+                                                        style={{
+                                                            top: `${((marker.totalMinutes - startMinutes) / totalMinutes) * 100}%`
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            {/* Événements */}
+                                            <div
+                                                className="vertical-events-container"
+                                                style={{ height: `${totalMinutes}px` }}
+                                            >
+                                                {(() => {
+                                                    // Trier les événements une seule fois par heure de début
+                                                    const sortedEvents = [...dayEvents].sort((a, b) => new Date(a.start) - new Date(b.start));
+                                                    return sortedEvents.map((ev, evIdx) => {
+                                                        // Trouver l'événement précédent (trié par heure de début)
+                                                        const previousEvent = evIdx > 0 ? sortedEvents[evIdx - 1] : null;
+                                                        const previousEventEnd = previousEvent ? (previousEvent.end_time || previousEvent.end) : null;
+
+                                                        // Trouver l'événement suivant (trié par heure de début)
+                                                        const nextEvent = evIdx < sortedEvents.length - 1 ? sortedEvents[evIdx + 1] : null;
+                                                        const nextEventStart = nextEvent ? nextEvent.start : null;
+
+                                                        const pos = getEventVerticalPosition(ev.start, ev.end_time || ev.end, previousEventEnd, nextEventStart);
+                                                        const courseNote = courseNotes && ev.uid ? courseNotes.get(ev.uid) : null;
+                                                        const noteEntries = courseNote
+                                                            ? (Array.isArray(courseNote.entries)
+                                                                ? courseNote.entries
+                                                                : parseStoredNoteValue(courseNote.notes))
+                                                            : [];
+
+                                                        // Déterminer si ce cours est marqué comme distanciel via un label
+                                                        const hasDistancielLabel = courseNote && courseNote.entry_labels
+                                                            ? Object.values(courseNote.entry_labels).some((labelsArray) =>
+                                                                Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
+                                                            )
+                                                            : false;
+
+                                                        // Extraire tous les labels non-Distanciel pour affichage dans le tooltip (dédupliqués)
+                                                        const nonDistancielLabels = courseNote && courseNote.entry_labels
+                                                            ? [...new Set(
+                                                                Object.values(courseNote.entry_labels)
+                                                                    .flat()
+                                                                    .filter((label) => 
+                                                                        typeof label === "string" && 
+                                                                        label.trim() !== "" && 
+                                                                        label !== "Distanciel"
+                                                                    )
+                                                            )]
+                                                            : [];
+
+                                                        // Construire les éléments de preview pour la tooltip (uniquement texte, pas les labels)
+                                                        const notePreviewItems = noteEntries.filter(
+                                                            (entry) =>
+                                                                typeof entry === "string" &&
+                                                                entry !== HIDDEN_LABEL_PLACEHOLDER &&
+                                                                entry.trim().length > 0
+                                                        );
+                                                        return (
+                                                            <EventCard
+                                                                key={evIdx}
+                                                                event={ev}
+                                                                stylePos={{
+                                                                    ...pos,
+                                                                    position: 'absolute',
+                                                                    left: '0',
+                                                                    right: '0',
+                                                                    width: '100%'
+                                                                }}
+                                                                subjectColors={subjectColors}
+                                                                onOpenEventDetails={onOpenEventDetails}
+                                                                noteEntries={noteEntries}
+                                                                fileCount={fileCounts[ev.uid] || 0}
+                                                                notePreviewItems={notePreviewItems}
+                                                                isDistanciel={hasDistancielLabel}
+                                                                nonDistancielLabels={nonDistancielLabels}
+                                                                colorPosition={colorPosition}
+                                                                colorBackgroundOpacity={colorBackgroundOpacity}
+                                                                entranceAnimationActive={entranceAnimationActive}
+                                                            />
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="vertical-day-collapsed-indicator">
+                                            <div className="vertical-day-collapsed-content">
+                                                <span className="vertical-day-collapsed-text">
+                                                    {day.split(' ')[0].slice(0, 3)}
+                                                </span>
+                                                <span className="vertical-day-collapsed-count">
+                                                    {dayEvents.length} {dayEvents.length > 1 ? 'cours' : 'cours'}
+                                                </span>
+                                                <button 
+                                                    className="vertical-day-collapsed-expand-btn"
+                                                    onClick={() => toggleDay(day)}
+                                                    aria-label={t('navbar.clickToExpandDay')}
+                                                    title={t('navbar.clickToExpandDay')}
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" transform="rotate(90 12 12)"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -558,4 +701,6 @@ export default function VerticalSchedule({
         </div>
     );
 }
+
+
 

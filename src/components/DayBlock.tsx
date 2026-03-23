@@ -3,6 +3,7 @@ import {forwardRef, useMemo, useState, useEffect} from "react";
 import {isToday} from "@/utils/dateUtils";
 import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/utils/timelineUtils";
 import {getCompactModeValues} from "@/utils/compactModeUtils";
+import {useI18n} from "@/i18n/I18nContext";
 import TimelineWrapper from "./Timeline/TimelineWrapper";
 import "./DayBlock.css";
 
@@ -25,6 +26,7 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
     courseProgressPercentDecimals = 2,
     entranceAnimationActive = false
 }, ref) => {
+    const { t } = useI18n();
     // Mémoriser les calculs pour éviter de les refaire à chaque rendu
     const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
     const todayCheck = useMemo(() => isToday(dayDate), [dayDate]);
@@ -86,13 +88,20 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
 
     return (
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
-             ref={todayCheck ? ref : null}>
+             ref={todayCheck ? ref : null}
+             title={isCollapsed ? t('navbar.clickToExpandDay') : ''}
+        >
             <div
                 className="day-header"
                 onClick={onToggle}
+                title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
             >
                 <h2>{todayCheck ? `${day}📍` : day}</h2>
-                <button className="collapse-toggle" aria-label={isCollapsed ? 'Ouvrir' : 'Fermer'}>
+                <button 
+                    className="collapse-toggle" 
+                    aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
+                    title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
+                >
                     {isCollapsed ? (
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                              aria-hidden="true">

@@ -50,9 +50,9 @@ import {generateEventKey} from "@/utils/eventModalUtils";
  */
 const FETCH_ICS_TIMEOUT_MS = 4000;
 /** Durée min. d’affichage du libellé « Chargement de l'emploi du temps » (pas de cache). */
-const MIN_DISPLAY_MS_EDT_LOADING_FIRST = 1000;
+const MIN_DISPLAY_MS_EDT_LOADING_FIRST = 0;
 /** Durée min. d’affichage du libellé « Vérification des mises à jour… » (cache présent). */
-const MIN_DISPLAY_MS_EDT_WAIT_SYNC = 500;
+const MIN_DISPLAY_MS_EDT_WAIT_SYNC = 0;
 
 function HomeContent({searchParams}) {
     const { t, language } = useI18n();
@@ -71,6 +71,7 @@ function HomeContent({searchParams}) {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [autoScrollToday, setAutoScrollToday] = useState(true);
     const [collapsedDays, setCollapsedDays] = useState({});
+    const [showDayWarningToast, setShowDayWarningToast] = useState(false);
     const [progressionExpanded, setProgressionExpanded] = useState(new Map());
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -1210,6 +1211,8 @@ function HomeContent({searchParams}) {
         setTestMode,
         setTestWeekModeState,
         setTestWeekMode,
+        setShowDayWarningToast,
+        language,
     });
 
     const handleRefresh = handlers.handleRefresh;
@@ -1371,6 +1374,19 @@ function HomeContent({searchParams}) {
 
     return (
         <div className={styles.pageWrapper}>
+            {/* Toast d'avertissement pour le dernier jour */}
+            {showDayWarningToast && (
+                <div className={styles.dayWarningToast}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>
+                        {language === 'fr' 
+                            ? 'Impossible de fermer tous les jours' 
+                            : 'Cannot close all days'}
+                    </span>
+                </div>
+            )}
             <Toast
                 message={t('page.edtChangeDetected')}
                 isVisible={showEdtChangeToast}

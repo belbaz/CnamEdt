@@ -38,7 +38,9 @@
     "back": "Retour",
     "examens": "Examens à venir",
     "notes": "Galao",
-    "message": "Message"
+    "message": "Message",
+    "clickToExpandDay": "Cliquer pour ouvrir ce jour",
+    "clickToCollapseDay": "Cliquer pour fermer ce jour"
   },
   "pageHeader": {
     "settings": "Paramètres",
