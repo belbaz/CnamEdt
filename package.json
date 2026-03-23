@@ -1,9 +1,9 @@
 {
   "name": "edt",
-  "version": "2.1.88",
+  "version": "2.1.89",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --experimental-https", 
+    "dev": "next dev --turbopack --experimental-https",
     "prebuild": "node scripts/pre-build.js",
     "build": "node scripts/pre-build.js; next build",
     "postinstall": "node scripts/pre-build.js",

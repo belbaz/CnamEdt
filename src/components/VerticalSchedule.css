@@ -1346,13 +1346,6 @@
     flex-wrap: wrap;
 }
 
-.last-update-info:hover {
-    background: var(--bg-primary);
-    border-color: var(--text-secondary);
-    transform: translateY(-1px);
-    transform: scale(1.05);
-}
-
 .last-update-info span {
     color: var(--text-muted);
 }
