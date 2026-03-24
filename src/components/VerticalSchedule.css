@@ -191,6 +191,26 @@
     box-sizing: border-box;
 }
 
+/* Wrapper grille pour Tooltip sur les en-têtes de jour */
+.vertical-schedule-header-tooltip-wrap {
+    min-width: 0;
+    width: 100%;
+    display: contents;
+}
+
+.vertical-schedule-header-tooltip-wrap .tooltip-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.vertical-schedule-header-tooltip-wrap .tooltip-wrapper .vertical-day-header {
+    width: 90%;
+}
+
 /* En-tête avec les jours */
 .vertical-schedule-header {
     display: grid;
@@ -387,7 +407,7 @@
 
 .vertical-day-collapse-btn:hover {
     background: var(--bg-primary);
-    transform: scale(1.2) rotate(90deg);
+    transform: scale(1.2) rotate(180deg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -542,6 +562,24 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+.vertical-day-column.collapsed > .tooltip-wrapper {
+    display: flex;
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    min-height: 100%;
+    min-width: 0;
+    height: 100%;
+}
+
+.vertical-day-column.collapsed > .tooltip-wrapper > .vertical-day-collapsed-indicator {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 100%;
+    height: 100%;
+    display: flex;
+}
+
 .vertical-day-column.today {
     border-radius: 12px;
     border: 2px solid #4299e1;
@@ -558,8 +596,9 @@
     border-radius: 12px;
     border: 1px solid var(--border-color);
     animation: fadeInIndicator 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    padding: 0.5rem 0.3rem;
+    padding: 0.5rem 0.25rem;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .vertical-day-collapsed-indicator:hover {
@@ -588,12 +627,12 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     width: 100%;
 }
 
 .vertical-day-collapsed-text {
-    font-size: 0.7rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: 0.05em;
@@ -621,13 +660,23 @@
 
 /* Compteur de cours dans le jour réduit */
 .vertical-day-collapsed-count {
-    font-size: 0.55rem;
+    font-size: 0.66rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-align: center;
     line-height: 1.2;
     opacity: 0.9;
     animation: fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.vertical-day-collapsed-notes-count {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.2;
+    opacity: 0.95;
+    animation: fadeInUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
 }
 
 @keyframes fadeInUp {
@@ -647,6 +696,7 @@
     border: 1px solid var(--border-color);
     width: 28px;
     height: 28px;
+    rotate: 270deg;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -662,7 +712,8 @@
 
 .vertical-day-collapsed-expand-btn:hover {
     background: var(--bg-primary);
-    transform: scale(1.2) rotate(180deg);
+    transform: scale(1.2);
+    rotate: 20deg;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -1058,11 +1109,15 @@
     }
 
     .vertical-day-collapsed-text {
-        font-size: 0.6rem;
+        font-size: 0.72rem;
     }
 
     .vertical-day-collapsed-count {
-        font-size: 0.5rem;
+        font-size: 0.6rem;
+    }
+    
+    .vertical-day-collapsed-notes-count {
+        font-size: 0.6rem;
     }
 
     .vertical-day-collapsed-expand-btn {
@@ -1213,11 +1268,15 @@
     }
 
     .vertical-day-collapsed-text {
-        font-size: 0.55rem;
+        font-size: 0.66rem;
     }
 
     .vertical-day-collapsed-count {
-        font-size: 0.48rem;
+        font-size: 0.56rem;
+    }
+    
+    .vertical-day-collapsed-notes-count {
+        font-size: 0.56rem;
     }
 
     .vertical-day-collapsed-expand-btn {

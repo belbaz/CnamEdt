@@ -1,6 +1,6 @@
 {
   "name": "edt",
-  "version": "2.1.89",
+  "version": "2.1.90",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --experimental-https",

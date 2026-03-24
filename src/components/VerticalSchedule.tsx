@@ -7,6 +7,7 @@ import { groupEventsByDay } from "@/utils/eventUtils";
 import { isToday, getLocale } from "@/utils/dateUtils";
 import { useI18n } from "@/i18n/I18nContext";
 import EventCard from "./Timeline/EventCard";
+import Tooltip from "./Tooltip";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
 
@@ -26,7 +27,8 @@ export default function VerticalSchedule({
     timePassedOverlayIntensity = 0.5,
     showCourseProgressPercent = false,
     courseProgressPercentDecimals = 2,
-    entranceAnimationActive = false
+    entranceAnimationActive = false,
+    showTooltips = true
 }) {
     const { language, t } = useI18n();
     const locale = getLocale(language);
@@ -57,6 +59,9 @@ export default function VerticalSchedule({
 
     // État pour le toast d'avertissement
     const [showWarningToast, setShowWarningToast] = useState(false);
+
+    const [verticalHeaderTooltipDay, setVerticalHeaderTooltipDay] = useState(null);
+    const [verticalCollapsedTooltipDay, setVerticalCollapsedTooltipDay] = useState(null);
 
     // Fonction pour basculer un jour
     const toggleDay = (day) => {
@@ -445,38 +450,51 @@ export default function VerticalSchedule({
                                 const monthName = dayParts[2] ? dayParts[2].slice(0, 3) : ''; // "mar"
                                 
                                 return (
-                                    <div
-                                        key={idx}
-                                        className={`vertical-day-header ${isTodayDay ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
-                                        onClick={() => toggleDay(day)}
-                                        style={{ cursor: 'pointer' }}
-                                        title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
-                                        aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
-                                    >
-                                        {isCollapsed ? (
-                                            <div className="vertical-day-header-collapsed-content">
-                                                <span className="vertical-day-header-short">{shortDayName}</span>
-                                                <span className="vertical-day-header-date">{dayNumber}</span>
-                                                <span className="vertical-day-header-month">{monthName}</span>
-                                            </div>
-                                        ) : (
-                                            <h3>{isTodayDay ? `${day}📍` : day}</h3>
-                                        )}
-                                        {!isCollapsed && (
-                                            <button
-                                                className="vertical-day-collapse-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
+                                    <div key={idx} className="vertical-schedule-header-tooltip-wrap">
+                                        <Tooltip
+                                            text={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
+                                            show={showTooltips && verticalHeaderTooltipDay === day}
+                                            enabled={showTooltips}
+                                            scrollContainerRef={containerRef}
+                                        >
+                                            <div
+                                                className={`vertical-day-header ${isTodayDay ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+                                                onClick={() => {
+                                                    setVerticalHeaderTooltipDay(null);
                                                     toggleDay(day);
                                                 }}
-                                                aria-label={t('navbar.clickToCollapseDay')}
-                                                title={t('navbar.clickToCollapseDay')}
+                                                onMouseEnter={() => setVerticalHeaderTooltipDay(day)}
+                                                onMouseLeave={() => setVerticalHeaderTooltipDay(null)}
+                                                style={{ cursor: 'pointer' }}
+                                                aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
                                             >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                </svg>
-                                            </button>
-                                        )}
+                                                {isCollapsed ? (
+                                                    <div className="vertical-day-header-collapsed-content">
+                                                        <span className="vertical-day-header-short">{shortDayName}</span>
+                                                        <span className="vertical-day-header-date">{dayNumber}</span>
+                                                        <span className="vertical-day-header-month">{monthName}</span>
+                                                    </div>
+                                                ) : (
+                                                    <h3>{isTodayDay ? `${day}📍` : day}</h3>
+                                                )}
+                                                {!isCollapsed && (
+                                                    <button
+                                                        type="button"
+                                                        className="vertical-day-collapse-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setVerticalHeaderTooltipDay(null);
+                                                            toggleDay(day);
+                                                        }}
+                                                        aria-label={t('navbar.clickToCollapseDay')}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </Tooltip>
                                     </div>
                                 );
                             })}
@@ -527,6 +545,63 @@ export default function VerticalSchedule({
                             const dayDate = dayEvents[0] ? new Date(dayEvents[0].start) : new Date();
                             const isTodayDay = isToday(dayDate);
                             const isCollapsed = collapsedDays[day] || false;
+                            const dayNotesCount = isCollapsed
+                                ? (() => {
+                                    if (!courseNotes || !Array.isArray(dayEvents) || dayEvents.length === 0) return 0;
+
+                                    let totalNotesForDay = 0;
+
+                                    dayEvents.forEach((ev) => {
+                                        if (!ev || !ev.uid) return;
+
+                                        const courseNote = courseNotes.get(ev.uid);
+                                        if (!courseNote) return;
+
+                                        const noteEntries = Array.isArray(courseNote.entries)
+                                            ? courseNote.entries
+                                            : parseStoredNoteValue(courseNote.notes);
+
+                                        // Compter les "notes texte" (on ignore le placeholder invisible)
+                                        const notePreviewItems = noteEntries.filter(
+                                            (entry) =>
+                                                typeof entry === "string" &&
+                                                entry !== HIDDEN_LABEL_PLACEHOLDER &&
+                                                entry.trim().length > 0
+                                        );
+
+                                        // Détecter si le seul contenu est "Distanciel"
+                                        const hasDistancielLabel = courseNote && courseNote.entry_labels
+                                            ? Object.values(courseNote.entry_labels).some((labelsArray) =>
+                                                Array.isArray(labelsArray) && labelsArray.includes("Distanciel")
+                                            )
+                                            : false;
+
+                                        const nonDistancielLabels = courseNote && courseNote.entry_labels
+                                            ? [...new Set(
+                                                Object.values(courseNote.entry_labels)
+                                                    .flat()
+                                                    .filter((label) =>
+                                                        typeof label === "string" &&
+                                                        label.trim() !== "" &&
+                                                        label !== "Distanciel"
+                                                    )
+                                            )]
+                                            : [];
+
+                                        const hasOnlyDistanciel = hasDistancielLabel && notePreviewItems.length === 0 && nonDistancielLabels.length === 0;
+                                        if (hasOnlyDistanciel) return;
+
+                                        const totalNoteCountForCourse = notePreviewItems.length > 0
+                                            ? notePreviewItems.length
+                                            : nonDistancielLabels.length;
+
+                                        totalNotesForDay += totalNoteCountForCourse;
+                                    });
+
+                                    return totalNotesForDay;
+                                })()
+                                : 0;
+
                             const currentPos = isTodayDay && currentTimePercent !== null
                                 ? currentTimePercent
                                 : null;
@@ -535,9 +610,7 @@ export default function VerticalSchedule({
                                 <div
                                     key={dayIdx}
                                     className={`vertical-day-column ${isTodayDay ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
-                                    onClick={() => isCollapsed && toggleDay(day)}
                                     style={{ cursor: isCollapsed ? 'pointer' : 'default' }}
-                                    title={isCollapsed ? t('navbar.clickToExpandDay') : ''}
                                     aria-label={isCollapsed ? t('navbar.clickToExpandDay') : undefined}
                                 >
                                     {!isCollapsed ? (
@@ -671,26 +744,56 @@ export default function VerticalSchedule({
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="vertical-day-collapsed-indicator">
-                                            <div className="vertical-day-collapsed-content">
-                                                <span className="vertical-day-collapsed-text">
-                                                    {day.split(' ')[0].slice(0, 3)}
-                                                </span>
-                                                <span className="vertical-day-collapsed-count">
-                                                    {dayEvents.length} {dayEvents.length > 1 ? 'cours' : 'cours'}
-                                                </span>
-                                                <button 
-                                                    className="vertical-day-collapsed-expand-btn"
-                                                    onClick={() => toggleDay(day)}
-                                                    aria-label={t('navbar.clickToExpandDay')}
-                                                    title={t('navbar.clickToExpandDay')}
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" transform="rotate(90 12 12)"/>
-                                                    </svg>
-                                                </button>
+                                        <Tooltip
+                                            text={t('navbar.clickToExpandDay')}
+                                            show={showTooltips && verticalCollapsedTooltipDay === day}
+                                            enabled={showTooltips}
+                                            scrollContainerRef={containerRef}
+                                        >
+                                            <div
+                                                className="vertical-day-collapsed-indicator"
+                                                onClick={() => {
+                                                    setVerticalCollapsedTooltipDay(null);
+                                                    toggleDay(day);
+                                                }}
+                                                onMouseEnter={() => setVerticalCollapsedTooltipDay(day)}
+                                                onMouseLeave={() => setVerticalCollapsedTooltipDay(null)}
+                                            >
+                                                <div className="vertical-day-collapsed-content">
+                                                    <span className="vertical-day-collapsed-text">
+                                                        {day.split(' ')[0].slice(0, 3)}
+                                                    </span>
+                                                    <span className="vertical-day-collapsed-count">
+                                                        {dayEvents.length} {dayEvents.length > 1 ? 'cours' : 'cours'}
+                                                    </span>
+                                                    {dayNotesCount > 0 && (
+                                                        <span className="vertical-day-collapsed-notes-count">
+                                                            {dayNotesCount} {dayNotesCount > 1 ? t('agenda.tabNotes') : t('agenda.note')}
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className="vertical-day-collapsed-expand-btn"
+                                                        aria-label={t('navbar.clickToExpandDay')}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setVerticalCollapsedTooltipDay(null);
+                                                            toggleDay(day);
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.stopPropagation();
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.stopPropagation();
+                                                        }}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" transform="rotate(90 12 12)"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </Tooltip>
                                     )}
                                 </div>
                             );

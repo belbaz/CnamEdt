@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./Navbar.css";
 
-export default function Tooltip({ children, text, show, enabled = true }) {
+export default function Tooltip({ children, text, show, enabled = true, scrollContainerRef = null }) {
     const tooltipRef = useRef(null);
     const wrapperRef = useRef(null);
     const [position, setPosition] = useState({ top: 0, left: 0, placement: 'top', arrowLeft: '50%' });
@@ -79,13 +79,21 @@ export default function Tooltip({ children, text, show, enabled = true }) {
         // Réajuster au scroll et resize
         window.addEventListener('scroll', updatePosition, true);
         window.addEventListener('resize', updatePosition);
+        
+        // Si un conteneur de scroll est fourni, écouter son scroll aussi
+        if (scrollContainerRef && scrollContainerRef.current) {
+            scrollContainerRef.current.addEventListener('scroll', updatePosition);
+        }
 
         return () => {
             clearTimeout(timeoutId);
             window.removeEventListener('scroll', updatePosition, true);
             window.removeEventListener('resize', updatePosition);
+            if (scrollContainerRef && scrollContainerRef.current) {
+                scrollContainerRef.current.removeEventListener('scroll', updatePosition);
+            }
         };
-    }, [show, enabled]);
+    }, [show, enabled, scrollContainerRef]);
 
     return (
         <div className="tooltip-wrapper" ref={wrapperRef}>

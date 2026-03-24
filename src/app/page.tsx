@@ -1635,6 +1635,7 @@ function HomeContent({searchParams}) {
                                 events={events}
                                 subjectColors={subjectColors}
                                 entranceAnimationActive={entranceAnimationActive}
+                                showTooltips={showTooltips}
                                 onOpenEventDetails={(ev, position) => {
                                     setEventClickPosition(position);
                                     setSelectedEvent(ev);
