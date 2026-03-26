@@ -465,6 +465,7 @@
     "openGalao": "Open Galao",
     "noCoursesThisWeek": "No courses found for this week",
     "lastUpdate": "Updated on:",
+    "lastUpdateToday": "Today",
     "edtChangeDetected": "A change was detected for this week.",
     "edtUpdatingOverlay": "Updating the schedule...",
     "edtWaitSync": "Checking for schedule updates...",

@@ -83,38 +83,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pour les requêtes de navigation (pages)
+  // Pour les requêtes de navigation (pages) - Network-first
+  // IMPORTANT: on ne fait PAS cache-first ici car si l'HTML est obsolète (vieux build),
+  // re-servir depuis le cache après un reload reproduirait l'écran blanc en boucle.
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match(req)
-        .then((cached) => {
-          if (cached) {
-            // Utiliser le cache immédiatement pour une navigation rapide
-            // Mettre à jour en arrière-plan
-            fetch(req)
-              .then((res) => {
-                if (res && res.ok) {
-                  const resClone = res.clone();
-                  caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-                }
-              })
-              .catch(() => {});
-            return cached;
+      fetch(req)
+        .then((res) => {
+          // Réseau disponible : mettre à jour le cache et retourner la réponse fraîche
+          if (res && res.ok) {
+            const resClone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
           }
-          
-          // Pas de cache, essayer le réseau
-          return fetch(req)
-            .then((res) => {
-              if (res && res.ok) {
-                const resClone = res.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-              }
-              return res;
-            })
-            .catch(() => {
-              // Hors ligne, retourner la page d'accueil en cache
-              return caches.match('/').then((fallback) => 
-                fallback || new Response('Page non disponible hors ligne', { 
+          return res;
+        })
+        .catch(() => {
+          // Hors ligne uniquement : fallback sur le cache
+          return caches.match(req)
+            .then((cached) => {
+              if (cached) return cached;
+              return caches.match('/').then((fallback) =>
+                fallback || new Response('Page non disponible hors ligne', {
                   status: 503,
                   headers: { 'Content-Type': 'text/html; charset=utf-8' }
                 })

@@ -404,23 +404,22 @@ export default function PWAUpdateChecker() {
         navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
         // Écouter les messages du Service Worker (pour les rechargements forcés)
+        // Note: on écoute sur navigator.serviceWorker directement (pas sur .controller)
+        // car le controller peut être null au moment de l'exécution de cet effect.
+        // La gestion principale de FORCE_RELOAD est faite par le script inline dans layout.tsx
+        // (qui s'exécute avant React), mais on garde ce listener comme filet de secours.
         const handleMessage = (event) => {
             if (event.data && event.data.type === 'FORCE_RELOAD') {
                 console.warn('[PWAUpdateChecker] Message FORCE_RELOAD reçu du Service Worker:', event.data.reason);
-                // Forcer un rechargement immédiat
                 window.location.reload();
             }
         };
         
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.addEventListener('message', handleMessage);
-        }
+        navigator.serviceWorker.addEventListener('message', handleMessage);
 
         return () => {
             navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.removeEventListener('message', handleMessage);
-            }
+            navigator.serviceWorker.removeEventListener('message', handleMessage);
         };
     }, [isPageLoaded]);
 

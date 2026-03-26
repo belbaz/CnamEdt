@@ -155,6 +155,72 @@ export default function RootLayout({ children }) {
                     })();
                 `}}
                 />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                    (function() {
+                        // === RÉCUPÉRATION AUTOMATIQUE : ÉCRAN BLANC / BUILD OBSOLÈTE ===
+                        // Ce script s'exécute AVANT React. Il gère deux cas d'échec :
+                        //   1. Le SW envoie FORCE_RELOAD (trop de fichiers 404 détectés)
+                        //   2. Un ChunkLoadError survient (chunk Next.js introuvable)
+                        // Dans les deux cas, on vide les caches et on recharge la page.
+
+                        function nukeCachesAndReload(reloadKey) {
+                            var now = Date.now();
+                            var lastTs = '';
+                            try { lastTs = sessionStorage.getItem(reloadKey) || ''; } catch(e) {}
+                            // Anti-boucle : ne pas recharger plus d'une fois toutes les 8 secondes
+                            if (lastTs && now - parseInt(lastTs, 10) < 8000) {
+                                console.warn('[SW Early] Anti-boucle rechargement (', reloadKey, ')');
+                                return;
+                            }
+                            try { sessionStorage.setItem(reloadKey, now.toString()); } catch(e) {}
+                            console.warn('[SW Early] Nettoyage cache + rechargement...');
+                            // Désinscrire les SW avant de recharger pour éviter de re-servir le vieil HTML
+                            var doReload = function() {
+                                var url = new URL(window.location.href);
+                                url.searchParams.delete('_nocache');
+                                url.searchParams.set('_nocache', now.toString());
+                                window.location.replace(url.toString());
+                            };
+                            try {
+                                var p = ('serviceWorker' in navigator)
+                                    ? navigator.serviceWorker.getRegistrations().then(function(regs) {
+                                        return Promise.all(regs.map(function(r) { return r.unregister(); }));
+                                      })
+                                    : Promise.resolve();
+                                p.then(function() {
+                                    if ('caches' in window) {
+                                        return caches.keys().then(function(names) {
+                                            return Promise.all(names.map(function(n) { return caches.delete(n); }));
+                                        });
+                                    }
+                                }).then(doReload).catch(doReload);
+                            } catch(e) { doReload(); }
+                        }
+
+                        // --- 1. Écoute précoce des messages du Service Worker ---
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.addEventListener('message', function(event) {
+                                if (event.data && event.data.type === 'FORCE_RELOAD') {
+                                    console.warn('[SW Early] FORCE_RELOAD reçu du SW (raison:', event.data.reason, ')');
+                                    nukeCachesAndReload('_sw_force_reload_ts');
+                                }
+                            });
+                        }
+
+                        // --- 2. Capture des ChunkLoadError (chunks Next.js obsolètes) ---
+                        window.addEventListener('error', function(event) {
+                            var msg = (event.message || '') + ((event.error && event.error.message) ? ' ' + event.error.message : '');
+                            if (msg.indexOf('ChunkLoadError') !== -1 || msg.indexOf('Failed to load chunk') !== -1) {
+                                console.warn('[SW Early] ChunkLoadError capturé :', msg);
+                                nukeCachesAndReload('_chunk_error_reload_ts');
+                            }
+                        }, true);
+
+                    })();
+                `}}
+                />
             </head>
             <body suppressHydrationWarning>
                 <I18nProvider>

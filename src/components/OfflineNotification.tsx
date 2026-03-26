@@ -107,13 +107,29 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) return t('offline.lastSave');
-            return date.toLocaleString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
+
+            const now = new Date();
+            const isToday =
+                date.getFullYear() === now.getFullYear() &&
+                date.getMonth() === now.getMonth() &&
+                date.getDate() === now.getDate();
+
+            // On garde le format date (JJ/MM/AAAA) + heure (24h) existant
+            const time = date.toLocaleTimeString('fr-FR', {
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                hour12: false
             });
+
+            const day = isToday
+                ? t('page.lastUpdateToday')
+                : date.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+
+            return `${day} ${time}`;
         } catch (e) {
             return t('offline.lastSave');
         }
