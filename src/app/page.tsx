@@ -120,6 +120,7 @@ function HomeContent({searchParams}) {
     const cachePrimedRef = useRef(false);
     const [edtRemoteUpdateOverlay, setEdtRemoteUpdateOverlay] = useState(false);
     const [showEdtChangeToast, setShowEdtChangeToast] = useState(false);
+    const [edtChangeToastMessage, setEdtChangeToastMessage] = useState('current-week'); // 'current-week' ou 'general'
     /** Animation d'entrée des cartes cours au premier affichage de l'EDT (une fois par visite). */
     const [entranceAnimationActive, setEntranceAnimationActive] = useState(false);
     const hasPlayedHomeEntranceRef = useRef(false);
@@ -425,7 +426,49 @@ function HomeContent({searchParams}) {
             if (shouldShowNotification) {
                 console.log(`[Page] Changements RÉELS détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
                 console.log(`[Page] Hash changé: ${previousHash} → ${currentHash}`);
-                setShowEdtChangeToast(true);
+                
+                // Déterminer si les changements concernent la semaine actuellement affichée
+                let changesInCurrentWeek = false;
+                
+                if (selectedWeek) {
+                    // Calculer la plage de dates de la semaine affichée
+                    const weekStart = new Date(selectedWeek);
+                    weekStart.setHours(0, 0, 0, 0);
+                    const weekEnd = new Date(selectedWeek);
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    weekEnd.setHours(23, 59, 59, 999);
+                    
+                    // Vérifier si un des changements concerne cette semaine
+                    const isEventInWeek = (event) => {
+                        if (!event || !event.start) return false;
+                        const eventDate = new Date(event.start);
+                        return eventDate >= weekStart && eventDate <= weekEnd;
+                    };
+                    
+                    // Vérifier les événements ajoutés, modifiés ou supprimés
+                    const addedInWeek = diff.added.some(isEventInWeek);
+                    const updatedInWeek = diff.updated.some(ev => isEventInWeek(ev.after || ev));
+                    const removedInWeek = diff.removed.some(isEventInWeek);
+                    
+                    changesInCurrentWeek = addedInWeek || updatedInWeek || removedInWeek;
+                    
+                    if (changesInCurrentWeek) {
+                        console.log(`[Page] Changements dans la semaine affichée (${selectedWeek.toLocaleDateString()})`);
+                    } else {
+                        console.log(`[Page] Changements HORS de la semaine affichée (${selectedWeek.toLocaleDateString()})`);
+                    }
+                }
+                
+                // Afficher la notification appropriée
+                if (changesInCurrentWeek) {
+                    // Changement cette semaine → Message spécifique
+                    setShowEdtChangeToast(true);
+                    setEdtChangeToastMessage('current-week'); // Message : "Un changement a été détecté cette semaine"
+                } else {
+                    // Changement ailleurs → Message général
+                    setShowEdtChangeToast(true);
+                    setEdtChangeToastMessage('general'); // Message : "Votre emploi du temps a été mis à jour"
+                }
                 
                 // Sauvegarder le nouveau hash pour la prochaine fois
                 if (currentHash && typeof window !== 'undefined') {
@@ -1430,7 +1473,9 @@ function HomeContent({searchParams}) {
                 </div>
             )}
             <Toast
-                message={t('page.edtChangeDetected')}
+                message={edtChangeToastMessage === 'current-week' 
+                    ? t('page.edtChangeDetected') 
+                    : t('page.edtChangeGeneral')}
                 isVisible={showEdtChangeToast}
                 onClose={() => setShowEdtChangeToast(false)}
             />

@@ -467,6 +467,7 @@
     "lastUpdate": "Updated on:",
     "lastUpdateToday": "Today",
     "edtChangeDetected": "A change was detected for this week.",
+    "edtChangeGeneral": "Your schedule has been updated.",
     "edtUpdatingOverlay": "Updating the schedule...",
     "edtWaitSync": "Checking for schedule updates...",
     "edtLoadingFirst": "Loading your schedule..."

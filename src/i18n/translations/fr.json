@@ -467,6 +467,7 @@
     "lastUpdate": "EDT à jour le :",
     "lastUpdateToday": "Aujourd'hui",
     "edtChangeDetected": "Un changement a été détecté cette semaine.",
+    "edtChangeGeneral": "Votre emploi du temps a été mis à jour.",
     "edtUpdatingOverlay": "Mise à jour de l'emploi du temps…",
     "edtWaitSync": "Vérification des mises à jour de l'emploi du temps…",
     "edtLoadingFirst": "Chargement de l'emploi du temps..."
