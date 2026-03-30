@@ -40,9 +40,9 @@ export async function GET() {
     try {
         const supabase = getSupabaseServerClient();
         if (supabase) {
-            // Read initial versions from events_versions (version_no = 1)
+            // Read initial versions from edt_events_versions (version_no = 1)
             const { data, error } = await supabase
-                .from('events_versions')
+                .from('edt_events_versions')
                 .select('uid, version_no, changed_at, summary, start, end_time, location, description')
                 .eq('version_no', 1)
                 .order('changed_at', { ascending: false });

@@ -18,7 +18,7 @@ export async function GET(req) {
         const uid = searchParams.get('uid'); // filter by specific uid optional
 
         let query = supabase
-            .from('events_versions')
+            .from('edt_events_versions')
             .select('uid, version_no, changed_at, summary, start, end_time, location, description')
             .order('changed_at', { ascending: false })
             .limit(limit);

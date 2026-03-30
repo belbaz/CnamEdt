@@ -88,7 +88,7 @@ export async function GET(request) {
             try {
                 const LIMIT = 10000;
                 const { data, error } = await supabase
-                    .from('events_versions')
+                    .from('edt_events_versions')
                     .select('uid, summary, start, end_time, location, description')
                     .order('uid', { ascending: true })
                     .order('version_no', { ascending: false })

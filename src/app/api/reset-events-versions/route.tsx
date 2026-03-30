@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * ⚠️ DANGER: Cette route vide la table events_versions
+ * ⚠️ DANGER: Cette route vide la table edt_events_versions
  * À utiliser uniquement pour réinitialiser le système de tracking des changements
  * 
  * Usage: GET /api/reset-events-versions?confirm=true
@@ -19,7 +19,7 @@ export async function GET(req) {
         if (confirm !== 'true') {
             return NextResponse.json({
                 error: 'Missing confirmation',
-                message: 'Pour vider la table events_versions, ajouter ?confirm=true',
+                message: 'Pour vider la table edt_events_versions, ajouter ?confirm=true',
                 warning: '⚠️ Cette opération est irréversible et supprimera tout l\'historique des changements'
             }, { status: 400 });
         }
@@ -33,7 +33,7 @@ export async function GET(req) {
         
         // Compter les lignes avant suppression
         const { count: beforeCount, error: countError } = await supabase
-            .from('events_versions')
+            .from('edt_events_versions')
             .select('*', { count: 'exact', head: true });
         
         if (countError) {
@@ -45,7 +45,7 @@ export async function GET(req) {
         
         // Supprimer toutes les lignes
         const { error: deleteError } = await supabase
-            .from('events_versions')
+            .from('edt_events_versions')
             .delete()
             .neq('uid', '__IMPOSSIBLE_VALUE__'); // Condition toujours vraie pour tout supprimer
         
@@ -56,11 +56,11 @@ export async function GET(req) {
             }, { status: 500 });
         }
         
-        console.log('[reset-events-versions] Deleted', beforeCount, 'rows from events_versions');
+        console.log('[reset-events-versions] Deleted', beforeCount, 'rows from edt_events_versions');
         
         return NextResponse.json({
             success: true,
-            message: 'Table events_versions vidée avec succès',
+            message: 'Table edt_events_versions vidée avec succès',
             rows_deleted: beforeCount,
             next_step: 'Rechargez l\'application pour re-synchroniser tous les événements'
         });

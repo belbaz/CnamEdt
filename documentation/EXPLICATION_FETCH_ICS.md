@@ -5,7 +5,7 @@
 Le système utilise **2 tables Supabase** pour optimiser les performances et tracker l'historique des changements de l'emploi du temps :
 
 1. **`ics_history`** : Historique global des changements (liste des matières)
-2. **`events_versions`** : Historique détaillé de chaque cours individuel avec versioning
+2. **`edt_events_versions`** : Historique détaillé de chaque cours individuel avec versioning
 
 **Principe** : Ne mettre à jour la base de données **que lorsqu'il y a de vrais changements** !
 
@@ -61,13 +61,13 @@ CREATE TABLE ics_history (
 
 ---
 
-### 2️⃣ Table `events_versions` - Historique détaillé par cours
+### 2️⃣ Table `edt_events_versions` - Historique détaillé par cours
 
 **Rôle** : Stocke **chaque version** de **chaque cours** quand son contenu change (salle, date, titre, etc.).
 
 **Structure** :
 ```sql
-CREATE TABLE events_versions (
+CREATE TABLE edt_events_versions (
     uid TEXT NOT NULL,
     version_no INTEGER NOT NULL,
     changed_at TIMESTAMPTZ NOT NULL,
@@ -269,7 +269,7 @@ if (!last || last.fingerprint !== fingerprint) {
 }
 ```
 
-#### Étape 2.3 : Mettre à jour `events_versions` (pour chaque cours modifié)
+#### Étape 2.3 : Mettre à jour `edt_events_versions` (pour chaque cours modifié)
 
 **⚠️ C'EST ICI QUE LA MAGIE OPÈRE !**
 
@@ -321,7 +321,7 @@ for (const event of events) {
 
 // Insérer les nouvelles versions en batch
 if (inserts.length > 0) {
-    await supabase.from('events_versions').insert(inserts);
+    await supabase.from('edt_events_versions').insert(inserts);
 }
 ```
 
@@ -407,7 +407,7 @@ Quand `useDevMode()` est actif, une notification s'affiche après chaque synchro
 2. Hash = "abc123" (aucun hash en DB)
 3. Parse le fichier → 265 événements
 4. Tous les événements sont nouveaux !
-5. Insère 265 lignes dans events_versions (version_no = 1)
+5. Insère 265 lignes dans edt_events_versions (version_no = 1)
 6. Insère 1 ligne dans ics_history
 ```
 
@@ -433,7 +433,7 @@ Quand `useDevMode()` est actif, une notification s'affiche après chaque synchro
 ```
 1. Télécharge le fichier ICS
 2. Hash = "abc123" (identique !)
-3. Récupère les événements depuis events_versions
+3. Récupère les événements depuis edt_events_versions
 4. ✅ Retourne immédiatement, aucune insertion !
 ```
 
@@ -459,7 +459,7 @@ Quand `useDevMode()` est actif, une notification s'affiche après chaque synchro
 4. Compare les hashs :
    - 264 événements inchangés → Ne rien faire
    - 1 événement modifié → Insérer version 2
-5. Insère 1 ligne dans events_versions (version_no = 2)
+5. Insère 1 ligne dans edt_events_versions (version_no = 2)
 ```
 
 **Logs** :
@@ -510,14 +510,14 @@ Si vous voyez :
 
 À chaque rechargement, c'est qu'il y a un problème !
 
-**Solution** : Vider la table `events_versions` pour réinitialiser avec le nouveau système de hash :
+**Solution** : Vider la table `edt_events_versions` pour réinitialiser avec le nouveau système de hash :
 
 ```bash
 # Via l'API
 curl "http://localhost:3000/api/reset-events-versions?confirm=true"
 
 # Ou via Supabase Dashboard
-DELETE FROM events_versions;
+DELETE FROM edt_events_versions;
 ```
 
 Puis rechargez l'application 2 fois. La deuxième fois devrait afficher `changes: 0` ✅
@@ -535,7 +535,7 @@ Puis rechargez l'application 2 fois. La deuxième fois devrait afficher `changes
 GET /api/reset-events-versions?confirm=true
 ```
 
-**Effet** : Vide la table `events_versions` (pour repartir de zéro)
+**Effet** : Vide la table `edt_events_versions` (pour repartir de zéro)
 
 ⚠️ **Attention** : Cela supprime tout l'historique des changements !
 
@@ -551,7 +551,7 @@ Activer le mode dev pour voir la notification :
 ## 💡 Résumé en 3 points
 
 1. **`ics_history`** détecte rapidement si le fichier ICS a changé (comparaison de hash)
-2. **`events_versions`** stocke chaque version de chaque cours (versioning intelligent)
+2. **`edt_events_versions`** stocke chaque version de chaque cours (versioning intelligent)
 3. **Optimisation** : Hash identique → cache, hash différent → parse et compare cours par cours
 
 **Le système ne met à jour que ce qui a vraiment changé !** 🎯
@@ -564,7 +564,7 @@ Si vous voyez encore des mises à jour massives après avoir suivi les étapes :
 
 1. Vérifiez les logs du serveur (backend)
 2. Vérifiez la console du navigateur (frontend)
-3. Vérifiez que la table `events_versions` a été vidée
+3. Vérifiez que la table `edt_events_versions` a été vidée
 4. Vérifiez que vous avez bien rechargé l'application 2 fois
 
 Le système devrait maintenant fonctionner parfaitement ! 🚀
