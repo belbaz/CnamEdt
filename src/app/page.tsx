@@ -406,9 +406,34 @@ function HomeContent({searchParams}) {
 
             const totalChanges = diff.added.length + diff.updated.length + diff.removed.length;
 
-            if (totalChanges > 0 && hadEventsBefore && !isReallyOffline) {
-                console.log(`[Page] Changements détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
+            // OPTIMISATION : Ne montrer la notification QUE si le hash a vraiment changé
+            // Comparer avec le hash précédent dans localStorage
+            const previousHash = typeof window !== 'undefined' ? localStorage.getItem('lastNotificationHash') : null;
+            const currentHash = meta.hash || null;
+            const hashHasChanged = currentHash && previousHash && currentHash !== previousHash;
+            
+            // Afficher la notification seulement si :
+            // 1. Il y a des changements détectés
+            // 2. Il y avait des events avant
+            // 3. On n'est pas hors ligne
+            // 4. ET soit le hash a changé, soit c'est la première visite (pas de hash précédent)
+            const shouldShowNotification = totalChanges > 0 && 
+                                          hadEventsBefore && 
+                                          !isReallyOffline &&
+                                          (hashHasChanged || !previousHash);
+
+            if (shouldShowNotification) {
+                console.log(`[Page] Changements RÉELS détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
+                console.log(`[Page] Hash changé: ${previousHash} → ${currentHash}`);
                 setShowEdtChangeToast(true);
+                
+                // Sauvegarder le nouveau hash pour la prochaine fois
+                if (currentHash && typeof window !== 'undefined') {
+                    localStorage.setItem('lastNotificationHash', currentHash);
+                }
+            } else if (totalChanges > 0) {
+                // Des changements sont détectés mais le hash est identique = faux positif
+                console.log(`[Page] Changements ignorés (cache backend vide, hash identique): ${totalChanges} changes, hash: ${currentHash}`);
             }
 
             // Afficher une notification de debug en mode dev
