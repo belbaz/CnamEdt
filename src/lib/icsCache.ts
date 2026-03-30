@@ -11,7 +11,21 @@
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Cache global (partagé entre toutes les requêtes de cette instance)
-const cache = {
+const cache: {
+    parsedICS: {
+        hash: string | null;
+        events: any[] | null;
+        timestamp: number;
+    };
+    latestEventMap: {
+        data: Map<string, any> | null;
+        timestamp: number;
+    };
+    icsHistory: {
+        data: any | null;
+        timestamp: number;
+    };
+} = {
     // Cache du fichier ICS parsé
     parsedICS: {
         hash: null,

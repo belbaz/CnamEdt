@@ -22,7 +22,7 @@ const fileCountsGlobalCache = {
 export function useFileCounts(uids = [], delay = 0) {
     const [fileCounts, setFileCounts] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<Error | null>(null);
 
     const fetchFileCounts = useCallback(async () => {
         if (!uids || uids.length === 0) {
@@ -73,7 +73,7 @@ export function useFileCounts(uids = [], delay = 0) {
             }
         } catch (err) {
             console.error("[useFileCounts] Erreur chargement compteurs fichiers:", err);
-            setError(err);
+            setError(err instanceof Error ? err : new Error(String(err)));
             setFileCounts({});
         } finally {
             setIsLoading(false);

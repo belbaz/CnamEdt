@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack --experimental-https",
     "prebuild": "node scripts/pre-build.js",
-    "build": "node scripts/pre-build.js; next build",
+    "build": "node scripts/pre-build.js && next build",
     "postinstall": "node scripts/pre-build.js",
     "start": "next start",
     "icons:web": "node scripts/generate-favicons.js",
