@@ -30,36 +30,49 @@ export async function POST(request) {
             return NextResponse.json({ counts: {} });
         }
 
-        // Récupérer tous les fichiers pour ces cours
-        // Note: On récupère juste les course_uid pour compter
+        // OPTIMISATION : Utiliser une requête SQL avec GROUP BY pour compter côté base de données
+        // Au lieu de récupérer toutes les lignes et compter en JavaScript,
+        // on demande à PostgreSQL de faire le comptage directement.
+        // Cela réduit drastiquement le volume de données transférées.
         const { data, error } = await supabase
-            .from('edt_course_files')
-            .select('course_uid')
-            .in('course_uid', course_uids);
+            .rpc('count_files_by_courses', { course_uid_list: course_uids });
 
         if (error) {
-            console.error(`${LOG_PREFIX} Erreur récupération fichiers:`, error);
+            // Si la fonction RPC n'existe pas encore, fallback sur l'ancienne méthode
+            if (error.code === '42883' || error.message?.includes('does not exist')) {
+                console.warn(`${LOG_PREFIX} RPC function not found, using fallback method`);
+                return await fallbackCountMethod(supabase, course_uids);
+            }
+            
+            console.error(`${LOG_PREFIX} Erreur récupération compteurs:`, error);
             return NextResponse.json(
                 { error: "Erreur lors du comptage des fichiers" },
                 { status: 500 }
             );
         }
 
-        // Compter les fichiers par cours
+        // Transformer le résultat en objet { course_uid: count }
         const counts = {};
-        // Initialiser à 0
+        // Initialiser tous les cours à 0
         course_uids.forEach(uid => counts[uid] = 0);
-
-        // Compter
-        data.forEach(file => {
-            if (counts[file.course_uid] !== undefined) {
-                counts[file.course_uid]++;
-            }
-        });
+        
+        // Remplir avec les vrais compteurs
+        if (data && Array.isArray(data)) {
+            data.forEach(row => {
+                counts[row.course_uid] = row.count || 0;
+            });
+        }
 
         return NextResponse.json({
             success: true,
             counts
+        }, {
+            headers: {
+                // Cache la réponse pendant 5 minutes côté client
+                'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
+                // Permettre le stockage en cache par les CDN
+                'CDN-Cache-Control': 'public, max-age=300',
+            }
         });
 
     } catch (error) {
@@ -69,5 +82,34 @@ export async function POST(request) {
             { status: 500 }
         );
     }
+}
+
+// Méthode de fallback si la fonction RPC n'existe pas
+async function fallbackCountMethod(supabase, course_uids) {
+    const { data, error } = await supabase
+        .from('edt_course_files')
+        .select('course_uid')
+        .in('course_uid', course_uids);
+
+    if (error) {
+        console.error(`${LOG_PREFIX} Erreur récupération fichiers (fallback):`, error);
+        return NextResponse.json(
+            { error: "Erreur lors du comptage des fichiers" },
+            { status: 500 }
+        );
+    }
+
+    const counts = {};
+    course_uids.forEach(uid => counts[uid] = 0);
+    data.forEach(file => {
+        if (counts[file.course_uid] !== undefined) {
+            counts[file.course_uid]++;
+        }
+    });
+
+    return NextResponse.json({
+        success: true,
+        counts
+    });
 }
 

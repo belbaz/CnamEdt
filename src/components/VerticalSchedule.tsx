@@ -10,6 +10,7 @@ import EventCard from "./Timeline/EventCard";
 import Tooltip from "./Tooltip";
 import "./VerticalSchedule.css";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
+import { useFileCounts } from "@/hooks/useFileCounts";
 
 export default function VerticalSchedule({
     events,
@@ -184,41 +185,13 @@ export default function VerticalSchedule({
         }
     }, [events]);
 
-    // Charger les compteurs de fichiers en batch
-    const [fileCounts, setFileCounts] = useState({});
-
-    useEffect(() => {
-        if (!events || events.length === 0) {
-            setFileCounts({});
-            return;
-        }
-
-        const fetchFileCounts = async () => {
-            try {
-                // Récupérer les UIDs uniques
-                const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
-
-                if (uids.length === 0) return;
-
-                const response = await fetch('/api/files/batch-counts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ course_uids: uids })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    setFileCounts(data.counts || {});
-                }
-            } catch (err) {
-                console.error("[VerticalSchedule] Erreur chargement compteurs fichiers:", err);
-            }
-        };
-
-        fetchFileCounts();
+    // Charger les compteurs de fichiers en batch avec cache optimisé
+    const uids = useMemo(() => {
+        if (!events || events.length === 0) return [];
+        return [...new Set(events.filter(e => e.uid).map(e => e.uid))];
     }, [events]);
+    
+    const { fileCounts } = useFileCounts(uids);
 
     useEffect(() => {
         if (isMobile || days.length === 0) {

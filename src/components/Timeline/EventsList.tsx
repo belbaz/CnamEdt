@@ -1,10 +1,11 @@
 // @ts-nocheck
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import EventCard from "./EventCard";
 import { getEventPosition, getEventPositionVertical } from "@/utils/timelineUtils";
 import { getCompactModeValues } from "@/utils/compactModeUtils";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
+import { useFileCounts } from "@/hooks/useFileCounts";
 import "./EventsList.css";
 
 export default function EventsList({
@@ -88,48 +89,15 @@ export default function EventsList({
         };
     }, [events, isTabletOrDesktop, dayHeightFactor, cardTopPadding, eventsContainerPadding]);
 
-    // Charger les compteurs de fichiers en batch
+    // Charger les compteurs de fichiers en batch avec cache optimisé
     // Différer le chargement pour éviter le lag lors de l'ouverture d'un jour
-    const [fileCounts, setFileCounts] = useState({});
-
-    useEffect(() => {
-        if (!events || events.length === 0) {
-            setFileCounts({});
-            return;
-        }
-
-        // Différer le chargement des compteurs de fichiers pour laisser l'animation se terminer
-        // Cela évite le lag lors de l'ouverture d'un jour
-        const timeoutId = setTimeout(() => {
-            const fetchFileCounts = async () => {
-                try {
-                    // Récupérer les UIDs uniques
-                    const uids = [...new Set(events.filter(e => e.uid).map(e => e.uid))];
-
-                    if (uids.length === 0) return;
-
-                    const response = await fetch('/api/files/batch-counts', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ course_uids: uids })
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        setFileCounts(data.counts || {});
-                    }
-                } catch (err) {
-                    console.error("[EventsList] Erreur chargement compteurs fichiers:", err);
-                }
-            };
-
-            fetchFileCounts();
-        }, 350); // Attendre la fin de l'animation (300ms + 50ms de marge)
-
-        return () => clearTimeout(timeoutId);
+    const uids = useMemo(() => {
+        if (!events || events.length === 0) return [];
+        return [...new Set(events.filter(e => e.uid).map(e => e.uid))];
     }, [events]);
+    
+    // Délai de 350ms pour laisser l'animation se terminer (300ms + 50ms de marge)
+    const { fileCounts } = useFileCounts(uids, 350);
 
     const containerStyle = isMobile
         ? { height: `${totalMinutes}px` }
