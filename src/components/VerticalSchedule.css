@@ -852,7 +852,7 @@
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(66, 153, 225, 1);
+    background: rgba(66, 153, 225, .60);
     pointer-events: none;
     z-index: 10;
     transition: height 0.3s ease, opacity 0.4s ease;
