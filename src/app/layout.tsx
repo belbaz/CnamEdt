@@ -68,7 +68,7 @@ export default function RootLayout({ children }) {
                         __html: `
                     (function() {
                         try {
-                            // Exposer le canal et la version au runtime (renforcé pour Capacitor/file:)
+                            // Exposer le canal et la version au runtime
                             window.__APP_CHANNEL = ${JSON.stringify(process.env.NEXT_PUBLIC_ENV || 'prod')};
                             window.__APP_VERSION = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_VERSION || '')};
                             window.__ACTIVE_CACHE = ${JSON.stringify(IS_CACHE_ENABLED)};

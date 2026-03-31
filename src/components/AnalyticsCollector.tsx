@@ -216,21 +216,11 @@ export default function AnalyticsCollector() {
             }
         });
 
-        // Récupérer la version du site depuis l'API
-        const fetchSiteVersion = async () => {
-            try {
-                const response = await fetch('/api/version', {
-                    method: 'GET',
-                    cache: 'no-store'
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.version) {
-                        siteVersionRef.current = data.version;
-                    }
-                }
-            } catch (error) {
-                console.warn(`${LOG_PREFIX} Impossible de récupérer la version depuis l'API:`, error);
+        // Récupérer la version du site depuis package.json
+        const fetchSiteVersion = () => {
+            const pkgVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+            if (pkgVersion) {
+                siteVersionRef.current = pkgVersion;
             }
         };
         fetchSiteVersion();

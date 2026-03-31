@@ -128,25 +128,18 @@ export default function SettingsMenu({
     // Le bouton update reste visible sur mobile/PWA
     const showUpdateButton = devMode ? true : (isMobile || isPWAInstalled);
 
-    // Récupérer la version depuis l'API ou utiliser currentVersion
+    // Récupérer la version depuis currentVersion ou package.json
     useEffect(() => {
         if (currentVersion) {
             setVersion(currentVersion);
-        } else if (!isPWAInstalled && typeof window !== 'undefined') {
-            // Pour le web, récupérer depuis l'API (canal unique)
-            const apiUrl = `/api/version`;
-            fetch(apiUrl)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.version) {
-                        setVersion(data.version);
-                    }
-                })
-                .catch(() => {
-                    // En cas d'erreur, garder null
-                });
+        } else {
+            // Utiliser la version depuis package.json
+            const pkgVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+            if (pkgVersion) {
+                setVersion(pkgVersion);
+            }
         }
-    }, [isPWAInstalled, currentVersion]);
+    }, [currentVersion]);
 
 
     useEffect(() => {

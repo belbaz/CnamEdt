@@ -20,7 +20,8 @@ export function useNetworkStatus() {
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-                await fetch('/api/version', { 
+                // Ping vers la route ICS pour vérifier la connexion
+                await fetch('/api/fetch-ics', { 
                     method: 'HEAD', 
                     cache: 'no-cache', 
                     signal: controller.signal 

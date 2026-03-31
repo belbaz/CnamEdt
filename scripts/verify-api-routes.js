@@ -14,9 +14,7 @@ console.log('✓ Dossier API trouvé:', apiDir);
 
 // Vérifier les routes API
 const routes = [
-  { path: 'version/route.js', name: '/api/version' },
-  { path: 'fetch-ics/route.js', name: '/api/fetch-ics' },
-  { path: 'download/apk/route.js', name: '/api/download/apk' }
+  { path: 'fetch-ics/route.js', name: '/api/fetch-ics' }
 ];
 
 let allValid = true;

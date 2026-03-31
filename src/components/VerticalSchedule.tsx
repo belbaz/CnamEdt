@@ -75,7 +75,7 @@ export default function VerticalSchedule({
                 
                 // Si c'est le dernier jour ouvert, ne pas le fermer
                 if (openDaysCount <= 1) {
-                    console.log('[VerticalSchedule] Impossible de fermer le dernier jour ouvert');
+                    //console.log('[VerticalSchedule] Impossible de fermer le dernier jour ouvert');
                     // Afficher le toast d'avertissement
                     setShowWarningToast(true);
                     // Masquer automatiquement après 3 secondes

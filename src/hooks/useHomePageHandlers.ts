@@ -116,7 +116,7 @@ export function useHomePageHandlers({
             
             // Si c'est le dernier jour ouvert, ne pas le fermer
             if (openDaysCount <= 1) {
-                console.log('[HandleToggleDay] Impossible de fermer le dernier jour ouvert');
+                //console.log('[HandleToggleDay] Impossible de fermer le dernier jour ouvert');
                 // Afficher le toast d'avertissement
                 if (setShowDayWarningToast) {
                     setShowDayWarningToast(true);

@@ -295,13 +295,10 @@ export function setTestWeekMode(enabled: boolean): void {
  * Récupère les événements selon le mode (test ou normal)
  */
 export async function getEvents(
-  isNative: boolean,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  CapacitorHttp: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fetchICSEvents: any,
 ): Promise<CourseEvent[]> {
   console.log("[Normal Mode] Fetching real data");
-  return await fetchICSEvents(isNative, CapacitorHttp);
+  return await fetchICSEvents();
 }
 

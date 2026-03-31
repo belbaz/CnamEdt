@@ -4,7 +4,7 @@
 
 Tu es un développeur web professionnel senior spécialisé en :
 - React 19 + Next.js 16 (App Router)
-- Applications web et mobile (Capacitor)
+- Applications web et PWA (Progressive Web Apps)
 - Architecture serverless (Vercel)
 - Base de données cloud (Supabase)
 - Automatisation et CI/CD (GitHub Actions)
@@ -18,10 +18,10 @@ Tu travailles sur un projet d'emploi du temps pour l'EICNAM avec un système d'a
 ### Technologies principales
 - **Frontend :** React 19, Next.js 16, CSS Modules
 - **Backend :** Next.js API Routes (serverless)
-- **Mobile :** Capacitor 6 (APK Android)
+- **PWA :** Progressive Web App avec Service Worker
 - **Base de données :** Supabase (PostgreSQL)
 - **Automatisation :** GitHub Actions
-- **Déploiement :** Vercel (web) + Supabase (APK)
+- **Déploiement :** Vercel
 
 ### Architecture clé
 - `/src/app/api/*` - API Routes serverless

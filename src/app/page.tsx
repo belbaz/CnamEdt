@@ -27,7 +27,6 @@ import Toast from "@/components/Toast";
 import DayBlock from "@/components/DayBlock";
 import VerticalSchedule from "@/components/VerticalSchedule";
 import ScrollToTop from "@/components/ScrollToTop";
-import PWAUpdateChecker from "@/components/PWAUpdateChecker";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import UpdateBanner from "@/components/UpdateBanner";
 import Footer from "@/components/Footer";
@@ -46,7 +45,6 @@ import {generateEventKey} from "@/utils/eventModalUtils";
 
 /**
  * Délai max sur UNE tentative de `fetchICSEvents()` → `/api/fetch-ics` uniquement.
- * (Ne s'applique pas à `/api/version` ni aux autres requêtes.)
  */
 const FETCH_ICS_TIMEOUT_MS = 4000;
 /** Durée min. d’affichage du libellé « Chargement de l'emploi du temps » (pas de cache). */
@@ -353,8 +351,8 @@ function HomeContent({searchParams}) {
                     // Timeout court (2s) pour ne pas bloquer l'UI trop longtemps
                     const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-                    // Utiliser un paramètre aléatoire pour contourner le cache SW
-                    await fetch('/api/version?t=' + Date.now(), {
+                    // Ping vers l'API fetch-ics pour vérifier le serveur
+                    await fetch('/api/fetch-ics', {
                         method: 'HEAD',
                         cache: 'no-store',
                         signal: controller.signal
@@ -828,8 +826,6 @@ function HomeContent({searchParams}) {
             document.querySelector('.map-viewer-overlay') ||
             document.querySelector('.subject-hours-modal-overlay') ||
             document.querySelector('.filter-overlay') ||
-            document.querySelector('.apk-popup-overlay') ||
-            document.querySelector('.update-popup-overlay') ||
             document.querySelector('.permission-request-overlay') ||
             // DevToolsButton utilise CSS Modules, on vérifie la présence d'un élément avec aria-modal
             document.querySelector('[aria-modal="true"]')
@@ -1487,8 +1483,6 @@ function HomeContent({searchParams}) {
                     </div>
                 </div>
             )}
-            {/* Vérification des mises à jour PWA */}
-            <PWAUpdateChecker/>
 
             {/* Bannière de mise à jour (is_update) */}
             <UpdateBanner/>

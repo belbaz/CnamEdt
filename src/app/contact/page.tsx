@@ -44,15 +44,10 @@ function ContactRedirectContent() {
                     console.warn('[Contact] Erreur récupération IP:', error);
                 }
 
-                // Récupérer la version
-                try {
-                    const versionResponse = await fetch('/api/version', { cache: 'no-store' });
-                    if (versionResponse.ok) {
-                        const versionData = await versionResponse.json();
-                        setVersion(versionData.version);
-                    }
-                } catch (error) {
-                    console.warn('[Contact] Erreur récupération version:', error);
+                // Récupérer la version depuis package.json
+                const pkgVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+                if (pkgVersion) {
+                    setVersion(pkgVersion);
                 }
 
                 // Collecter les informations techniques (comme dans AnalyticsCollector)

@@ -13,8 +13,7 @@ export default function Footer({
                                    onToggleTestWeek = null
                                }) {
     const { t } = useI18n();
-    const [version, setVersion] = useState(null);
-    const [isDemoMode, setIsDemoMode] = useState(false); // Pour éviter les erreurs d'hydratation
+    const [isDemoMode, setIsDemoMode] = useState(false);
     const devMode = useDevMode();
     
     // Vérifier le mode démo côté client uniquement (après le montage)
@@ -24,26 +23,8 @@ export default function Footer({
         setIsDemoMode(hostname === 'demo-edt.vercel.app' || envMode);
     }, []);
 
-    useEffect(() => {
-        const fetchVersion = async () => {
-            try {
-                const res = await fetch('/api/version');
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
-                }
-                const data = await res.json();
-                if (data.version) {
-                    setVersion(data.version);
-                }
-            } catch (err) {
-                console.error("Failed to fetch version:", err);
-                // Ne pas afficher d'erreur, simplement ne pas afficher la version
-                setVersion(null);
-            }
-        };
-
-        fetchVersion();
-    }, []); // ← exécute une seule fois au montage
+    // Version depuis package.json
+    const version = process.env.NEXT_PUBLIC_APP_VERSION || null;
 
     return (
         <footer className="app-footer">

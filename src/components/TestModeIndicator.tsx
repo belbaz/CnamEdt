@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import "./TestModeIndicator.css";
 
-export default function TestModeIndicator({ currentVersion, isNative }) {
+export default function TestModeIndicator({ currentVersion }) {
     const [isTestMode, setIsTestMode] = useState(false);
 
     useEffect(() => {
@@ -12,12 +12,11 @@ export default function TestModeIndicator({ currentVersion, isNative }) {
             return;
         }
 
-        // Afficher l'indicateur UNIQUEMENT pour l'APK de test (canal de build),
-        // peu importe la bascule locale destinée aux updates.
+        // Afficher l'indicateur UNIQUEMENT pour le canal de test
         const channel = (typeof window !== 'undefined' && window.__APP_CHANNEL) || process.env.NEXT_PUBLIC_ENV || 'prod';
         const isTestChannel = channel === 'test';
         setIsTestMode(isTestChannel);
-    }, [currentVersion, isNative]);
+    }, [currentVersion]);
 
     if (!isTestMode) {
         return null;

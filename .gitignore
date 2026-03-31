@@ -37,29 +37,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Capacitor & Mobile
-android/
-ios/
-.capacitor/
-.api_temp/
-
-# Gradle
-.gradle/
-build/
-*.apk
-*.aab
-
-# Android Studio
-.idea/
-*.iml
-local.properties
-
 # Logs
 *.log
- 
-# Cle de signature (NE PAS COMMITER) 
-*.keystore 
-android/keystore.properties 
-edt-cnam-release-key.keystore 
 
 certificates
