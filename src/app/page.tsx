@@ -119,6 +119,7 @@ function HomeContent({searchParams}) {
     const [edtRemoteUpdateOverlay, setEdtRemoteUpdateOverlay] = useState(false);
     const [showEdtChangeToast, setShowEdtChangeToast] = useState(false);
     const [edtChangeToastMessage, setEdtChangeToastMessage] = useState('current-week'); // 'current-week' ou 'general'
+    const [edtChangeToastWeekLabel, setEdtChangeToastWeekLabel] = useState('');
     /** Animation d'entrée des cartes cours au premier affichage de l'EDT (une fois par visite). */
     const [entranceAnimationActive, setEntranceAnimationActive] = useState(false);
     const hasPlayedHomeEntranceRef = useRef(false);
@@ -131,6 +132,31 @@ function HomeContent({searchParams}) {
     /** Au moment du chargement : avait-on déjà des cours en cache local ? */
     const blockingLoadHadCacheRef = useRef(false);
     const blockingLoadEndTimerRef = useRef(null);
+
+    const formatWeekRangeLabel = (weekDate) => {
+        if (!weekDate) return '';
+        try {
+            const weekStart = new Date(weekDate);
+            weekStart.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+
+            const locale = language === 'en' ? 'en-GB' : 'fr-FR';
+            const startStr = weekStart.toLocaleDateString(locale, {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            const endStr = weekEnd.toLocaleDateString(locale, {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            return `${startStr} - ${endStr}`;
+        } catch (e) {
+            return '';
+        }
+    };
 
     // Notes des cours
     const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
@@ -462,10 +488,12 @@ function HomeContent({searchParams}) {
                     // Changement cette semaine → Message spécifique
                     setShowEdtChangeToast(true);
                     setEdtChangeToastMessage('current-week'); // Message : "Un changement a été détecté cette semaine"
+                    setEdtChangeToastWeekLabel(formatWeekRangeLabel(selectedWeek));
                 } else {
                     // Changement ailleurs → Message général
                     setShowEdtChangeToast(true);
                     setEdtChangeToastMessage('general'); // Message : "Votre emploi du temps a été mis à jour"
+                    setEdtChangeToastWeekLabel('');
                 }
                 
                 // Sauvegarder le nouveau hash pour la prochaine fois
@@ -1470,7 +1498,7 @@ function HomeContent({searchParams}) {
             )}
             <Toast
                 message={edtChangeToastMessage === 'current-week' 
-                    ? t('page.edtChangeDetected') 
+                    ? `${t('page.edtChangeDetected')}${edtChangeToastWeekLabel ? ` (${edtChangeToastWeekLabel})` : ''}`
                     : t('page.edtChangeGeneral')}
                 isVisible={showEdtChangeToast}
                 onClose={() => setShowEdtChangeToast(false)}
@@ -1549,36 +1577,36 @@ function HomeContent({searchParams}) {
                 {/* Affichage détaillé de l'erreur uniquement en mode dev (desktop) */}
                 {error && devMode && !isSmallScreen && (
                     <div className={styles.errorContainer}>
-                        <h3 className={styles.errorTitle}>❌ Erreur</h3>
+                        <h3 className={styles.errorTitle}>❌ {t('page.debugErrorTitle')}</h3>
                         <div className={styles.errorMessage}>
-                            <strong>Message&nbsp;:</strong> {error}
+                            <strong>{t('page.debugErrorMessage')}</strong> {error}
                         </div>
 
                         {debugInfo && (
-                            <details className={styles.debugDetails}>
+                            <details className={styles.debugDetails} open>
                                 <summary className={styles.debugSummary}>
-                                    🔍 Informations de débogage (cliquer pour voir)
+                                    🔍 {t('page.debugInfoTitle')} ({t('page.debugInfoToggle')})
                                 </summary>
                                 <div className={styles.debugContent}>
                                     <div>
-                                        <strong>PWA installée&nbsp;:</strong>{' '}
-                                        {debugInfo.isPWAInstalled ? 'Oui ✅' : 'Non ❌'}
+                                        <strong>{t('page.debugPWAInstalled')}</strong>{' '}
+                                        {debugInfo.isPWAInstalled ? `${t('page.debugYes')} ✅` : `${t('page.debugNo')} ❌`}
                                     </div>
                                     <div>
-                                        <strong>Mode standalone&nbsp;:</strong>{' '}
-                                        {debugInfo.isStandalone ? 'Oui ✅' : 'Non ❌'}
+                                        <strong>{t('page.debugStandaloneMode')}</strong>{' '}
+                                        {debugInfo.isStandalone ? `${t('page.debugYes')} ✅` : `${t('page.debugNo')} ❌`}
                                     </div>
-                                    <div><strong>Protocole&nbsp;:</strong> {debugInfo.protocol}</div>
-                                    <div><strong>URL&nbsp;:</strong> {debugInfo.href}</div>
+                                    <div><strong>{t('page.debugProtocol')}</strong> {debugInfo.protocol}</div>
+                                    <div><strong>{t('page.debugURL')}</strong> {debugInfo.href}</div>
                                     {debugInfo.fetchError && (
                                         <>
                                             <hr className={styles.debugHr}/>
-                                            <div><strong>Erreur Fetch&nbsp;:</strong> {debugInfo.fetchError}</div>
+                                            <div><strong>{t('page.debugFetchError')}</strong> {debugInfo.fetchError}</div>
                                         </>
                                     )}
                                     {debugInfo.userAgent && (
                                         <div className={styles.debugUserAgent}>
-                                            <strong>User Agent&nbsp;:</strong> {debugInfo.userAgent}
+                                            <strong>{t('page.debugUserAgent')}</strong> {debugInfo.userAgent}
                                         </div>
                                     )}
                                 </div>
@@ -1587,8 +1615,8 @@ function HomeContent({searchParams}) {
                     </div>
                 )}
 
-                {/* Affichage utilisateur simple (mobile + desktop) hors mode dev */}
-                {error && !devMode && (
+                {/* Affichage utilisateur simple (mobile + desktop), aussi en mode dev */}
+                {error && (
                     <div className={styles.smallErrorWrapper} role="status" aria-live="polite">
                         <div className={styles.smallErrorBanner}>
                             <div className={styles.smallErrorContent}>

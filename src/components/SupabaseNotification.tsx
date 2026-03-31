@@ -1,9 +1,11 @@
 // @ts-nocheck
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from '../i18n/I18nContext';
 import "./SupabaseNotification.css";
 
 export default function SupabaseNotification({ show = false, source = null }) {
+    const { t } = useI18n();
     const [showNotification, setShowNotification] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -85,11 +87,11 @@ export default function SupabaseNotification({ show = false, source = null }) {
     // Formater le timestamp pour l'affichage
     const formatLastUpdate = (timestamp) => {
         if (!timestamp) {
-            return 'Non disponible';
+            return t('supabaseNotification.notAvailable');
         }
         try {
             const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return 'Non disponible';
+            if (isNaN(date.getTime())) return t('supabaseNotification.notAvailable');
             return date.toLocaleString('fr-FR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -98,7 +100,7 @@ export default function SupabaseNotification({ show = false, source = null }) {
                 minute: '2-digit'
             });
         } catch (e) {
-            return 'Non disponible';
+            return t('supabaseNotification.notAvailable');
         }
     };
 
@@ -121,11 +123,11 @@ export default function SupabaseNotification({ show = false, source = null }) {
     }
 
     // Déterminer le message selon la source
-    let message = "Données sauvegardées";
+    let message = t('supabaseNotification.dataSaved');
     if (source === 'database-fallback') {
-        message = "Données sauvegardées";
+        message = t('supabaseNotification.dataSaved');
     } else if (source === 'force-db' || source === 'database') {
-        message = "Données sauvegardées";
+        message = t('supabaseNotification.dataSaved');
     }
 
     return (
@@ -146,7 +148,7 @@ export default function SupabaseNotification({ show = false, source = null }) {
             {showModal && (
                 <div className="supabase-modal-overlay" onClick={handleCloseModal}>
                     <div className="supabase-modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button className="supabase-modal-close" onClick={handleCloseModal} aria-label="Fermer">
+                        <button className="supabase-modal-close" onClick={handleCloseModal} aria-label={t('supabaseNotification.closeModal')}>
                             ×
                         </button>
                         <div className="supabase-modal-header">
@@ -156,19 +158,19 @@ export default function SupabaseNotification({ show = false, source = null }) {
                                 <path d="M3 5v14c0 1.1 4.03 2 9 2s9-.9 9-2V5" stroke="currentColor" strokeWidth="2" fill="none"/>
                                 <ellipse cx="12" cy="19" rx="9" ry="2" fill="currentColor" opacity="0.9"/>
                             </svg>
-                            <h2 className="supabase-modal-title">Données sauvegardées</h2>
+                            <h2 className="supabase-modal-title">{t('supabaseNotification.modalTitle')}</h2>
                         </div>
                         <div className="supabase-modal-body">
                             <p className="supabase-modal-message">
-                                Nous n'avons pas pu accéder au site de l'emploi du temps car il n'est pas disponible.
+                                {t('supabaseNotification.noAccessMessage')}
                             </p>
                             <p className="supabase-modal-message">
-                                Nous avons récupéré les derniers cours qui sont dans la base de données.
+                                {t('supabaseNotification.recoveredDataMessage')}
                             </p>
                             <div className="supabase-modal-info">
-                                <p className="supabase-modal-label">Dernière mise à jour des données :</p>
+                                <p className="supabase-modal-label">{t('supabaseNotification.lastUpdateLabel')}</p>
                                 <p className="supabase-modal-date">
-                                    {loadingDate ? 'Chargement...' : formatLastUpdate(lastDbUpdate)}
+                                    {loadingDate ? t('supabaseNotification.loading') : formatLastUpdate(lastDbUpdate)}
                                 </p>
                             </div>
                         </div>

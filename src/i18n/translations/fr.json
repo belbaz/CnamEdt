@@ -470,7 +470,19 @@
     "edtChangeGeneral": "Votre emploi du temps a été mis à jour.",
     "edtUpdatingOverlay": "Mise à jour de l'emploi du temps…",
     "edtWaitSync": "Vérification des mises à jour de l'emploi du temps…",
-    "edtLoadingFirst": "Chargement de l'emploi du temps..."
+    "edtLoadingFirst": "Chargement de l'emploi du temps...",
+    "debugErrorTitle": "Erreur de chargement",
+    "debugErrorMessage": "Message :",
+    "debugInfoTitle": "Informations de débogage",
+    "debugInfoToggle": "Cliquer pour voir les détails",
+    "debugPWAInstalled": "PWA installée :",
+    "debugStandaloneMode": "Mode standalone :",
+    "debugProtocol": "Protocole :",
+    "debugURL": "URL :",
+    "debugFetchError": "Erreur Fetch :",
+    "debugUserAgent": "User Agent :",
+    "debugYes": "Oui",
+    "debugNo": "Non"
   },
   "examens": {
     "loading": "Chargement des examens...",
@@ -748,6 +760,16 @@
     "onlineMessage": "L'emploi du temps est à jour.",
     "lastSave": "Dernière sauvegarde :",
     "close": "Fermer"
+  },
+  "supabaseNotification": {
+    "dataSaved": "Données sauvegardées",
+    "modalTitle": "Données sauvegardées",
+    "noAccessMessage": "Nous n'avons pas pu accéder au site de l'emploi du temps car il n'est pas disponible.",
+    "recoveredDataMessage": "Nous avons récupéré les derniers cours qui sont dans la base de données.",
+    "lastUpdateLabel": "Dernière mise à jour des données :",
+    "notAvailable": "Non disponible",
+    "loading": "Chargement...",
+    "closeModal": "Fermer"
   },
   "pwaInstall": {
     "title": "Installer l'application",

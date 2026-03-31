@@ -802,6 +802,18 @@
     overflow-wrap: break-word;
 }
 
+/* Variante sombre plus lisible et contrastée */
+:global(.dark-mode) .smallErrorBanner,
+:global([data-theme="dark"]) .smallErrorBanner {
+    background: linear-gradient(
+        145deg,
+        rgba(127, 29, 29, 0.28),
+        rgba(68, 10, 10, 0.45)
+    );
+    border: 1px solid rgba(248, 113, 113, 0.55);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(239, 68, 68, 0.14) inset;
+}
+
 .smallErrorContent {
     display: flex;
     flex-direction: column;
@@ -818,10 +830,22 @@
     width: 100%;
 }
 
+:global(.dark-mode) .smallErrorTitle,
+:global([data-theme="dark"]) .smallErrorTitle {
+    color: #fecaca;
+}
+
 .smallErrorText {
     font-size: 0.84rem;
     text-align: center;
     width: 100%;
+}
+
+:global(.dark-mode) .smallErrorText,
+:global([data-theme="dark"]) .smallErrorText,
+:global(.dark-mode) .smallErrorHint,
+:global([data-theme="dark"]) .smallErrorHint {
+    color: rgba(255, 236, 236, 0.9);
 }
 
 .smallErrorHint {
@@ -849,11 +873,25 @@
     word-break: break-word;
 }
 
+:global(.dark-mode) .smallErrorLink,
+:global([data-theme="dark"]) .smallErrorLink {
+    border: 1px solid rgba(254, 202, 202, 0.65);
+    background: rgba(248, 113, 113, 0.24);
+    color: #ffe4e6;
+}
+
 .smallErrorLink:hover {
     background: rgba(248, 113, 113, 0.25);
     color: #7f1d1d;
     box-shadow: 0 3px 10px rgba(248, 113, 113, 0.3);
     transform: translateY(-1px);
+}
+
+:global(.dark-mode) .smallErrorLink:hover,
+:global([data-theme="dark"]) .smallErrorLink:hover {
+    background: rgba(252, 165, 165, 0.32);
+    color: #fff1f2;
+    box-shadow: 0 6px 14px rgba(127, 29, 29, 0.45);
 }
 
 /* Message "Pas de cours" */

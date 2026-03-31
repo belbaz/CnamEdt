@@ -470,7 +470,19 @@
     "edtChangeGeneral": "Your schedule has been updated.",
     "edtUpdatingOverlay": "Updating the schedule...",
     "edtWaitSync": "Checking for schedule updates...",
-    "edtLoadingFirst": "Loading your schedule..."
+    "edtLoadingFirst": "Loading your schedule...",
+    "debugErrorTitle": "Loading Error",
+    "debugErrorMessage": "Message:",
+    "debugInfoTitle": "Debug Information",
+    "debugInfoToggle": "Click to view details",
+    "debugPWAInstalled": "PWA installed:",
+    "debugStandaloneMode": "Standalone mode:",
+    "debugProtocol": "Protocol:",
+    "debugURL": "URL:",
+    "debugFetchError": "Fetch Error:",
+    "debugUserAgent": "User Agent:",
+    "debugYes": "Yes",
+    "debugNo": "No"
   },
   "examens": {
     "loading": "Loading exams...",
@@ -749,6 +761,16 @@
     "onlineMessage": "The schedule is up to date.",
     "lastSave": "Last save:",
     "close": "Close"
+  },
+  "supabaseNotification": {
+    "dataSaved": "Data saved",
+    "modalTitle": "Data saved",
+    "noAccessMessage": "We could not access the schedule website because it is not available.",
+    "recoveredDataMessage": "We have retrieved the latest courses that are in the database.",
+    "lastUpdateLabel": "Last data update:",
+    "notAvailable": "Not available",
+    "loading": "Loading...",
+    "closeModal": "Close"
   },
   "pwaInstall": {
     "title": "Install application",
