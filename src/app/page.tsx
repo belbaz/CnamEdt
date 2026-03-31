@@ -451,6 +451,15 @@ function HomeContent({searchParams}) {
                 console.log(`[Page] Changements RÉELS détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
                 console.log(`[Page] Hash changé: ${previousHash} → ${currentHash}`);
                 
+                // Déterminer une semaine de référence à partir des changements (fallback si selectedWeek non prêt)
+                const changedEvents = [
+                    ...(Array.isArray(diff.added) ? diff.added : []),
+                    ...(Array.isArray(diff.removed) ? diff.removed : []),
+                    ...(Array.isArray(diff.updated) ? diff.updated.map(ev => ev?.after || ev).filter(Boolean) : [])
+                ];
+                const firstChangedEvent = changedEvents.find(ev => ev && ev.start);
+                const changedWeekMonday = firstChangedEvent?.start ? getMonday(new Date(firstChangedEvent.start)) : null;
+
                 // Déterminer si les changements concernent la semaine actuellement affichée
                 let changesInCurrentWeek = false;
                 
@@ -488,7 +497,8 @@ function HomeContent({searchParams}) {
                     // Changement cette semaine → Message spécifique
                     setShowEdtChangeToast(true);
                     setEdtChangeToastMessage('current-week'); // Message : "Un changement a été détecté cette semaine"
-                    setEdtChangeToastWeekLabel(formatWeekRangeLabel(selectedWeek));
+                    const weekForToast = selectedWeek || changedWeekMonday;
+                    setEdtChangeToastWeekLabel(formatWeekRangeLabel(weekForToast));
                 } else {
                     // Changement ailleurs → Message général
                     setShowEdtChangeToast(true);
