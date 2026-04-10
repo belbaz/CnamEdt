@@ -159,14 +159,15 @@ async function fetchEventsForWeb(options = {}) {
                     console.warn('[ICS Service] HASH MISMATCH! Local:', localHash, '| Server:', serverHash);
                     console.warn('[ICS Service] Cache local obsolète → refetch forcé');
                 }
+                // Cache obsolète détecté → afficher overlay de mise à jour
+                if (cached && cached.events && cached.events.length > 0) {
+                    onStaleCache?.();
+                }
             } else {
-                console.warn('[ICS Service] Pas de cache local valide');
+                console.warn('[ICS Service] Pas de cache local valide (navigation privée ou premier chargement)');
             }
             
             // Pas de cache valide OU hash différent → Refaire une requête en forçant le parsing
-            if (cached && cached.events && cached.events.length > 0) {
-                onStaleCache?.();
-            }
             console.log('[ICS Service] Forcing server to parse ICS (cache invalide ou obsolète)');
             const lang = typeof localStorage !== 'undefined' ? (localStorage.getItem('language') || 'fr') : 'fr';
             const forceRes = await fetch(`/api/fetch-ics?force=true&lang=${encodeURIComponent(lang)}`, {

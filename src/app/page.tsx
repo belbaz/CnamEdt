@@ -279,19 +279,31 @@ function HomeContent({searchParams}) {
                 userAgent: window.navigator.userAgent.substring(0, 100)
             };
 
+            // Vérifier si on a un cache local AVANT de lancer le fetch
+            const hasLocalCache = typeof window !== 'undefined' && !!(loadEventsFromCache()?.events?.length);
+            
             let response;
             let icsTimeoutId = null;
             try {
                 const fetchPromise = fetchICSEvents({
                     onStaleCache: () => setEdtRemoteUpdateOverlay(true)
                 });
-                const timeoutPromise = new Promise((_, reject) => {
-                    icsTimeoutId = setTimeout(
-                        () => reject(new Error('FETCH_ICS_TIMEOUT')),
-                        FETCH_ICS_TIMEOUT_MS
-                    );
-                });
-                response = await Promise.race([fetchPromise, timeoutPromise]);
+                
+                // Si on a un cache local, on applique un timeout pour la synchro en arrière-plan
+                // Sinon, on attend indéfiniment car on DOIT avoir les données du serveur
+                if (hasLocalCache) {
+                    console.log('[Page] Cache local disponible → timeout de', FETCH_ICS_TIMEOUT_MS, 'ms pour la synchro');
+                    const timeoutPromise = new Promise((_, reject) => {
+                        icsTimeoutId = setTimeout(
+                            () => reject(new Error('FETCH_ICS_TIMEOUT')),
+                            FETCH_ICS_TIMEOUT_MS
+                        );
+                    });
+                    response = await Promise.race([fetchPromise, timeoutPromise]);
+                } else {
+                    console.log('[Page] Pas de cache local → attente complète du serveur (pas de timeout)');
+                    response = await fetchPromise;
+                }
             } catch (fetchError) {
                 const isTimeout = fetchError?.message === 'FETCH_ICS_TIMEOUT';
                 if (isTimeout) {
