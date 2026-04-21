@@ -463,15 +463,6 @@ function HomeContent({searchParams}) {
                 console.log(`[Page] Changements RÉELS détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
                 console.log(`[Page] Hash changé: ${previousHash} → ${currentHash}`);
                 
-                // Déterminer une semaine de référence à partir des changements (fallback si selectedWeek non prêt)
-                const changedEvents = [
-                    ...(Array.isArray(diff.added) ? diff.added : []),
-                    ...(Array.isArray(diff.removed) ? diff.removed : []),
-                    ...(Array.isArray(diff.updated) ? diff.updated.map(ev => ev?.after || ev).filter(Boolean) : [])
-                ];
-                const firstChangedEvent = changedEvents.find(ev => ev && ev.start);
-                const changedWeekMonday = firstChangedEvent?.start ? getMonday(new Date(firstChangedEvent.start)) : null;
-
                 // Déterminer si les changements concernent la semaine actuellement affichée
                 let changesInCurrentWeek = false;
                 
@@ -490,7 +481,6 @@ function HomeContent({searchParams}) {
                         return eventDate >= weekStart && eventDate <= weekEnd;
                     };
                     
-                    // Vérifier les événements ajoutés, modifiés ou supprimés
                     const addedInWeek = diff.added.some(isEventInWeek);
                     const updatedInWeek = diff.updated.some(ev => isEventInWeek(ev.after || ev));
                     const removedInWeek = diff.removed.some(isEventInWeek);
@@ -500,27 +490,22 @@ function HomeContent({searchParams}) {
                     if (changesInCurrentWeek) {
                         console.log(`[Page] Changements dans la semaine affichée (${selectedWeek.toLocaleDateString()})`);
                     } else {
-                        console.log(`[Page] Changements HORS de la semaine affichée (${selectedWeek.toLocaleDateString()})`);
+                        console.log(`[Page] Changements HORS de la semaine affichée — notification ignorée`);
                     }
                 }
                 
-                // Afficher la notification appropriée
+                // N'afficher la notification QUE si le changement concerne la semaine affichée
                 if (changesInCurrentWeek) {
-                    // Changement cette semaine → Message spécifique
                     setShowEdtChangeToast(true);
-                    setEdtChangeToastMessage('current-week'); // Message : "Un changement a été détecté cette semaine"
-                    const weekForToast = selectedWeek || changedWeekMonday;
-                    setEdtChangeToastWeekLabel(formatWeekRangeLabel(weekForToast));
-                } else {
-                    // Changement ailleurs → Message général
-                    setShowEdtChangeToast(true);
-                    setEdtChangeToastMessage('general'); // Message : "Votre emploi du temps a été mis à jour"
-                    setEdtChangeToastWeekLabel('');
+                    setEdtChangeToastMessage('current-week');
+                    setEdtChangeToastWeekLabel(formatWeekRangeLabel(selectedWeek));
                 }
+                // Changements hors semaine affichée → pas de notification (silencieux)
                 
                 // Sauvegarder le nouveau hash pour la prochaine fois
                 if (currentHash && typeof window !== 'undefined') {
                     localStorage.setItem('lastNotificationHash', currentHash);
+                    localStorage.setItem('lastEdtChangeNotificationTime', String(Date.now()));
                 }
             } else if (totalChanges > 0) {
                 // Des changements sont détectés mais le hash est identique = faux positif
