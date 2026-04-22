@@ -289,33 +289,34 @@ function HomeContent({searchParams}) {
                     onStaleCache: () => setEdtRemoteUpdateOverlay(true)
                 });
                 
-                // Si on a un cache local, on applique un timeout pour la synchro en arrière-plan
-                // Sinon, on attend indéfiniment car on DOIT avoir les données du serveur
-                if (hasLocalCache) {
-                    console.log('[Page] Cache local disponible → timeout de', FETCH_ICS_TIMEOUT_MS, 'ms pour la synchro');
-                    const timeoutPromise = new Promise((_, reject) => {
-                        icsTimeoutId = setTimeout(
-                            () => reject(new Error('FETCH_ICS_TIMEOUT')),
-                            FETCH_ICS_TIMEOUT_MS
-                        );
-                    });
-                    response = await Promise.race([fetchPromise, timeoutPromise]);
-                } else {
-                    console.log('[Page] Pas de cache local → attente complète du serveur (pas de timeout)');
-                    response = await fetchPromise;
-                }
+                // Toujours appliquer un timeout pour éviter un blocage infini en cas de perte réseau
+                // - Avec cache : timeout court (4s) pour un affichage rapide depuis le cache
+                // - Sans cache : timeout long (15s) pour laisser le temps au serveur de répondre
+                const timeoutMs = hasLocalCache ? FETCH_ICS_TIMEOUT_MS : 15000;
+                console.log('[Page] Timeout fetch ICS :', timeoutMs, 'ms (cache local :', hasLocalCache, ')');
+                const timeoutPromise = new Promise((_, reject) => {
+                    icsTimeoutId = setTimeout(
+                        () => reject(new Error('FETCH_ICS_TIMEOUT')),
+                        timeoutMs
+                    );
+                });
+                response = await Promise.race([fetchPromise, timeoutPromise]);
             } catch (fetchError) {
                 const isTimeout = fetchError?.message === 'FETCH_ICS_TIMEOUT';
                 if (isTimeout) {
                     console.warn('[Page] Timeout synchro ICS — repli sur le cache si disponible');
                 }
                 // En cas d'erreur réseau ou timeout, utiliser le cache
+                // "Hors ligne" = message retourné par le Service Worker en mode offline (HTTP 503)
                 const isNetworkError = isTimeout ||
                     !isOnline ||
                     fetchError.message.includes('Failed to fetch') ||
                     fetchError.message.includes('réseau') ||
                     fetchError.message.includes('network') ||
-                    fetchError.message.includes('fetch failed');
+                    fetchError.message.includes('fetch failed') ||
+                    fetchError.message.toLowerCase().includes('hors ligne') ||
+                    fetchError.message.includes('offline') ||
+                    fetchError.message.includes('503');
 
                 if (isNetworkError) {
                     setHasNetworkError(true);
