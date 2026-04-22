@@ -50,6 +50,8 @@ export default function ServiceWorkerRegister() {
             try {
                 const registration = await navigator.serviceWorker.register("/sw.js", {
                     scope: "/",
+                    // Ne pas utiliser le cache HTTP pour décider si sw.js a changé (sinon prod « figée »)
+                    updateViaCache: "none",
                 });
                 if (cancelled) return;
                 console.log("[SW] Service Worker enregistré, scope :", registration.scope);

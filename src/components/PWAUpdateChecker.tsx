@@ -8,6 +8,8 @@ import "./PWAUpdateChecker.css";
 const CACHE_ENV = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? "true";
 const IS_CACHE_ENABLED_BUILD = String(CACHE_ENV).toLowerCase() !== "false";
 
+const UPDATE_CHECK_INTERVAL_MS = 30_000;
+
 function isCacheEnabledClient() {
     if (typeof window === "undefined") return false;
     return typeof window.__ACTIVE_CACHE !== "undefined"
@@ -16,9 +18,8 @@ function isCacheEnabledClient() {
 }
 
 /**
- * Bannière « nouvelle version » lorsqu’un Service Worker est en attente
- * (installé mais pas encore actif — public/sw.js attend SKIP_WAITING).
- * Production uniquement (aligné sur ServiceWorkerRegister).
+ * Bannière quand un nouveau Service Worker est installé mais pas encore actif (registration.waiting).
+ * En prod, évite les courses updatefound / reg.update() et pousse des contrôles réguliers.
  */
 export default function PWAUpdateChecker() {
     const { t } = useI18n();
@@ -26,68 +27,88 @@ export default function PWAUpdateChecker() {
     const [reloading, setReloading] = useState(false);
     const registrationRef = useRef(null);
 
-    const refreshRegistration = useCallback(async () => {
+    const applyWaitingVisibility = useCallback((reg) => {
+        if (!reg) return;
+        registrationRef.current = reg;
+        setVisible(!!reg.waiting);
+    }, []);
+
+    useEffect(() => {
         if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
         if (process.env.NODE_ENV !== "production") return;
         if (!isCacheEnabledClient()) return;
 
-        try {
-            const reg = await navigator.serviceWorker.getRegistration();
-            registrationRef.current = reg;
-            if (!reg) {
-                setVisible(false);
-                return;
+        let cancelled = false;
+        /** @type {ServiceWorkerRegistration | null} */
+        let regForCleanup = null;
+        /** @type {ReturnType<typeof setInterval> | null} */
+        let intervalId = null;
+        let onUpdateFound = null;
+        let onFocus = null;
+        let onVisible = null;
+
+        const runUpdateCheck = async (reg) => {
+            if (cancelled || !reg) return;
+            try {
+                await reg.update();
+            } catch {
+                /* ignore */
             }
-            await reg.update();
-            setVisible(!!reg.waiting);
-        } catch {
-            // ignore
-        }
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-        if (process.env.NODE_ENV !== "production") return;
-        if (!isCacheEnabledClient()) return;
-
-        refreshRegistration();
-        const interval = setInterval(refreshRegistration, 60_000);
-        const onFocus = () => refreshRegistration();
-        window.addEventListener("focus", onFocus);
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener("focus", onFocus);
+            applyWaitingVisibility(reg);
         };
-    }, [refreshRegistration]);
 
-    useEffect(() => {
-        if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-        if (process.env.NODE_ENV !== "production") return;
-        if (!isCacheEnabledClient()) return;
-
-        let reg = null;
-
-        const onUpdateFound = () => {
-            const installing = reg?.installing;
-            if (!installing) return;
-            installing.addEventListener("statechange", () => {
-                if (installing.state === "installed" && navigator.serviceWorker.controller) {
-                    registrationRef.current = reg;
-                    setVisible(!!reg.waiting);
+        const watchInstalling = (reg, worker) => {
+            if (!worker) return;
+            const bump = () => {
+                if (cancelled) return;
+                if (worker.state === "installed" && navigator.serviceWorker.controller) {
+                    applyWaitingVisibility(reg);
                 }
-            });
+            };
+            worker.addEventListener("statechange", bump);
+            bump();
         };
 
-        navigator.serviceWorker.getRegistration().then((r) => {
-            reg = r;
-            registrationRef.current = r;
-            if (r) r.addEventListener("updatefound", onUpdateFound);
-        });
+        (async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (cancelled || !reg) return;
+
+            regForCleanup = reg;
+            registrationRef.current = reg;
+
+            onUpdateFound = () => {
+                watchInstalling(reg, reg.installing);
+            };
+            reg.addEventListener("updatefound", onUpdateFound);
+
+            if (reg.installing) {
+                watchInstalling(reg, reg.installing);
+            }
+
+            applyWaitingVisibility(reg);
+            await runUpdateCheck(reg);
+
+            onFocus = () => runUpdateCheck(reg);
+            window.addEventListener("focus", onFocus);
+
+            onVisible = () => {
+                if (document.visibilityState === "visible") runUpdateCheck(reg);
+            };
+            document.addEventListener("visibilitychange", onVisible);
+
+            intervalId = setInterval(() => runUpdateCheck(reg), UPDATE_CHECK_INTERVAL_MS);
+        })();
 
         return () => {
-            if (reg) reg.removeEventListener("updatefound", onUpdateFound);
+            cancelled = true;
+            if (intervalId) clearInterval(intervalId);
+            if (onFocus) window.removeEventListener("focus", onFocus);
+            if (onVisible) document.removeEventListener("visibilitychange", onVisible);
+            if (regForCleanup && onUpdateFound) {
+                regForCleanup.removeEventListener("updatefound", onUpdateFound);
+            }
         };
-    }, []);
+    }, [applyWaitingVisibility]);
 
     const handleReload = useCallback(() => {
         const reg = registrationRef.current;

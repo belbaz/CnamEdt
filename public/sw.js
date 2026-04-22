@@ -1,7 +1,10 @@
 // Service Worker pour PWA EDT EICNAM
 // Gère le cache offline et les mises à jour
 // NOTE: CACHE_VERSION est injecté automatiquement par le script pre-build.js avec la version de package.json
+// BUILD_STAMP : change à chaque build (commit / déploiement) pour que le navigateur détecte une nouvelle version
+// même si la version npm n’a pas été bumpée — sinon pas de worker « waiting » → pas de bannière PWA.
 
+const BUILD_STAMP = "1dd9b97";
 const CACHE_VERSION = '2.1.99'; // Sera remplacé automatiquement par pre-build.js
 const CACHE_NAME = `edt-pwa-${CACHE_VERSION}`;
 const DATA_CACHE_NAME = `edt-data-${CACHE_VERSION}`;
@@ -16,6 +19,9 @@ const APP_SHELL = [
   '/favicon.svg',
   '/manifest.webmanifest'
 ];
+
+// Référencer BUILD_STAMP pour que le fichier diffère à chaque build (évite l’élimination dead-code)
+console.log('[SW] build:', typeof BUILD_STAMP !== 'undefined' ? BUILD_STAMP : '');
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {

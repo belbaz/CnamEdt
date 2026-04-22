@@ -45,7 +45,7 @@ if (!fs.existsSync(apiDir) && fs.existsSync(backupDir)) {
   console.error('[pre-build] ⚠️  Dossier API introuvable - les routes API ne fonctionneront pas !');
 }
 
-// Injecter la version dans le Service Worker
+// Injecter la version + un stamp unique par build dans le Service Worker (détection mise à jour PWA)
 try {
   const packageJsonPath = path.join(__dirname, '..', 'package.json');
   const swPath = path.join(__dirname, '..', 'public', 'sw.js');
@@ -53,9 +53,28 @@ try {
   if (fs.existsSync(packageJsonPath) && fs.existsSync(swPath)) {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     const version = packageJson.version || '1.0.0';
+    let buildStamp =
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.VERCEL_DEPLOYMENT_ID ||
+      process.env.GITHUB_SHA ||
+      '';
+    if (!buildStamp) {
+      try {
+        buildStamp = execSync('git rev-parse --short HEAD', {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
+      } catch (e) {
+        buildStamp = `dev-${Date.now()}`;
+      }
+    }
     const swContent = fs.readFileSync(swPath, 'utf8');
     
-    const updatedSwContent = swContent.replace(
+    let updatedSwContent = swContent.replace(
+      /const BUILD_STAMP = ['"][^'"]*['"];?/,
+      `const BUILD_STAMP = ${JSON.stringify(buildStamp)};`
+    );
+    updatedSwContent = updatedSwContent.replace(
       /const CACHE_VERSION = ['"][^'"]*['"];?/,
       `const CACHE_VERSION = '${version}';`
     );
