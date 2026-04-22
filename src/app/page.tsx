@@ -226,7 +226,11 @@ function HomeContent({searchParams}) {
 
         console.log('[Page] Utilisation du cache:', cached.events.length, 'événements');
         setAllEvents(cached.events);
-        setSubjectColors(cached.colors);
+        const colors =
+            cached.colors && Object.keys(cached.colors).length > 0
+                ? cached.colors
+                : createSubjectColorMapping(cached.events);
+        setSubjectColors(colors);
         const weeks = extractAvailableWeeks(cached.events, language);
         setAvailableWeeks(weeks);
         if (!eventKeyParam && weeks.length > 0) {
@@ -775,24 +779,11 @@ function HomeContent({searchParams}) {
                 blockingLoadHadCacheRef.current = !!(cached?.events?.length);
             }
             if (cached && cached.events && cached.events.length > 0) {
-                setAllEvents(cached.events);
-                setSubjectColors(cached.colors);
-                const weeks = extractAvailableWeeks(cached.events, language);
-                setAvailableWeeks(weeks);
-                if (!eventKeyParam && weeks.length > 0) {
-                    const weekToSelect = selectBestWeek(weeks);
-                    setSelectedWeek(weekToSelect?.monday);
+                // Même logique que loadCacheAndUpdateState : efface erreur / debug / notifs
+                if (loadCacheAndUpdateState(cached)) {
+                    setHasNetworkError(true);
+                    finishBlockingLoading();
                 }
-                if (typeof window !== 'undefined') {
-                    const cachedTimestamp = localStorage.getItem('lastUpdateTimestamp');
-                    if (cachedTimestamp) {
-                        setLastUpdateTimestamp(cachedTimestamp);
-                    } else {
-                        setLastUpdateTimestamp(null);
-                    }
-                }
-                setHasNetworkError(true);
-                finishBlockingLoading();
             } else {
                 setError('Mode hors ligne\n\nAucune sauvegarde en cache');
                 setHasNetworkError(true);

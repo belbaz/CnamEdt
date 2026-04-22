@@ -30,16 +30,36 @@ export function loadEventsFromCache() {
     const saved = localStorage.getItem("events");
     const savedColors = localStorage.getItem("subjectColors");
     const savedHash = localStorage.getItem("cacheHash");
-    
-    if (saved && savedColors) {
-        return {
-            events: JSON.parse(saved),
-            colors: JSON.parse(savedColors),
-            hash: savedHash || null  // Le hash peut être null pour les anciens caches
-        };
+
+    // Hors ligne : il suffit d'avoir des événements. subjectColors peut manquer
+    // (ancien cache, effacement partiel, migration) — on renvoie {} et l'UI régénère les couleurs.
+    if (!saved) return null;
+
+    let events;
+    try {
+        events = JSON.parse(saved);
+    } catch {
+        return null;
     }
-    
-    return null;
+    if (!Array.isArray(events) || events.length === 0) return null;
+
+    let colors = {};
+    if (savedColors) {
+        try {
+            const parsed = JSON.parse(savedColors);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                colors = parsed;
+            }
+        } catch {
+            colors = {};
+        }
+    }
+
+    return {
+        events,
+        colors,
+        hash: savedHash || null
+    };
 }
 
 /**

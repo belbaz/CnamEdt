@@ -2,6 +2,7 @@
 import "./global.css";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
 import CookieConsent from "@/components/CookieConsent";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import LanguageSetter from "@/components/LanguageSetter";
 import { I18nProvider } from "@/i18n/I18nContext";
 
@@ -225,6 +226,7 @@ export default function RootLayout({ children }) {
             <body suppressHydrationWarning>
                 <I18nProvider>
                     <LanguageSetter />
+                    <ServiceWorkerRegister />
                     <AnalyticsCollector />
                     <CookieConsent />
                     {children}
