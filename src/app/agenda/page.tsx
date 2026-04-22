@@ -8,7 +8,15 @@ import {getLocale} from "@/utils/dateUtils";
 import BackButton from "@/components/BackButton";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
-import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
+import {
+    areNoteEntriesEqual,
+    parseStoredNoteValue,
+    sanitizeNoteEntries,
+    HIDDEN_LABEL_PLACEHOLDER,
+    buildPersistableNotesLabelsAndPrivacy,
+    reindexEntryKeyedState,
+    NOTE_PRIVACY_PERSONAL,
+} from "@/utils/noteEntries";
 import { generateEventKey } from "@/utils/eventModalUtils";
 import { fetchICSEvents } from "@/services/icsService";
 import LoginForm from "@/app/login/LoginForm";
@@ -42,6 +50,8 @@ function AgendaContent() {
     const [deleting, setDeleting] = useState(false);
     const [entryLabels, setEntryLabels] = useState({}); // Labels par note : { "0": ["Contrôle"], "1": ["Devoir"] }
     const [originalEntryLabels, setOriginalEntryLabels] = useState({}); // Labels originaux pour détecter les modifications
+    const [entryPrivacy, setEntryPrivacy] = useState({});
+    const [originalEntryPrivacy, setOriginalEntryPrivacy] = useState({});
     const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
     const [newLabelValue, setNewLabelValue] = useState(""); // Valeur du nouveau label
     const [error, setError] = useState(null);
@@ -89,8 +99,12 @@ function AgendaContent() {
             setSaving(true);
             setError(null);
 
-            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
-                buildPersistableNotesAndLabels(noteEntries, entryLabels);
+            const { entries: entriesToPersist, labels: normalizedEntryLabels, privacy: normalizedEntryPrivacy } =
+                buildPersistableNotesLabelsAndPrivacy(
+                    noteEntries,
+                    entryLabels,
+                    authenticated && userRole !== "visiteur" ? entryPrivacy : {}
+                );
 
             const res = await fetch("/api/agenda", {
                 method: "POST",
@@ -101,6 +115,7 @@ function AgendaContent() {
                     course_uid: selectedCourse,
                     notes: entriesToPersist,
                     entry_labels: normalizedEntryLabels,
+                    entry_privacy: normalizedEntryPrivacy,
                 }),
             });
 
@@ -115,18 +130,25 @@ function AgendaContent() {
             // Mettre à jour la Map des notes
             const newNotes = new Map(notes);
             if (data.note) {
+                const ep =
+                    data.note?.entry_privacy && typeof data.note.entry_privacy === "object"
+                        ? data.note.entry_privacy
+                        : {};
                 const normalizedNote = {
                     ...data.note,
                     entries: Array.isArray(data.note?.entries)
                         ? data.note.entries
                         : parseStoredNoteValue(data.note?.notes),
                     entry_labels: data.note?.entry_labels || {},
+                    entry_privacy: ep,
                 };
                 newNotes.set(selectedCourse, normalizedNote);
                 setNoteEntries(normalizedNote.entries);
                 setOriginalNoteEntries(normalizedNote.entries);
                 setEntryLabels(normalizedNote.entry_labels || {});
                 setOriginalEntryLabels(normalizedNote.entry_labels || {});
+                setEntryPrivacy(ep);
+                setOriginalEntryPrivacy(ep);
             } else {
                 newNotes.delete(selectedCourse);
                 setNoteEntries([]);
@@ -148,7 +170,7 @@ function AgendaContent() {
         } finally {
             setSaving(false);
         }
-    }, [selectedCourse, userRole, noteEntries, entryLabels, notes, refreshPublicNotes]);
+    }, [selectedCourse, userRole, noteEntries, entryLabels, entryPrivacy, authenticated, notes, refreshPublicNotes]);
 
     // Raccourci global Ctrl+Entrée pour enregistrer la note en cours d'édition (texte ou labels)
     useEffect(() => {
@@ -317,19 +339,30 @@ function AgendaContent() {
             const entryLabelsData = courseNote?.entry_labels || {};
             setEntryLabels({ ...entryLabelsData });
             setOriginalEntryLabels({ ...entryLabelsData });
+            const entryPrivacyData =
+                courseNote?.entry_privacy && typeof courseNote.entry_privacy === "object"
+                    ? courseNote.entry_privacy
+                    : {};
+            setEntryPrivacy({ ...entryPrivacyData });
+            setOriginalEntryPrivacy({ ...entryPrivacyData });
         } else {
             setNoteEntries([]);
             setOriginalNoteEntries([]);
             setIsEditingNotes(false);
             setEntryLabels({});
             setOriginalEntryLabels({});
+            setEntryPrivacy({});
+            setOriginalEntryPrivacy({});
         }
         setShowLabelInputForEntry(null);
         setNewLabelValue("");
     }, [selectedCourse, notes]);
 
     // Vérifier si le contenu a été modifié
-    const hasChanges = !areNoteEntriesEqual(noteEntries, originalNoteEntries);
+    const hasChanges =
+        !areNoteEntriesEqual(noteEntries, originalNoteEntries) ||
+        JSON.stringify(entryLabels) !== JSON.stringify(originalEntryLabels) ||
+        JSON.stringify(entryPrivacy) !== JSON.stringify(originalEntryPrivacy);
     const sanitizedCurrentEntries = sanitizeNoteEntries(noteEntries);
     const savedEntries = sanitizeNoteEntries(originalNoteEntries);
 
@@ -513,6 +546,27 @@ function AgendaContent() {
 
     const handleRemoveEntry = (index) => {
         setNoteEntries((prev) => prev.filter((_, idx) => idx !== index));
+        setEntryLabels((prev) => reindexEntryKeyedState(prev, index));
+        setEntryPrivacy((prev) => reindexEntryKeyedState(prev, index));
+    };
+
+    const handleToggleEntryPrivacy = (index) => {
+        if (userRole === "visiteur" || !authenticated) {
+            return;
+        }
+        const k = String(index);
+        setEntryPrivacy((prev) => {
+            const next = { ...prev };
+            if (next[k] === NOTE_PRIVACY_PERSONAL) {
+                delete next[k];
+            } else {
+                next[k] = NOTE_PRIVACY_PERSONAL;
+            }
+            return next;
+        });
+        if (!isEditingNotes) {
+            setIsEditingNotes(true);
+        }
     };
 
     const handleStartEditing = () => {
@@ -529,6 +583,7 @@ function AgendaContent() {
     const handleCancelEditing = () => {
         setNoteEntries(originalNoteEntries);
         setEntryLabels(originalEntryLabels);
+        setEntryPrivacy(originalEntryPrivacy);
         setIsEditingNotes(false);
         setShowLabelInputForEntry(null);
         setNewLabelValue("");
@@ -1122,7 +1177,12 @@ function AgendaContent() {
                                 return (
                                     <div key={index} className={styles.noteEntryCard}>
                                         <div className={styles.noteEntryHeader}>
-                                            <span>{t('agenda.note')} {index + 1}</span>
+                                            <span>
+                                                {t('agenda.note')} {index + 1}
+                                                {entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL && (
+                                                    <span title={t('agenda.personalNoteHint')}> 🔒</span>
+                                                )}
+                                            </span>
                                             <button
                                                 onClick={() => handleRemoveEntry(index)}
                                                 className={styles.noteEntryRemove}
@@ -1132,6 +1192,17 @@ function AgendaContent() {
                                                 {t('agenda.remove')}
                                             </button>
                                         </div>
+                                        {authenticated && userRole !== "visiteur" && (
+                                            <label className={styles.notePrivacyToggle}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL}
+                                                    onChange={() => handleToggleEntryPrivacy(index)}
+                                                    disabled={saving}
+                                                />
+                                                <span>{t('agenda.personalNote')}</span>
+                                            </label>
+                                        )}
                                         
                                         {/* Labels pour cette note */}
                                         <div className={styles.noteLabelsSection}>

@@ -129,7 +129,9 @@
     "add": "Add",
     "addNotesPlaceholder": "Add your notes...",
     "visitorCannotModify": "Visitors cannot modify notes",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "personalNote": "Personal note (only visible to you when signed in)",
+    "personalNoteHint": "This entry is hidden from guests and the public list."
   },
   "footer": {
     "lastUpdate": "Last update",
@@ -518,6 +520,8 @@
     "note": "Note",
     "noteNumber": "Note {index}",
     "remove": "Remove",
+    "personalNote": "Personal note (only visible to you when signed in)",
+    "personalNoteHint": "This entry is hidden from guests and the public list.",
     "labels": "Labels",
     "createCustomLabel": "Create custom label",
     "newLabel": "+ New",

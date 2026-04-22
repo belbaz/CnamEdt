@@ -4,12 +4,19 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/sessionToken";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
-import { normalizeIncomingNotes, parseStoredNoteValue } from "@/utils/noteEntries";
+import {
+    buildPersistableNotesLabelsAndPrivacy,
+    normalizeIncomingNotes,
+    parseEntryPrivacyFromDb,
+    parseStoredNoteValue,
+    stripPersonalEntriesFromAgendaRow,
+} from "@/utils/noteEntries";
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const LOG_PREFIX = "[API agenda]";
+const AGENDA_GET_CACHE_HEADERS = { 'Cache-Control': 'private, no-store, max-age=0, must-revalidate' };
 
 function formatAgendaRow(row) {
     if (!row) {
@@ -25,7 +32,8 @@ function formatAgendaRow(row) {
     if (row.entry_labels && typeof row.entry_labels === 'object') {
         entryLabels = row.entry_labels;
     }
-    
+    const entryPrivacy = parseEntryPrivacyFromDb(row.entry_privacy);
+
     return {
         ...row,
         entries: parseStoredNoteValue(row.notes),
@@ -34,6 +42,7 @@ function formatAgendaRow(row) {
         user_name_last: userInfo?.last_name || null,
         labels: Array.isArray(row.labels) ? row.labels : (row.labels ? [row.labels] : []), // Garder pour compatibilité
         entry_labels: entryLabels, // Nouveau : labels par paragraphe
+        entry_privacy: entryPrivacy,
         orphan_event_info: row.orphan_event_info || null, // Infos du cours depuis edt_events_versions si orphelin
     };
 }
@@ -109,6 +118,7 @@ export async function GET(request) {
                         modification_history: null,
                         labels: [], // Ancien système (vide pour compatibilité)
                         entry_labels: entryLabels, // Nouveau système avec labels par paragraphe
+                        entry_privacy: {},
                         entries: entries,
                         user_name: 'Mode Démo',
                         user_name_first: 'Démo',
@@ -116,11 +126,10 @@ export async function GET(request) {
                     };
                 });
                 
-                return NextResponse.json({
-                    authenticated: false,
-                    notes: notesArray,
-                    isDemo: true
-                });
+                return NextResponse.json(
+                    { authenticated: false, notes: notesArray, isDemo: true },
+                    { headers: AGENDA_GET_CACHE_HEADERS }
+                );
             } catch (demoError) {
                 console.error(`${LOG_PREFIX} Erreur lors de la génération des notes de démo:`, demoError);
                 // En cas d'erreur, continuer avec le flux normal
@@ -149,7 +158,7 @@ export async function GET(request) {
             // Utilisateur connecté : récupérer ses propres notes
             query = supabase
                 .from('edt_agenda')
-                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels')
+                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels, entry_privacy')
                 .eq('user_id', user.sub)
                 .order('updated_at', { ascending: false });
 
@@ -161,7 +170,7 @@ export async function GET(request) {
             // Pour chaque course_uid, on prend la note la plus récente
             query = supabase
                 .from('edt_agenda')
-                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels')
+                .select('id, course_uid, notes, created_at, updated_at, user_id, modification_history, labels, entry_labels, entry_privacy')
                 .order('updated_at', { ascending: false });
 
             if (courseUid) {
@@ -259,6 +268,8 @@ export async function GET(request) {
             }
         }
 
+        const shouldStripPersonal = !user || forcePublicMode;
+
         // Formater les données avec les informations utilisateur et les infos de cours orphelins
         const formattedData = processedData.map(row => {
             const userInfo = userInfoMap[row.user_id] || null;
@@ -268,25 +279,32 @@ export async function GET(request) {
             // on enrichit avec les infos de la dernière version connue
             const orphanEventInfo = orphanEventInfoMap[row.course_uid] || null;
             
-            return formatAgendaRow({ 
+            let out = formatAgendaRow({ 
                 ...row, 
                 edt_user: userInfo,
                 modification_history: enrichedHistory,
                 orphan_event_info: orphanEventInfo // Infos du cours depuis edt_events_versions si orphelin
             });
+            if (shouldStripPersonal) {
+                out = stripPersonalEntriesFromAgendaRow(out);
+            }
+            return out;
         });
 
         if (courseUid) {
-            return NextResponse.json({
-                authenticated: isAuthenticated,
-                note: formattedData.length > 0 ? formattedData[0] : null
-            });
+            return NextResponse.json(
+                {
+                    authenticated: isAuthenticated,
+                    note: formattedData.length > 0 ? formattedData[0] : null
+                },
+                { headers: AGENDA_GET_CACHE_HEADERS }
+            );
         }
 
-        return NextResponse.json({
-            authenticated: isAuthenticated,
-            notes: formattedData
-        });
+        return NextResponse.json(
+            { authenticated: isAuthenticated, notes: formattedData },
+            { headers: AGENDA_GET_CACHE_HEADERS }
+        );
 
     } catch (error) {
         console.error(`${LOG_PREFIX} Erreur inattendue:`, error);
@@ -347,7 +365,7 @@ export async function POST(request) {
         }
 
         const body = await request.json();
-        const { course_uid, notes, labels, entry_labels } = body;
+        const { course_uid, notes, labels, entry_labels, entry_privacy } = body;
 
         if (!course_uid || typeof course_uid !== 'string') {
             return NextResponse.json(
@@ -394,6 +412,32 @@ export async function POST(request) {
             }
         }
 
+        let normalizedEntryPrivacy = {};
+        if (entry_privacy !== undefined) {
+            if (typeof entry_privacy !== 'object' || entry_privacy === null || Array.isArray(entry_privacy)) {
+                return NextResponse.json(
+                    { error: "entry_privacy doit être un objet dont les clés sont des index numériques" },
+                    { status: 400 }
+                );
+            }
+            for (const [indexStr, val] of Object.entries(entry_privacy)) {
+                const index = parseInt(indexStr, 10);
+                if (isNaN(index) || index < 0) {
+                    return NextResponse.json(
+                        { error: `entry_privacy: la clé "${indexStr}" doit être un index numérique valide` },
+                        { status: 400 }
+                    );
+                }
+                if (val !== 'public' && val !== 'personal') {
+                    return NextResponse.json(
+                        { error: "entry_privacy: chaque valeur doit être \"public\" ou \"personal\"" },
+                        { status: 400 }
+                    );
+                }
+                normalizedEntryPrivacy[indexStr] = val;
+            }
+        }
+
         // Garder la compatibilité avec l'ancien système de labels (pour migration progressive)
         let normalizedLabels = [];
         if (labels !== undefined) {
@@ -408,7 +452,22 @@ export async function POST(request) {
                 .map(label => label.trim());
         }
 
-        const normalizedEntries = normalizeIncomingNotes(notes);
+        const rawNotesInput = Array.isArray(notes) ? notes : normalizeIncomingNotes(notes);
+        let normalizedEntries;
+        let builtLabels;
+        let builtPrivacy;
+        if (entry_labels !== undefined || entry_privacy !== undefined) {
+            const b = buildPersistableNotesLabelsAndPrivacy(
+                rawNotesInput,
+                entry_labels !== undefined ? normalizedEntryLabels : {},
+                entry_privacy !== undefined ? normalizedEntryPrivacy : {}
+            );
+            normalizedEntries = b.entries;
+            builtLabels = b.labels;
+            builtPrivacy = b.privacy;
+        } else {
+            normalizedEntries = normalizeIncomingNotes(notes);
+        }
 
         // Vérifier si une note existe déjà pour ce cours et cet utilisateur
         const { data: existing, error: checkError } = await supabase
@@ -490,9 +549,11 @@ export async function POST(request) {
                 modification_history: updatedHistory
             };
             
-            // Ajouter les labels par paragraphe (entry_labels) si fournis
             if (entry_labels !== undefined) {
-                updateData.entry_labels = normalizedEntryLabels;
+                updateData.entry_labels = builtLabels !== undefined ? builtLabels : normalizedEntryLabels;
+            }
+            if (entry_privacy !== undefined) {
+                updateData.entry_privacy = builtPrivacy;
             }
             
             // Garder la compatibilité avec l'ancien système (pour migration progressive)
@@ -534,9 +595,13 @@ export async function POST(request) {
                 modification_history: initialHistory
             };
             
-            // Ajouter les labels par paragraphe (entry_labels) si fournis
             if (entry_labels !== undefined) {
-                insertData.entry_labels = normalizedEntryLabels;
+                insertData.entry_labels = builtLabels !== undefined ? builtLabels : normalizedEntryLabels;
+            }
+            if (entry_labels !== undefined || entry_privacy !== undefined) {
+                insertData.entry_privacy = builtPrivacy !== undefined ? builtPrivacy : {};
+            } else {
+                insertData.entry_privacy = {};
             }
             
             // Garder la compatibilité avec l'ancien système (pour migration progressive)

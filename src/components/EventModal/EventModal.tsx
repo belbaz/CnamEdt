@@ -14,7 +14,15 @@ import {
     getAcademicYearParts
 } from "@/utils/eventModalUtils";
 import { getEventTitle } from "@/utils/eventUtils";
-import { areNoteEntriesEqual, parseStoredNoteValue, sanitizeNoteEntries, HIDDEN_LABEL_PLACEHOLDER, buildPersistableNotesAndLabels } from "@/utils/noteEntries";
+import {
+    areNoteEntriesEqual,
+    parseStoredNoteValue,
+    sanitizeNoteEntries,
+    HIDDEN_LABEL_PLACEHOLDER,
+    buildPersistableNotesLabelsAndPrivacy,
+    reindexEntryKeyedState,
+    NOTE_PRIVACY_PERSONAL,
+} from "@/utils/noteEntries";
 import {useI18n} from "@/i18n/I18nContext";
 import styles from "@/app/page.module.css";
 
@@ -39,6 +47,8 @@ export default function EventModal({
     const [isModalEditingNotes, setIsModalEditingNotes] = useState(false);
     const [entryLabels, setEntryLabels] = useState({}); // Labels par note : { "0": ["Contrôle"], "1": ["Devoir"] }
     const [originalEntryLabels, setOriginalEntryLabels] = useState({}); // Labels originaux pour détecter les modifications
+    const [entryPrivacy, setEntryPrivacy] = useState({}); // { "0": "personal", ... } — absent = public
+    const [originalEntryPrivacy, setOriginalEntryPrivacy] = useState({});
     const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
     const [newLabelValue, setNewLabelValue] = useState(""); // Valeur du nouveau label
     const { t } = useI18n();
@@ -67,12 +77,20 @@ export default function EventModal({
             const entryLabelsData = courseNote?.entry_labels || {};
             setEntryLabels({ ...entryLabelsData });
             setOriginalEntryLabels({ ...entryLabelsData });
+            const entryPrivacyData =
+                courseNote?.entry_privacy && typeof courseNote.entry_privacy === "object"
+                    ? courseNote.entry_privacy
+                    : {};
+            setEntryPrivacy({ ...entryPrivacyData });
+            setOriginalEntryPrivacy({ ...entryPrivacyData });
         } else {
             setEditingNoteEntries([]);
             setOriginalNoteEntries([]);
             setIsModalEditingNotes(false);
             setEntryLabels({});
             setOriginalEntryLabels({});
+            setEntryPrivacy({});
+            setOriginalEntryPrivacy({});
         }
         setShowLabelInputForEntry(null);
         setNewLabelValue("");
@@ -128,8 +146,12 @@ export default function EventModal({
         try {
             setSavingNote(true);
 
-            const { entries: entriesToPersist, labels: normalizedEntryLabels } =
-                buildPersistableNotesAndLabels(editingNoteEntries, entryLabels);
+            const { entries: entriesToPersist, labels: normalizedEntryLabels, privacy: normalizedEntryPrivacy } =
+                buildPersistableNotesLabelsAndPrivacy(
+                    editingNoteEntries,
+                    entryLabels,
+                    notesAuthenticated && userRole !== "visiteur" ? entryPrivacy : {}
+                );
 
             const res = await fetch("/api/agenda", {
                 method: "POST",
@@ -140,6 +162,7 @@ export default function EventModal({
                     course_uid: selectedEvent.uid,
                     notes: entriesToPersist,
                     entry_labels: normalizedEntryLabels,
+                    entry_privacy: normalizedEntryPrivacy,
                 }),
             });
 
@@ -163,6 +186,12 @@ export default function EventModal({
             const entryLabelsData = data.note?.entry_labels || {};
             setOriginalEntryLabels(entryLabelsData);
             setEntryLabels(entryLabelsData);
+            const p =
+                data.note?.entry_privacy && typeof data.note.entry_privacy === "object"
+                    ? data.note.entry_privacy
+                    : {};
+            setOriginalEntryPrivacy(p);
+            setEntryPrivacy(p);
             setIsModalEditingNotes(false);
             if (refreshNotes) {
                 refreshNotes();
@@ -173,7 +202,7 @@ export default function EventModal({
         } finally {
             setSavingNote(false);
         }
-    }, [selectedEvent, userRole, editingNoteEntries, entryLabels, refreshNotes]);
+    }, [selectedEvent, userRole, editingNoteEntries, entryLabels, entryPrivacy, notesAuthenticated, refreshNotes]);
 
     // Raccourci global Ctrl+Entrée pour enregistrer/supprimer la note (texte ou label)
     useEffect(() => {
@@ -225,9 +254,10 @@ export default function EventModal({
     
     // Vérifier si les labels ont changé
     const labelsChanged = JSON.stringify(entryLabels) !== JSON.stringify(originalEntryLabels);
+    const privacyChanged = JSON.stringify(entryPrivacy) !== JSON.stringify(originalEntryPrivacy);
     
-    // Il y a des modifications si les entrées OU les labels ont changé
-    const modalHasChanges = entriesChanged || labelsChanged;
+    // Il y a des modifications si les entrées OU les labels OU la visibilité ont changé
+    const modalHasChanges = entriesChanged || labelsChanged || privacyChanged;
     
     const sanitizedModalEntries = sanitizeNoteEntries(editingNoteEntries);
     const savedModalEntries = sanitizeNoteEntries(originalNoteEntries);
@@ -258,6 +288,8 @@ export default function EventModal({
 
     const handleRemoveEntry = (index) => {
         setEditingNoteEntries((prev) => prev.filter((_, idx) => idx !== index));
+        setEntryLabels((prev) => reindexEntryKeyedState(prev, index));
+        setEntryPrivacy((prev) => reindexEntryKeyedState(prev, index));
     };
 
     const handleStartEditing = () => {
@@ -274,9 +306,29 @@ export default function EventModal({
     const handleCancelEditing = () => {
         setEditingNoteEntries(originalNoteEntries);
         setEntryLabels(originalEntryLabels);
+        setEntryPrivacy(originalEntryPrivacy);
         setIsModalEditingNotes(false);
         setShowLabelInputForEntry(null);
         setNewLabelValue("");
+    };
+
+    const handleToggleEntryPrivacy = (index) => {
+        if (userRole === "visiteur" || !notesAuthenticated) {
+            return;
+        }
+        const k = String(index);
+        setEntryPrivacy((prev) => {
+            const next = { ...prev };
+            if (next[k] === NOTE_PRIVACY_PERSONAL) {
+                delete next[k];
+            } else {
+                next[k] = NOTE_PRIVACY_PERSONAL;
+            }
+            return next;
+        });
+        if (!isModalEditingNotes) {
+            setIsModalEditingNotes(true);
+        }
     };
 
     const handleAddNoteButton = () => {
@@ -857,7 +909,12 @@ export default function EventModal({
                                                         <div key={`${selectedEvent.uid}-${index}`}
                                                             className="modal-note-entry">
                                                             <div className="modal-note-header">
-                                                                <span>{t('eventModal.noteNumber')} {index + 1}</span>
+                                                                <span>
+                                                                    {t('eventModal.noteNumber')} {index + 1}
+                                                                    {entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL && (
+                                                                        <span className="modal-note-privacy-badge" title={t('eventModal.personalNoteHint')}> 🔒</span>
+                                                                    )}
+                                                                </span>
                                                                 <button
                                                                     type="button"
                                                                     className="modal-note-remove"
@@ -868,6 +925,17 @@ export default function EventModal({
                                                                     {t('eventModal.delete')}
                                                                 </button>
                                                             </div>
+                                                            {notesAuthenticated && userRole !== 'visiteur' && (
+                                                                <label className="modal-note-privacy-toggle">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL}
+                                                                        onChange={() => handleToggleEntryPrivacy(index)}
+                                                                        disabled={savingNote}
+                                                                    />
+                                                                    <span>{t('eventModal.personalNote')}</span>
+                                                                </label>
+                                                            )}
                                                             
                                                             {/* Labels pour ce paragraphe */}
                                                             <div className="modal-labels-section">

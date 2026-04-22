@@ -105,28 +105,98 @@ export function areNoteEntriesEqual(a = [], b = []) {
 // Utilisé pour stocker les entrées qui n'ont pas de texte mais ont des labels associés.
 export const HIDDEN_LABEL_PLACEHOLDER = "\u200B";
 
+/** Par défaut, une entrée est visible par tous. */
+export const NOTE_PRIVACY_PUBLIC = "public";
+/** Note visible uniquement par l'utilisateur auteur (côté serveur + client connecté). */
+export const NOTE_PRIVACY_PERSONAL = "personal";
+
 /**
- * Construit la paire (entries, entry_labels) prête à être persistée.
- * - Supprime les entrées sans texte ET sans label.
- * - Conserve les entrées avec label mais sans texte en utilisant un placeholder invisible.
- * - Recompacte les index et recalcule entry_labels pour rester aligné avec entries.
+ * Interprète entry_privacy (JSONB / API) : objet, chaîne JSON, ou null.
+ * Certaines chaines (PostgREST) renvoient parfois une string au lieu d'un objet.
  */
-export function buildPersistableNotesAndLabels(rawEntries = [], rawEntryLabels = {}) {
+export function parseEntryPrivacyFromDb(raw) {
+    if (raw == null) {
+        return {};
+    }
+    if (typeof raw === "string") {
+        const trimmed = raw.trim();
+        if (!trimmed) {
+            return {};
+        }
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+                return pickPersonalPrivacyKeys(parsed);
+            }
+        } catch {
+            return {};
+        }
+        return {};
+    }
+    if (typeof raw === "object" && !Array.isArray(raw)) {
+        return pickPersonalPrivacyKeys(raw);
+    }
+    return {};
+}
+
+function pickPersonalPrivacyKeys(obj) {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+        if (v === NOTE_PRIVACY_PERSONAL) {
+            out[String(k)] = NOTE_PRIVACY_PERSONAL;
+        }
+    }
+    return out;
+}
+
+/**
+ * Reindexe un objet { "0": v, "1": w } quand l'entrée `removedIndex` est supprimée.
+ */
+export function reindexEntryKeyedState(state, removedIndex) {
+    const prev = state && typeof state === "object" ? state : {};
+    const next = {};
+    for (const [k, v] of Object.entries(prev)) {
+        const i = parseInt(k, 10);
+        if (Number.isNaN(i) || i < 0) continue;
+        if (i === removedIndex) continue;
+        const newI = i > removedIndex ? i - 1 : i;
+        next[String(newI)] = v;
+    }
+    return next;
+}
+
+/**
+ * Construit entries + entry_labels + entry_privacy prête à être persistée.
+ * - On ne stocke dans privacy que les index en NOTE_PRIVACY_PERSONAL (absent = public).
+ */
+export function buildPersistableNotesLabelsAndPrivacy(
+    rawEntries = [],
+    rawEntryLabels = {},
+    rawEntryPrivacy = {}
+) {
     const entries = Array.isArray(rawEntries) ? rawEntries : [];
     const entryLabels = rawEntryLabels && typeof rawEntryLabels === "object" ? rawEntryLabels : {};
+    const entryPrivacy = rawEntryPrivacy && typeof rawEntryPrivacy === "object" ? rawEntryPrivacy : {};
 
     const labelIndexes = Object.keys(entryLabels)
         .map((k) => parseInt(k, 10))
         .filter((n) => !Number.isNaN(n) && n >= 0);
-
-    const maxIndex = Math.max(entries.length - 1, labelIndexes.length > 0 ? Math.max(...labelIndexes) : -1);
+    const privacyIndexes = Object.keys(entryPrivacy)
+        .map((k) => parseInt(k, 10))
+        .filter((n) => !Number.isNaN(n) && n >= 0);
+    const maxIndex = Math.max(
+        entries.length - 1,
+        labelIndexes.length > 0 ? Math.max(...labelIndexes) : -1,
+        privacyIndexes.length > 0 ? Math.max(...privacyIndexes) : -1
+    );
 
     if (maxIndex < 0) {
-        return { entries: [], labels: {} };
+        return { entries: [], labels: {}, privacy: {} };
     }
 
     const resultEntries = [];
     const resultLabels = {};
+    const resultPrivacy = {};
     let nextIndex = 0;
 
     for (let i = 0; i <= maxIndex; i++) {
@@ -141,12 +211,10 @@ export function buildPersistableNotesAndLabels(rawEntries = [], rawEntryLabels =
 
         const hasLabels = labelsForOldIndex.length > 0;
 
-        // Rien à conserver pour cet index
         if (!text && !hasLabels) {
             continue;
         }
 
-        // Si seulement des labels, utiliser le placeholder invisible
         if (!text && hasLabels) {
             text = HIDDEN_LABEL_PLACEHOLDER;
         }
@@ -157,10 +225,76 @@ export function buildPersistableNotesAndLabels(rawEntries = [], rawEntryLabels =
             resultLabels[String(nextIndex)] = labelsForOldIndex;
         }
 
+        const pRaw = entryPrivacy[String(i)];
+        if (pRaw === NOTE_PRIVACY_PERSONAL) {
+            resultPrivacy[String(nextIndex)] = NOTE_PRIVACY_PERSONAL;
+        }
+
         nextIndex++;
     }
 
-    return { entries: resultEntries, labels: resultLabels };
+    return { entries: resultEntries, labels: resultLabels, privacy: resultPrivacy };
+}
+
+/**
+ * Construit la paire (entries, entry_labels) prête à être persistée.
+ * @deprecated Préférer buildPersistableNotesLabelsAndPrivacy si la confidentialité par entrée est utilisée.
+ */
+export function buildPersistableNotesAndLabels(rawEntries = [], rawEntryLabels = {}) {
+    const { entries, labels } = buildPersistableNotesLabelsAndPrivacy(
+        rawEntries,
+        rawEntryLabels,
+        {}
+    );
+    return { entries, labels: labels };
+}
+
+/**
+ * Retire les entrées personnelles d'une note déjà formatée (API GET pour utilisateurs non authentifiés / mode public).
+ */
+export function stripPersonalEntriesFromAgendaRow(row) {
+    if (!row) return row;
+
+    const entries = Array.isArray(row.entries)
+        ? row.entries
+        : parseStoredNoteValue(row.notes);
+    const privacy = parseEntryPrivacyFromDb(row.entry_privacy);
+    const entryLabels = row.entry_labels && typeof row.entry_labels === "object" ? row.entry_labels : {};
+
+    const keep = [];
+    for (let i = 0; i < entries.length; i++) {
+        if ((privacy[String(i)] || NOTE_PRIVACY_PUBLIC) !== NOTE_PRIVACY_PERSONAL) {
+            keep.push(i);
+        }
+    }
+
+    if (keep.length === entries.length) {
+        return {
+            ...row,
+            entry_privacy: { ...privacy },
+        };
+    }
+
+    const newEntries = keep.map((i) => entries[i]);
+    const newLabels = {};
+    const newPrivacy = {};
+    keep.forEach((oldIdx, j) => {
+        if (Array.isArray(entryLabels[String(oldIdx)]) && entryLabels[String(oldIdx)].length > 0) {
+            newLabels[String(j)] = entryLabels[String(oldIdx)];
+        }
+        const p = privacy[String(oldIdx)] || NOTE_PRIVACY_PUBLIC;
+        if (p === NOTE_PRIVACY_PERSONAL) {
+            newPrivacy[String(j)] = NOTE_PRIVACY_PERSONAL;
+        }
+    });
+
+    return {
+        ...row,
+        entries: newEntries,
+        notes: JSON.stringify(newEntries),
+        entry_labels: newLabels,
+        entry_privacy: newPrivacy,
+    };
 }
 
 /**

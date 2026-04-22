@@ -1,14 +1,15 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { parseStoredNoteValue } from "@/utils/noteEntries";
+import { parseEntryPrivacyFromDb, parseStoredNoteValue } from "@/utils/noteEntries";
 import { useI18n } from "@/i18n/I18nContext";
 
 /**
  * Hook pour charger et gérer les notes des cours
  * Retourne une Map<course_uid, note> pour accès rapide
+ * @param sessionKey - change quand la session change (ex. id utilisateur ou "anon") pour recharger les notes filtrées côté API
  */
-export function useCourseNotes() {
+export function useCourseNotes(sessionKey) {
     const { language } = useI18n();
     const [notes, setNotes] = useState(new Map());
     const [loading, setLoading] = useState(true);
@@ -47,6 +48,7 @@ export function useCourseNotes() {
                             : parseStoredNoteValue(note?.notes),
                         labels: Array.isArray(note?.labels) ? note.labels : (note?.labels ? [note.labels] : []),
                         entry_labels: note?.entry_labels || {},
+                        entry_privacy: parseEntryPrivacyFromDb(note?.entry_privacy),
                     };
                     notesMap.set(note.course_uid, normalizedNote);
                 });
@@ -64,7 +66,7 @@ export function useCourseNotes() {
 
     useEffect(() => {
         loadNotes();
-    }, [loadNotes]);
+    }, [loadNotes, sessionKey]);
 
     return {
         notes,

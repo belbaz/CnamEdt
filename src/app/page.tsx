@@ -158,12 +158,17 @@ function HomeContent({searchParams}) {
         }
     };
 
-    // Notes des cours
-    const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes();
-
     // Infos utilisateur
     const [userInfo, setUserInfo] = useState(null);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+    /** Inclut le chargement / l'id pour recharger les notes quand la session change (contenu public vs compte + entrées perso). */
+    const courseNotesSessionKey = `${isLoadingUser ? "0" : "1"}:${userInfo?.id ?? "anon"}`;
+
+    // Notes des cours
+    const { notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes } = useCourseNotes(
+        courseNotesSessionKey
+    );
 
 
     // Présence d'un deep-link vers un cours précis

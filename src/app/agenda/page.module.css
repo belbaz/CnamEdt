@@ -1495,6 +1495,21 @@
     font-weight: 600;
 }
 
+.notePrivacyToggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.notePrivacyToggle input {
+    cursor: pointer;
+}
+
 .noteEntryRemove {
     background: none;
     border: none;

@@ -129,7 +129,9 @@
     "add": "Ajouter",
     "addNotesPlaceholder": "Ajoutez vos notes...",
     "visitorCannotModify": "Les visiteurs ne peuvent pas modifier de notes",
-    "saving": "Enregistrement..."
+    "saving": "Enregistrement...",
+    "personalNote": "Note personnelle (visible seulement par vous lorsque vous êtes connecté)",
+    "personalNoteHint": "Cette entrée n'est pas visible par les visiteurs ni dans la liste publique."
   },
   "footer": {
     "lastUpdate": "Dernière mise à jour",
@@ -518,6 +520,8 @@
     "note": "Note",
     "noteNumber": "Note {index}",
     "remove": "Supprimer",
+    "personalNote": "Note personnelle (visible seulement par vous lorsque vous êtes connecté)",
+    "personalNoteHint": "Cette entrée n'est pas visible par les visiteurs ni dans la liste publique.",
     "labels": "Labels",
     "createCustomLabel": "Créer un label personnalisé",
     "newLabel": "+ Nouveau",

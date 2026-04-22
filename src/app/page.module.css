@@ -151,6 +151,21 @@
     color: var(--text-secondary);
 }
 
+:global(.modal-note-privacy-toggle) {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+:global(.modal-note-privacy-toggle input) {
+    cursor: pointer;
+}
+
 :global(.modal-note-remove) {
     border: none;
     background: none;

@@ -320,6 +320,21 @@ function mergeNotes(oldNote, newNote) {
         }
     }
 
+    const oldEntryPrivacy = oldNote.entry_privacy && typeof oldNote.entry_privacy === "object"
+        ? oldNote.entry_privacy
+        : {};
+    const newEntryPrivacy = newNote.entry_privacy && typeof newNote.entry_privacy === "object"
+        ? newNote.entry_privacy
+        : {};
+    const mergedEntryPrivacy = { ...oldEntryPrivacy };
+    for (const [indexStr, val] of Object.entries(newEntryPrivacy)) {
+        const newIndex = parseInt(indexStr, 10);
+        if (!isNaN(newIndex) && (val === "public" || val === "personal")) {
+            const mergedIndex = oldEntriesCount + newIndex;
+            mergedEntryPrivacy[String(mergedIndex)] = val;
+        }
+    }
+
     // Fusionner l'historique des modifications
     const oldHistory = Array.isArray(oldNote.modification_history) ? oldNote.modification_history : [];
     const newHistory = Array.isArray(newNote.modification_history) ? newNote.modification_history : [];
@@ -329,6 +344,7 @@ function mergeNotes(oldNote, newNote) {
         notes: JSON.stringify(mergedEntries),
         labels: mergedLabels,
         entry_labels: mergedEntryLabels,
+        entry_privacy: mergedEntryPrivacy,
         modification_history: mergedHistory
     };
 }
@@ -369,7 +385,7 @@ async function migrateOrphanNotes(supabase, currentEvents) {
         // Récupérer toutes les notes de l'agenda
         const { data: allNotes, error: notesError } = await supabase
             .from('edt_agenda')
-            .select('id, course_uid, user_id, notes, created_at, updated_at, labels, entry_labels, modification_history');
+            .select('id, course_uid, user_id, notes, created_at, updated_at, labels, entry_labels, entry_privacy, modification_history');
         
         if (notesError) {
             console.warn('[API fetch-ics] Erreur récupération notes pour migration:', notesError.message);
@@ -445,7 +461,7 @@ async function migrateOrphanNotes(supabase, currentEvents) {
                 // Vérifier qu'il n'existe pas déjà une note pour ce nouveau course_uid et cet utilisateur
                 const { data: existingNote, error: checkError } = await supabase
                     .from('edt_agenda')
-                    .select('id, notes, labels, entry_labels, modification_history')
+                    .select('id, notes, labels, entry_labels, entry_privacy, modification_history')
                     .eq('user_id', note.user_id)
                     .eq('course_uid', newCourseUid)
                     .maybeSingle();
@@ -478,6 +494,7 @@ async function migrateOrphanNotes(supabase, currentEvents) {
                             notes: merged.notes,
                             labels: merged.labels,
                             entry_labels: merged.entry_labels,
+                            entry_privacy: merged.entry_privacy,
                             modification_history: merged.modification_history
                         })
                         .eq('id', existingNote.id);
