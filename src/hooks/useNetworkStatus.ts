@@ -6,12 +6,9 @@ import { useEffect, useRef, useState } from "react";
  * Hook pour détecter le statut de la connexion réseau (web uniquement)
  */
 export function useNetworkStatus() {
-    // Initialiser directement avec navigator.onLine pour éviter le faux "online"
-    // qui déclencherait fetchEvents() alors qu'on est hors-ligne
-    const [isOnline, setIsOnline] = useState(() => {
-        if (typeof navigator === 'undefined') return true;
-        return navigator.onLine;
-    });
+    // Garder true comme valeur initiale pour la compatibilité SSR (Next.js hydration)
+    // La valeur réelle de navigator.onLine est lue dans useEffect (client uniquement)
+    const [isOnline, setIsOnline] = useState(true);
     const pollingIntervalRef = useRef(null);
 
     useEffect(() => {
@@ -40,11 +37,11 @@ export function useNetworkStatus() {
             }
         };
 
-        // Synchroniser avec navigator.onLine au cas où il aurait changé entre le render et l'effect
+        // Lire navigator.onLine dès que le composant est monté (synchrone, avant checkRealConnection)
         const currentOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
         setStatus(currentOnline);
         
-        // Vérifier la connexion réelle au chargement (réseau vs cache SW)
+        // Vérification réseau réelle (réseau vs cache SW) — asynchrone
         checkRealConnection();
 
         // Écouter les événements online/offline

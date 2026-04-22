@@ -587,7 +587,11 @@ function HomeContent({searchParams}) {
             const isNetworkError = err.message.includes('Failed to fetch') ||
                 err.message.includes('réseau') ||
                 err.message.includes('network') ||
-                err.message.includes('fetch failed');
+                err.message.includes('fetch failed') ||
+                err.message.toLowerCase().includes('hors ligne') ||
+                err.message.toLowerCase().includes('offline') ||
+                err.message.includes('503') ||
+                err.message.includes('FETCH_ICS_TIMEOUT');
 
             if (isNetworkError) {
                 setHasNetworkError(true);
@@ -759,8 +763,13 @@ function HomeContent({searchParams}) {
         const cached = loadEventsFromCache();
         cachePrimedRef.current = !!(cached && cached.events && cached.events.length > 0);
 
-        if (!isOnline) {
-            console.log('[Page] Mode hors ligne — affichage immédiat depuis le cache');
+        // Vérification directe de navigator.onLine en plus du state isOnline
+        // Raison : isOnline peut encore valoir true (valeur initiale useState) même si le navigateur
+        // sait déjà qu'on est hors-ligne — la mise à jour du state est asynchrone (batch React)
+        const navigatorSaysOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+        if (!isOnline || navigatorSaysOffline) {
+            console.log('[Page] Mode hors ligne — affichage immédiat depuis le cache (isOnline:', isOnline, '/ navigator.onLine:', typeof navigator !== 'undefined' ? navigator.onLine : 'N/A', ')');
             if (blockingLoadStartRef.current === null) {
                 blockingLoadStartRef.current = Date.now();
                 blockingLoadHadCacheRef.current = !!(cached?.events?.length);
