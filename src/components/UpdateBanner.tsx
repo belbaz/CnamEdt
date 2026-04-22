@@ -55,9 +55,9 @@ export default function UpdateBanner() {
             setCookie('isUpdate', 'true');
         }
 
-        // Vérifier le cookie isUpdate
+        // Vérifier le cookie isUpdate (uniquement si explicitement "true")
         const cookieValue = getCookie('isUpdate');
-        const isUpdateFromCookie = cookieValue === 'true' || cookieValue !== null;
+        const isUpdateFromCookie = cookieValue === 'true';
 
         // Vérifier aussi si isUpdate est défini globalement (window.isUpdate)
         const isUpdateFromGlobal = typeof window.isUpdate !== 'undefined' && window.isUpdate === true;

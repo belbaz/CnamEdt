@@ -1304,10 +1304,6 @@
     /*    width: calc(100% + 2px);*/
     /*}*/
 
-    .event-card:hover {
-        transform: translateY(-2px);
-    }
-
     .event-card:active {
         transform: translateY(-2px) scale(0.96);
     }

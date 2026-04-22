@@ -3,6 +3,7 @@ import "./global.css";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
 import CookieConsent from "@/components/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import PWAUpdateChecker from "@/components/PWAUpdateChecker";
 import LanguageSetter from "@/components/LanguageSetter";
 import { I18nProvider } from "@/i18n/I18nContext";
 
@@ -227,6 +228,7 @@ export default function RootLayout({ children }) {
                 <I18nProvider>
                     <LanguageSetter />
                     <ServiceWorkerRegister />
+                    <PWAUpdateChecker />
                     <AnalyticsCollector />
                     <CookieConsent />
                     {children}
