@@ -189,17 +189,22 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => {
-          // Hors ligne, essayer le cache
-          return caches.match(req).then((cached) => {
-            if (cached) {
-              return cached;
-            }
-            // Pas de cache, retourner une erreur
-            return new Response(JSON.stringify({ error: 'Hors ligne' }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
+          // Hors ligne : chercher dans le cache (correspondance exacte d'abord)
+          return caches.match(req)
+            .then((cached) => {
+              if (cached) return cached;
+              // Fallback : ignorer les query params (ex: lang=fr vs lang=en)
+              // Utile si la langue a changé depuis le dernier accès en ligne
+              return caches.match(req, { ignoreSearch: true });
+            })
+            .then((cached) => {
+              if (cached) return cached;
+              // Aucun cache disponible
+              return new Response(JSON.stringify({ error: 'Hors ligne' }), {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' }
+              });
             });
-          });
         })
     );
     return;

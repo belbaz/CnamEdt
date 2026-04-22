@@ -192,6 +192,9 @@ function HomeContent({searchParams}) {
         const start = blockingLoadStartRef.current;
         if (start == null) {
             setLoading(false);
+            // Safety net : si les cartes ne sont toujours pas visibles, les débloquer
+            // (évite le cas où finishBlockingLoading a été appelé sans que start ait été positionné)
+            setCanShowCards(true);
             return;
         }
         const minMs = blockingLoadHadCacheRef.current
@@ -270,6 +273,22 @@ function HomeContent({searchParams}) {
             setDebugInfo(null);
             setShowSupabaseNotification(false);
             setSupabaseSource(null);
+
+            // Vérification offline immédiate (avant tout fetch réseau)
+            // Cas : fetchEvents() a été appelé alors que isOnline était true,
+            // mais navigator.onLine dit déjà false → charger le cache sans attendre
+            const immediatelyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+            if (immediatelyOffline) {
+                console.log('[Page] fetchEvents() : navigator.onLine=false détecté immédiatement → repli cache direct');
+                const cached = loadEventsFromCache();
+                if (loadCacheAndUpdateState(cached)) {
+                    setHasNetworkError(true);
+                    return;
+                }
+                setHasNetworkError(true);
+                setError('Mode hors ligne\n\nAucune sauvegarde en cache');
+                return;
+            }
 
             const debug = {
                 isPWAInstalled: isInstalled,

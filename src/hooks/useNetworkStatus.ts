@@ -6,7 +6,12 @@ import { useEffect, useRef, useState } from "react";
  * Hook pour détecter le statut de la connexion réseau (web uniquement)
  */
 export function useNetworkStatus() {
-    const [isOnline, setIsOnline] = useState(true);
+    // Initialiser directement avec navigator.onLine pour éviter le faux "online"
+    // qui déclencherait fetchEvents() alors qu'on est hors-ligne
+    const [isOnline, setIsOnline] = useState(() => {
+        if (typeof navigator === 'undefined') return true;
+        return navigator.onLine;
+    });
     const pollingIntervalRef = useRef(null);
 
     useEffect(() => {
@@ -21,6 +26,8 @@ export function useNetworkStatus() {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
                 // Ping vers la route ICS pour vérifier la connexion
+                // NOTE: HEAD n'est pas intercepté par le Service Worker (req.method !== 'GET')
+                // → il va directement sur le réseau, ce qui est voulu pour un vrai ping
                 await fetch('/api/fetch-ics', { 
                     method: 'HEAD', 
                     cache: 'no-cache', 
@@ -33,11 +40,11 @@ export function useNetworkStatus() {
             }
         };
 
-        // État initial
-        const initialOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        setStatus(initialOnline);
+        // Synchroniser avec navigator.onLine au cas où il aurait changé entre le render et l'effect
+        const currentOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        setStatus(currentOnline);
         
-        // Vérifier une fois au chargement
+        // Vérifier la connexion réelle au chargement (réseau vs cache SW)
         checkRealConnection();
 
         // Écouter les événements online/offline
