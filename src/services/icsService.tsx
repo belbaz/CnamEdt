@@ -269,8 +269,9 @@ export async function fetchICSEvents(options = {}) {
  * @param {Array} events - Les événements à sauvegarder
  * @param {Object} colors - Le mapping des couleurs par matière
  * @param {string|null} hash - Le hash ICS du serveur (pour détecter les caches obsolètes)
+ * @param {{ preserveTimestamp?: boolean }} [options] - Si preserveTimestamp : ne pas mettre à jour la date affichée (ICS inchangé / cache local)
  */
-export function saveEventsToCache(events, colors, hash = null) {
+export function saveEventsToCache(events, colors, hash = null, options = {}) {
     if (typeof localStorage === 'undefined') return;
     if (!ACTIVE_CACHE) {
         localStorage.removeItem("events");
@@ -279,11 +280,20 @@ export function saveEventsToCache(events, colors, hash = null) {
         localStorage.removeItem("cacheHash");
         return;
     }
+    const preserveTimestamp = options.preserveTimestamp === true;
     localStorage.setItem("events", JSON.stringify(events));
     localStorage.setItem("subjectColors", JSON.stringify(colors));
-    // TOUJOURS sauvegarder le timestamp quand on sauvegarde le cache
-    localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
-    // Sauvegarder le hash pour pouvoir comparer avec le serveur plus tard
+    if (!preserveTimestamp) {
+        localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
+    } else {
+        try {
+            if (!localStorage.getItem("lastUpdateTimestamp")) {
+                localStorage.setItem("lastUpdateTimestamp", new Date().toISOString());
+            }
+        } catch {
+            /* ignore */
+        }
+    }
     if (hash) {
         localStorage.setItem("cacheHash", hash);
         console.log('[ICS Service] Cache sauvegardé avec hash:', hash);

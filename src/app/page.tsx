@@ -171,9 +171,6 @@ function HomeContent({searchParams}) {
     );
 
 
-    // Présence d'un deep-link vers un cours précis
-    const eventKeyParam = searchParams?.get('eventKey');
-
     // Hook PWA pour détecter l'installation
     const {isInstalled, isStandalone} = usePWA();
     const {isOnline} = useNetworkStatus();
@@ -225,6 +222,21 @@ function HomeContent({searchParams}) {
         }, wait);
     };
 
+    // Conserver la semaine affichée quand on recharge depuis le cache ou après sync (ex. passage avion → hors ligne).
+    // Sinon selectBestWeek ramenait toujours vers la semaine « courante » et cassait navigation + clic sur un cours.
+    const syncSelectedWeekWithAvailableWeeks = (weeks) => {
+        const hasEventKey =
+            typeof window !== 'undefined' &&
+            !!new URLSearchParams(window.location.search).get('eventKey');
+        if (hasEventKey || !weeks || weeks.length === 0) return;
+        setSelectedWeek((prev) => {
+            if (prev && weeks.some((w) => w.monday.getTime() === prev.getTime())) {
+                return prev;
+            }
+            return selectBestWeek(weeks)?.monday ?? null;
+        });
+    };
+
     // Fonction utilitaire pour charger le cache et mettre à jour l'état
     const loadCacheAndUpdateState = (cached) => {
         if (!cached || !cached.events || cached.events.length === 0) return false;
@@ -238,10 +250,7 @@ function HomeContent({searchParams}) {
         setSubjectColors(colors);
         const weeks = extractAvailableWeeks(cached.events, language);
         setAvailableWeeks(weeks);
-        if (!eventKeyParam && weeks.length > 0) {
-            const weekToSelect = selectBestWeek(weeks);
-            setSelectedWeek(weekToSelect?.monday);
-        }
+        syncSelectedWeekWithAvailableWeeks(weeks);
 
         // Récupérer le timestamp du cache pour afficher la date de dernière mise à jour du cache
         // IMPORTANT: Toujours restaurer depuis localStorage pour éviter d'afficher la date actuelle
@@ -402,10 +411,7 @@ function HomeContent({searchParams}) {
 
             const weeks = extractAvailableWeeks(eventsData, language);
             setAvailableWeeks(weeks);
-            if (!eventKeyParam) {
-                const weekToSelect = selectBestWeek(weeks);
-                setSelectedWeek(weekToSelect?.monday);
-            }
+            syncSelectedWeekWithAvailableWeeks(weeks);
 
             // Vérifier si on est vraiment en ligne (pas juste le navigateur, mais le serveur accessible)
             let isReallyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -433,22 +439,25 @@ function HomeContent({searchParams}) {
 
             if (!isReallyOffline) {
                 const serverHash = meta.hash || null;
-                const unchangedLocal =
-                    meta.source === 'local-cache' && meta.fromCache === true;
+                const preserveTimestamp =
+                    (meta.source === 'local-cache' && meta.fromCache === true) ||
+                    meta.icsUnchanged === true;
 
-                if (!unchangedLocal) {
-                    // Données nouvellement synchronisées : mettre à jour cache + date affichée
-                    saveEventsToCache(eventsData, colorMapping, serverHash);
+                // Toujours réécrire le cache local avec la liste complète quand on est en ligne (y compris ICS inchangé).
+                if (eventsData.length > 0) {
+                    saveEventsToCache(eventsData, colorMapping, serverHash, { preserveTimestamp });
+                }
+
+                if (!preserveTimestamp) {
                     const newTimestamp = new Date().toISOString();
                     setLastUpdateTimestamp(newTimestamp);
                     console.log('[Page] En ligne - Date actuelle:', newTimestamp, '| Hash:', serverHash);
                 } else {
-                    // Hash ICS inchangé : ne pas fausser la « dernière mise à jour » affichée
                     if (typeof window !== 'undefined') {
                         const ts = localStorage.getItem('lastUpdateTimestamp');
                         if (ts) setLastUpdateTimestamp(ts);
                     }
-                    console.log('[Page] ICS inchangé (hash = cache local), date de MAJ conservée | Hash:', serverHash);
+                    console.log('[Page] Données inchangées — cache EDT complet réécrit, date de MAJ conservée | Hash:', serverHash);
                 }
                 setHasNetworkError(false);
             } else {

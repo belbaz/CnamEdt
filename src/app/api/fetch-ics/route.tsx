@@ -150,6 +150,35 @@ function buildEventPayload(rawEvent) {
     };
 }
 
+/** Même logique que le flux principal : texte ICS → événements uniques par uid stable, triés par date. */
+function parseIcsTextToSortedEvents(text) {
+    const parsed = ical.sync.parseICS(text);
+    const eventMap = new Map();
+    for (const value of Object.values(parsed)) {
+        if (!value || value.type !== 'VEVENT') continue;
+        const payload = buildEventPayload(value);
+        if (!payload.uid) continue;
+
+        const existing = eventMap.get(payload.uid);
+        if (!existing) {
+            eventMap.set(payload.uid, payload);
+            continue;
+        }
+
+        const existingStart = existing.start ? new Date(existing.start).getTime() : -Infinity;
+        const newStart = payload.start ? new Date(payload.start).getTime() : -Infinity;
+        if (newStart >= existingStart) {
+            eventMap.set(payload.uid, payload);
+        }
+    }
+
+    return Array.from(eventMap.values()).sort((a, b) => {
+        const timeA = a.start ? new Date(a.start).getTime() : 0;
+        const timeB = b.start ? new Date(b.start).getTime() : 0;
+        return timeA - timeB;
+    });
+}
+
 function computeEventContentHash(event) {
     // Normaliser les dates pour éviter les différences de format (millisecondes, etc.)
     const normalizeDate = (dateStr) => {
@@ -834,10 +863,9 @@ export async function GET(request) {
                 });
             }
 
-            // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible)
-            // Si le hash est identique ET que le client n'a pas demandé un force,
-            // dire au client d'utiliser son cache localStorage
-            // (on n'interroge PAS Supabase pour éviter les requêtes inutiles)
+            // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible).
+            // Si le hash est identique : on renvoie quand même tout le calendrier parsé pour que le client
+            // puisse remplir localStorage (mode hors ligne, nouvel appareil, cache partiel).
             if (supabaseClient && !forceParser) {
                 try {
                     const ics_hash = currentIcsHash;
@@ -865,21 +893,36 @@ export async function GET(request) {
                     }
                     
                     if (lastHash && ics_hash === lastHash) {
-                        // Hash identique : dire au client d'utiliser son cache localStorage
-                        // On ne va PAS chercher dans Supabase (edt_events_versions)
-                        console.log('[API fetch-ics] ICS hash unchanged, telling client to use local cache');
-                        return NextResponse.json({
-                            unchanged: true,
-                            meta: {
-                                source: 'unchanged',
-                                fromCache: true,
-                                hash: ics_hash.substring(0, 8) // Pour debug
-                            }
-                        }, {
-                            headers: {
-                                'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
-                            }
-                        });
+                        let eventsForClient = getCachedParsedICS(currentIcsHash);
+                        if (!eventsForClient || eventsForClient.length === 0) {
+                            eventsForClient = parseIcsTextToSortedEvents(text);
+                            setCachedParsedICS(currentIcsHash, eventsForClient);
+                        }
+                        if (eventsForClient.length === 0) {
+                            console.warn('[API fetch-ics] Hash inchangé mais parsing vide — poursuite du flux complet');
+                        } else {
+                            console.log('[API fetch-ics] ICS hash inchangé — envoi de', eventsForClient.length, 'événements pour le cache client');
+                            return NextResponse.json({
+                                events: eventsForClient,
+                                diff: {
+                                    added: [],
+                                    updated: [],
+                                    removed: []
+                                },
+                                meta: {
+                                    source: 'unchanged',
+                                    fromCache: false,
+                                    changed: 0,
+                                    hash: hashForClient,
+                                    icsUnchanged: true
+                                }
+                            }, {
+                                headers: {
+                                    'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+                                    'CDN-Cache-Control': 'public, max-age=300'
+                                }
+                            });
+                        }
                     }
                 } catch (checkErr) {
                     console.warn('[API fetch-ics] Error checking hash, will parse:', checkErr.message);
@@ -888,32 +931,7 @@ export async function GET(request) {
                 console.log('[API fetch-ics] Force parsing requested, skipping hash check');
             }
 
-            const parsed = ical.sync.parseICS(text);
-
-            const eventMap = new Map();
-            for (const value of Object.values(parsed)) {
-                if (!value || value.type !== 'VEVENT') continue;
-                const payload = buildEventPayload(value);
-                if (!payload.uid) continue;
-
-                const existing = eventMap.get(payload.uid);
-                if (!existing) {
-                    eventMap.set(payload.uid, payload);
-                    continue;
-                }
-
-                const existingStart = existing.start ? new Date(existing.start).getTime() : -Infinity;
-                const newStart = payload.start ? new Date(payload.start).getTime() : -Infinity;
-                if (newStart >= existingStart) {
-                    eventMap.set(payload.uid, payload);
-                }
-            }
-
-            const events = Array.from(eventMap.values()).sort((a, b) => {
-                const timeA = a.start ? new Date(a.start).getTime() : 0;
-                const timeB = b.start ? new Date(b.start).getTime() : 0;
-                return timeA - timeB;
-            });
+            const events = parseIcsTextToSortedEvents(text);
 
             console.log('[API fetch-ics] Events parsed:', events.length);
             
