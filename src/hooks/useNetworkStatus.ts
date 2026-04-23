@@ -1,76 +1,101 @@
 // @ts-nocheck
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+
+/** Timeout HEAD si le navigateur prétend être en ligne (détecte « faux en ligne » / SW) */
+const HEAD_PROBE_MS = 2200;
 
 /**
- * Hook pour détecter le statut de la connexion réseau (web uniquement)
+ * Détection réseau pour l’app EDT :
+ * - Si le navigateur annonce hors ligne → on débloque tout de suite (pas d’attente HEAD).
+ * - Sinon → un HEAD court vers /api/fetch-ics (hors SW) valide la vraie connectivité.
+ *
+ * `connectivityReady` indique que cette première décision est faite (évite la fausse branche « en ligne »).
  */
 export function useNetworkStatus() {
-    // Garder true comme valeur initiale pour la compatibilité SSR (Next.js hydration)
-    // La valeur réelle de navigator.onLine est lue dans useEffect (client uniquement)
     const [isOnline, setIsOnline] = useState(true);
-    /** false jusqu'au 1er HEAD /api/fetch-ics — évite de traiter « en ligne » avant la preuve réseau */
     const [connectivityReady, setConnectivityReady] = useState(false);
-    const pollingIntervalRef = useRef(null);
+    const abortRef = useRef(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+        if (typeof window === "undefined" || typeof navigator === "undefined") {
+            setConnectivityReady(true);
+            return;
+        }
+
         let cancelled = false;
+
+        const setReady = () => {
+            if (!cancelled) setConnectivityReady(true);
+        };
 
         const setStatus = (online) => {
             if (!cancelled) setIsOnline(online);
         };
 
         const checkRealConnection = async () => {
+            if (abortRef.current) {
+                abortRef.current.abort();
+                abortRef.current = null;
+            }
+            const controller = new AbortController();
+            abortRef.current = controller;
+            let timeoutId = 0;
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000);
-                // Ping vers la route ICS pour vérifier la connexion
-                // NOTE: HEAD n'est pas intercepté par le Service Worker (req.method !== 'GET')
-                // → il va directement sur le réseau, ce qui est voulu pour un vrai ping
-                await fetch('/api/fetch-ics', { 
-                    method: 'HEAD', 
-                    cache: 'no-cache', 
-                    signal: controller.signal 
+                timeoutId = window.setTimeout(() => controller.abort(), HEAD_PROBE_MS);
+                await fetch("/api/fetch-ics", {
+                    method: "HEAD",
+                    cache: "no-cache",
+                    signal: controller.signal,
                 });
-                clearTimeout(timeoutId);
                 setStatus(true);
             } catch {
                 setStatus(false);
             } finally {
-                if (!cancelled) setConnectivityReady(true);
+                if (timeoutId) window.clearTimeout(timeoutId);
+                abortRef.current = null;
+                setReady();
             }
         };
 
-        // Lire navigator.onLine dès que le composant est monté (synchrone, avant checkRealConnection)
-        const currentOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        setStatus(currentOnline);
-        
-        // Vérification réseau réelle (réseau vs cache SW) — asynchrone
-        checkRealConnection();
+        const onOffline = () => {
+            if (abortRef.current) {
+                abortRef.current.abort();
+                abortRef.current = null;
+            }
+            setStatus(false);
+            setReady();
+        };
 
-        // Écouter les événements online/offline
         const onOnline = () => {
             setStatus(true);
-            // Vérifier la connexion réelle après un court délai
-            setTimeout(checkRealConnection, 1000);
+            window.setTimeout(() => {
+                if (!cancelled) void checkRealConnection();
+            }, 400);
         };
-        
-        const onOffline = () => setStatus(false);
 
-        window.addEventListener('online', onOnline);
-        window.addEventListener('offline', onOffline);
+        // Hors ligne annoncé : affichage immédiat du cache EDT (pas de sonde bloquante).
+        if (!navigator.onLine) {
+            setStatus(false);
+            setReady();
+        } else {
+            setStatus(true);
+            void checkRealConnection();
+        }
+
+        window.addEventListener("online", onOnline);
+        window.addEventListener("offline", onOffline);
 
         return () => {
             cancelled = true;
-            window.removeEventListener('online', onOnline);
-            window.removeEventListener('offline', onOffline);
-            if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current);
-                pollingIntervalRef.current = null;
+            if (abortRef.current) {
+                abortRef.current.abort();
+                abortRef.current = null;
             }
+            window.removeEventListener("online", onOnline);
+            window.removeEventListener("offline", onOffline);
         };
     }, []);
 
     return { isOnline, connectivityReady };
 }
-

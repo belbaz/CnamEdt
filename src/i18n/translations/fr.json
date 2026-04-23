@@ -475,6 +475,7 @@
     "edtVerifyingShort": "Vérif…",
     "edtMinorUpdateHint": "L'EDT a été ajusté sur d'autres semaines.",
     "edtLoadingFirst": "Chargement de l'emploi du temps...",
+    "connectivityCheck": "Vérification de la connexion…",
     "debugErrorTitle": "Erreur de chargement",
     "debugErrorMessage": "Message :",
     "debugInfoTitle": "Informations de débogage",

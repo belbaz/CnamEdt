@@ -131,8 +131,8 @@ function HomeContent({searchParams}) {
     const hasPlayedHomeEntranceRef = useRef(false);
     /** Flag pour savoir si on peut afficher les cartes (évite le flash avant animation) */
     const [canShowCards, setCanShowCards] = useState(false);
-    /** Texte chargement EDT : même valeur SSR/client au 1er rendu (évite mismatch d’hydratation), puis sync après montage. */
-    const [edtInitialLoadingText, setEdtInitialLoadingText] = useState(() => t('page.edtLoadingFirst'));
+    /** Dès l’ouverture : message « connexion » jusqu’à la fin de la sonde ; puis edtWaitSync / edtLoadingFirst. */
+    const [edtInitialLoadingText, setEdtInitialLoadingText] = useState(() => t('page.connectivityCheck'));
     /** Début de l’écran de chargement plein écran (pour durée mini. d’affichage du texte). */
     const blockingLoadStartRef = useRef(null);
     /** Au moment du chargement : avait-on déjà des cours en cache local ? */
@@ -796,24 +796,10 @@ function HomeContent({searchParams}) {
         const cached = loadEventsFromCache();
         cachePrimedRef.current = !!(cached && cached.events && cached.events.length > 0);
 
-        // Avant la 1ère sonde HEAD : ne pas prendre la branche « en ligne » (isOnline peut rester true
-        // alors que le réseau est coupé — ex. simulateur mobile / navigator.onLine menteur).
+        // Avant la fin de la sonde réseau : toujours afficher le chargement (spinner + libellé dédié).
         if (!connectivityReady) {
-            if (cached && cached.events && cached.events.length > 0) {
-                if (loadCacheAndUpdateState(cached)) {
-                    setLoading(false);
-                    setCanShowCards(true);
-                    if (!hasPlayedHomeEntranceRef.current) {
-                        hasPlayedHomeEntranceRef.current = true;
-                        setEntranceAnimationActive(true);
-                    }
-                }
-                if (blockingLoadStartRef.current === null) {
-                    blockingLoadStartRef.current = Date.now();
-                    blockingLoadHadCacheRef.current = true;
-                }
-                finishBlockingLoading();
-            }
+            setLoading(true);
+            setCanShowCards(false);
             return;
         }
 
@@ -876,11 +862,15 @@ function HomeContent({searchParams}) {
     }, []);
 
     useEffect(() => {
+        if (!connectivityReady) {
+            setEdtInitialLoadingText(t('page.connectivityCheck'));
+            return;
+        }
         const cached = loadEventsFromCache();
         setEdtInitialLoadingText(
             cached?.events?.length > 0 ? t('page.edtWaitSync') : t('page.edtLoadingFirst')
         );
-    }, [t]);
+    }, [t, connectivityReady]);
 
     // Charger les infos utilisateur (après la sonde réseau : évite un 503 SW inutile hors ligne au chargement)
     useEffect(() => {

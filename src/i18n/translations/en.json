@@ -475,6 +475,7 @@
     "edtVerifyingShort": "Checking…",
     "edtMinorUpdateHint": "The schedule changed on other weeks.",
     "edtLoadingFirst": "Loading your schedule...",
+    "connectivityCheck": "Checking connection…",
     "debugErrorTitle": "Loading Error",
     "debugErrorMessage": "Message:",
     "debugInfoTitle": "Debug Information",
