@@ -78,6 +78,25 @@ export default function RootLayout({ children }) {
                     })();
                 `}}
                 />
+                {process.env.NODE_ENV === "production" && IS_CACHE_ENABLED ? (
+                    <script
+                        dangerouslySetInnerHTML={{
+                            __html: `
+                    (function() {
+                        // Enregistrement immédiat du SW (avant React) : sur mobile le 1er chargement
+                        // contrôle mieux les navigations / cache que useEffect tardif.
+                        if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+                        var en = (typeof window.__ACTIVE_CACHE !== 'undefined') ? !!window.__ACTIVE_CACHE : true;
+                        if (!en) return;
+                        navigator.serviceWorker.register('/sw.js', {
+                            scope: '/',
+                            updateViaCache: 'none'
+                        }).catch(function() {});
+                    })();
+                `,
+                        }}
+                    />
+                ) : null}
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
@@ -168,6 +187,13 @@ export default function RootLayout({ children }) {
                         // Dans les deux cas, on vide les caches et on recharge la page.
 
                         function nukeCachesAndReload(reloadKey) {
+                            // Hors ligne : ne JAMAIS désinscrire le SW ni vider les caches.
+                            // Sur mobile, un échec de chunk (réseau coupé) ressemble à un ChunkLoadError :
+                            // nettoyer ici rendait la PWA inexploitable sans Internet.
+                            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                                console.warn('[SW Early] Nettoyage SW ignoré (hors ligne — conservation du cache PWA)');
+                                return;
+                            }
                             var now = Date.now();
                             var lastTs = '';
                             try { lastTs = sessionStorage.getItem(reloadKey) || ''; } catch(e) {}
@@ -219,6 +245,20 @@ export default function RootLayout({ children }) {
                                 nukeCachesAndReload('_chunk_error_reload_ts');
                             }
                         }, true);
+
+                        // --- 3. Même chose via promesses (import dynamique sur mobile / Safari) ---
+                        window.addEventListener('unhandledrejection', function(event) {
+                            var reason = event.reason;
+                            var msg = (reason && reason.message) ? String(reason.message) : String(reason || '');
+                            if (msg.indexOf('ChunkLoadError') !== -1 ||
+                                msg.indexOf('Failed to load chunk') !== -1 ||
+                                msg.indexOf('Loading chunk') !== -1 ||
+                                msg.indexOf('Failed to fetch dynamically imported module') !== -1) {
+                                console.warn('[SW Early] Échec chunk (promesse) :', msg);
+                                event.preventDefault();
+                                nukeCachesAndReload('_chunk_reject_reload_ts');
+                            }
+                        });
 
                     })();
                 `}}
