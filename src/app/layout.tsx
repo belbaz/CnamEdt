@@ -1,11 +1,20 @@
 // @ts-nocheck
 import "./global.css";
+import { Inter } from "next/font/google";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
 import CookieConsent from "@/components/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import PWAUpdateChecker from "@/components/PWAUpdateChecker";
 import LanguageSetter from "@/components/LanguageSetter";
 import { I18nProvider } from "@/i18n/I18nContext";
+
+// Inter est téléchargée au build et servie en local → aucune requête Google hors ligne
+const inter = Inter({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800"],
+    display: "swap",
+    variable: "--font-inter",
+});
 
 const activeCacheEnv = process.env.NEXT_PUBLIC_ACTIVE_CACHE ?? process.env.ACTIVE_CACHE ?? 'true';
 const IS_CACHE_ENABLED = String(activeCacheEnv).toLowerCase() !== 'false';
@@ -17,12 +26,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="fr" suppressHydrationWarning>
+        <html lang="fr" suppressHydrationWarning className={inter.variable}>
             <head>
                 {/* Style critique pour éviter le flash de langue - cache le body jusqu'à ce que la langue soit chargée */}
                 <style dangerouslySetInnerHTML={{__html: `
                     body:not(.i18n-ready) { opacity: 0 !important; }
-                    body.i18n-ready { opacity: 1; }
+                    body.i18n-ready { opacity: 1; transition: opacity .15s; }
                 `}} />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png" />
@@ -61,10 +70,7 @@ export default function RootLayout({ children }) {
                 <meta name="apple-mobile-web-app-title" content="EDT EICNAM" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="theme-color" content="#111827" />
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-                    rel="stylesheet" />
+                {/* Polices servies localement via next/font/google — pas de requête externe bloquante */}
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
@@ -97,6 +103,21 @@ export default function RootLayout({ children }) {
                         }}
                     />
                 ) : null}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                    (function() {
+                        // Garde-fou : si React met trop de temps à s'hydrater (réseau lent,
+                        // gros bundle en cache sur petit mobile), on révèle quand même le body
+                        // après 500ms pour ne pas rester sur un écran vide.
+                        setTimeout(function() {
+                            if (document.body && !document.body.classList.contains('i18n-ready')) {
+                                document.body.classList.add('i18n-ready');
+                            }
+                        }, 500);
+                    })();
+                `}}
+                />
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
