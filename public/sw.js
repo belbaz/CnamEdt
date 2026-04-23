@@ -88,6 +88,38 @@ function isRscOrNextDataUrl(url) {
 }
 
 /**
+ * Next.js génère un ?_rsc= différent à chaque requête flight : hors ligne, caches.match(req) échoue
+ * même si une réponse flight pour le même chemin est déjà en cache (préfetch / visite antérieure).
+ * On réutilise une entrée « même pathname + _rsc » du cache (même build).
+ */
+async function matchCachedFlightForPathname(req, url) {
+  try {
+    const origin = url.origin;
+    const wantPath = url.pathname || '/';
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    for (const key of keys) {
+      try {
+        const ku = new URL(key.url);
+        if (ku.origin !== origin || ku.pathname !== wantPath) continue;
+        if (!ku.searchParams.has('_rsc')) continue;
+        const hit = await cache.match(key);
+        if (!hit || !hit.ok) continue;
+        const ct = (hit.headers.get('content-type') || '').toLowerCase();
+        // Ne pas renvoyer une page HTML complète à la place d’un payload flight
+        if (ct.includes('text/html') && !ct.includes('component')) continue;
+        return hit;
+      } catch (e) {
+        /* continue */
+      }
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return null;
+}
+
+/**
  * Repli document hors ligne : plusieurs clés possibles (mobile normalise différemment les URL).
  */
 async function matchOfflineDocument(req) {
@@ -147,10 +179,11 @@ async function matchOfflineDocument(req) {
 async function matchOfflineWithSearchFallback(req, url) {
   let hit = await caches.match(req);
   if (hit) return hit;
-  // Ne pas confondre payload RSC / flight avec une autre réponse (ex. HTML de /)
   if (!isRscOrNextDataUrl(url)) {
     hit = await caches.match(req, { ignoreSearch: true });
+    return hit || null;
   }
+  hit = await matchCachedFlightForPathname(req, url);
   return hit || null;
 }
 
