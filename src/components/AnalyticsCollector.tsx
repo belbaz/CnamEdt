@@ -181,7 +181,15 @@ export default function AnalyticsCollector() {
                 }
             }
         } catch (error) {
-            console.warn(`${LOG_PREFIX} Erreur envoi analytics:`, error);
+            const msg = error instanceof Error ? error.message : String(error);
+            const offline =
+                msg.includes('Failed to fetch') ||
+                msg.includes('INTERNET_DISCONNECTED') ||
+                msg.includes('NetworkError') ||
+                msg.includes('Load failed');
+            if (!offline) {
+                console.warn(`${LOG_PREFIX} Erreur envoi analytics:`, error);
+            }
         }
     };
 

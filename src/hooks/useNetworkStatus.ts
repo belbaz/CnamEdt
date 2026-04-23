@@ -9,6 +9,8 @@ export function useNetworkStatus() {
     // Garder true comme valeur initiale pour la compatibilité SSR (Next.js hydration)
     // La valeur réelle de navigator.onLine est lue dans useEffect (client uniquement)
     const [isOnline, setIsOnline] = useState(true);
+    /** false jusqu'au 1er HEAD /api/fetch-ics — évite de traiter « en ligne » avant la preuve réseau */
+    const [connectivityReady, setConnectivityReady] = useState(false);
     const pollingIntervalRef = useRef(null);
 
     useEffect(() => {
@@ -21,7 +23,7 @@ export function useNetworkStatus() {
         const checkRealConnection = async () => {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
                 // Ping vers la route ICS pour vérifier la connexion
                 // NOTE: HEAD n'est pas intercepté par le Service Worker (req.method !== 'GET')
                 // → il va directement sur le réseau, ce qui est voulu pour un vrai ping
@@ -34,6 +36,8 @@ export function useNetworkStatus() {
                 setStatus(true);
             } catch {
                 setStatus(false);
+            } finally {
+                if (!cancelled) setConnectivityReady(true);
             }
         };
 
@@ -67,6 +71,6 @@ export function useNetworkStatus() {
         };
     }, []);
 
-    return { isOnline };
+    return { isOnline, connectivityReady };
 }
 

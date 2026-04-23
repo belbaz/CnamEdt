@@ -179,7 +179,7 @@ function HomeContent({searchParams}) {
 
     // Hook PWA pour détecter l'installation
     const {isInstalled, isStandalone} = usePWA();
-    const {isOnline} = useNetworkStatus();
+    const { isOnline, connectivityReady } = useNetworkStatus();
     const devMode = useDevMode();
 
     // Pull-to-refresh sur mobile/web
@@ -796,6 +796,27 @@ function HomeContent({searchParams}) {
         const cached = loadEventsFromCache();
         cachePrimedRef.current = !!(cached && cached.events && cached.events.length > 0);
 
+        // Avant la 1ère sonde HEAD : ne pas prendre la branche « en ligne » (isOnline peut rester true
+        // alors que le réseau est coupé — ex. simulateur mobile / navigator.onLine menteur).
+        if (!connectivityReady) {
+            if (cached && cached.events && cached.events.length > 0) {
+                if (loadCacheAndUpdateState(cached)) {
+                    setLoading(false);
+                    setCanShowCards(true);
+                    if (!hasPlayedHomeEntranceRef.current) {
+                        hasPlayedHomeEntranceRef.current = true;
+                        setEntranceAnimationActive(true);
+                    }
+                }
+                if (blockingLoadStartRef.current === null) {
+                    blockingLoadStartRef.current = Date.now();
+                    blockingLoadHadCacheRef.current = true;
+                }
+                finishBlockingLoading();
+            }
+            return;
+        }
+
         // Vérification directe de navigator.onLine en plus du state isOnline
         // Raison : isOnline peut encore valoir true (valeur initiale useState) même si le navigateur
         // sait déjà qu'on est hors-ligne — la mise à jour du state est asynchrone (batch React)
@@ -837,7 +858,7 @@ function HomeContent({searchParams}) {
             console.log("[Page] En ligne — pas de cache, chargement initial depuis le serveur");
             fetchEvents({ uiMode: "initial-blocking" });
         }
-    }, [isOnline]);
+    }, [isOnline, connectivityReady]);
 
     useEffect(() => {
         if (!showEdtMinorUpdateHint) return;
@@ -861,8 +882,13 @@ function HomeContent({searchParams}) {
         );
     }, [t]);
 
-    // Charger les infos utilisateur
+    // Charger les infos utilisateur (après la sonde réseau : évite un 503 SW inutile hors ligne au chargement)
     useEffect(() => {
+        if (!connectivityReady) return;
+        if (!isOnline) {
+            setIsLoadingUser(false);
+            return;
+        }
         const loadUserInfo = async () => {
             try {
                 setIsLoadingUser(true);
@@ -888,7 +914,7 @@ function HomeContent({searchParams}) {
             }
         };
         loadUserInfo();
-    }, []);
+    }, [connectivityReady, isOnline]);
 
     // Charger la date du dernier build uniquement pour les superAdmin
     useEffect(() => {

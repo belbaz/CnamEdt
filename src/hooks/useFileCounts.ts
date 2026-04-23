@@ -42,6 +42,11 @@ export function useFileCounts(uids = [], delay = 0) {
             }
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            setFileCounts(fileCountsGlobalCache.key === cacheKey ? fileCountsGlobalCache.data || {} : {});
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
@@ -72,7 +77,15 @@ export function useFileCounts(uids = [], delay = 0) {
                 throw new Error(data.error || 'Erreur inconnue');
             }
         } catch (err) {
-            console.error("[useFileCounts] Erreur chargement compteurs fichiers:", err);
+            const msg = err instanceof Error ? err.message : String(err);
+            const likelyOffline =
+                msg.includes('Failed to fetch') ||
+                msg.includes('NetworkError') ||
+                msg.includes('INTERNET_DISCONNECTED') ||
+                msg.includes('Load failed');
+            if (!likelyOffline) {
+                console.error("[useFileCounts] Erreur chargement compteurs fichiers:", err);
+            }
             setError(err instanceof Error ? err : new Error(String(err)));
             setFileCounts({});
         } finally {
