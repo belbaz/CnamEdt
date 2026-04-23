@@ -47,6 +47,8 @@ import {generateEventKey} from "@/utils/eventModalUtils";
  * Délai max sur UNE tentative de `fetchICSEvents()` → `/api/fetch-ics` uniquement.
  */
 const FETCH_ICS_TIMEOUT_MS = 4000;
+/** Timeout synchro en arrière-plan (cache déjà affiché). */
+const FETCH_ICS_TIMEOUT_BG_MS = 5000;
 /** Durée min. d’affichage du libellé « Chargement de l'emploi du temps » (pas de cache). */
 const MIN_DISPLAY_MS_EDT_LOADING_FIRST = 0;
 /** Durée min. d’affichage du libellé « Vérification des mises à jour… » (cache présent). */
@@ -117,6 +119,10 @@ function HomeContent({searchParams}) {
     /** Indique qu'un cache local a déjà été appliqué (évite un flash de chargement plein écran au sync). */
     const cachePrimedRef = useRef(false);
     const [edtRemoteUpdateOverlay, setEdtRemoteUpdateOverlay] = useState(false);
+    /** Synchro serveur en arrière-plan (cache déjà montré). */
+    const [isEdtVerifying, setIsEdtVerifying] = useState(false);
+    /** Changement EDT hors de la semaine affichée — indicateur discret, pas le toast. */
+    const [showEdtMinorUpdateHint, setShowEdtMinorUpdateHint] = useState(false);
     const [showEdtChangeToast, setShowEdtChangeToast] = useState(false);
     const [edtChangeToastMessage, setEdtChangeToastMessage] = useState('current-week'); // 'current-week' ou 'general'
     const [edtChangeToastWeekLabel, setEdtChangeToastWeekLabel] = useState('');
@@ -177,7 +183,7 @@ function HomeContent({searchParams}) {
     const devMode = useDevMode();
 
     // Pull-to-refresh sur mobile/web
-    usePullToRefresh(() => fetchEvents());
+    usePullToRefresh(() => fetchEvents({ uiMode: "user-refresh" }));
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
@@ -275,17 +281,20 @@ function HomeContent({searchParams}) {
         return true;
     };
 
-    const fetchEvents = async () => {
+    const fetchEvents = async (options = {}) => {
+        const uiMode = options.uiMode ?? "initial-blocking";
+        const isNonBlocking = uiMode === "background" || uiMode === "user-refresh";
+        let verifyingActive = false;
         try {
             // Inclut le cache chargé juste avant le premier fetch (évite un faux « pas de données »).
             const hadEventsBefore = allEvents.length > 0 || cachePrimedRef.current;
 
-            // Spinner plein écran tant qu'aucun événement n'est affiché (sync init ou pas de cache)
-            if (allEvents.length === 0) {
+            // Spinner plein écran seulement si rien n'est encore affiché et qu'on est en mode chargement initial
+            if (!isNonBlocking && allEvents.length === 0) {
                 setLoading(true);
                 blockingLoadStartRef.current = Date.now();
                 blockingLoadHadCacheRef.current =
-                    typeof window !== 'undefined' && !!(loadEventsFromCache()?.events?.length);
+                    typeof window !== "undefined" && !!(loadEventsFromCache()?.events?.length);
             }
             setError(null);
             setDebugInfo(null);
@@ -295,17 +304,22 @@ function HomeContent({searchParams}) {
             // Vérification offline immédiate (avant tout fetch réseau)
             // Cas : fetchEvents() a été appelé alors que isOnline était true,
             // mais navigator.onLine dit déjà false → charger le cache sans attendre
-            const immediatelyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+            const immediatelyOffline = typeof navigator !== "undefined" && !navigator.onLine;
             if (immediatelyOffline) {
-                console.log('[Page] fetchEvents() : navigator.onLine=false détecté immédiatement → repli cache direct');
+                console.log("[Page] fetchEvents() : navigator.onLine=false détecté immédiatement → repli cache direct");
                 const cached = loadEventsFromCache();
                 if (loadCacheAndUpdateState(cached)) {
                     setHasNetworkError(true);
                     return;
                 }
                 setHasNetworkError(true);
-                setError('Mode hors ligne\n\nAucune sauvegarde en cache');
+                setError("Mode hors ligne\n\nAucune sauvegarde en cache");
                 return;
+            }
+
+            if (isNonBlocking) {
+                setIsEdtVerifying(true);
+                verifyingActive = true;
             }
 
             const debug = {
@@ -317,20 +331,23 @@ function HomeContent({searchParams}) {
             };
 
             // Vérifier si on a un cache local AVANT de lancer le fetch
-            const hasLocalCache = typeof window !== 'undefined' && !!(loadEventsFromCache()?.events?.length);
-            
+            const hasLocalCache = typeof window !== "undefined" && !!(loadEventsFromCache()?.events?.length);
+
             let response;
             let icsTimeoutId = null;
             try {
                 const fetchPromise = fetchICSEvents({
-                    onStaleCache: () => setEdtRemoteUpdateOverlay(true)
+                    onStaleCache: () => {
+                        if (!isNonBlocking) setEdtRemoteUpdateOverlay(true);
+                    }
                 });
-                
-                // Toujours appliquer un timeout pour éviter un blocage infini en cas de perte réseau
-                // - Avec cache : timeout court (4s) pour un affichage rapide depuis le cache
-                // - Sans cache : timeout long (15s) pour laisser le temps au serveur de répondre
-                const timeoutMs = hasLocalCache ? FETCH_ICS_TIMEOUT_MS : 15000;
-                console.log('[Page] Timeout fetch ICS :', timeoutMs, 'ms (cache local :', hasLocalCache, ')');
+
+                // Timeout : en arrière-plan, délai un peu plus long mais sans bloquer l'affichage
+                let timeoutMs = 15000;
+                if (hasLocalCache) {
+                    timeoutMs = isNonBlocking ? FETCH_ICS_TIMEOUT_BG_MS : FETCH_ICS_TIMEOUT_MS;
+                }
+                console.log("[Page] Timeout fetch ICS :", timeoutMs, "ms | cache :", hasLocalCache, "| ui :", uiMode);
                 const timeoutPromise = new Promise((_, reject) => {
                     icsTimeoutId = setTimeout(
                         () => reject(new Error('FETCH_ICS_TIMEOUT')),
@@ -413,26 +430,22 @@ function HomeContent({searchParams}) {
             setAvailableWeeks(weeks);
             syncSelectedWeekWithAvailableWeeks(weeks);
 
-            // Vérifier si on est vraiment en ligne (pas juste le navigateur, mais le serveur accessible)
-            let isReallyOffline = typeof navigator !== 'undefined' && !navigator.onLine;
-
-            // Si le navigateur se dit en ligne, on vérifie si on peut vraiment contacter le serveur
-            // pour éviter de considérer le cache du SW comme une réponse "en ligne"
-            if (!isReallyOffline) {
+            // Vérifier si on est vraiment en ligne (HEAD optionnel : sauté en arrière-plan car le fetch ICS vient de réussir)
+            let isReallyOffline = typeof navigator !== "undefined" && !navigator.onLine;
+            if (!isReallyOffline && !isNonBlocking) {
                 try {
                     const controller = new AbortController();
-                    // Timeout court (2s) pour ne pas bloquer l'UI trop longtemps
                     const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-                    // Ping vers l'API fetch-ics pour vérifier le serveur
-                    await fetch('/api/fetch-ics', {
-                        method: 'HEAD',
-                        cache: 'no-store',
+                    await fetch("/api/fetch-ics", {
+                        method: "HEAD",
+                        cache: "no-store",
                         signal: controller.signal
                     });
                     clearTimeout(timeoutId);
                 } catch (e) {
-                    console.log('[Page] Navigateur en ligne mais serveur inaccessible (SW cache probable) -> Mode hors ligne forcé');
+                    console.log(
+                        "[Page] Navigateur en ligne mais serveur inaccessible (SW cache probable) -> Mode hors ligne forcé"
+                    );
                     isReallyOffline = true;
                 }
             }
@@ -532,18 +545,19 @@ function HomeContent({searchParams}) {
                     }
                 }
                 
-                // N'afficher la notification QUE si le changement concerne la semaine affichée
                 if (changesInCurrentWeek) {
+                    setShowEdtMinorUpdateHint(false);
                     setShowEdtChangeToast(true);
-                    setEdtChangeToastMessage('current-week');
+                    setEdtChangeToastMessage("current-week");
                     setEdtChangeToastWeekLabel(formatWeekRangeLabel(selectedWeek));
+                } else {
+                    setShowEdtChangeToast(false);
+                    setShowEdtMinorUpdateHint(true);
                 }
-                // Changements hors semaine affichée → pas de notification (silencieux)
-                
-                // Sauvegarder le nouveau hash pour la prochaine fois
-                if (currentHash && typeof window !== 'undefined') {
-                    localStorage.setItem('lastNotificationHash', currentHash);
-                    localStorage.setItem('lastEdtChangeNotificationTime', String(Date.now()));
+
+                if (currentHash && typeof window !== "undefined") {
+                    localStorage.setItem("lastNotificationHash", currentHash);
+                    localStorage.setItem("lastEdtChangeNotificationTime", String(Date.now()));
                 }
             } else if (totalChanges > 0) {
                 // Des changements sont détectés mais le hash est identique = faux positif
@@ -638,6 +652,7 @@ function HomeContent({searchParams}) {
         } finally {
             finishBlockingLoading();
             setEdtRemoteUpdateOverlay(false);
+            if (verifyingActive) setIsEdtVerifying(false);
         }
     };
 
@@ -806,12 +821,29 @@ function HomeContent({searchParams}) {
             return;
         }
 
-        // En ligne : NE PAS afficher l'EDT depuis le cache dans l'UI — attendre la réponse serveur
-        // Le cache sert uniquement au comparatif de hash côté icsService
-        console.log('[Page] En ligne — attente de la vérification ICS / hash avant affichage');
-        // NE PAS charger le cache ici pour éviter le double affichage
-        fetchEvents();
+        // En ligne avec cache : afficher l'EDT tout de suite, synchro serveur en arrière-plan
+        if (cached && cached.events && cached.events.length > 0) {
+            console.log("[Page] En ligne — affichage immédiat depuis le cache, vérification ICS en arrière-plan");
+            if (loadCacheAndUpdateState(cached)) {
+                setLoading(false);
+                setCanShowCards(true);
+                if (!hasPlayedHomeEntranceRef.current) {
+                    hasPlayedHomeEntranceRef.current = true;
+                    setEntranceAnimationActive(true);
+                }
+            }
+            fetchEvents({ uiMode: "background" });
+        } else {
+            console.log("[Page] En ligne — pas de cache, chargement initial depuis le serveur");
+            fetchEvents({ uiMode: "initial-blocking" });
+        }
     }, [isOnline]);
+
+    useEffect(() => {
+        if (!showEdtMinorUpdateHint) return;
+        const id = window.setTimeout(() => setShowEdtMinorUpdateHint(false), 12000);
+        return () => clearTimeout(id);
+    }, [showEdtMinorUpdateHint]);
 
     useEffect(() => {
         return () => {
@@ -1544,6 +1576,11 @@ function HomeContent({searchParams}) {
                 isVisible={showEdtChangeToast}
                 onClose={() => setShowEdtChangeToast(false)}
             />
+            {showEdtMinorUpdateHint && (
+                <div className={styles.edtMinorUpdateHint} role="status" aria-live="polite">
+                    {t("page.edtMinorUpdateHint")}
+                </div>
+            )}
             {edtRemoteUpdateOverlay && (
                 <div className={styles.edtRemoteUpdateOverlay} role="status" aria-live="polite">
                     <div className={styles.edtRemoteUpdateOverlayInner}>
@@ -1848,6 +1885,11 @@ function HomeContent({searchParams}) {
                             !hasNetworkError && (
                                 <div className="last-update-info">
                                     <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
+                                    {isEdtVerifying && (
+                                        <span className={styles.edtVerifyingPill} aria-live="polite">
+                                            {t("page.edtVerifyingShort")}
+                                        </span>
+                                    )}
                                     <button 
                                         onClick={() => setShowOfflineModal(true)} 
                                         className="btn-update-detail"
@@ -1863,6 +1905,11 @@ function HomeContent({searchParams}) {
                         {
                             hasNetworkError && (
                                 <div className="last-update-info">
+                                    {isEdtVerifying && (
+                                        <span className={styles.edtVerifyingPill} aria-live="polite">
+                                            {t("page.edtVerifyingShort")}
+                                        </span>
+                                    )}
                                     <button 
                                         onClick={() => setShowOfflineModal(true)} 
                                         className={styles.offlineTimestamp}

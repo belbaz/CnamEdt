@@ -472,6 +472,8 @@
     "edtChangeGeneral": "Your schedule has been updated.",
     "edtUpdatingOverlay": "Updating the schedule...",
     "edtWaitSync": "Checking for schedule updates...",
+    "edtVerifyingShort": "Checking…",
+    "edtMinorUpdateHint": "The schedule changed on other weeks.",
     "edtLoadingFirst": "Loading your schedule...",
     "debugErrorTitle": "Loading Error",
     "debugErrorMessage": "Message:",

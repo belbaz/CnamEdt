@@ -24,7 +24,7 @@ export function useHomePageHandlers({
     language
 }) {
     const handleRefresh = () => {
-        fetchEvents();
+        fetchEvents({ uiMode: "user-refresh" });
     };
 
     const handleToday = () => {
@@ -284,7 +284,7 @@ export function useHomePageHandlers({
             // Désactiver le mode test : recharger les données normales
             setTestModeState(false);
             setTestMode(false);
-            fetchEvents();
+            fetchEvents({ uiMode: "user-refresh" });
         }
     };
 
@@ -324,7 +324,7 @@ export function useHomePageHandlers({
             console.log('[Test Week] Désactivation du mode Test Semaine');
             setTestWeekModeState(false);
             setTestWeekMode(false);
-            fetchEvents();
+            fetchEvents({ uiMode: "user-refresh" });
         }
     };
 

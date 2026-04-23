@@ -843,6 +843,7 @@ export async function GET(request) {
                 
                 // Retourner immédiatement depuis le cache
                 return NextResponse.json({
+                    unchanged: true,
                     events: cachedEvents,
                     diff: {
                         added: [],
@@ -853,7 +854,8 @@ export async function GET(request) {
                         source: 'memory-cache',
                         fromCache: true,
                         changed: 0,
-                        hash: hashForClient
+                        hash: hashForClient,
+                        icsUnchanged: true
                     }
                 }, {
                     headers: {
@@ -903,6 +905,7 @@ export async function GET(request) {
                         } else {
                             console.log('[API fetch-ics] ICS hash inchangé — envoi de', eventsForClient.length, 'événements pour le cache client');
                             return NextResponse.json({
+                                unchanged: true,
                                 events: eventsForClient,
                                 diff: {
                                     added: [],

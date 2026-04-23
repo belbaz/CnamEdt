@@ -144,7 +144,7 @@ async function fetchEventsForWeb(options = {}) {
         let meta = { source: 'api', fromCache: false, changed: null };
 
         // Si le serveur dit que rien n'a changé, vérifier si le cache local correspond
-        if (data && data.unchanged === true) {
+        if (data && (data.unchanged === true || data.meta?.icsUnchanged === true)) {
             console.log('[ICS Service] Server says unchanged, checking local cache');
             const cached = loadEventsFromCache();
             const serverHash = data.meta?.hash || null;
@@ -215,7 +215,7 @@ async function fetchEventsForWeb(options = {}) {
         } else if (data && typeof data === 'object') {
             if (Array.isArray(data.events)) {
                 events = data.events;
-            } else if (data.unchanged !== true) {
+            } else if (data.unchanged !== true && data.meta?.icsUnchanged !== true) {
                 // Seulement lever une erreur si ce n'est pas une réponse "unchanged"
                 events = [];
             }

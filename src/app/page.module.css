@@ -528,6 +528,54 @@
     }
 }
 
+/* Pill discret : vérification serveur en cours (cache déjà affiché) */
+.edtVerifyingPill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    color: var(--text-muted, #64748b);
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    white-space: nowrap;
+}
+
+.dark-mode .edtVerifyingPill,
+[data-theme="dark"] .edtVerifyingPill {
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* Changement EDT hors semaine affichée — discret, pas le toast */
+.edtMinorUpdateHint {
+    position: fixed;
+    bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1200;
+    max-width: min(92vw, 20rem);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--text-secondary, #475569);
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.92));
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    text-align: center;
+    pointer-events: none;
+    opacity: 0.92;
+}
+
+.dark-mode .edtMinorUpdateHint,
+[data-theme="dark"] .edtMinorUpdateHint {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: var(--text-muted, #94a3b8);
+}
+
 /* Position relative pour le parent */
 .weekContent {
     position: relative;

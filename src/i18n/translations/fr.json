@@ -472,6 +472,8 @@
     "edtChangeGeneral": "Votre emploi du temps a été mis à jour.",
     "edtUpdatingOverlay": "Mise à jour de l'emploi du temps…",
     "edtWaitSync": "Vérification des mises à jour de l'emploi du temps…",
+    "edtVerifyingShort": "Vérif…",
+    "edtMinorUpdateHint": "L'EDT a été ajusté sur d'autres semaines.",
     "edtLoadingFirst": "Chargement de l'emploi du temps...",
     "debugErrorTitle": "Erreur de chargement",
     "debugErrorMessage": "Message :",
