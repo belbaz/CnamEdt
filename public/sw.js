@@ -15,10 +15,10 @@ const MAX_404_BEFORE_RELOAD = 3; // Après 3 fichiers 404, forcer un rechargemen
 
 // Sur mobile, fetch() peut rester « en attente » très longtemps hors ligne au lieu de rejeter :
 // sans timeout, le repli cache ne s’exécute jamais → site inaccessible sans Internet.
-const NAV_FETCH_TIMEOUT_MS = 8000;
-const STATIC_FETCH_TIMEOUT_MS = 8000;
-const API_FETCH_TIMEOUT_MS = 8000;
-const OTHER_FETCH_TIMEOUT_MS = 8000;
+const NAV_FETCH_TIMEOUT_MS = 5000;
+const STATIC_FETCH_TIMEOUT_MS = 5000;
+const API_FETCH_TIMEOUT_MS = 5000;
+const OTHER_FETCH_TIMEOUT_MS = 5000;
 
 // Ressources essentielles à mettre en cache immédiatement
 const APP_SHELL = [
@@ -68,6 +68,18 @@ function isTopLevelDocumentNavigation(req, url) {
   const modeHdr = req.headers.get('Sec-Fetch-Mode');
   const accept = req.headers.get('Accept') || '';
   if (modeHdr === 'navigate' && accept.includes('text/html')) return true;
+  // Chrome Android / WebView : navigation document avec peu d’en-têtes Sec-Fetch
+  if (accept.includes('text/html')) {
+    if (isRscOrNextDataUrl(url)) return false;
+    if (!url.pathname.startsWith('/_next/') && !url.pathname.startsWith('/api/')) {
+      const site = req.headers.get('Sec-Fetch-Site');
+      if (site === 'none') return true;
+      const hasSecFetch =
+        req.headers.has('Sec-Fetch-Dest') ||
+        !!req.headers.get('Sec-Fetch-Mode');
+      if (!hasSecFetch) return true;
+    }
+  }
   return false;
 }
 
@@ -111,6 +123,24 @@ async function matchOfflineDocument(req) {
       /* continue */
     }
   }
+
+  // Dernier recours : parcourir les clés (certaines entrées Android ne matchent pas Request)
+  try {
+    const u = new URL(req.url);
+    const wantPath = u.pathname || '/';
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    for (const key of keys) {
+      const ku = new URL(key.url);
+      if (ku.origin !== u.origin || ku.pathname !== wantPath) continue;
+      const hit = await cache.match(key);
+      if (!hit) continue;
+      const ct = (hit.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('text/html')) return hit;
+    }
+  } catch (e) {
+    /* ignore */
+  }
   return null;
 }
 
@@ -151,9 +181,14 @@ self.addEventListener('install', (event) => {
       caches.open(DATA_CACHE_NAME)
     ])
     .then(() => {
-      // NE PAS skipWaiting automatiquement - attendre que l'utilisateur accepte la mise à jour
-      // Cela permet d'afficher la bannière de mise à jour
-      console.log('[SW] Service Worker installé (en attente)');
+      // Première installation : activer tout de suite (sinon sur Android le SW peut rester
+      // inactif jusqu’à fermeture d’onglets → jamais de cache offline au 1er usage).
+      if (!self.registration.active) {
+        console.log('[SW] Première installation → skipWaiting');
+        self.skipWaiting();
+      } else {
+        console.log('[SW] Mise à jour installée (en attente — bannière PWA)');
+      }
     })
   );
 });
@@ -205,9 +240,9 @@ self.addEventListener('fetch', (event) => {
   if (isTopLevelDocumentNavigation(req, url)) {
     event.respondWith(
       (async () => {
-        // Signalement navigateur : évite d’attendre un fetch qui ne finit pas
+        const cachedPromise = matchOfflineDocument(req);
         if (navigatorClaimsOffline()) {
-          const cached = await matchOfflineDocument(req);
+          const cached = await cachedPromise;
           if (cached) return cached;
         }
         try {
@@ -217,11 +252,11 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
             return res;
           }
-          const cached = await matchOfflineDocument(req);
+          const cached = await cachedPromise;
           if (cached) return cached;
           return res;
         } catch (e) {
-          const cached = await matchOfflineDocument(req);
+          const cached = await cachedPromise;
           if (cached) return cached;
           return new Response('Page non disponible hors ligne', {
             status: 503,

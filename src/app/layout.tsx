@@ -180,16 +180,12 @@ export default function RootLayout({ children }) {
                     dangerouslySetInnerHTML={{
                         __html: `
                     (function() {
-                        // === RÉCUPÉRATION AUTOMATIQUE : ÉCRAN BLANC / BUILD OBSOLÈTE ===
-                        // Ce script s'exécute AVANT React. Il gère deux cas d'échec :
-                        //   1. Le SW envoie FORCE_RELOAD (trop de fichiers 404 détectés)
-                        //   2. Un ChunkLoadError survient (chunk Next.js introuvable)
-                        // Dans les deux cas, on vide les caches et on recharge la page.
+                        // === RÉCUPÉRATION : build obsolète uniquement quand le réseau répond ===
+                        // IMPORTANT Android : navigator.onLine reste souvent true sans Internet.
+                        // Un ChunkLoadError déclenchait nukeCachesAndReload → PWA hors ligne cassée.
+                        // On ne vide plus jamais les caches sur erreur JS ; seulement après vérif réseau OK.
 
                         function nukeCachesAndReload(reloadKey) {
-                            // Hors ligne : ne JAMAIS désinscrire le SW ni vider les caches.
-                            // Sur mobile, un échec de chunk (réseau coupé) ressemble à un ChunkLoadError :
-                            // nettoyer ici rendait la PWA inexploitable sans Internet.
                             if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                                 console.warn('[SW Early] Nettoyage SW ignoré (hors ligne — conservation du cache PWA)');
                                 return;
@@ -227,38 +223,40 @@ export default function RootLayout({ children }) {
                             } catch(e) { doReload(); }
                         }
 
+                        function networkOkThenNuke(reloadKey) {
+                            // Hors du scope du SW (cross-origin) : si on utilisait /manifest, le SW pourrait
+                            // répondre depuis le cache hors ligne et déclencher un nuke par erreur.
+                            var ctrl = new AbortController();
+                            var tid = setTimeout(function() { ctrl.abort(); }, 3500);
+                            fetch('https://www.gstatic.com/generate_204', {
+                                method: 'GET',
+                                mode: 'no-cors',
+                                cache: 'no-store',
+                                signal: ctrl.signal
+                            })
+                                .then(function() {
+                                    clearTimeout(tid);
+                                    nukeCachesAndReload(reloadKey);
+                                })
+                                .catch(function() {
+                                    clearTimeout(tid);
+                                    console.warn('[SW Early] Nettoyage annulé (pas de réseau réel — cache PWA conservé)');
+                                });
+                        }
+
                         // --- 1. Écoute précoce des messages du Service Worker ---
                         if ('serviceWorker' in navigator) {
                             navigator.serviceWorker.addEventListener('message', function(event) {
                                 if (event.data && event.data.type === 'FORCE_RELOAD') {
                                     console.warn('[SW Early] FORCE_RELOAD reçu du SW (raison:', event.data.reason, ')');
-                                    nukeCachesAndReload('_sw_force_reload_ts');
+                                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                                        console.warn('[SW Early] FORCE_RELOAD ignoré (navigator hors ligne)');
+                                        return;
+                                    }
+                                    networkOkThenNuke('_sw_force_reload_ts');
                                 }
                             });
                         }
-
-                        // --- 2. Capture des ChunkLoadError (chunks Next.js obsolètes) ---
-                        window.addEventListener('error', function(event) {
-                            var msg = (event.message || '') + ((event.error && event.error.message) ? ' ' + event.error.message : '');
-                            if (msg.indexOf('ChunkLoadError') !== -1 || msg.indexOf('Failed to load chunk') !== -1) {
-                                console.warn('[SW Early] ChunkLoadError capturé :', msg);
-                                nukeCachesAndReload('_chunk_error_reload_ts');
-                            }
-                        }, true);
-
-                        // --- 3. Même chose via promesses (import dynamique sur mobile / Safari) ---
-                        window.addEventListener('unhandledrejection', function(event) {
-                            var reason = event.reason;
-                            var msg = (reason && reason.message) ? String(reason.message) : String(reason || '');
-                            if (msg.indexOf('ChunkLoadError') !== -1 ||
-                                msg.indexOf('Failed to load chunk') !== -1 ||
-                                msg.indexOf('Loading chunk') !== -1 ||
-                                msg.indexOf('Failed to fetch dynamically imported module') !== -1) {
-                                console.warn('[SW Early] Échec chunk (promesse) :', msg);
-                                event.preventDefault();
-                                nukeCachesAndReload('_chunk_reject_reload_ts');
-                            }
-                        });
 
                     })();
                 `}}
