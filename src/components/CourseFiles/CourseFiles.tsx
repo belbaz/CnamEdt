@@ -164,11 +164,23 @@ export default function CourseFiles({courseUid, authenticated}) {
         return null;
     }
 
+    // Section compactée quand il n'y a aucun fichier : on aplatit sur une ligne
+    // (juste le header + bouton d'upload), pour gagner de la place dans la modale.
+    const isFilesEmpty = !loading && files.length === 0 && !error;
+
     return (
-        <div className="modal-section modal-section-dashed">
+        <div
+            className="modal-section modal-section-dashed"
+            data-empty={isFilesEmpty ? "true" : undefined}
+        >
             <div className="modal-notes-header">
                 <div className="modal-notes-title">
                     <h3>{t('files.filesTitle')}</h3>
+                    {isFilesEmpty && (
+                        <span className="modal-section-empty-hint">
+                            {t('files.noFilesEmpty')}
+                        </span>
+                    )}
                 </div>
                 {authenticated && (
                     <label className={styles.uploadButton}>

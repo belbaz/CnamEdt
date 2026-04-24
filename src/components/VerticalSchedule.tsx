@@ -137,6 +137,24 @@ export default function VerticalSchedule({
     const wrapperRef = useRef(null);
     const containerRef = useRef(null);
 
+    // État de chargement (affiche un "Chargement..." centré le temps que le
+    // planning soit rendu, pour éviter le flash de cartes qui "sautent").
+    // NB : on ne déclenche qu'au montage. Si on se basait sur [events], la classe
+    // .event-card--home-entrance serait retirée puis réappliquée à chaque refresh
+    // (cache puis sync ICS en arrière-plan) → l'animation d'entrée repartirait
+    // à zéro et on verrait l'EDT s'afficher deux fois.
+    const [isCalculating, setIsCalculating] = useState(true);
+    useEffect(() => {
+        let rafId = null;
+        const timeoutId = setTimeout(() => {
+            rafId = requestAnimationFrame(() => setIsCalculating(false));
+        }, 50);
+        return () => {
+            clearTimeout(timeoutId);
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
+    }, []);
+
     const [isMobile, setIsMobile] = useState(false);
     const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState(null);
     // Détecter un petit écran (mobile) OU app native
@@ -185,13 +203,16 @@ export default function VerticalSchedule({
         }
     }, [events]);
 
-    // Charger les compteurs de fichiers en batch avec cache optimisé
+    // Charger les compteurs de fichiers en batch avec cache optimisé.
+    // Délai de 1000ms : on attend que l'animation d'entrée des cartes soit
+    // terminée avant de fetcher (sinon la data arrive en plein milieu de
+    // l'animation → re-render des EventCard → frame drop visible).
     const uids = useMemo(() => {
         if (!events || events.length === 0) return [];
         return [...new Set(events.filter(e => e.uid).map(e => e.uid))];
     }, [events]);
-    
-    const { fileCounts } = useFileCounts(uids);
+
+    const { fileCounts } = useFileCounts(uids, 1000);
 
     useEffect(() => {
         if (isMobile || days.length === 0) {
@@ -475,14 +496,19 @@ export default function VerticalSchedule({
                     )}
 
                     {/* Corps du planning */}
-                    <div 
-                        className={`vertical-schedule-body ${!showTimeLabels ? 'no-time-column' : ''}`}
+                    <div
+                        className={`vertical-schedule-body ${!showTimeLabels ? 'no-time-column' : ''} ${isCalculating ? 'is-loading' : ''}`}
                         style={{
-                            gridTemplateColumns: `${showTimeLabels ? '35px' : ''} ${days.map(day => 
+                            gridTemplateColumns: `${showTimeLabels ? '35px' : ''} ${days.map(day =>
                                 collapsedDays[day] ? '50px' : 'minmax(180px, 1fr)'
                             ).join(' ')}`
                         }}
                     >
+                        {isCalculating && (
+                            <div className="vertical-schedule-loading" aria-live="polite">
+                                {t('loading.default')}
+                            </div>
+                        )}
                             {/* Colonne des heures */}
                             {showTimeLabels && (
                                 <div className="vertical-time-column">
@@ -709,7 +735,7 @@ export default function VerticalSchedule({
                                                                 nonDistancielLabels={nonDistancielLabels}
                                                                 colorPosition={colorPosition}
                                                                 colorBackgroundOpacity={colorBackgroundOpacity}
-                                                                entranceAnimationActive={entranceAnimationActive}
+                                                                entranceAnimationActive={entranceAnimationActive && !isCalculating}
                                                             />
                                                         );
                                                     });

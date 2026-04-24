@@ -1073,6 +1073,37 @@
     border-color: rgba(148, 163, 184, 0.5);
 }
 
+/* Variante compacte : quand la section (Notes ou Fichiers) est vide,
+   on aplatit tout sur une seule ligne pour gagner de la place.
+   On garde juste le header (titre + hint "Aucune note" + bouton d'action)
+   et on cache tout le reste du contenu. */
+:global(.modal-section-dashed[data-empty="true"]) {
+    padding: 0.4rem 0.65rem;
+    margin-bottom: 0.35rem;
+}
+
+:global(.modal-section-dashed[data-empty="true"] .modal-notes-header) {
+    margin-bottom: 0;
+    align-items: center;
+}
+
+:global(.modal-section-dashed[data-empty="true"]) > *:not(:global(.modal-notes-header)) {
+    display: none;
+}
+
+/* Petit texte "Aucune note / Aucun fichier" affiché à droite du titre en mode compact */
+:global(.modal-section-empty-hint) {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-muted, #94a3b8);
+    font-style: italic;
+    margin-left: 0.4rem;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Styles pour les labels dans le modal */
 :global(.modal-labels-section) {
     margin-bottom: 0.65rem;

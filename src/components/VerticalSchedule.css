@@ -6,6 +6,47 @@
     font-size: 1rem;
 }
 
+/* Texte "Chargement..." centré affiché brièvement au rendu du planning vertical.
+   On masque le contenu (via is-loading) pour éviter le flash des cartes.
+   ⚠️ On utilise UNIQUEMENT `visibility` (pas d'opacity/transition) : c'est
+   l'animation d'entrée des EventCard (.event-card--home-entrance) qui gère le
+   reveal visuel. Un fade-in additionnel sur le conteneur rendrait l'animation
+   des cartes "molle" car les deux opacités se multiplieraient. */
+.vertical-schedule-body {
+    position: relative;
+}
+
+.vertical-schedule-body.is-loading > *:not(.vertical-schedule-loading) {
+    visibility: hidden;
+}
+
+.vertical-schedule-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary, #64748b);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 2;
+    /* Sur la grille parente, occuper toute la largeur */
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    animation: verticalScheduleLoadingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes verticalScheduleLoadingPulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+
 /* Toast d'avertissement pour le dernier jour */
 .vertical-warning-toast {
     position: fixed;

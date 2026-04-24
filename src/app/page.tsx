@@ -1367,6 +1367,10 @@ function HomeContent({searchParams}) {
 
     // Calculer groupByDay avant de l'utiliser dans le hook
     const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short', language), [events, viewMode, language]);
+    const allDaysExpanded = useMemo(
+        () => Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => !collapsedDays[d]),
+        [groupByDay, collapsedDays]
+    );
 
     useEffect(() => {
         if (!entranceAnimationActive || events.length === 0) return;
@@ -1629,7 +1633,7 @@ function HomeContent({searchParams}) {
                 isMobile={isSmallScreen}
                 onSettingsOpenChange={setSettingsOpen}
                 onToggleAllDays={handleToggleAllDays}
-                allDaysCollapsed={Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => collapsedDays[d])}
+                allDaysCollapsed={!allDaysExpanded}
                 compactMode={compactMode}
                 isPWAInstalled={isInstalled}
                 currentVersion={process.env.NEXT_PUBLIC_APP_VERSION}
@@ -1789,7 +1793,7 @@ function HomeContent({searchParams}) {
                                 <button
                                     onClick={() => handleToggleAllDays()}
                                     className={styles.dayOptionsButton}
-                                    aria-label={Object.keys(groupByDay).every(d => collapsedDays[d]) ? t('navbar.expandAllDays') : t('navbar.collapseAllDays')}
+                                    aria-label={allDaysExpanded ? t('navbar.collapseAllDays') : t('navbar.expandAllDays')}
                                     onFocus={handleDayOptionsHintPosition}
                                     onBlur={handleDayOptionsHintReset}
                                 >
@@ -1801,9 +1805,9 @@ function HomeContent({searchParams}) {
                                         xmlns="http://www.w3.org/2000/svg"
                                         aria-hidden="true"
                                     >
-                                        {Object.keys(groupByDay).every(d => collapsedDays[d]) ? (
+                                        {allDaysExpanded ? (
                                             <path
-                                                d="M6 9l6 6 6-6"
+                                                d="M6 15l6-6 6 6"
                                                 stroke="currentColor"
                                                 strokeWidth="2.2"
                                                 strokeLinecap="round"
@@ -1811,7 +1815,7 @@ function HomeContent({searchParams}) {
                                             />
                                         ) : (
                                             <path
-                                                d="M6 15l6-6 6 6"
+                                                d="M6 9l6 6 6-6"
                                                 stroke="currentColor"
                                                 strokeWidth="2.2"
                                                 strokeLinecap="round"
@@ -1826,9 +1830,9 @@ function HomeContent({searchParams}) {
                                         className={styles.dayOptionsHint}
                                         aria-hidden="true"
                                     >
-                                        {Object.keys(groupByDay).every(d => collapsedDays[d])
-                                            ? t('navbar.expandAllDays')
-                                            : t('navbar.collapseAllDays')}
+                                        {allDaysExpanded
+                                            ? t('navbar.collapseAllDays')
+                                            : t('navbar.expandAllDays')}
                                     </div>
                                 )}
                             </div>

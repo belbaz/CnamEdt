@@ -601,6 +601,54 @@ export default function EventModal({
                             </div>
                         </div>
 
+                        {/* Section Actions */}
+                        <div className="modal-section modal-actions">
+                            {selectedEventLocationMeta?.hasPhysical && (
+                                <button
+                                    className="action-btn map-btn"
+                                    onClick={() => onShowMap(true)}
+                                    aria-label={t('eventModal.map')}
+                                >
+                                    <span className="action-btn-icon">🗺️</span>
+                                    <span className="action-btn-text">{t('eventModal.map')}</span>
+                                </button>
+                            )}
+                            {(() => {
+                                const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
+                                if (!courseId) return null;
+                                const [yearStart, yearEnd] = getAcademicYearParts(selectedEvent.start || Date.now());
+                                const query = `${courseId} ${yearStart} ${yearEnd}`;
+                                const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
+                                return (
+                                    <a
+                                        className="action-btn moodle-btn"
+                                        href={moodleUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={`${t('eventModal.map')} ${courseId}`}
+                                    >
+                                        <span className="action-btn-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20"
+                                                 height="20">
+                                                <circle cx="28" cy="28" r="26" fill="white" />
+                                                <g transform="translate(4, 4)">
+                                                    <path fill="#ffab40"
+                                                          d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z" />
+                                                    <path d="M5.5 16.2H6.5V32H5.5z" />
+                                                    <path fill="#424242"
+                                                          d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z" />
+                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z" />
+                                                    <path fill="#424242"
+                                                          d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z" />
+                                                </g>
+                                            </svg>
+                                        </span>
+                                        <span className="action-btn-text">Moodle</span>
+                                    </a>
+                                );
+                            })()}
+                        </div>
+
                         {/* Section Progression */}
                         {hoursStats && hoursStats.total > 0 && (() => {
                             const progressionKey = selectedEvent?.uid || 'default';
@@ -655,11 +703,27 @@ export default function EventModal({
                         })()}
 
                         {/* Section Notes Agenda */}
-                        {selectedEvent.uid && (
-                            <div className="modal-section modal-section-dashed">
+                        {selectedEvent.uid && (() => {
+                            // Pas de notes, pas de labels, pas en édition : on rend la section
+                            // beaucoup plus compacte (juste le header sur une ligne).
+                            const isNotesEmpty =
+                                notesAuthenticated &&
+                                !isModalEditingNotes &&
+                                savedModalEntries.length === 0 &&
+                                !hasAnyLabelForModal;
+                            return (
+                            <div
+                                className="modal-section modal-section-dashed"
+                                data-empty={isNotesEmpty ? "true" : undefined}
+                            >
                                 <div className="modal-notes-header">
                                     <div className="modal-notes-title">
                                         <h3>📋 {t('eventModal.notes')}</h3>
+                                        {isNotesEmpty && (
+                                            <span className="modal-section-empty-hint">
+                                                {t('eventModal.noNotes')}
+                                            </span>
+                                        )}
                                     </div>
                                     {notesAuthenticated && (
                                         <button
@@ -1186,7 +1250,8 @@ export default function EventModal({
                                     </>
                                 )}
                             </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Section Fichiers */}
                         {selectedEvent.uid && (
@@ -1196,59 +1261,15 @@ export default function EventModal({
                             />
                         )}
 
-                        {/* Section Actions */}
-                        <div className="modal-section modal-actions">
-                            {selectedEventLocationMeta?.hasPhysical && (
-                                <button
-                                    className="action-btn map-btn"
-                                    onClick={() => onShowMap(true)}
-                                    aria-label={t('eventModal.map')}
-                                >
-                                    <span className="action-btn-icon">🗺️</span>
-                                    <span className="action-btn-text">{t('eventModal.map')}</span>
-                                </button>
-                            )}
-                            {(() => {
-                                const courseId = extractCourseIdFromSummary(selectedEvent.summary || selectedEvent.description || '');
-                                if (!courseId) return null;
-                                const [yearStart, yearEnd] = getAcademicYearParts(selectedEvent.start || Date.now());
-                                const query = `${courseId} ${yearStart} ${yearEnd}`;
-                                const moodleUrl = `https://par.moodle.lecnam.net/course/search.php?search=${encodeURIComponent(query)}`;
-                                return (
-                                    <a
-                                        className="action-btn moodle-btn"
-                                        href={moodleUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        aria-label={`${t('eventModal.map')} ${courseId}`}
-                                    >
-                                        <span className="action-btn-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" width="20"
-                                                height="20">
-                                                <circle cx="28" cy="28" r="26" fill="white" />
-                                                <g transform="translate(4, 4)">
-                                                    <path fill="#ffab40"
-                                                        d="M33.5,16c-2.5,0-4.8,1-6.5,2.6C25.3,17,23,16,20.5,16c-5.2,0-9.5,4.3-9.5,9.5V37h6V24.5 c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V24.5c0-1.9,1.6-3.5,3.5-3.5s3.5,1.6,3.5,3.5V37h6V25.5C43,20.3,38.7,16,33.5,16z" />
-                                                    <path d="M5.5 16.2H6.5V32H5.5z" />
-                                                    <path fill="#424242"
-                                                        d="M22,13c1.1,0.4,2.6,2,3,3c-1.8,1.7-2.6,2.9-3,6c-0.1,1.1-0.9,1.7-2,1c-3.1-1.9-6-2-8-2 c-1-1-0.5-3.7,0-5l6,1L22,13z" />
-                                                    <path fill="#616161" d="M18,17H4l11-7h14L18,17z" />
-                                                    <path fill="#424242"
-                                                        d="M7.5,30c0-2.2-0.7-4-1.5-4s-1.5,1.8-1.5,4s0.7,4,1.5,4S7.5,32.2,7.5,30z" />
-                                                </g>
-                                            </svg>
-                                        </span>
-                                        <span className="action-btn-text">Moodle</span>
-                                    </a>
-                                );
-                            })()}
-                        </div>
-
                         {/* Debug info */}
                         {devMode && selectedEvent.description && (
-                            <div className="modal-section">
-                                <div className="pop-desc">{selectedEvent.description}</div>
-                            </div>
+                            <details className="modal-section">
+                                <summary className="pop-desc" style={{ cursor: "pointer", fontWeight: 600 }}>
+                                    Infos debug
+                                </summary>
+                                <div className="pop-desc">Description: {selectedEvent.description}</div>
+                                <div className="pop-desc">Location: {selectedEvent.location}</div>
+                            </details>
                         )}
                     </div>
                 </div>

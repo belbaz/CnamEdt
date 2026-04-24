@@ -6,6 +6,7 @@ import { getEventPosition, getEventPositionVertical } from "@/utils/timelineUtil
 import { getCompactModeValues } from "@/utils/compactModeUtils";
 import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
 import { useFileCounts } from "@/hooks/useFileCounts";
+import { useI18n } from "@/i18n/I18nContext";
 import "./EventsList.css";
 
 export default function EventsList({
@@ -22,12 +23,14 @@ export default function EventsList({
     colorBackgroundOpacity = 0.6,
     entranceAnimationActive = false
 }) {
+    const { t } = useI18n();
     const { dayHeightFactor, cardTopPadding, eventsContainerPadding } = getCompactModeValues(compactMode);
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 650;
     const isTabletOrDesktop = typeof window !== 'undefined' && window.innerWidth > 650;
     const containerRef = useRef(null);
     const [calculatedHeight, setCalculatedHeight] = useState(80); // Valeur initiale par défaut
     const [isCalculating, setIsCalculating] = useState(true);
+    const showLoading = isCalculating && isTabletOrDesktop;
 
     useEffect(() => {
         // Calculer la hauteur uniquement pour desktop
@@ -96,19 +99,30 @@ export default function EventsList({
         return [...new Set(events.filter(e => e.uid).map(e => e.uid))];
     }, [events]);
     
-    // Délai de 350ms pour laisser l'animation se terminer (300ms + 50ms de marge)
-    const { fileCounts } = useFileCounts(uids, 350);
+    // Délai de 1000ms : on attend que l'animation d'entrée des cartes soit
+    // terminée (0.55s + 0.40s de stagger max = ~0.95s) avant de fetcher les
+    // compteurs de fichiers. Sinon la data arrive en plein milieu de l'anim
+    // et déclenche un re-render de chaque EventCard → frame drop visible.
+    const { fileCounts } = useFileCounts(uids, 1000);
 
     const containerStyle = isMobile
         ? { height: `${totalMinutes}px` }
         : {
             minHeight: `${calculatedHeight}px`,
-            padding: `${eventsContainerPadding}rem 0`,
-            opacity: isCalculating ? 0 : 1,
-            transition: 'opacity 0.15s ease-in-out'
+            padding: `${eventsContainerPadding}rem 0`
         };
 
-    const ulStyle = isMobile ? { height: '100%' } : {};
+    // Les cartes restent rendues pendant le calcul (sinon on ne peut pas mesurer leur hauteur),
+    // mais on les rend invisibles et on affiche un texte "Chargement..." à la place.
+    // ⚠️ On utilise UNIQUEMENT `visibility` (pas d'opacity/transition ici) : c'est
+    // l'animation d'entrée des EventCard (.event-card--home-entrance) qui gère le
+    // reveal visuel. Si on ajoute un fade-in sur le <ul>, les deux opacités se
+    // multiplient et l'animation des cartes apparaît "molle" / pas fluide.
+    const ulStyle = isMobile
+        ? { height: '100%' }
+        : {
+            visibility: showLoading ? 'hidden' : 'visible'
+        };
 
     return (
         <div
@@ -116,6 +130,11 @@ export default function EventsList({
             className="events-container"
             style={containerStyle}
         >
+            {showLoading && (
+                <div className="events-container-loading" aria-live="polite">
+                    {t('loading.default')}
+                </div>
+            )}
             <ul style={ulStyle}>
                 {(() => {
                     // Trier les événements une seule fois par heure de début
@@ -190,7 +209,7 @@ export default function EventsList({
                                 nonDistancielLabels={nonDistancielLabels}
                                 colorPosition={colorPosition}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
-                                entranceAnimationActive={entranceAnimationActive}
+                                entranceAnimationActive={entranceAnimationActive && !isCalculating}
                             />
                         );
                     });

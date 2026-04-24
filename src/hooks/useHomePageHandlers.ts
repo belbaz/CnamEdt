@@ -137,12 +137,12 @@ export function useHomePageHandlers({
     const handleToggleAllDays = () => {
         const dayKeys = Object.keys(groupByDay);
         if (dayKeys.length === 0) return;
-        
-        const someExpanded = dayKeys.some(d => !collapsedDays[d]);
+
+        const allExpanded = dayKeys.every(d => !collapsedDays[d]);
         const nextCollapsed = {};
-        
-        if (someExpanded) {
-            // Si certains jours sont ouverts, on veut tous les fermer SAUF un
+
+        if (allExpanded) {
+            // Si tous les jours sont ouverts, on ferme tous les jours SAUF un
             // Garder ouvert le jour actuel s'il existe, sinon le premier jour
             const today = new Date();
             const todayDateString = today.toDateString();
@@ -166,7 +166,7 @@ export function useHomePageHandlers({
                 nextCollapsed[d] = (d !== dayToKeepOpen); // Fermer tous sauf celui qu'on garde
             }
         } else {
-            // Si tous les jours sont fermés, ouvrir tous les jours
+            // Si au moins un jour est déjà replié, ouvrir tous les jours
             for (const d of dayKeys) {
                 nextCollapsed[d] = false;
             }

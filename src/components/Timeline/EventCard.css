@@ -1,16 +1,27 @@
-/* 1. Définition de l'animation avec perspective et flou */
+/* 1. Définition de l'animation d'entrée — "lift-in" raffiné
+   ⚠️ Perf : on n'anime QUE `transform` et `opacity` (propriétés composées
+   directement sur le GPU, sans layout ni paint). Aucun filter/blur/box-shadow
+   animé, aucun rotateX 3D (ancienne version qui faisait chuter le FPS avec
+   plusieurs cartes en stagger).
+
+   L'effet visuel :
+    - la carte arrive depuis le bas (28px plus bas)
+    - en grandissant depuis 92 % jusqu'à sa taille finale
+    - et découvre son opacité rapidement (0 → 1 avant le milieu de l'anim),
+      ce qui laisse ensuite le seul mouvement spatial se terminer en douceur.
+   Combiné avec la courbe ease-out-expo, ça donne un rendu "Apple/Stripe"
+   très propre — fluide, élégant, sans excès. */
 @keyframes eventCardEntrance {
     0% {
         opacity: 0;
-        /* translateY un peu plus court (30px) pour plus de subtilité */
-        /* rotateX(15deg) donne un effet de bascule vers l'avant */
-        transform: translateY(30px) scale(0.95) rotateX(15deg);
-        filter: blur(10px);
+        transform: translate3d(0, 28px, 0) scale(0.92);
+    }
+    45% {
+        opacity: 1;
     }
     100% {
         opacity: 1;
-        transform: translateY(0) scale(1) rotateX(0);
-        filter: blur(0);
+        transform: translate3d(0, 0, 0) scale(1);
     }
 }
 
@@ -29,37 +40,42 @@
     box-sizing: border-box;
     margin: 0;
     cursor: pointer;
-    
-    /* Optimisation pour les animations complexes */
+
+    /* Optimisation pour les animations : on déclare uniquement ce qu'on anime
+       réellement pendant l'entrée (transform + opacity). Le navigateur peut
+       alors promouvoir la carte sur son propre layer GPU. */
     transform-origin: center bottom;
     backface-visibility: hidden;
-    will-change: transform, opacity, filter;
-    
+
     /* Transition fluide pour le survol (hover) */
-    transition: 
+    transition:
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
         box-shadow 0.3s ease,
         border-color 0.2s ease;
 }
 
-/* 3. Déclenchement de l'animation */
+/* 3. Déclenchement de l'animation (uniquement pendant l'entrée pour éviter
+   de laisser `will-change` en permanence, ce qui consomme de la VRAM)
+   Courbe ease-out-expo : fort mouvement initial qui décélère très doucement,
+   donne ce rendu "premium" qu'on voit sur Apple/Stripe/Linear. */
 .event-card.event-card--home-entrance {
-    /* Courbe "Quint" pour une entrée rapide qui ralentit avec élégance */
-    animation: eventCardEntrance 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+    animation: eventCardEntrance 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* 4. Gestion des délais (Stagger effect) */
-.event-card--home-entrance:nth-child(1) { animation-delay: 0.05s; }
-.event-card--home-entrance:nth-child(2) { animation-delay: 0.10s; }
-.event-card--home-entrance:nth-child(3) { animation-delay: 0.15s; }
-.event-card--home-entrance:nth-child(4) { animation-delay: 0.20s; }
-.event-card--home-entrance:nth-child(5) { animation-delay: 0.25s; }
-.event-card--home-entrance:nth-child(6) { animation-delay: 0.30s; }
-.event-card--home-entrance:nth-child(7) { animation-delay: 0.35s; }
-.event-card--home-entrance:nth-child(8) { animation-delay: 0.40s; }
-.event-card--home-entrance:nth-child(9) { animation-delay: 0.45s; }
-.event-card--home-entrance:nth-child(10) { animation-delay: 0.50s; }
-.event-card--home-entrance:nth-child(n+11) { animation-delay: 0.55s; }
+/* 4. Gestion des délais (Stagger effect) — 45ms d'écart entre chaque carte.
+   C'est le sweet spot : assez pour qu'on perçoive l'effet "en vague", assez
+   court pour que tout soit posé avant 1s total. */
+.event-card--home-entrance:nth-child(1) { animation-delay: 0.045s; }
+.event-card--home-entrance:nth-child(2) { animation-delay: 0.09s; }
+.event-card--home-entrance:nth-child(3) { animation-delay: 0.135s; }
+.event-card--home-entrance:nth-child(4) { animation-delay: 0.18s; }
+.event-card--home-entrance:nth-child(5) { animation-delay: 0.225s; }
+.event-card--home-entrance:nth-child(6) { animation-delay: 0.27s; }
+.event-card--home-entrance:nth-child(7) { animation-delay: 0.315s; }
+.event-card--home-entrance:nth-child(8) { animation-delay: 0.36s; }
+.event-card--home-entrance:nth-child(9) { animation-delay: 0.405s; }
+.event-card--home-entrance:nth-child(n+10) { animation-delay: 0.45s; }
 
 /* 5. Accessibilité */
 @media (prefers-reduced-motion: reduce) {
@@ -67,7 +83,6 @@
         animation: none !important;
         opacity: 1 !important;
         transform: none !important;
-        filter: none !important;
     }
 }
 
@@ -149,15 +164,28 @@
     flex-direction: column;
     overflow: hidden;
     z-index: 10000;
-    will-change: transform, opacity, width, height, top, left;
+    /* will-change minimal : seules transform + opacity sont animées.
+       Déclarer width/height/top/left ici faisait gaspiller de la VRAM
+       pour rien et n'aidait pas les anciennes animations qui touchaient
+       à ces propriétés (layout non composé). */
+    will-change: transform, opacity;
     /* Animation par défaut si pas de position */
     animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Animation depuis la position du cours cliqué - Super smooth et fluide */
-.event-modal-expanding {
-    animation: modalExpandFromSource .30s cubic-bezier(0.23, 1, 0.32, 1);
-    animation-fill-mode: both;
+/* Animation depuis la position du cours cliqué — version GPU-only.
+   ⚠️ Perf : l'ancienne version animait `top/left/width/height/max-height/
+   border-radius` (layout recalculé à chaque frame) + `filter: blur()`
+   (GPU-heavy) + `box-shadow` (paint à chaque frame) = trio le plus
+   coûteux possible en CSS.
+   Ici on positionne déjà la modale à sa place finale (top:50%, left:50%,
+   taille finale) et on utilise UNIQUEMENT `transform` pour la faire
+   visuellement partir de la position de la carte cliquée : `translate()`
+   pour se décaler vers (origin-x, origin-y) et `scale()` pour démarrer à
+   une taille proche de celle de la carte. Tout est composé sur le GPU
+   sans trigger de layout ni de paint → rendu identique, ~10× moins cher. */
+.event-modal.event-modal-expanding {
+    animation: modalExpandFromSource 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 .event-modal-header {
@@ -290,8 +318,7 @@
 
 /* Section du modal */
 .modal-section {
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--border-light);
+    padding: 0.2rem 0 0.65rem 0;
 }
 
 .modal-section:first-child {
@@ -307,7 +334,7 @@
 .modal-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.75rem;
     flex-wrap: wrap;
 }
@@ -458,39 +485,34 @@
     }
 }
 
-/* Animation super fluide depuis la source - Morphing élégant et smooth */
+/* Morphing depuis la carte source vers le centre — GPU-only.
+   Principe du calcul de la translation :
+    - La modale est déjà centrée via `top:50% left:50% transform:translate(-50%,-50%)`.
+    - Pour la faire visuellement apparaître au centre de la carte cliquée
+      (origin-x, origin-y), on ajoute au translate(-50%,-50%) un décalage
+      `(origin-x - 50vw, origin-y - 50vh)` → c'est exactement la différence
+      entre le centre de la carte et le centre du viewport.
+    - Au même moment on applique un `scale(0.3)` pour que la modale démarre
+      à une taille proche de celle de la carte.
+   Puis on interpole vers `translate(-50%, -50%) scale(1)` (position finale).
+   L'opacité passe de 0 à 1 sur les 55 % premiers pour que le mouvement final
+   se termine en douceur à pleine opacité (comme l'ancienne version). */
 @keyframes modalExpandFromSource {
     0% {
         opacity: 0;
-        top: var(--origin-y, 50%);
-        left: var(--origin-x, 50%);
-        width: var(--origin-width, 200px);
-        min-height: var(--origin-height, 60px);
-        max-height: var(--origin-height, 60px);
-        transform: translate(-50%, -50%) scale(0.9);
-        border-radius: 10px;
-        filter: blur(2px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transform:
+            translate(
+                calc(-50% + var(--origin-x, 50vw) - 50vw),
+                calc(-50% + var(--origin-y, 50vh) - 50vh)
+            )
+            scale(0.3);
     }
-    40% {
-        opacity: 0.85;
-        filter: blur(1px);
-    }
-    70% {
-        opacity: 0.98;
-        filter: blur(0.3px);
+    55% {
+        opacity: 1;
     }
     100% {
         opacity: 1;
-        top: 50%;
-        left: 50%;
-        width: clamp(280px, 90vw, 520px);
-        min-height: auto;
-        max-height: 87vh;
         transform: translate(-50%, -50%) scale(1);
-        border-radius: 14px;
-        filter: blur(0px);
-        box-shadow: var(--shadow-lg);
     }
 }
 

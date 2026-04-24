@@ -31,29 +31,25 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
     const dayDate = useMemo(() => events[0] ? new Date(events[0].start) : new Date(), [events]);
     const todayCheck = useMemo(() => isToday(dayDate), [dayDate]);
 
-    // Mémoriser les calculs de timeline uniquement si le jour n'est pas collapsed
-    // Cela évite les calculs inutiles quand le jour est fermé
-    const timeRange = useMemo(() => {
-        if (isCollapsed) return {startMinutes: 0, endMinutes: 0};
-        return getDayTimeRange(events);
-    }, [events, isCollapsed]);
-
+    // On calcule toujours la timeline : le contenu reste monté pour permettre
+    // une animation de repli/déploiement fluide (via grid-template-rows)
+    const timeRange = useMemo(() => getDayTimeRange(events), [events]);
     const {startMinutes, endMinutes} = timeRange;
 
-    const timeMarkers = useMemo(() => {
-        if (isCollapsed) return [];
-        return generateTimeMarkers(startMinutes, endMinutes);
-    }, [startMinutes, endMinutes, isCollapsed]);
+    const timeMarkers = useMemo(
+        () => generateTimeMarkers(startMinutes, endMinutes),
+        [startMinutes, endMinutes]
+    );
 
     // État pour la position actuelle qui se met à jour automatiquement
     const [currentPos, setCurrentPos] = useState<number | null>(() => {
-        if (isCollapsed || !todayCheck) return null;
+        if (!todayCheck) return null;
         return getCurrentTimePosition(dayDate, startMinutes, endMinutes) as number | null;
     });
 
     // Mettre à jour la position régulièrement et quand l'onglet redevient actif
     useEffect(() => {
-        if (isCollapsed || !todayCheck) {
+        if (!todayCheck) {
             setCurrentPos(null);
             return;
         }
@@ -82,7 +78,7 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [todayCheck, dayDate, startMinutes, endMinutes, isCollapsed]);
+    }, [todayCheck, dayDate, startMinutes, endMinutes]);
 
     const totalMinutes = useMemo(() => endMinutes - startMinutes, [startMinutes, endMinutes]);
 
@@ -97,49 +93,43 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                 title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
             >
                 <h2>{todayCheck ? `${day}📍` : day}</h2>
-                <button 
-                    className="collapse-toggle" 
+                <button
+                    className="collapse-toggle"
                     aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
                     title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
                 >
-                    {isCollapsed ? (
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                             aria-hidden="true">
-                            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                                  strokeLinejoin="round"/>
-                        </svg>
-                    ) : (
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                             aria-hidden="true">
-                            <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                                  strokeLinejoin="round"/>
-                        </svg>
-                    )}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                         aria-hidden="true">
+                        <path d="M6 15l6-6 6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                              strokeLinejoin="round"/>
+                    </svg>
                 </button>
             </div>
-            {!isCollapsed && (
-                <TimelineWrapper
-                    timeMarkers={timeMarkers}
-                    startMinutes={startMinutes}
-                    endMinutes={endMinutes}
-                    totalMinutes={totalMinutes}
-                    currentPos={currentPos}
-                    events={events}
-                    subjectColors={subjectColors}
-                    onOpenEventDetails={onOpenEventDetails}
-                    compactMode={compactMode}
-                    showTimeLabels={showTimeLabels}
-                    hide15MinSpacing={hide15MinSpacing}
-                    courseNotes={courseNotes}
-                    showCurrentTimeIndicator={showCurrentTimeIndicator}
-                    colorPosition={colorPosition}
-                    colorBackgroundOpacity={colorBackgroundOpacity}
-                    timePassedOverlayIntensity={timePassedOverlayIntensity}
-                    showCourseProgressPercent={showCourseProgressPercent}
-                    courseProgressPercentDecimals={courseProgressPercentDecimals}
-                    entranceAnimationActive={entranceAnimationActive}
-                />
-            )}
+            <div className="day-content" aria-hidden={isCollapsed}>
+                <div className="day-content-inner">
+                    <TimelineWrapper
+                        timeMarkers={timeMarkers}
+                        startMinutes={startMinutes}
+                        endMinutes={endMinutes}
+                        totalMinutes={totalMinutes}
+                        currentPos={currentPos}
+                        events={events}
+                        subjectColors={subjectColors}
+                        onOpenEventDetails={onOpenEventDetails}
+                        compactMode={compactMode}
+                        showTimeLabels={showTimeLabels}
+                        hide15MinSpacing={hide15MinSpacing}
+                        courseNotes={courseNotes}
+                        showCurrentTimeIndicator={showCurrentTimeIndicator}
+                        colorPosition={colorPosition}
+                        colorBackgroundOpacity={colorBackgroundOpacity}
+                        timePassedOverlayIntensity={timePassedOverlayIntensity}
+                        showCourseProgressPercent={showCourseProgressPercent}
+                        courseProgressPercentDecimals={courseProgressPercentDecimals}
+                        entranceAnimationActive={entranceAnimationActive}
+                    />
+                </div>
+            </div>
         </div>
     );
 });
