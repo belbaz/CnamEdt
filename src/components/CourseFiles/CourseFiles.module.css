@@ -34,11 +34,15 @@
     transition: all 0.2s ease;
     white-space: nowrap;
     line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 .uploadButton:hover:not(:disabled) {
     background: rgba(37, 99, 235, 0.15);
     border-color: #1d4ed8;
+    text-decoration: none;
 }
 
 .uploadButton:disabled {

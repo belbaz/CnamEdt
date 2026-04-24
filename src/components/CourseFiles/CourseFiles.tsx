@@ -182,7 +182,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                         </span>
                     )}
                 </div>
-                {authenticated && (
+                {authenticated ? (
                     <label className={styles.uploadButton}>
                         <input
                             type="file"
@@ -193,6 +193,10 @@ export default function CourseFiles({courseUid, authenticated}) {
                         />
                         {uploading ? t('files.uploadingShort') : t('files.add')}
                     </label>
+                ) : (
+                    <a href="/login" className={styles.uploadButton}>
+                        {t('files.connectToUpload')}
+                    </a>
                 )}
             </div>
 

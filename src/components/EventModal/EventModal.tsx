@@ -705,9 +705,9 @@ export default function EventModal({
                         {/* Section Notes Agenda */}
                         {selectedEvent.uid && (() => {
                             // Pas de notes, pas de labels, pas en édition : on rend la section
-                            // beaucoup plus compacte (juste le header sur une ligne).
+                            // beaucoup plus compacte (juste le header sur une ligne), qu'on soit
+                            // connecté ou non, pour rester cohérent avec la section Fichiers.
                             const isNotesEmpty =
-                                notesAuthenticated &&
                                 !isModalEditingNotes &&
                                 savedModalEntries.length === 0 &&
                                 !hasAnyLabelForModal;
@@ -725,7 +725,7 @@ export default function EventModal({
                                             </span>
                                         )}
                                     </div>
-                                    {notesAuthenticated && (
+                                    {notesAuthenticated ? (
                                         <button
                                             type="button"
                                             className={courseFilesStyles.uploadButton}
@@ -739,6 +739,13 @@ export default function EventModal({
                                                     ? "✏️ " + t('eventModal.editNote')
                                                     : t('eventModal.createNote'))}
                                         </button>
+                                    ) : (
+                                        <a
+                                            href="/login"
+                                            className={courseFilesStyles.uploadButton}
+                                        >
+                                            {t('eventModal.connectToCreate')}
+                                        </a>
                                     )}
                                 </div>
                                 
