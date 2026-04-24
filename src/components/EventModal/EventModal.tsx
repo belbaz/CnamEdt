@@ -292,17 +292,6 @@ export default function EventModal({
         setEntryPrivacy((prev) => reindexEntryKeyedState(prev, index));
     };
 
-    const handleStartEditing = () => {
-        if (userRole === 'visiteur') {
-            alert(t('eventModal.visitorCannotEdit'));
-            return;
-        }
-        setIsModalEditingNotes(true);
-        if (editingNoteEntries.length === 0) {
-            setEditingNoteEntries([""]);
-        }
-    };
-
     const handleCancelEditing = () => {
         setEditingNoteEntries(originalNoteEntries);
         setEntryLabels(originalEntryLabels);
@@ -335,11 +324,9 @@ export default function EventModal({
         if (userRole === 'visiteur' || !notesAuthenticated) {
             return;
         }
-        if (isModalEditingNotes) {
-            handleAddEntry();
-        } else {
-            handleStartEditing();
-        }
+        // Toujours ajouter une nouvelle entrée (entrera en mode édition si nécessaire),
+        // pour que le bouton soit toujours un "Ajouter" cohérent avec la section Fichiers.
+        handleAddEntry();
     };
 
     // Labels prédéfinis avec leurs couleurs
@@ -733,17 +720,44 @@ export default function EventModal({
                                             disabled={savingNote || userRole === 'visiteur'}
                                             title={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}
                                         >
-                                            {isModalEditingNotes
-                                                ? t('eventModal.addParagraph')
-                                                : ((savedModalEntries.length > 0 || hasAnyLabelForModal)
-                                                    ? "✏️ " + t('eventModal.editNote')
-                                                    : t('eventModal.createNote'))}
+                                            <svg
+                                                width="12"
+                                                height="12"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M12 5v14M5 12h14"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2.5"
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                            {t('files.add')}
                                         </button>
                                     ) : (
                                         <a
                                             href="/login"
                                             className={courseFilesStyles.uploadButton}
                                         >
+                                            <svg
+                                                width="12"
+                                                height="12"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2.5"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            </svg>
                                             {t('eventModal.connectToCreate')}
                                         </a>
                                     )}

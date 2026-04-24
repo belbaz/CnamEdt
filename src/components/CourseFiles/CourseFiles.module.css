@@ -36,6 +36,7 @@
     line-height: 1.2;
     display: inline-flex;
     align-items: center;
+    gap: 0.3rem;
     text-decoration: none;
 }
 
@@ -48,6 +49,18 @@
 .uploadButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.uploadButton svg {
+    flex-shrink: 0;
+}
+
+.uploadButton .spinner {
+    animation: uploadButtonSpin 0.8s linear infinite;
+}
+
+@keyframes uploadButtonSpin {
+    to { transform: rotate(360deg); }
 }
 
 .error {

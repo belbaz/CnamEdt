@@ -421,8 +421,8 @@
     "connectToUpload": "Connectez-vous",
     "connectToUploadFull": "pour ajouter et uploader des fichiers",
     "filesTitle": "📄 Fichiers",
-    "add": "➕ Ajouter",
-    "uploadingShort": "⏳ Upload...",
+    "add": "Ajouter",
+    "uploadingShort": "Upload…",
     "noFilesEmpty": "Aucun fichier",
     "download": "Télécharger",
     "connectToAddFiles": "pour ajouter des fichiers"
