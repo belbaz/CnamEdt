@@ -31,10 +31,10 @@ export async function POST(request) {
             );
         }
 
-        // Accepter soit "admin" soit une adresse @lecnam.net
-        if (email !== "admin" && !email.endsWith("@lecnam.net")) {
+        // Accepter soit "admin" soit "test" soit une adresse @lecnam.net
+        if (email !== "admin" && email !== "test" && !email.endsWith("@lecnam.net")) {
             return NextResponse.json(
-                { error: "Seules les adresses @lecnam.net ou 'admin' sont autorisées." },
+                { error: "Seules les adresses @lecnam.net sont autorisées." },
                 { status: 400 },
             );
         }

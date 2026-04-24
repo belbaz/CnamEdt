@@ -60,8 +60,8 @@ export default function LoginForm({ onSuccess, embedded = false }) {
         setSuccessMessage("");
 
         const normalizedEmail = email.trim().toLowerCase();
-        // Accepter soit "admin" soit une adresse @lecnam.net
-        if (normalizedEmail !== "admin" && !normalizedEmail.endsWith("@lecnam.net")) {
+        // Accepter soit "admin" soit "test" soit une adresse @lecnam.net
+        if (normalizedEmail !== "admin" && normalizedEmail !== "test" && !normalizedEmail.endsWith("@lecnam.net")) {
             setErrorMessage(t('login.errorEmail'));
             return;
         }

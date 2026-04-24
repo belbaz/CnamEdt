@@ -211,6 +211,278 @@ describe('eventUtils', () => {
       const result = getEventTitle(ev);
       expect(result.prof).toBe('DUPONT');
     });
+
+    // --- Demi-groupe labellisé "X GROUPE avec <prof>" (cas anglais) ---
+
+    it('demi-groupe "2ME GROUPE avec <prof>" + label "Professeur : …"', () => {
+      const ev = {
+        summary: 'Anglais',
+        description:
+          'Cours/Exercices Dirigés - 2ME GROUPE avec Monsieur JEAN AUCHE - Professeur : - Madame Kirti SARDESAI',
+        location: 'Salle : 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['JEAN AUCHE', 'Kirti SARDESAI'])
+      );
+      expect(result.splitGroup.rooms).toContain('30.-1.16');
+      expect(result.prof).toContain(' / ');
+    });
+
+    it('demi-groupe "1ER GROUPE avec X salle … - 2ME GROUPE avec Y salle …"', () => {
+      const ev = {
+        summary: 'Anglais',
+        description:
+          'Cours/Exercices Dirigés - 1ER GROUPE avec Mr DUPONT salle 21.104 - 2ME GROUPE avec Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['21.104', '30.-1.16'])
+      );
+    });
+
+    it('demi-groupe format "Groupe 1 : Mr X - Groupe 2 : Mme Y"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Groupe 1 : Mr DUPONT - Groupe 2 : Mme MARTIN',
+        location: 'Salle : 21.104',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe format "GROUPE A avec X - GROUPE B avec Y"', () => {
+      const ev = {
+        summary: 'TP',
+        description:
+          'Cours/Exercices Dirigés - GROUPE A avec Mr DUPONT - GROUPE B avec Mme MARTIN',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe avec accents "1ère GROUPE avec X - 2ème GROUPE avec Y"', () => {
+      const ev = {
+        summary: 'Anglais',
+        description: '1ère GROUPE avec Monsieur DUPONT - 2ème GROUPE avec Madame MARTIN',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe "1/2 GROUPE avec X - 1/2 GROUPE avec Y"', () => {
+      const ev = {
+        summary: 'Anglais',
+        description:
+          'Cours/Exercices Dirigés - 1/2 GROUPE avec Mr DUPONT salle 21.104 - 1/2 GROUPE avec Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe "DEMI-GROUPE avec X" + label prof', () => {
+      const ev = {
+        summary: 'Anglais',
+        description:
+          'Cours/Exercices Dirigés - DEMI-GROUPE avec Mr AUCHE - Professeur : - Madame SARDESAI',
+        location: 'Salle : 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['AUCHE', 'SARDESAI'])
+      );
+    });
+
+    it('cours normal avec préfixe groupe (pas de demi-groupe si 1 seul prof)', () => {
+      // Si le prof du label est le MÊME que celui du segment groupe → pas un demi-groupe
+      const ev = {
+        summary: 'Anglais',
+        description:
+          'Cours/Exercices Dirigés - 1ER GROUPE avec Monsieur DUPONT - Professeur : - Monsieur DUPONT',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeUndefined();
+      expect(result.prof).toBe('DUPONT');
+    });
+
+    // --- Nouveaux mots-clés & séparateurs ---
+
+    it('demi-groupe anglais "1st GROUP with X - 2nd GROUP with Y"', () => {
+      const ev = {
+        summary: 'English',
+        description: '1st GROUP with Mr DUPONT - 2nd GROUP with Mrs MARTIN',
+        location: 'Salle : 21.104',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe "SOUS-GROUPE 1 : X / SOUS-GROUPE 2 : Y" (slash comme séparateur)', () => {
+      const ev = {
+        summary: 'TP',
+        description:
+          'Cours/Exercices Dirigés - SOUS-GROUPE 1 : Mr DUPONT salle 21.104 / SOUS-GROUPE 2 : Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['21.104', '30.-1.16'])
+      );
+    });
+
+    it('demi-groupe séparé par une virgule "Grp 1 : X, Grp 2 : Y"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Grp 1 : Mr DUPONT salle 21.104, Grp 2 : Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe séparé par un saut de ligne', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr AUCHE salle 21.104\nMme SARDESAI salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['AUCHE', 'SARDESAI'])
+      );
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['21.104', '30.-1.16'])
+      );
+    });
+
+    it('demi-groupe séparé par un pipe "|"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr AUCHE salle 21.104 | Mme SARDESAI salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['AUCHE', 'SARDESAI'])
+      );
+    });
+
+    it('demi-groupe abréviations "GRP 1 X - GPE 2 Y"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'GRP 1 Mr DUPONT salle 21.104 - GPE 2 Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    it('demi-groupe "Groupe n°1 : X - Groupe n°2 : Y"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Groupe n°1 : Mr DUPONT salle 21.104 - Groupe n°2 : Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['DUPONT', 'MARTIN'])
+      );
+    });
+
+    // --- Heuristique : ≥ 2 salles détectées → demi-groupe (pas de mot-clé) ---
+
+    it('heuristique 2 salles sans mot-clé "GROUPE" ni séparateur fort', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr DUPONT salle 21.104 Mme MARTIN salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['21.104', '30.-1.16'])
+      );
+    });
+
+    it('heuristique 2 salles séparées par "et"', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr DUPONT en 21.104 et Mme MARTIN en 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['21.104', '30.-1.16'])
+      );
+    });
+
+    it('heuristique 3 salles distinctes → 3 profs détectés', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr A salle 21.104, Mme B salle 30.-1.16, M. C salle 11bis.2.10',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.rooms.length).toBe(3);
+      expect(result.splitGroup.professors.length).toBe(3);
+    });
+
+    it('heuristique : salles identiques répétées → PAS un demi-groupe', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Cours en 21.104 puis retour en 21.104',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeUndefined();
+    });
+
+    it('heuristique : 2 salles mais même prof → PAS un demi-groupe', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Mr DUPONT salle 21.104 puis Mr DUPONT salle 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeUndefined();
+    });
+
+    it('préserve le cas avec tiret dans un nom composé "DU MOUZA"', () => {
+      // Le split ne doit pas casser le nom sur un tiret interne
+      const ev = {
+        summary: 'Algorithmique',
+        description:
+          'Cours/Exercices Dirigés - Professeur : - Monsieur Cédric DU MOUZA',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('Cédric DU MOUZA');
+      expect(result.splitGroup).toBeUndefined();
+    });
   });
 
   describe('getColorIndexForSubject', () => {
