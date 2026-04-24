@@ -102,6 +102,115 @@ describe('eventUtils', () => {
       const result = getEventTitle(ev);
       expect(result.matiere).toBe('Base de données');
     });
+
+    // --- Nouveaux cas ---
+
+    it('demi-groupe format "salle avant prof" (sans mot "salle")', () => {
+      const ev = {
+        summary: 'TP',
+        description:
+          'Cours/Exercices Dirigés - 30.-1.16 Mme SARDESAI - 30.-1.27 Mr AUCHE - Professeur : - Madame Kirti SARDESAI',
+        location: 'Salle : 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['SARDESAI', 'AUCHE'])
+      );
+      expect(result.splitGroup.rooms).toEqual(
+        expect.arrayContaining(['30.-1.16', '30.-1.27'])
+      );
+    });
+
+    it('prof avec prénom + nom (Monsieur Cédric DU MOUZA)', () => {
+      const ev = {
+        summary: 'Algorithmique',
+        description:
+          'Cours/Exercices Dirigés - Professeur : - Monsieur Cédric DU MOUZA',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('Cédric DU MOUZA');
+    });
+
+    it('prof vide "?" dans label → fallback sur le nom dans la description', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Cours/Exercices Dirigés - Mr CEDRIC FONTAINE - Professeur : - ?',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('CEDRIC FONTAINE');
+    });
+
+    it('prof sur ligne suivante (ICS multiligne)', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Cours/Exercices Dirigés\nProfesseur :\n- Madame Kirti SARDESAI',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('Kirti SARDESAI');
+    });
+
+    it('label "Professeur : - ?" sans autre info → prof vide', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Cours/Exercices Dirigés - Professeur : - ?',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('');
+    });
+
+    it('demi-groupe mixte : 1 prof+salle + prof dans label + 2e salle via location', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'Mr AUCHE salle 21.104 - Professeur : - Madame Kirti SARDESAI',
+        location: 'Salle : 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(['AUCHE', 'Kirti SARDESAI']);
+      expect(result.splitGroup.rooms).toEqual(['21.104', '30.-1.16']);
+    });
+
+    it('prof sans titre (JEAN AUCHE) dans un demi-groupe', () => {
+      const ev = {
+        summary: 'TP',
+        description: 'JEAN AUCHE salle 21.104 - Professeur : - Madame Kirti SARDESAI',
+        location: 'Salle : 30.-1.16',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors).toEqual(
+        expect.arrayContaining(['JEAN AUCHE', 'Kirti SARDESAI'])
+      );
+    });
+
+    it('trois profs sur le même créneau (format salle avant prof)', () => {
+      const ev = {
+        summary: 'TP',
+        description:
+          'Cours/Exercices Dirigés - 30.-1.16 Mme SARDESAI - 30.-1.27 Mr AUCHE - 21.104 M. DUPONT',
+      };
+      const result = getEventTitle(ev);
+      expect(result.splitGroup).toBeDefined();
+      expect(result.splitGroup.professors.length).toBe(3);
+      expect(result.splitGroup.rooms.length).toBe(3);
+    });
+
+    it('description vide → prof vide', () => {
+      const ev = { summary: 'Cours', description: '' };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('');
+      expect(result.splitGroup).toBeUndefined();
+    });
+
+    it('évite de reconnaître "Cours/Exercices Dirigés" comme un prof', () => {
+      const ev = {
+        summary: 'Cours',
+        description: 'Cours/Exercices Dirigés - Professeur : - M. DUPONT',
+      };
+      const result = getEventTitle(ev);
+      expect(result.prof).toBe('DUPONT');
+    });
   });
 
   describe('getColorIndexForSubject', () => {
