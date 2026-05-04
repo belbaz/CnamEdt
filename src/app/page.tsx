@@ -55,7 +55,7 @@ const MIN_DISPLAY_MS_EDT_LOADING_FIRST = 0;
 const MIN_DISPLAY_MS_EDT_WAIT_SYNC = 0;
 
 function HomeContent({searchParams}) {
-    const { t, language } = useI18n();
+    const {t, language} = useI18n();
     const router = useRouter();
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -172,18 +172,18 @@ function HomeContent({searchParams}) {
     const courseNotesSessionKey = `${isLoadingUser ? "0" : "1"}:${userInfo?.id ?? "anon"}`;
 
     // Notes des cours
-    const { notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes } = useCourseNotes(
+    const {notes: courseNotes, authenticated: notesAuthenticated, refresh: refreshNotes} = useCourseNotes(
         courseNotesSessionKey
     );
 
 
     // Hook PWA pour détecter l'installation
     const {isInstalled, isStandalone} = usePWA();
-    const { isOnline, connectivityReady } = useNetworkStatus();
+    const {isOnline, connectivityReady} = useNetworkStatus();
     const devMode = useDevMode();
 
     // Pull-to-refresh sur mobile/web
-    usePullToRefresh(() => fetchEvents({ uiMode: "user-refresh" }));
+    usePullToRefresh(() => fetchEvents({uiMode: "user-refresh"}));
 
     // Ref pour le jour actuel
     const todayRef = useRef(null);
@@ -214,7 +214,7 @@ function HomeContent({searchParams}) {
             blockingLoadEndTimerRef.current = null;
             blockingLoadStartRef.current = null;
             blockingLoadHadCacheRef.current = false;
-            
+
             if (!hasPlayedHomeEntranceRef.current) {
                 hasPlayedHomeEntranceRef.current = true;
                 setEntranceAnimationActive(true);
@@ -458,7 +458,7 @@ function HomeContent({searchParams}) {
 
                 // Toujours réécrire le cache local avec la liste complète quand on est en ligne (y compris ICS inchangé).
                 if (eventsData.length > 0) {
-                    saveEventsToCache(eventsData, colorMapping, serverHash, { preserveTimestamp });
+                    saveEventsToCache(eventsData, colorMapping, serverHash, {preserveTimestamp});
                 }
 
                 if (!preserveTimestamp) {
@@ -499,24 +499,24 @@ function HomeContent({searchParams}) {
             const previousHash = typeof window !== 'undefined' ? localStorage.getItem('lastNotificationHash') : null;
             const currentHash = meta.hash || null;
             const hashHasChanged = currentHash && previousHash && currentHash !== previousHash;
-            
+
             // Afficher la notification seulement si :
             // 1. Il y a des changements détectés
             // 2. Il y avait des events avant
             // 3. On n'est pas hors ligne
             // 4. ET soit le hash a changé, soit c'est la première visite (pas de hash précédent)
-            const shouldShowNotification = totalChanges > 0 && 
-                                          hadEventsBefore && 
-                                          !isReallyOffline &&
-                                          (hashHasChanged || !previousHash);
+            const shouldShowNotification = totalChanges > 0 &&
+                hadEventsBefore &&
+                !isReallyOffline &&
+                (hashHasChanged || !previousHash);
 
             if (shouldShowNotification) {
                 console.log(`[Page] Changements RÉELS détectés (${totalChanges}): ${diff.added.length} ajoutés, ${diff.updated.length} modifiés, ${diff.removed.length} supprimés`);
                 console.log(`[Page] Hash changé: ${previousHash} → ${currentHash}`);
-                
+
                 // Déterminer si les changements concernent la semaine actuellement affichée
                 let changesInCurrentWeek = false;
-                
+
                 if (selectedWeek) {
                     // Calculer la plage de dates de la semaine affichée
                     const weekStart = new Date(selectedWeek);
@@ -524,27 +524,27 @@ function HomeContent({searchParams}) {
                     const weekEnd = new Date(selectedWeek);
                     weekEnd.setDate(weekEnd.getDate() + 6);
                     weekEnd.setHours(23, 59, 59, 999);
-                    
+
                     // Vérifier si un des changements concerne cette semaine
                     const isEventInWeek = (event) => {
                         if (!event || !event.start) return false;
                         const eventDate = new Date(event.start);
                         return eventDate >= weekStart && eventDate <= weekEnd;
                     };
-                    
+
                     const addedInWeek = diff.added.some(isEventInWeek);
                     const updatedInWeek = diff.updated.some(ev => isEventInWeek(ev.after || ev));
                     const removedInWeek = diff.removed.some(isEventInWeek);
-                    
+
                     changesInCurrentWeek = addedInWeek || updatedInWeek || removedInWeek;
-                    
+
                     if (changesInCurrentWeek) {
                         console.log(`[Page] Changements dans la semaine affichée (${selectedWeek.toLocaleDateString()})`);
                     } else {
                         console.log(`[Page] Changements HORS de la semaine affichée — notification ignorée`);
                     }
                 }
-                
+
                 if (changesInCurrentWeek) {
                     setShowEdtMinorUpdateHint(false);
                     setShowEdtChangeToast(true);
@@ -754,7 +754,7 @@ function HomeContent({searchParams}) {
 
         // Gérer plusieurs eventKey séparés par des virgules
         const eventKeys = eventKeyParam.split(',').map(key => decodeURIComponent(key.trim()));
-        
+
         // Trouver le premier événement correspondant (pour déterminer la semaine)
         const matchingEvent = allEvents.find((e) => {
             const key = generateEventKey(e);
@@ -839,10 +839,10 @@ function HomeContent({searchParams}) {
                     setEntranceAnimationActive(true);
                 }
             }
-            fetchEvents({ uiMode: "background" });
+            fetchEvents({uiMode: "background"});
         } else {
             console.log("[Page] En ligne — pas de cache, chargement initial depuis le serveur");
-            fetchEvents({ uiMode: "initial-blocking" });
+            fetchEvents({uiMode: "initial-blocking"});
         }
     }, [isOnline, connectivityReady]);
 
@@ -1449,7 +1449,7 @@ function HomeContent({searchParams}) {
             router.replace('/');
         }
     };
-    
+
     const handleWeekChange = (newWeekMonday) => {
         // Désactiver le mode année scolaire si actif
         if (showFullYear) {
@@ -1580,17 +1580,18 @@ function HomeContent({searchParams}) {
             {showDayWarningToast && (
                 <div className={styles.dayWarningToast}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor"
+                              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     <span>
-                        {language === 'fr' 
-                            ? 'Impossible de fermer tous les jours' 
+                        {language === 'fr'
+                            ? 'Impossible de fermer tous les jours'
                             : 'Cannot close all days'}
                     </span>
                 </div>
             )}
             <Toast
-                message={edtChangeToastMessage === 'current-week' 
+                message={edtChangeToastMessage === 'current-week'
                     ? `${t('page.edtChangeDetected')}${edtChangeToastWeekLabel ? ` (${edtChangeToastWeekLabel})` : ''}`
                     : t('page.edtChangeGeneral')}
                 isVisible={showEdtChangeToast}
@@ -1619,7 +1620,7 @@ function HomeContent({searchParams}) {
             {/* Bouton de scroll to top */}
             <ScrollToTop/>
 
-                <Navbar
+            <Navbar
                 darkMode={darkMode}
                 oledMode={oledMode}
                 onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -1699,7 +1700,8 @@ function HomeContent({searchParams}) {
                                     {debugInfo.fetchError && (
                                         <>
                                             <hr className={styles.debugHr}/>
-                                            <div><strong>{t('page.debugFetchError')}</strong> {debugInfo.fetchError}</div>
+                                            <div><strong>{t('page.debugFetchError')}</strong> {debugInfo.fetchError}
+                                            </div>
                                         </>
                                     )}
                                     {debugInfo.userAgent && (
@@ -1756,8 +1758,8 @@ function HomeContent({searchParams}) {
                 )}
 
                 {showFullYear && (!loading || events.length > 0) ? (
-                    <YearCalendar 
-                        events={events} 
+                    <YearCalendar
+                        events={events}
                         onDateClick={(date) => {
                             const monday = getMonday(date);
                             setSelectedWeek(monday);
@@ -1766,228 +1768,189 @@ function HomeContent({searchParams}) {
                     />
                 ) : (
                     (!loading || events.length > 0) && events.length > 0 && canShowCards && (
-                    <div style={viewMode === 'vertical' ? {margin: '.3rem'} : {margin: '0'}}
-                        key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
-                        className={
-                            `${styles.weekContent} ` +
-                            (viewMode === 'vertical' ? styles.weekContentVertical : '') + ' ' +
-                            (weekTransitionDirection === 'next'
-                                ? styles.slideLeft
-                                : weekTransitionDirection === 'prev'
-                                    ? styles.slideRight
-                                    : '')
-                        }
-                    >
-                        {getTimeRemainingText && (
-                            <div className={styles.timeRemainingText}>
-                                {getTimeRemainingText}
-                            </div>
-                        )}
-                        {viewMode === 'horizontal' && (
-                            <div
-                                className={styles.dayOptionsButtonWrapper}
-                                data-hint-align={dayOptionsHintAlignLeft ? 'left' : undefined}
-                                onMouseEnter={handleDayOptionsHintPosition}
-                                onMouseLeave={handleDayOptionsHintReset}
-                            >
-                                <button
-                                    onClick={() => handleToggleAllDays()}
-                                    className={styles.dayOptionsButton}
-                                    aria-label={allDaysExpanded ? t('navbar.collapseAllDays') : t('navbar.expandAllDays')}
-                                    onFocus={handleDayOptionsHintPosition}
-                                    onBlur={handleDayOptionsHintReset}
+                        <div style={viewMode === 'vertical' ? {margin: '.3rem'} : {margin: '0'}}
+                             key={selectedWeek ? selectedWeek.getTime() : 'no-week'}
+                             className={
+                                 `${styles.weekContent} ` +
+                                 (viewMode === 'vertical' ? styles.weekContentVertical : '') + ' ' +
+                                 (weekTransitionDirection === 'next'
+                                     ? styles.slideLeft
+                                     : weekTransitionDirection === 'prev'
+                                         ? styles.slideRight
+                                         : '')
+                             }
+                        >
+                            {getTimeRemainingText && (
+                                <div className={styles.timeRemainingText}>
+                                    {getTimeRemainingText}
+                                </div>
+                            )}
+                            {viewMode === 'horizontal' && (
+                                <div
+                                    className={styles.dayOptionsButtonWrapper}
+                                    data-hint-align={dayOptionsHintAlignLeft ? 'left' : undefined}
+                                    onMouseEnter={handleDayOptionsHintPosition}
+                                    onMouseLeave={handleDayOptionsHintReset}
                                 >
-                                    <svg
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        aria-hidden="true"
+                                    <button
+                                        onClick={() => handleToggleAllDays()}
+                                        className={styles.dayOptionsButton}
+                                        aria-label={allDaysExpanded ? t('navbar.collapseAllDays') : t('navbar.expandAllDays')}
+                                        onFocus={handleDayOptionsHintPosition}
+                                        onBlur={handleDayOptionsHintReset}
                                     >
-                                        {allDaysExpanded ? (
-                                            <path
-                                                d="M6 15l6-6 6 6"
-                                                stroke="currentColor"
-                                                strokeWidth="2.2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
-                                        ) : (
-                                            <path
-                                                d="M6 9l6 6 6-6"
-                                                stroke="currentColor"
-                                                strokeWidth="2.2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
-                                        )}
-                                    </svg>
-                                </button>
-                                {showTooltips && (
-                                    <div
-                                        ref={dayOptionsHintRef}
-                                        className={styles.dayOptionsHint}
-                                        aria-hidden="true"
-                                    >
-                                        {allDaysExpanded
-                                            ? t('navbar.collapseAllDays')
-                                            : t('navbar.expandAllDays')}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {viewMode === 'vertical' ? (
-                            <VerticalSchedule
-                                events={events}
-                                subjectColors={subjectColors}
-                                entranceAnimationActive={entranceAnimationActive}
-                                showTooltips={showTooltips}
-                                onOpenEventDetails={(ev, position) => {
-                                    setEventClickPosition(position);
-                                    setSelectedEvent(ev);
-                                }}
-                                compactMode={compactMode}
-                                showTimeLabels={showTimeLabels}
-                                hide15MinSpacing={hide15MinSpacing}
-                                showCurrentTimeIndicator={showCurrentTimeIndicator}
-                                isPWAInstalled={isInstalled}
-                                monthFormat={'short'}
-                                courseNotes={courseNotes}
-                                colorPosition={colorPosition}
-                                colorBackgroundOpacity={colorBackgroundOpacity}
-                                timePassedOverlayIntensity={timePassedOverlayIntensity}
-                                showCourseProgressPercent={showCourseProgressPercent}
-                                courseProgressPercentDecimals={courseProgressPercentDecimals}
-                            />
-                        ) : (
-                            Object.entries(groupByDay).map(([day, evs], index) => {
-                                const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
-                                const isToday = dayDate.toDateString() === new Date().toDateString();
+                                        <svg
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            aria-hidden="true"
+                                        >
+                                            {allDaysExpanded ? (
+                                                <path
+                                                    d="M6 15l6-6 6 6"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2.2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            ) : (
+                                                <path
+                                                    d="M6 9l6 6 6-6"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2.2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                            )}
+                                        </svg>
+                                    </button>
+                                    {showTooltips && (
+                                        <div
+                                            ref={dayOptionsHintRef}
+                                            className={styles.dayOptionsHint}
+                                            aria-hidden="true"
+                                        >
+                                            {allDaysExpanded
+                                                ? t('navbar.collapseAllDays')
+                                                : t('navbar.expandAllDays')}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {viewMode === 'vertical' ? (
+                                <VerticalSchedule
+                                    events={events}
+                                    subjectColors={subjectColors}
+                                    entranceAnimationActive={entranceAnimationActive}
+                                    showTooltips={showTooltips}
+                                    onOpenEventDetails={(ev, position) => {
+                                        setEventClickPosition(position);
+                                        setSelectedEvent(ev);
+                                    }}
+                                    compactMode={compactMode}
+                                    showTimeLabels={showTimeLabels}
+                                    hide15MinSpacing={hide15MinSpacing}
+                                    showCurrentTimeIndicator={showCurrentTimeIndicator}
+                                    isPWAInstalled={isInstalled}
+                                    monthFormat={'short'}
+                                    courseNotes={courseNotes}
+                                    colorPosition={colorPosition}
+                                    colorBackgroundOpacity={colorBackgroundOpacity}
+                                    timePassedOverlayIntensity={timePassedOverlayIntensity}
+                                    showCourseProgressPercent={showCourseProgressPercent}
+                                    courseProgressPercentDecimals={courseProgressPercentDecimals}
+                                />
+                            ) : (
+                                Object.entries(groupByDay).map(([day, evs], index) => {
+                                    const dayDate = evs[0] ? new Date(evs[0].start) : new Date();
+                                    const isToday = dayDate.toDateString() === new Date().toDateString();
 
-                                return (
-                                    <div key={day} style={{margin: '.3rem', position: 'relative'}}>
-                                        <DayBlock
-                                            ref={isToday ? todayRef : null}
-                                            day={day}
-                                            events={evs}
-                                            subjectColors={subjectColors}
-                                            isCollapsed={collapsedDays[day] || false}
-                                            onToggle={() => handleToggleDay(day)}
-                                            onOpenEventDetails={(ev, position) => {
-                                                setEventClickPosition(position);
-                                                setSelectedEvent(ev);
+                                    return (
+                                        <div key={day} style={{margin: '.3rem', position: 'relative'}}>
+                                            <DayBlock
+                                                ref={isToday ? todayRef : null}
+                                                day={day}
+                                                events={evs}
+                                                subjectColors={subjectColors}
+                                                isCollapsed={collapsedDays[day] || false}
+                                                onToggle={() => handleToggleDay(day)}
+                                                onOpenEventDetails={(ev, position) => {
+                                                    setEventClickPosition(position);
+                                                    setSelectedEvent(ev);
+                                                }}
+                                                entranceAnimationActive={entranceAnimationActive}
+                                                compactMode={compactMode}
+                                                showTimeLabels={showTimeLabels}
+                                                hide15MinSpacing={hide15MinSpacing}
+                                                courseNotes={courseNotes}
+                                                showCurrentTimeIndicator={showCurrentTimeIndicator}
+                                                colorPosition={colorPosition}
+                                                colorBackgroundOpacity={colorBackgroundOpacity}
+                                                timePassedOverlayIntensity={timePassedOverlayIntensity}
+                                                showCourseProgressPercent={showCourseProgressPercent}
+                                                courseProgressPercentDecimals={courseProgressPercentDecimals}
+                                            />
+                                            {isToday && (
+                                                <div
+                                                    className={styles.todaySpacer}
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+                            {/* Affichage de la date et heure de dernière sauvegarde */}
+                            {
+                                !hasNetworkError && (
+                                    <div className="last-update-info">
+                                        <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
+                                        {isEdtVerifying && (
+                                            <span className={styles.edtVerifyingPill} aria-live="polite">
+                                            {t("page.edtVerifyingShort")}
+                                        </span>
+                                        )}
+                                        <button
+                                            onClick={() => setShowOfflineModal(true)}
+                                            className="btn-update-detail"
+                                            title="Cliquer pour voir les détails"
+                                            aria-label="Voir les détails de la dernière mise à jour"
+                                        >
+                                            {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
+                                        </button>
+                                    </div>
+                                )
+                            }
+                            {/* Affichage de la date et heure de dernière sauvegarde */}
+                            {
+                                hasNetworkError && (
+                                    <div className="last-update-info">
+                                        {isEdtVerifying && (
+                                            <span className={styles.edtVerifyingPill} aria-live="polite">
+                                            {t("page.edtVerifyingShort")}
+                                        </span>
+                                        )}
+                                        <button
+                                            onClick={() => setShowOfflineModal(true)}
+                                            className={styles.offlineTimestamp}
+                                            style={{
+                                                cursor: 'pointer',
+                                                font: 'inherit',
+                                                textAlign: 'inherit',
+                                                display: 'inline-block'
                                             }}
-                                            entranceAnimationActive={entranceAnimationActive}
-                                            compactMode={compactMode}
-                                            showTimeLabels={showTimeLabels}
-                                            hide15MinSpacing={hide15MinSpacing}
-                                            courseNotes={courseNotes}
-                                            showCurrentTimeIndicator={showCurrentTimeIndicator}
-                                            colorPosition={colorPosition}
-                                            colorBackgroundOpacity={colorBackgroundOpacity}
-                                            timePassedOverlayIntensity={timePassedOverlayIntensity}
-                                            showCourseProgressPercent={showCourseProgressPercent}
-                                            courseProgressPercentDecimals={courseProgressPercentDecimals}
-                                        />
-                                        {isToday && (
-                                            <div
-                                                className={styles.todaySpacer}
-                                                aria-hidden="true"
-                                            />
-                                        )}
+                                            title="Cliquer pour voir les détails"
+                                            aria-label="Voir les détails de la dernière mise à jour"
+                                        >
+                                            {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
+                                        </button>
                                     </div>
-                                );
-                            })
-                        )}
-                        {/* Affichage de la date et heure de dernière sauvegarde */}
-                        {
-                            !hasNetworkError && (
-                                <div className="last-update-info">
-                                    <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
-                                    {isEdtVerifying && (
-                                        <span className={styles.edtVerifyingPill} aria-live="polite">
-                                            {t("page.edtVerifyingShort")}
-                                        </span>
-                                    )}
-                                    <button 
-                                        onClick={() => setShowOfflineModal(true)} 
-                                        className="btn-update-detail"
-                                        title="Cliquer pour voir les détails"
-                                        aria-label="Voir les détails de la dernière mise à jour"
-                                    >
-                                        {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
-                                    </button>
-                                </div>
-                            )
-                        }
-                        {/* Affichage de la date et heure de dernière sauvegarde */}
-                        {
-                            hasNetworkError && (
-                                <div className="last-update-info">
-                                    {isEdtVerifying && (
-                                        <span className={styles.edtVerifyingPill} aria-live="polite">
-                                            {t("page.edtVerifyingShort")}
-                                        </span>
-                                    )}
-                                    <button 
-                                        onClick={() => setShowOfflineModal(true)} 
-                                        className={styles.offlineTimestamp}
-                                        style={{ 
-                                            cursor: 'pointer',
-                                            font: 'inherit',
-                                            textAlign: 'inherit',
-                                            display: 'inline-block'
-                                        }}
-                                        title="Cliquer pour voir les détails"
-                                        aria-label="Voir les détails de la dernière mise à jour"
-                                    >
-                                        {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
-                                    </button>
-                                </div>
-                            )
-                        }
-                        {(userInfo?.role === 'superAdmin') && (
-                            <div className={styles.timeRemainingText}>
-                                {userInfo?.role === 'superAdmin' && (
-                                    <div className={styles.superAdminBuildInfo}>
-                                        {(() => {
-                                            if (isLoadingBuildTimestamp) {
-                                                return <span style={{ opacity: 0.6 }}>{t('loading.lastDeploymentLoading')}</span>;
-                                            }
-
-                                            const formatted = formatLastUpdate(buildTimestamp);
-
-                                            // Calculer si la date dépasse 1 mois et demi (~45 jours)
-                                            let isTooOld = false;
-                                            if (buildTimestamp) {
-                                                const buildDate = new Date(buildTimestamp);
-                                                if (!isNaN(buildDate.getTime())) {
-                                                    const now = new Date();
-                                                    const diffMs = now.getTime() - buildDate.getTime();
-                                                    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-                                                    if (diffDays > 45) {
-                                                        isTooOld = true;
-                                                    }
-                                                }
-                                            }
-
-                                            const style = isTooOld
-                                                ? { color: '#dc2626', fontSize: '0.9rem', fontWeight: 600 }
-                                                : {};
-
-                                            return (
-                                                <span style={style}>
-                                                    Last deployment : {formatted}
-                                                </span>
-                                            );
-                                        })()}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                ))}
+                                )
+                            }
+                        </div>
+                    ))}
             </main>
 
             <Footer
@@ -1999,8 +1962,8 @@ function HomeContent({searchParams}) {
 
             <ScrollToTop/>
 
-            <OfflineNotification 
-                forceShow={hasNetworkError} 
+            <OfflineNotification
+                forceShow={hasNetworkError}
                 lastUpdateTimestamp={lastUpdateTimestamp}
                 showModal={showOfflineModal}
                 onModalClose={() => setShowOfflineModal(false)}

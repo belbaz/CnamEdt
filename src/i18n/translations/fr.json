@@ -435,9 +435,7 @@
     "loadingUsers": "Chargement des utilisateurs...",
     "loadingWeek": "Chargement ...",
     "reloading": "Rechargement...",
-    "reload": "Recharger",
-    "lastDeployment": "Last deployment :",
-    "lastDeploymentLoading": "Last deployment : Chargement..."
+    "reload": "Recharger"
   },
   "weekPicker": {
     "today": "Retour à la semaine actuelle",
