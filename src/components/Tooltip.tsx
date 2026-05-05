@@ -1,119 +1,119 @@
 // @ts-nocheck
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "./Navbar.css";
 
 export default function Tooltip({ children, text, show, enabled = true, scrollContainerRef = null }) {
     const tooltipRef = useRef(null);
     const wrapperRef = useRef(null);
-    const [position, setPosition] = useState({ top: 0, left: 0, placement: 'top', arrowLeft: '50%' });
+    const [position, setPosition] = useState({ top: 0, left: 0, placement: "top", arrowLeft: "50%" });
+    /** Évite un flash en (0,0) avant la mesure synchrone dans useLayoutEffect */
+    const [positionReady, setPositionReady] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        if (!show || !enabled || !tooltipRef.current || !wrapperRef.current) return;
+        setIsMounted(true);
+    }, []);
+
+    useLayoutEffect(() => {
+        if (!show || !enabled || !isMounted) {
+            setPositionReady(false);
+            return;
+        }
 
         const updatePosition = () => {
-            // Vérifier que les refs existent avant d'accéder à leurs propriétés
-            if (!tooltipRef.current || !wrapperRef.current) return;
-            
-            const wrapperRect = wrapperRef.current.getBoundingClientRect();
-            const tooltipRect = tooltipRef.current.getBoundingClientRect();
+            const wrapEl = wrapperRef.current;
+            const tipEl = tooltipRef.current;
+            if (!wrapEl || !tipEl) return;
+
+            const wrapperRect = wrapEl.getBoundingClientRect();
             const margin = 8;
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
 
-            // Calculer la position du centre du bouton (ne change pas)
-            const buttonCenterX = wrapperRect.left + (wrapperRect.width / 2);
-            
-            // Position par défaut : en dessous, centré
+            let tooltipRect = tipEl.getBoundingClientRect();
+
+            if (tooltipRect.width > viewportWidth - 2 * margin) {
+                tipEl.style.maxWidth = `${viewportWidth - 2 * margin}px`;
+            } else {
+                tipEl.style.maxWidth = "";
+            }
+            void tipEl.offsetHeight;
+            tooltipRect = tipEl.getBoundingClientRect();
+
+            const buttonCenterX = wrapperRect.left + wrapperRect.width / 2;
+
             let top = wrapperRect.bottom + margin;
-            let left = wrapperRect.left + (wrapperRect.width / 2) - (tooltipRect.width / 2);
-            let placement = 'bottom';
-            
-            // Ajuster horizontalement si ça dépasse à gauche
+            let left = wrapperRect.left + wrapperRect.width / 2 - tooltipRect.width / 2;
+            let placement = "bottom";
+
             if (left < margin) {
                 left = margin;
             }
 
-            // Ajuster horizontalement si ça dépasse à droite
             if (left + tooltipRect.width > viewportWidth - margin) {
                 left = viewportWidth - tooltipRect.width - margin;
             }
 
-            // Si ça dépasse en bas, mettre au-dessus
             if (top + tooltipRect.height > viewportHeight - margin) {
                 top = wrapperRect.top - tooltipRect.height - margin;
-                placement = 'top';
+                placement = "top";
             }
 
-            // Si ça dépasse toujours en haut, coller en haut de l'écran
             if (top < margin) {
                 top = margin;
-                placement = 'top';
+                placement = "top";
             }
 
-            // Si le tooltip est trop large, le centrer et réduire la largeur
-            let finalTooltipWidth = tooltipRect.width;
-            if (tooltipRect.width > viewportWidth - 2 * margin) {
-                left = margin;
-                tooltipRef.current.style.maxWidth = `${viewportWidth - 2 * margin}px`;
-                // Attendre que le tooltip soit redimensionné pour recalculer
-                finalTooltipWidth = Math.min(tooltipRect.width, viewportWidth - 2 * margin);
-            }
-
-            // Calculer la position de la flèche pour pointer vers le centre du bouton
-            // La flèche doit être à la position du centre du bouton moins la position gauche du tooltip
+            const finalTooltipWidth = tooltipRect.width;
             const arrowPosition = buttonCenterX - left;
-            // Limiter la flèche entre 12px et finalTooltipWidth - 12px pour éviter qu'elle sorte du tooltip
             const arrowLeft = Math.max(12, Math.min(arrowPosition, finalTooltipWidth - 12));
 
             setPosition({ top, left, placement, arrowLeft: `${arrowLeft}px` });
+            setPositionReady(true);
         };
 
-        // Attendre que le tooltip soit rendu pour calculer sa position
-        const timeoutId = setTimeout(() => {
-            requestAnimationFrame(() => {
-                requestAnimationFrame(updatePosition);
-            });
-        }, 10);
+        updatePosition();
 
-        // Réajuster au scroll et resize
-        window.addEventListener('scroll', updatePosition, true);
-        window.addEventListener('resize', updatePosition);
-        
-        // Si un conteneur de scroll est fourni, écouter son scroll aussi
+        window.addEventListener("scroll", updatePosition, true);
+        window.addEventListener("resize", updatePosition);
+
         if (scrollContainerRef && scrollContainerRef.current) {
-            scrollContainerRef.current.addEventListener('scroll', updatePosition);
+            scrollContainerRef.current.addEventListener("scroll", updatePosition);
         }
 
         return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener('scroll', updatePosition, true);
-            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener("scroll", updatePosition, true);
+            window.removeEventListener("resize", updatePosition);
             if (scrollContainerRef && scrollContainerRef.current) {
-                scrollContainerRef.current.removeEventListener('scroll', updatePosition);
+                scrollContainerRef.current.removeEventListener("scroll", updatePosition);
             }
+            setPositionReady(false);
         };
-    }, [show, enabled, scrollContainerRef]);
+    }, [show, enabled, isMounted, text, scrollContainerRef]);
 
     return (
         <div className="tooltip-wrapper" ref={wrapperRef}>
             {children}
-            {show && enabled && (
-                <div
-                    ref={tooltipRef}
-                    className={`tooltip tooltip-${position.placement}`}
-                    style={{
-                        top: `${position.top}px`,
-                        left: `${position.left}px`,
-                        position: 'fixed',
-                        '--arrow-left': position.arrowLeft,
-                    }}
-                >
-                    {text}
-                </div>
-            )}
+            {show && enabled && isMounted &&
+                createPortal(
+                    <div
+                        ref={tooltipRef}
+                        className={`tooltip tooltip-${position.placement}`}
+                        style={{
+                            top: `${position.top}px`,
+                            left: `${position.left}px`,
+                            position: "fixed",
+                            "--arrow-left": position.arrowLeft,
+                            visibility: positionReady ? "visible" : "hidden",
+                            animation: positionReady ? undefined : "none",
+                        }}
+                    >
+                        {text}
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }
-
-

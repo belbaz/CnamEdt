@@ -168,11 +168,15 @@
     border: 1px solid var(--border-color);
     pointer-events: none;
     animation: tooltipFadeIn 0.2s ease-out;
-    max-width: calc(100vw - 2rem);
+    /* Évite qu’un bloc fixed avec width:auto ne s’étire sur tout le viewport */
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: min(22rem, calc(100vw - 2rem));
+    min-width: 0;
     word-wrap: break-word;
+    overflow-wrap: break-word;
     white-space: normal;
     text-align: center;
-    min-width: max-content;
 }
 
 .tooltip-top::after {

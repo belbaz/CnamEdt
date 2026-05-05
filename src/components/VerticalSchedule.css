@@ -924,7 +924,7 @@
     color: red;
     font-size: 0.75rem;
     font-weight: bold;
-    z-index: 11;
+    z-index: 100;
     pointer-events: none;
     transform: translate(-50%, -50%);
     background: rgba(255, 255, 255, 0.9);
