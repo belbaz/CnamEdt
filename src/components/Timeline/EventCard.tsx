@@ -7,6 +7,7 @@ import "./EventCard.css";
 import Image from "next/image";
 import {useDevMode} from "../../utils/env";
 import {sanitizeNoteEntries} from "@/utils/noteEntries";
+import {useI18n} from "@/i18n/I18nContext";
 
 const isVisioLocation = (location) => {
     if (!location || typeof location !== 'string') return false;
@@ -49,8 +50,10 @@ export default function EventCard({
     nonDistancielLabels = [],
     colorPosition = 'background',
     colorBackgroundOpacity = 0.6,
-    entranceAnimationActive = false
+    entranceAnimationActive = false,
+    noteHasPersonalEntries = false,
 }) {
+    const { t } = useI18n();
     const {matiere, prof, description, splitGroup} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
@@ -307,14 +310,30 @@ export default function EventCard({
                             onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
                             onBlur={hasTooltipContent ? () => setShowTooltip(false) : undefined}
                         >
-                            <span className="note-icon">
-                                <Image
-                                    src="/note.svg"
-                                    alt="Notes"
-                                    fill
-                                    sizes="20px"
-                                />
-                            </span>
+                            <div className="note-badge-visual">
+                                <span className="note-icon">
+                                    <Image
+                                        src="/note.svg"
+                                        alt={t("common.noteCourseIconAlt")}
+                                        fill
+                                        sizes="20px"
+                                    />
+                                </span>
+                                {noteHasPersonalEntries && (
+                                    <span
+                                        className="note-lock-corner"
+                                        title={t("common.noteCourseIconPersonalAlt")}
+                                    >
+                                        <Image
+                                            src="/lock.svg"
+                                            alt=""
+                                            width={15}
+                                            height={15}
+                                            aria-hidden
+                                        />
+                                    </span>
+                                )}
+                            </div>
                             <span className="note-count-badge">{totalCount}</span>
                         </div>
                         {/* Afficher la tooltip seulement s'il y a du contenu (texte, labels ou fichiers) */}

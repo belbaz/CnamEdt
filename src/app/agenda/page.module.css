@@ -1257,6 +1257,29 @@
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--border-light);
+    min-width: 0;
+}
+
+.noteLabelsSectionCompact {
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.5rem;
+}
+
+.noteLabelsSectionCompact .noteLabelsHeader {
+    margin-bottom: 0.35rem;
+}
+
+.noteLabelsSectionCompact .noteLabelsList {
+    margin-bottom: 0.35rem;
+}
+
+.noteLabelsSectionCompact .predefinedLabels {
+    margin-top: 0.28rem;
+    padding-bottom: 0.58rem;
+}
+
+.noteLabelsSectionCompact .customLabelInput {
+    margin-top: 0.45rem;
 }
 
 .noteLabelsHeader {
@@ -1275,29 +1298,61 @@
 }
 
 .addLabelButton {
-    background: transparent;
-    border: 1px solid var(--border-light);
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid #2563eb;
     border-radius: 8px;
     padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #1d4ed8;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    line-height: 1.25;
 }
 
 .addLabelButton:hover {
-    background: var(--bg-primary);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.15);
+    border-color: #1d4ed8;
+    color: #1d4ed8;
 }
 
 .noteLabelsList {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
-    min-height: 1.5rem;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.65rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.92) rgba(241, 245, 249, 0.85);
+}
+
+.noteLabelsList::-webkit-scrollbar {
+    height: 7px;
+}
+
+.noteLabelsList::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.85);
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.noteLabelsList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background-clip: padding-box;
+}
+
+.noteLabelsList::-webkit-scrollbar-thumb:hover {
+    background: #f1f5f9;
+    border-color: rgba(148, 163, 184, 0.35);
 }
 
 .noteLabel {
@@ -1306,11 +1361,13 @@
     gap: 0.5rem;
     background: var(--bg-primary);
     border: 1px solid var(--border-light);
-    border-radius: 20px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.85rem;
+    border-radius: 8px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
     font-weight: 600;
     transition: all 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .removeLabelButton {
@@ -1318,9 +1375,9 @@
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1rem;
     line-height: 1;
-    padding: 0;
+    padding: 0.1rem;
     width: 18px;
     height: 18px;
     display: flex;
@@ -1343,36 +1400,104 @@
 
 .predefinedLabels {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
     margin-top: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.65rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.92) rgba(241, 245, 249, 0.85);
+}
+
+.predefinedLabels::-webkit-scrollbar {
+    height: 7px;
+}
+
+.predefinedLabels::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.85);
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.predefinedLabels::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background-clip: padding-box;
+}
+
+.predefinedLabels::-webkit-scrollbar-thumb:hover {
+    background: #f1f5f9;
+    border-color: rgba(148, 163, 184, 0.35);
+}
+
+.dark-mode .noteLabelsList,
+.dark-mode .predefinedLabels,
+[data-theme="dark"] .noteLabelsList,
+[data-theme="dark"] .predefinedLabels,
+.oled-mode .noteLabelsList,
+.oled-mode .predefinedLabels {
+    scrollbar-color: rgba(255, 255, 255, 0.4) rgba(255, 255, 255, 0.08);
+}
+
+.dark-mode .noteLabelsList::-webkit-scrollbar-track,
+.dark-mode .predefinedLabels::-webkit-scrollbar-track,
+[data-theme="dark"] .noteLabelsList::-webkit-scrollbar-track,
+[data-theme="dark"] .predefinedLabels::-webkit-scrollbar-track,
+.oled-mode .noteLabelsList::-webkit-scrollbar-track,
+.oled-mode .predefinedLabels::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.dark-mode .noteLabelsList::-webkit-scrollbar-thumb,
+.dark-mode .predefinedLabels::-webkit-scrollbar-thumb,
+[data-theme="dark"] .noteLabelsList::-webkit-scrollbar-thumb,
+[data-theme="dark"] .predefinedLabels::-webkit-scrollbar-thumb,
+.oled-mode .noteLabelsList::-webkit-scrollbar-thumb,
+.oled-mode .predefinedLabels::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.38);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.dark-mode .noteLabelsList::-webkit-scrollbar-thumb:hover,
+.dark-mode .predefinedLabels::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .noteLabelsList::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .predefinedLabels::-webkit-scrollbar-thumb:hover,
+.oled-mode .noteLabelsList::-webkit-scrollbar-thumb:hover,
+.oled-mode .predefinedLabels::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.52);
+    border-color: rgba(255, 255, 255, 0.22);
 }
 
 .predefinedLabelButton {
     background: var(--bg-secondary);
     border: 1px solid var(--border-light);
     border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    line-height: 1.25;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.predefinedLabelButton:hover:not(.predefinedLabelButtonDisabled) {
+.predefinedLabelButton:hover:not(:disabled) {
     background: var(--bg-primary);
     border-color: var(--primary-color);
     color: var(--primary-color);
-    transform: translateY(-1px);
 }
 
-.predefinedLabelButtonDisabled {
-    opacity: 0.5;
+.predefinedLabelButton:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
-    background: var(--bg-primary);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
 }
 
 .customLabelInput {
@@ -1405,26 +1530,30 @@
 .customLabelCancelButton {
     padding: 0.5rem 1rem;
     border-radius: 8px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    border: none;
+    transition: filter 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
+        color 0.2s ease, border-color 0.2s ease;
+    line-height: 1.25;
 }
 
 .customLabelAddButton {
     background: var(--primary-color);
     color: #fff;
+    border: none;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .customLabelAddButton:hover:not(:disabled) {
     filter: brightness(110%);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.28);
 }
 
 .customLabelAddButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 .customLabelCancelButton {
@@ -1496,33 +1625,122 @@
 }
 
 .notePrivacyToggle {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
     user-select: none;
-    margin: 0;
+    margin: 0.08rem 0 0;
+    padding: 0.28rem 0;
 }
 
-.notePrivacyToggle input {
+.notePrivacyLabel {
+    line-height: 1.35;
+}
+
+.notePrivacySwitch {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.38);
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.notePrivacySwitch:has(.notePrivacyCheckbox:checked) {
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+    box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.35);
+}
+
+.notePrivacySwitch:has(.notePrivacyCheckbox:disabled) {
+    opacity: 0.55;
+}
+
+.notePrivacySwitch:has(.notePrivacyCheckbox:focus-visible) {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.notePrivacyCheckbox {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
     cursor: pointer;
+    z-index: 2;
+}
+
+.notePrivacyCheckbox:disabled {
+    cursor: not-allowed;
+}
+
+.notePrivacyThumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+    transition: transform 0.22s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.notePrivacyCheckbox:checked + .notePrivacyThumb {
+    transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notePrivacyThumb,
+    .notePrivacySwitch {
+        transition: none;
+    }
+}
+
+.dark-mode .notePrivacySwitch,
+[data-theme="dark"] .notePrivacySwitch,
+.oled-mode .notePrivacySwitch {
+    background: rgba(71, 85, 105, 0.55);
+}
+
+.dark-mode .notePrivacySwitch:has(.notePrivacyCheckbox:checked),
+[data-theme="dark"] .notePrivacySwitch:has(.notePrivacyCheckbox:checked),
+.oled-mode .notePrivacySwitch:has(.notePrivacyCheckbox:checked) {
+    background: linear-gradient(135deg, #fcd34d, #ea580c);
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
+}
+
+.dark-mode .notePrivacyThumb,
+[data-theme="dark"] .notePrivacyThumb,
+.oled-mode .notePrivacyThumb {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 .noteEntryRemove {
-    background: none;
-    border: none;
-    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85rem;
-    border-radius: 6px;
-    transition: background 0.2s;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    line-height: 1.25;
 }
 
 .noteEntryRemove:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(220, 38, 38, 0.55);
+    color: #b91c1c;
 }
 
 .noteEntryTextarea {
@@ -1612,25 +1830,29 @@
 .noteViewActions button {
     flex: 1;
     min-width: 0;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    border: none;
-    font-size: 0.9rem;
-    transition: all 0.2s;
+    border-width: 1px;
+    border-style: solid;
+    border-color: transparent;
+    font-size: 0.8rem;
+    transition: filter 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
+        color 0.2s ease, border-color 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     white-space: nowrap;
+    line-height: 1.25;
 }
 
 @media (min-width: 640px) {
     .noteActions button,
     .noteViewActions button {
-        padding: 0.85rem 1.5rem;
-        font-size: 0.95rem;
+        padding: 0.55rem 1.15rem;
+        font-size: 0.8rem;
     }
 }
 
@@ -1638,14 +1860,14 @@
 .saveButton {
     background: var(--primary-color);
     color: #fff;
+    border-color: var(--primary-color);
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .addNoteButton:hover,
 .saveButton:hover {
     filter: brightness(110%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.28);
 }
 
 .cancelButton {
@@ -1660,21 +1882,26 @@
 }
 
 .noteEditButton {
+    border: 1px solid #2563eb;
     background: rgba(37, 99, 235, 0.1);
-    color: var(--primary-color);
+    color: #1d4ed8;
 }
 
 .noteEditButton:hover {
-    background: rgba(37, 99, 235, 0.2);
+    background: rgba(37, 99, 235, 0.15);
+    border-color: #1d4ed8;
 }
 
 .deleteButton {
-    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    background: rgba(239, 68, 68, 0.08);
     color: #dc2626;
 }
 
 .deleteButton:hover {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(220, 38, 38, 0.55);
+    color: #b91c1c;
 }
 
 /* =========================================

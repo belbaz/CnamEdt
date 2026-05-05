@@ -4,7 +4,7 @@
 // BUILD_STAMP : change à chaque build (commit / déploiement) pour que le navigateur détecte une nouvelle version
 // même si la version npm n’a pas été bumpée — sinon pas de worker « waiting » → pas de bannière PWA.
 
-const BUILD_STAMP = "75f410f";
+const BUILD_STAMP = "1f6eb71";
 const CACHE_VERSION = '2.1.99'; // Sera remplacé automatiquement par pre-build.js
 const CACHE_NAME = `edt-pwa-${CACHE_VERSION}`;
 const DATA_CACHE_NAME = `edt-data-${CACHE_VERSION}`;

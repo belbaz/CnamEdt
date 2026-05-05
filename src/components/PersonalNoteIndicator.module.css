@@ -1,0 +1,47 @@
+.strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    align-self: flex-start;
+    margin-bottom: 0.38rem;
+    padding: 0.28rem 0.55rem;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(217, 119, 6, 0.38);
+    color: #b45309;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.iconWrap {
+    display: inline-flex;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.lockChip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    color: #d97706;
+}
+
+:global(.dark-mode) .strip,
+:global([data-theme="dark"]) .strip,
+:global(.oled-mode) .strip {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fcd34d;
+}
+
+:global(.dark-mode) .iconWrap,
+:global([data-theme="dark"]) .iconWrap,
+:global(.oled-mode) .iconWrap,
+:global(.dark-mode) .lockChip,
+:global([data-theme="dark"]) .lockChip,
+:global(.oled-mode) .lockChip {
+    color: #fbbf24;
+}

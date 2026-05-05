@@ -82,7 +82,10 @@
     "error": "Erreur",
     "success": "Succès",
     "notAvailable": "Non disponible",
-    "contact": "Contact"
+    "contact": "Contact",
+    "personalNoteBadge": "Note personnelle",
+    "noteCourseIconAlt": "Notes",
+    "noteCourseIconPersonalAlt": "Notes (entrées personnelles)"
   },
   "eventModal": {
     "location": "Lieu",
@@ -116,6 +119,9 @@
     "connectToCreate": "Connectez-vous",
     "connectToCreateFull": "Connectez-vous pour créer une note",
     "connectToEdit": "Connectez-vous pour modifier cette note",
+    "connectNotesLinkEmpty": "Connexion · créer une note",
+    "connectNotesLinkWithNotes": "Connexion · modifier ou créer",
+    "connectNotesTooltip": "Connectez-vous pour créer, modifier ou compléter vos notes sur ce cours.",
     "unknownUser": "Utilisateur inconnu",
     "saveError": "Erreur lors de la sauvegarde",
     "noteNumber": "Note",
@@ -130,7 +136,7 @@
     "addNotesPlaceholder": "Ajoutez vos notes...",
     "visitorCannotModify": "Les visiteurs ne peuvent pas modifier de notes",
     "saving": "Enregistrement...",
-    "personalNote": "Note personnelle (visible seulement par vous lorsque vous êtes connecté)",
+    "personalNote": "Note personnelle (vous uniquement)",
     "personalNoteHint": "Cette entrée n'est pas visible par les visiteurs ni dans la liste publique."
   },
   "footer": {
@@ -420,6 +426,9 @@
     "delete": "Supprimer",
     "connectToUpload": "Connectez-vous",
     "connectToUploadFull": "pour ajouter et uploader des fichiers",
+    "connectFilesLinkEmpty": "Connexion · ajouter un fichier",
+    "connectFilesLinkWithFiles": "Connexion · vos fichiers",
+    "connectFilesTooltip": "Connectez-vous pour envoyer, télécharger ou gérer vos fichiers pour ce cours.",
     "filesTitle": "📄 Fichiers",
     "add": "Ajouter",
     "uploadingShort": "Upload…",
@@ -521,7 +530,7 @@
     "note": "Note",
     "noteNumber": "Note {index}",
     "remove": "Supprimer",
-    "personalNote": "Note personnelle (visible seulement par vous lorsque vous êtes connecté)",
+    "personalNote": "Note personnelle (vous uniquement)",
     "personalNoteHint": "Cette entrée n'est pas visible par les visiteurs ni dans la liste publique.",
     "labels": "Labels",
     "createCustomLabel": "Créer un label personnalisé",
@@ -848,6 +857,11 @@
       "privacyNote": "Tes identifiants ne sont pas stockés, ils sont uniquement utilisés pour ouvrir une session Galao.",
       "loginSuccess": "Connexion réussie !",
       "logoutButton": "Se déconnecter",
+      "sessionIdleTimeout": "Déconnexion automatique : 15 minutes sans rechargement de la page sur ce portail (comportement aligné sur la session Galao). Reconnectez-vous si besoin.",
+      "sessionStaleRelogin": "La session affichée n’est plus valide côté Galao. Merci de te reconnecter.",
+      "verifyingSession": "Vérification de la session Galao…",
+      "resumeToNotes": "Après connexion, tu seras renvoyé vers les notes.",
+      "resumeToAbsences": "Après connexion, tu seras renvoyé vers les absences.",
       "chooseSection": "Que souhaitez-vous consulter ?",
       "loading": "Chargement du portail Galao..."
     },

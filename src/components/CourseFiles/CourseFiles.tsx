@@ -2,7 +2,6 @@
 "use client";
 import {useState, useEffect} from "react";
 import styles from "./CourseFiles.module.css";
-import pageStyles from "@/app/page.module.css";
 import {useI18n} from "@/i18n/I18nContext";
 
 /**
@@ -233,7 +232,12 @@ export default function CourseFiles({courseUid, authenticated}) {
                         )}
                     </label>
                 ) : (
-                    <a href="/login" className={styles.uploadButton}>
+                    <a
+                        href="/login"
+                        className={[styles.uploadButton, "modal-notes-login-cta"].join(" ")}
+                        title={t("files.connectFilesTooltip")}
+                        aria-label={t("files.connectFilesTooltip")}
+                    >
                         <svg
                             width="12"
                             height="12"
@@ -250,7 +254,11 @@ export default function CourseFiles({courseUid, authenticated}) {
                                 strokeLinejoin="round"
                             />
                         </svg>
-                        {t('files.connectToUpload')}
+                        {t(
+                            files.length > 0
+                                ? "files.connectFilesLinkWithFiles"
+                                : "files.connectFilesLinkEmpty"
+                        )}
                     </a>
                 )}
             </div>
@@ -333,17 +341,6 @@ export default function CourseFiles({courseUid, authenticated}) {
                             </div>
                         );
                     })}
-                </div>
-            )}
-
-            {!authenticated && (
-                <div className="modal-auth-message" style={{marginTop: '0.75rem'}}>
-                    <p className="modal-auth-message-text">
-                        <a href="/login" className={pageStyles.notesUnauthLink}>
-                            {t('files.connectToUpload')}
-                        </a>
-                        <span style={{display: 'block', marginTop: '0.25rem'}}>{t('files.connectToAddFiles')}</span>
-                    </p>
                 </div>
             )}
         </div>

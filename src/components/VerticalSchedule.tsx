@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n/I18nContext";
 import EventCard from "./Timeline/EventCard";
 import Tooltip from "./Tooltip";
 import "./VerticalSchedule.css";
-import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
+import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER, agendaRowHasPersonalEntries } from "@/utils/noteEntries";
 import { useFileCounts } from "@/hooks/useFileCounts";
 
 export default function VerticalSchedule({
@@ -715,6 +715,8 @@ export default function VerticalSchedule({
                                                                 entry !== HIDDEN_LABEL_PLACEHOLDER &&
                                                                 entry.trim().length > 0
                                                         );
+                                                        const noteHasPersonalEntries =
+                                                            agendaRowHasPersonalEntries(courseNote);
                                                         return (
                                                             <EventCard
                                                                 key={evIdx}
@@ -736,6 +738,7 @@ export default function VerticalSchedule({
                                                                 colorPosition={colorPosition}
                                                                 colorBackgroundOpacity={colorBackgroundOpacity}
                                                                 entranceAnimationActive={entranceAnimationActive && !isCalculating}
+                                                                noteHasPersonalEntries={noteHasPersonalEntries}
                                                             />
                                                         );
                                                     });

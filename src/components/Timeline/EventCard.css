@@ -902,17 +902,36 @@
     pointer-events: auto;
 }
 
-.note-icon {
+.note-badge-visual {
+    position: relative;
+    width: 90%;
+    height: 90%;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-badge-visual .note-icon {
     position: relative;
     font-size: 1.2rem;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 90%;
-    height: 90%;
-    margin-top: 1px;
+    width: 100%;
+    height: 100%;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.note-lock-corner {
+    position: absolute;
+    left: 20%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    line-height: 0;
+    z-index: 4;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
 .note-count-badge {

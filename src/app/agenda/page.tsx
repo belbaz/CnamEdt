@@ -20,6 +20,10 @@ import {
 import { generateEventKey } from "@/utils/eventModalUtils";
 import { fetchICSEvents } from "@/services/icsService";
 import LoginForm from "@/app/login/LoginForm";
+import {
+    PersonalNoteIndicatorStrip,
+    PersonalNoteLockChip,
+} from "@/components/PersonalNoteIndicator";
 
 function AgendaContent() {
     const { t, language } = useI18n();
@@ -649,16 +653,11 @@ function AgendaContent() {
         if (!labelName.trim()) return;
         
         const indexStr = String(entryIndex);
-        setEntryLabels(prev => {
-            const currentLabels = prev[indexStr] || [];
-            if (!currentLabels.includes(labelName.trim())) {
-                return {
-                    ...prev,
-                    [indexStr]: [...currentLabels, labelName.trim()]
-                };
-            }
-            return prev;
-        });
+        const trimmed = labelName.trim();
+        setEntryLabels((prev) => ({
+            ...prev,
+            [indexStr]: [trimmed],
+        }));
     };
 
     const handleRemoveLabel = (entryIndex, labelToRemove) => {
@@ -1141,6 +1140,13 @@ function AgendaContent() {
             (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
         );
 
+        const agendaCourseNote = notes.get(selectedCourse);
+        const mayShowPersonalPrivacyIndicators =
+            authenticated &&
+            userInfo?.id &&
+            agendaCourseNote?.user_id === userInfo.id &&
+            userRole !== "visiteur";
+
         return (
             <>
                 {/* Sur desktop, afficher le header avec le nom et l'heure du cours */}
@@ -1175,14 +1181,19 @@ function AgendaContent() {
                                 const entryLabelsForIndex = entryLabels[String(index)] || [];
                                 
                                 return (
-                                    <div key={index} className={styles.noteEntryCard}>
-                                        <div className={styles.noteEntryHeader}>
-                                            <span>
-                                                {t('agenda.note')} {index + 1}
-                                                {entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL && (
-                                                    <span title={t('agenda.personalNoteHint')}> 🔒</span>
-                                                )}
-                                            </span>
+                                        <div key={index} className={styles.noteEntryCard}>
+                                            <div className={styles.noteEntryHeader}>
+                                                <span>
+                                                    {t('agenda.note')} {index + 1}
+                                                    <PersonalNoteLockChip
+                                                        visible={
+                                                            mayShowPersonalPrivacyIndicators &&
+                                                            entryPrivacy[String(index)] ===
+                                                                NOTE_PRIVACY_PERSONAL
+                                                        }
+                                                        title={t("agenda.personalNoteHint")}
+                                                    />
+                                                </span>
                                             <button
                                                 onClick={() => handleRemoveEntry(index)}
                                                 className={styles.noteEntryRemove}
@@ -1192,20 +1203,39 @@ function AgendaContent() {
                                                 {t('agenda.remove')}
                                             </button>
                                         </div>
-                                        {authenticated && userRole !== "visiteur" && (
-                                            <label className={styles.notePrivacyToggle}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL}
-                                                    onChange={() => handleToggleEntryPrivacy(index)}
-                                                    disabled={saving}
-                                                />
-                                                <span>{t('agenda.personalNote')}</span>
+                                        <PersonalNoteIndicatorStrip
+                                            visible={
+                                                mayShowPersonalPrivacyIndicators &&
+                                                entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL
+                                            }
+                                        />
+                                        {authenticated &&
+                                            userRole !== "visiteur" &&
+                                            mayShowPersonalPrivacyIndicators && (
+                                            <label
+                                                className={styles.notePrivacyToggle}
+                                                title={t("agenda.personalNoteHint")}
+                                            >
+                                                <span className={styles.notePrivacySwitch}>
+                                                    <input
+                                                        type="checkbox"
+                                                        className={styles.notePrivacyCheckbox}
+                                                        checked={
+                                                            entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL
+                                                        }
+                                                        onChange={() => handleToggleEntryPrivacy(index)}
+                                                        disabled={saving}
+                                                    />
+                                                    <span className={styles.notePrivacyThumb} aria-hidden />
+                                                </span>
+                                                <span className={styles.notePrivacyLabel}>
+                                                    {t("agenda.personalNote")}
+                                                </span>
                                             </label>
                                         )}
                                         
                                         {/* Labels pour cette note */}
-                                        <div className={styles.noteLabelsSection}>
+                                        <div className={[styles.noteLabelsSection, styles.noteLabelsSectionCompact].join(" ")}>
                                             <div className={styles.noteLabelsHeader}>
                                                 <span className={styles.noteLabelsTitle}>{t('agenda.labels')}</span>
                                                 <button
@@ -1228,65 +1258,68 @@ function AgendaContent() {
                                                 </button>
                                             </div>
                                             
-                                            {/* Labels existants pour cette note */}
-                                            <div className={styles.noteLabelsList}>
-                                                {entryLabelsForIndex.length > 0 ? (
-                                                    entryLabelsForIndex.map((label, idx) => {
-                                                        const labelColor = getLabelColor(label);
-                                                        const translatedLabel = getTranslatedLabel(label);
-                                                        return (
-                                                            <span 
-                                                                key={idx} 
-                                                                className={styles.noteLabel}
-                                                                style={{ 
-                                                                    backgroundColor: `${labelColor}15`,
-                                                                    borderColor: labelColor,
-                                                                    color: labelColor
-                                                                }}
-                                                            >
-                                                                {translatedLabel}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleRemoveLabel(index, label)}
-                                                                    className={styles.removeLabelButton}
-                                                                    title="Supprimer ce label"
-                                                                    style={{ color: labelColor }}
-                                                                    disabled={userRole === 'visiteur'}
-                                                                >
-                                                                    ×
-                                                                </button>
-                                                            </span>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <span className={styles.noLabelsText}>
-                                                        {isEditingNotes ? t('agenda.noLabels') : t('agenda.noLabelsShort')}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            {(() => {
+                                                const predefinedNames = new Set(predefinedLabels.map((p) => p.name));
+                                                const singlePredefinedSelected =
+                                                    entryLabelsForIndex.length === 1 &&
+                                                    predefinedNames.has(entryLabelsForIndex[0]);
+                                                const showPredefinedRow = !singlePredefinedSelected;
 
-                                            {/* Boutons des labels prédéfinis */}
-                                            <div className={styles.predefinedLabels}>
-                                                {predefinedLabels.map((labelObj) => (
-                                                    <button
-                                                        key={labelObj.name}
-                                                        type="button"
-                                                        onClick={() => handleAddLabel(index, labelObj.name)}
-                                                        disabled={entryLabelsForIndex.includes(labelObj.name) || userRole === 'visiteur'}
-                                                        className={[styles.predefinedLabelButton, entryLabelsForIndex.includes(labelObj.name) && styles.predefinedLabelButtonDisabled].filter(Boolean).join(' ')}
-                                                        style={!entryLabelsForIndex.includes(labelObj.name) ? {
-                                                            borderColor: labelObj.color,
-                                                            color: labelObj.color
-                                                        } : {
-                                                            backgroundColor: `${labelObj.color}15`,
-                                                            borderColor: labelObj.color,
-                                                            color: labelObj.color
-                                                        }}
-                                                    >
-                                                        {labelObj.name}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                                return (
+                                                    <>
+                                                        <div className={styles.noteLabelsList}>
+                                                            {entryLabelsForIndex.length > 0 &&
+                                                                entryLabelsForIndex.map((label, idx) => {
+                                                                    const labelColor = getLabelColor(label);
+                                                                    const translatedLabel = getTranslatedLabel(label);
+                                                                    return (
+                                                                        <span 
+                                                                            key={idx} 
+                                                                            className={styles.noteLabel}
+                                                                            style={{ 
+                                                                                backgroundColor: `${labelColor}18`,
+                                                                                borderColor: labelColor,
+                                                                                color: labelColor
+                                                                            }}
+                                                                        >
+                                                                            {translatedLabel}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleRemoveLabel(index, label)}
+                                                                                className={styles.removeLabelButton}
+                                                                                title="Supprimer ce label"
+                                                                                style={{ color: labelColor }}
+                                                                                disabled={userRole === 'visiteur'}
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                        </div>
+
+                                                        {showPredefinedRow && (
+                                                            <div className={styles.predefinedLabels}>
+                                                                {predefinedLabels.map((labelObj) => (
+                                                                    <button
+                                                                        key={labelObj.name}
+                                                                        type="button"
+                                                                        onClick={() => handleAddLabel(index, labelObj.name)}
+                                                                        disabled={userRole === 'visiteur'}
+                                                                        className={styles.predefinedLabelButton}
+                                                                        style={{
+                                                                            borderColor: labelObj.color,
+                                                                            color: labelObj.color,
+                                                                        }}
+                                                                    >
+                                                                        {labelObj.name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
 
                                             {/* Input pour créer un label personnalisé */}
                                             {showLabelInputForEntry === index && (

@@ -2000,6 +2000,7 @@ function HomeContent({searchParams}) {
                 refreshNotes={refreshNotes}
                 devMode={devMode}
                 userRole={userInfo?.role}
+                notesSessionUserId={userInfo?.id ?? null}
             />
 
             {/* Bouton des outils de développement (uniquement en mode dev) */}

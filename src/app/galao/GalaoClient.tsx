@@ -1,12 +1,23 @@
 // @ts-nocheck
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
-import KeepAlive from "@/components/KeepAlive";
 import { useI18n } from "@/i18n/I18nContext";
+import {
+    consumeGalaoPostLoginRedirect,
+    peekGalaoPostLoginRedirect,
+} from "@/lib/galaoPostLoginRedirect";
+
+function hasGalaoClientCookieFlag(): boolean {
+    if (typeof document === "undefined") return false;
+    return document.cookie.split(";").some((c) => c.trim().startsWith("galao_client="));
+}
+
+/** Délai sans rechargement de la page sur /galao avant déconnexion (aligné sur l’inactivité côté PHP Galao). */
+const GALAO_PORTAL_IDLE_MS = 15 * 60 * 1000;
 
 /**
  * Page centrale Galao :
@@ -25,19 +36,92 @@ export default function GalaoClient() {
     const [infoMessage, setInfoMessage] = useState("");
     const [hasExistingSession, setHasExistingSession] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [verifyingSession, setVerifyingSession] = useState(hasGalaoClientCookieFlag);
 
-    // Détection d'une session existante (cookie galao_client posé par /api/galao/login)
+    /** Affiché uniquement après montage (évite divergence SSR / sessionStorage). */
+    const [resumeAfterLoginHint, setResumeAfterLoginHint] = useState(null);
+
     useEffect(() => {
-        if (typeof document === "undefined") return;
-        const hasClientFlag = document.cookie.split(";").some((c) =>
-            c.trim().startsWith("galao_client="),
-        );
-        if (hasClientFlag) {
-            setHasExistingSession(true);
-            setIsLoggedIn(true);
-            setInfoMessage(t('galao.portal.loginSuccess'));
+        if (verifyingSession || isLoggedIn) {
+            setResumeAfterLoginHint(null);
+            return;
+        }
+        setResumeAfterLoginHint(peekGalaoPostLoginRedirect());
+    }, [verifyingSession, isLoggedIn]);
+
+    const clearGalaoSession = useCallback(async () => {
+        setIsLoggedIn(false);
+        setHasExistingSession(false);
+        try {
+            await fetch("/api/galao/logout", { method: "POST" });
+            if (typeof document !== "undefined") {
+                document.cookie = "galao_client=; Max-Age=0; path=/";
+            }
+        } catch (err) {
+            console.warn("[Galao] Erreur lors de la déconnexion", err);
         }
     }, []);
+
+    // Si le navigateur dit « connecté » (galao_client), on vérifie auprès de Galao via ping
+    useEffect(() => {
+        let cancelled = false;
+        async function verifyCookieMatchesGalaoSession() {
+            if (typeof document === "undefined") return;
+            const hasClientFlag = document.cookie.split(";").some((c) =>
+                c.trim().startsWith("galao_client="),
+            );
+            if (!hasClientFlag) {
+                setVerifyingSession(false);
+                setIsLoggedIn(false);
+                setHasExistingSession(false);
+                return;
+            }
+            setVerifyingSession(true);
+            try {
+                const res = await fetch("/api/galao/ping");
+                const data = await res.json().catch(() => ({}));
+                if (cancelled) return;
+                const active = res.ok && data?.active === true;
+                if (active) {
+                    setHasExistingSession(true);
+                    setIsLoggedIn(true);
+                    setErrorMessage("");
+                    setInfoMessage(t("galao.portal.loginSuccess"));
+                } else {
+                    await clearGalaoSession();
+                    setInfoMessage("");
+                    setErrorMessage(t("galao.portal.sessionStaleRelogin"));
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    await clearGalaoSession();
+                    setInfoMessage("");
+                    setErrorMessage(t("galao.portal.sessionStaleRelogin"));
+                }
+            } finally {
+                if (!cancelled) setVerifyingSession(false);
+            }
+        }
+        verifyCookieMatchesGalaoSession();
+        return () => {
+            cancelled = true;
+        };
+    }, [t, clearGalaoSession]);
+
+    /**
+     * Pas de KeepAlive sur cette page : tant qu’on reste sur le portail sans recharger,
+     * aucune requête vers Galao n’est refaite ; au bout de 15 min on aligne l’UI sur une session expirée.
+     */
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        const id = window.setTimeout(() => {
+            setErrorMessage("");
+            void clearGalaoSession().then(() => {
+                setInfoMessage(t("galao.portal.sessionIdleTimeout"));
+            });
+        }, GALAO_PORTAL_IDLE_MS);
+        return () => window.clearTimeout(id);
+    }, [isLoggedIn, clearGalaoSession, t]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -61,6 +145,15 @@ export default function GalaoClient() {
 
             if (!response.ok || !payload?.success) {
                 throw new Error(payload?.error || t('galao.notes.connectionFailed'));
+            }
+
+            const next = consumeGalaoPostLoginRedirect();
+            if (next) {
+                if (typeof sessionStorage !== "undefined") {
+                    sessionStorage.setItem("from_galao", "true");
+                }
+                router.push(next);
+                return;
             }
 
             setIsLoggedIn(true);
@@ -92,25 +185,12 @@ export default function GalaoClient() {
     const handleLogout = async () => {
         setErrorMessage("");
         setInfoMessage("");
-        setIsLoggedIn(false);
-        setHasExistingSession(false);
-
-        try {
-            await fetch("/api/galao/logout", { method: "POST" });
-            if (typeof document !== "undefined") {
-                document.cookie = "galao_client=; Max-Age=0; path=/";
-            }
-            setInfoMessage(t('galao.notes.logoutSuccess'));
-        } catch (err) {
-            console.warn("[Galao] Erreur lors de la déconnexion", err);
-        }
+        await clearGalaoSession();
+        setInfoMessage(t('galao.notes.logoutSuccess'));
     };
 
     return (
         <div className={styles.page}>
-            {/* KeepAlive pour maintenir la session Galao active */}
-            {isLoggedIn && <KeepAlive />}
-            
             <div className={styles.notePage}>
                 <BackButton href="/" title="Retour à l'emploi du temps" />
 
@@ -123,7 +203,7 @@ export default function GalaoClient() {
                                 dangerouslySetInnerHTML={{ __html: t('galao.portal.subtitle') }}
                             />
                         </div>
-                        {isLoggedIn && (
+                        {isLoggedIn && !verifyingSession && (
                             <button
                                 onClick={handleLogout}
                                 className={styles.logoutButton}
@@ -134,13 +214,30 @@ export default function GalaoClient() {
                         )}
                     </header>
 
-                    {!isLoggedIn && (
+                    {verifyingSession ? (
+                        <div className={styles.loaderContainer}>
+                            <div className={styles.modernLoader} />
+                            <div className={styles.loaderText}>{t('galao.portal.verifyingSession')}</div>
+                        </div>
+                    ) : null}
+
+                    {!verifyingSession && !isLoggedIn && (
                         <>
                             {errorMessage && (
                                 <div className={styles.errorBanner}>{errorMessage}</div>
                             )}
                             {infoMessage && (
                                 <div className={styles.successBanner}>{infoMessage}</div>
+                            )}
+                            {resumeAfterLoginHint === "/note" && (
+                                <p className={styles.cardSubhead} style={{ marginBottom: '0.75rem' }}>
+                                    {t('galao.portal.resumeToNotes')}
+                                </p>
+                            )}
+                            {resumeAfterLoginHint === "/absences" && (
+                                <p className={styles.cardSubhead} style={{ marginBottom: '0.75rem' }}>
+                                    {t('galao.portal.resumeToAbsences')}
+                                </p>
                             )}
 
                             <form className={styles.form} onSubmit={handleSubmit}>
@@ -189,7 +286,7 @@ export default function GalaoClient() {
                         </>
                     )}
 
-                    {isLoggedIn && (
+                    {!verifyingSession && isLoggedIn && (
                         <div>
                             {/* Message de succès */}
                             {infoMessage && (

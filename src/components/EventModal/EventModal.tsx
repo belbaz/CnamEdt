@@ -24,7 +24,24 @@ import {
     NOTE_PRIVACY_PERSONAL,
 } from "@/utils/noteEntries";
 import {useI18n} from "@/i18n/I18nContext";
-import styles from "@/app/page.module.css";
+import {
+    PersonalNoteIndicatorStrip,
+    PersonalNoteLockChip,
+} from "@/components/PersonalNoteIndicator";
+
+function ModalNoteEditToolbarIcon() {
+    return (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L7 21H3v-4l11.732-11.732z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
 
 export default function EventModal({
     selectedEvent,
@@ -39,7 +56,8 @@ export default function EventModal({
     notesAuthenticated,
     refreshNotes,
     devMode,
-    userRole = null
+    userRole = null,
+    notesSessionUserId = null,
 }) {
     const [editingNoteEntries, setEditingNoteEntries] = useState([]);
     const [originalNoteEntries, setOriginalNoteEntries] = useState([]);
@@ -52,6 +70,16 @@ export default function EventModal({
     const [showLabelInputForEntry, setShowLabelInputForEntry] = useState(null); // Index de la note pour lequel l'input est ouvert (null si aucun)
     const [newLabelValue, setNewLabelValue] = useState(""); // Valeur du nouveau label
     const { t } = useI18n();
+
+    const modalCourseNote =
+        selectedEvent?.uid && courseNotes instanceof Map ? courseNotes.get(selectedEvent.uid) : null;
+
+    /** Indicateurs « note personnelle » : uniquement connecté + note chargée = la nôtre (user_id session) */
+    const mayShowPersonalPrivacyIndicators =
+        notesAuthenticated &&
+        !!modalCourseNote &&
+        !!notesSessionUserId &&
+        modalCourseNote.user_id === notesSessionUserId;
 
     const extractNoteEntries = (record) => {
         if (!record) return [];
@@ -264,6 +292,12 @@ export default function EventModal({
     const hasAnyLabelForModal = Object.values(entryLabels || {}).some(
         (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
     );
+    const canManageNotes =
+        notesAuthenticated && userRole !== "visiteur";
+    const showEditExistingNotesButton =
+        canManageNotes &&
+        !isModalEditingNotes &&
+        (savedModalEntries.length > 0 || hasAnyLabelForModal);
     // Cas spécifique : on est en train de transformer une note existante en note vide
     const isDeletingNote = savedModalEntries.length > 0 && sanitizedModalEntries.length === 0;
 
@@ -329,6 +363,16 @@ export default function EventModal({
         handleAddEntry();
     };
 
+    const handleStartEditingNotes = () => {
+        if (!notesAuthenticated || userRole === "visiteur") return;
+        setEditingNoteEntries(originalNoteEntries.length > 0 ? [...originalNoteEntries] : []);
+        setEntryLabels({ ...originalEntryLabels });
+        setEntryPrivacy({ ...originalEntryPrivacy });
+        setShowLabelInputForEntry(null);
+        setNewLabelValue("");
+        setIsModalEditingNotes(true);
+    };
+
     // Labels prédéfinis avec leurs couleurs
     const predefinedLabels = [
         { name: t('agenda.predefinedLabels.control'),       color: "#ef4444" }, // Rouge
@@ -390,16 +434,11 @@ export default function EventModal({
         if (!labelName.trim()) return;
         
         const indexStr = String(entryIndex);
-        setEntryLabels(prev => {
-            const currentLabels = prev[indexStr] || [];
-            if (!currentLabels.includes(labelName.trim())) {
-                return {
-                    ...prev,
-                    [indexStr]: [...currentLabels, labelName.trim()]
-                };
-            }
-            return prev;
-        });
+        const trimmed = labelName.trim();
+        setEntryLabels((prev) => ({
+            ...prev,
+            [indexStr]: [trimmed],
+        }));
     };
 
     const handleRemoveLabel = (entryIndex, labelToRemove) => {
@@ -713,34 +752,53 @@ export default function EventModal({
                                         )}
                                     </div>
                                     {notesAuthenticated ? (
-                                        <button
-                                            type="button"
-                                            className={courseFilesStyles.uploadButton}
-                                            onClick={handleAddNoteButton}
-                                            disabled={savingNote || userRole === 'visiteur'}
-                                            title={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}
-                                        >
-                                            <svg
-                                                width="12"
-                                                height="12"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                aria-hidden="true"
+                                        <div className="modal-notes-toolbar">
+                                            {showEditExistingNotesButton && (
+                                                <button
+                                                    type="button"
+                                                    className={[courseFilesStyles.uploadButton, "modal-notes-toolbar-btn"].join(
+                                                        " "
+                                                    )}
+                                                    onClick={handleStartEditingNotes}
+                                                    disabled={savingNote}
+                                                >
+                                                    <ModalNoteEditToolbarIcon />
+                                                    {t("eventModal.editNote")}
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className={[courseFilesStyles.uploadButton, "modal-notes-toolbar-btn"].join(
+                                                    " "
+                                                )}
+                                                onClick={handleAddNoteButton}
+                                                disabled={savingNote || userRole === 'visiteur'}
+                                                title={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}
                                             >
-                                                <path
-                                                    d="M12 5v14M5 12h14"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2.5"
-                                                    strokeLinecap="round"
-                                                />
-                                            </svg>
-                                            {t('files.add')}
-                                        </button>
+                                                <svg
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    aria-hidden="true"
+                                                >
+                                                    <path
+                                                        d="M12 5v14M5 12h14"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                                {t('files.add')}
+                                            </button>
+                                        </div>
                                     ) : (
                                         <a
                                             href="/login"
-                                            className={courseFilesStyles.uploadButton}
+                                            className={[courseFilesStyles.uploadButton, "modal-notes-login-cta"].join(" ")}
+                                            title={t("eventModal.connectNotesTooltip")}
+                                            aria-label={t("eventModal.connectNotesTooltip")}
                                         >
                                             <svg
                                                 width="12"
@@ -758,7 +816,11 @@ export default function EventModal({
                                                     strokeLinejoin="round"
                                                 />
                                             </svg>
-                                            {t('eventModal.connectToCreate')}
+                                            {t(
+                                                isNotesEmpty
+                                                    ? "eventModal.connectNotesLinkEmpty"
+                                                    : "eventModal.connectNotesLinkWithNotes"
+                                            )}
                                         </a>
                                     )}
                                 </div>
@@ -777,18 +839,16 @@ export default function EventModal({
 
                                             if (!hasAnyContent) {
                                                 return (
-                                                    <div className="modal-notes-empty">
+                                                    <div className="modal-notes-empty modal-notes-empty-unauth">
                                                         <p className="modal-note-view-text">{t('eventModal.noNotes')}</p>
-                                                        <div className="modal-auth-message" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                                                            <p className="modal-auth-message-text">
-                                                                <a href="/login" className={styles.notesUnauthLink}>
-                                                                    {t('eventModal.connectToCreate')}
-                                                                </a> {t('eventModal.connectToCreateFull').replace(t('eventModal.connectToCreate'), '').trim()}
-                                                            </p>
-                                                        </div>
                                                     </div>
                                                 );
                                             }
+
+                                            const entryPrivacyMap =
+                                                courseNote?.entry_privacy && typeof courseNote.entry_privacy === "object"
+                                                    ? courseNote.entry_privacy
+                                                    : {};
 
                                             const modificationHistory = courseNote?.modification_history || [];
                                             const lastPerson = modificationHistory.length > 0
@@ -821,59 +881,66 @@ export default function EventModal({
                                                     ? savedModalEntries
                                                     : indexes.map(() => "");
 
+                                            const entryIsPersonal = (idx) =>
+                                                entryPrivacyMap[String(idx)] === NOTE_PRIVACY_PERSONAL;
+
                                             return (
-                                                <div>
+                                                <div className="modal-note-view-list">
                                                     {displayEntries.map((entry, index) => {
                                                         const entryLabelsForIndex =
                                                             (entryLabelsMap && entryLabelsMap[String(index)]) || [];
                                                         const isLabelOnly =
                                                             entry === HIDDEN_LABEL_PLACEHOLDER ||
                                                             (!entry && entryLabelsForIndex.length > 0);
+                                                        const showPersonalStrip =
+                                                            mayShowPersonalPrivacyIndicators &&
+                                                            entryIsPersonal(index);
+                                                        const showMetaRow = !!lastPerson;
                                                         return (
-                                                            <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                                {/* Labels pour cette note */}
-                                                                {entryLabelsForIndex.length > 0 && (
-                                                                    <div className="modal-note-labels-inline">
-                                                                        {entryLabelsForIndex.map((label, idx) => {
-                                                                            const labelColor = getLabelColor(label);
-                                                                            const translatedLabel = getTranslatedLabel(label);
-                                                                            return (
-                                                                                <span
-                                                                                    key={idx}
-                                                                                    className="modal-label-inline"
-                                                                                    style={{
-                                                                                        backgroundColor: `${labelColor}15`,
-                                                                                        borderColor: labelColor,
-                                                                                        color: labelColor
-                                                                                    }}
-                                                                                >
-                                                                                    {translatedLabel}
-                                                                                </span>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                                {!isLabelOnly && (
-                                                                    <div className="modal-note-view-card">
-                                                                        <p className="modal-note-view-text">{entry}</p>
-                                                                    </div>
-                                                                )}
-                                                                {lastPerson && (
-                                                                    <div className="modal-note-last-person">
-                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                            <div key={`${selectedEvent.uid}-view-${index}`} className="modal-note-view-block">
+                                                                <div className="modal-note-view-body">
+                                                                    <PersonalNoteIndicatorStrip visible={showPersonalStrip} />
+                                                                    {entryLabelsForIndex.length > 0 && (
+                                                                        <div className="modal-note-labels-inline">
+                                                                            {entryLabelsForIndex.map((label, idx) => {
+                                                                                const labelColor = getLabelColor(label);
+                                                                                const translatedLabel = getTranslatedLabel(label);
+                                                                                return (
+                                                                                    <span
+                                                                                        key={idx}
+                                                                                        className="modal-label-inline"
+                                                                                        style={{
+                                                                                            backgroundColor: `${labelColor}15`,
+                                                                                            borderColor: labelColor,
+                                                                                            color: labelColor
+                                                                                        }}
+                                                                                    >
+                                                                                        {translatedLabel}
+                                                                                    </span>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                    {!isLabelOnly && (
+                                                                        <div className="modal-note-view-card">
+                                                                            <p className="modal-note-view-text">{entry}</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {showMetaRow && (
+                                                                    <div className="modal-note-meta">
+                                                                        {lastPerson && (
+                                                                            <span className="modal-note-meta-author">
+                                                                                {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                                {lastPerson.timestamp &&
+                                                                                    ` — ${formatDateTime(lastPerson.timestamp)}`}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         );
                                                     })}
-                                                    <div className="modal-auth-message" style={{ marginTop: '0.75rem', marginBottom: 0 }}>
-                                                        <p className="modal-auth-message-text">
-                                                            <a href="/login" className={styles.notesUnauthLink}>
-                                                                {t('eventModal.connectToCreate')}
-                                                            </a> {t('eventModal.connectToEdit').replace(t('eventModal.connectToCreate'), '').trim()}
-                                                        </p>
-                                                    </div>
                                                 </div>
                                             );
                                         })()}
@@ -919,8 +986,16 @@ export default function EventModal({
                                                         .filter((n) => !Number.isNaN(n))
                                                         .sort((a, b) => a - b);
 
+                                                    const entryPrivacyMap =
+                                                        courseNote?.entry_privacy && typeof courseNote.entry_privacy === "object"
+                                                            ? courseNote.entry_privacy
+                                                            : {};
+
+                                                    const entryIsPersonal = (idx) =>
+                                                        entryPrivacyMap[String(idx)] === NOTE_PRIVACY_PERSONAL;
+
                                                     return (
-                                                        <div>
+                                                        <div className="modal-note-view-list">
                                                             {indexes.map((index) => {
                                                                 const entry = savedModalEntries[index] || "";
                                                                 const entryLabelsForIndex =
@@ -928,38 +1003,50 @@ export default function EventModal({
                                                                 const isLabelOnly =
                                                                     entry === HIDDEN_LABEL_PLACEHOLDER ||
                                                                     (!entry && entryLabelsForIndex.length > 0);
+                                                                const showPersonalStrip =
+                                                                    mayShowPersonalPrivacyIndicators &&
+                                                                    entryIsPersonal(index);
+                                                                const showMetaRow = !!lastPerson;
                                                                 return (
-                                                                    <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                                        {entryLabelsForIndex.length > 0 && (
-                                                                            <div className="modal-note-labels-inline">
-                                                                                {entryLabelsForIndex.map((label, idx) => {
-                                                                                    const labelColor = getLabelColor(label);
-                                                                                    const translatedLabel = getTranslatedLabel(label);
-                                                                                    return (
-                                                                                        <span
-                                                                                            key={idx}
-                                                                                            className="modal-label-inline"
-                                                                                            style={{
-                                                                                                backgroundColor: `${labelColor}15`,
-                                                                                                borderColor: labelColor,
-                                                                                                color: labelColor
-                                                                                            }}
-                                                                                        >
-                                                                                            {translatedLabel}
-                                                                                        </span>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        )}
-                                                                        {!isLabelOnly && (
-                                                                            <div className="modal-note-view-card">
-                                                                                <p className="modal-note-view-text">{entry}</p>
-                                                                            </div>
-                                                                        )}
-                                                                        {lastPerson && (
-                                                                            <div className="modal-note-last-person">
-                                                                                {lastPerson.user_name || t('eventModal.unknownUser')}
-                                                                                {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                                    <div key={`${selectedEvent.uid}-view-${index}`} className="modal-note-view-block">
+                                                                        <div className="modal-note-view-body">
+                                                                            <PersonalNoteIndicatorStrip visible={showPersonalStrip} />
+                                                                            {entryLabelsForIndex.length > 0 && (
+                                                                                <div className="modal-note-labels-inline">
+                                                                                    {entryLabelsForIndex.map((label, idx) => {
+                                                                                        const labelColor = getLabelColor(label);
+                                                                                        const translatedLabel = getTranslatedLabel(label);
+                                                                                        return (
+                                                                                            <span
+                                                                                                key={idx}
+                                                                                                className="modal-label-inline"
+                                                                                                style={{
+                                                                                                    backgroundColor: `${labelColor}15`,
+                                                                                                    borderColor: labelColor,
+                                                                                                    color: labelColor
+                                                                                                }}
+                                                                                            >
+                                                                                                {translatedLabel}
+                                                                                            </span>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            )}
+                                                                            {!isLabelOnly && (
+                                                                                <div className="modal-note-view-card">
+                                                                                    <p className="modal-note-view-text">{entry}</p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        {showMetaRow && (
+                                                                            <div className="modal-note-meta">
+                                                                                {lastPerson && (
+                                                                                    <span className="modal-note-meta-author">
+                                                                                        {lastPerson.user_name || t('eventModal.unknownUser')}
+                                                                                        {lastPerson.timestamp &&
+                                                                                            ` — ${formatDateTime(lastPerson.timestamp)}`}
+                                                                                    </span>
+                                                                                )}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -994,11 +1081,16 @@ export default function EventModal({
                                                         <div key={`${selectedEvent.uid}-${index}`}
                                                             className="modal-note-entry">
                                                             <div className="modal-note-header">
-                                                                <span>
+                                                                <span className="modal-note-header-title">
                                                                     {t('eventModal.noteNumber')} {index + 1}
-                                                                    {entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL && (
-                                                                        <span className="modal-note-privacy-badge" title={t('eventModal.personalNoteHint')}> 🔒</span>
-                                                                    )}
+                                                                    <PersonalNoteLockChip
+                                                                        visible={
+                                                                            mayShowPersonalPrivacyIndicators &&
+                                                                            entryPrivacy[String(index)] ===
+                                                                                NOTE_PRIVACY_PERSONAL
+                                                                        }
+                                                                        title={t("eventModal.personalNoteHint")}
+                                                                    />
                                                                 </span>
                                                                 <button
                                                                     type="button"
@@ -1010,20 +1102,39 @@ export default function EventModal({
                                                                     {t('eventModal.delete')}
                                                                 </button>
                                                             </div>
-                                                            {notesAuthenticated && userRole !== 'visiteur' && (
-                                                                <label className="modal-note-privacy-toggle">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={entryPrivacy[String(index)] === NOTE_PRIVACY_PERSONAL}
-                                                                        onChange={() => handleToggleEntryPrivacy(index)}
-                                                                        disabled={savingNote}
-                                                                    />
-                                                                    <span>{t('eventModal.personalNote')}</span>
+                                                            {notesAuthenticated &&
+                                                                userRole !== "visiteur" &&
+                                                                mayShowPersonalPrivacyIndicators && (
+                                                                <label
+                                                                    className="modal-note-privacy-toggle"
+                                                                    title={t("eventModal.personalNoteHint")}
+                                                                >
+                                                                    <span className="modal-note-privacy-switch">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="modal-note-privacy-checkbox"
+                                                                            checked={
+                                                                                entryPrivacy[String(index)] ===
+                                                                                NOTE_PRIVACY_PERSONAL
+                                                                            }
+                                                                            onChange={() =>
+                                                                                handleToggleEntryPrivacy(index)
+                                                                            }
+                                                                            disabled={savingNote}
+                                                                        />
+                                                                        <span
+                                                                            className="modal-note-privacy-thumb"
+                                                                            aria-hidden
+                                                                        />
+                                                                    </span>
+                                                                    <span className="modal-note-privacy-label">
+                                                                        {t("eventModal.personalNote")}
+                                                                    </span>
                                                                 </label>
                                                             )}
                                                             
-                                                            {/* Labels pour ce paragraphe */}
-                                                            <div className="modal-labels-section">
+                                                                {/* Labels pour ce paragraphe */}
+                                                                <div className="modal-labels-section modal-labels-section-compact">
                                                                 <div className="modal-labels-header">
                                                                     <span className="modal-labels-title">{t('eventModal.labels')}</span>
                                                                     <button
@@ -1045,66 +1156,68 @@ export default function EventModal({
                                                                         {t('eventModal.createLabel')}
                                                                     </button>
                                                                 </div>
-                                                                
-                                                                {/* Labels existants pour cette note */}
-                                                                <div className="modal-labels-list">
-                                                                    {entryLabelsForIndex.length > 0 ? (
-                                                                        entryLabelsForIndex.map((label, idx) => {
-                                                                            const labelColor = getLabelColor(label);
-                                                                            const translatedLabel = getTranslatedLabel(label);
-                                                                            return (
-                                                                                <span 
-                                                                                    key={idx} 
-                                                                                    className="modal-label"
-                                                                                    style={{ 
-                                                                                        backgroundColor: `${labelColor}15`,
-                                                                                        borderColor: labelColor,
-                                                                                        color: labelColor
-                                                                                    }}
-                                                                                >
-                                                                                    {translatedLabel}
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => handleRemoveLabel(index, label)}
-                                                                                        className="modal-remove-label-button"
-                                                                                        title={t('eventModal.removeLabel')}
-                                                                                        style={{ color: labelColor }}
-                                                                                        disabled={userRole === 'visiteur'}
-                                                                                    >
-                                                                                        ×
-                                                                                    </button>
-                                                                                </span>
-                                                                            );
-                                                                        })
-                                                                    ) : (
-                                                                        <span className="modal-no-labels-text">
-                                                                            {isModalEditingNotes ? t('eventModal.noLabelsForNote') : t('eventModal.noLabels')}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
+                                                                {(() => {
+                                                                    const predefinedNames = new Set(predefinedLabels.map((p) => p.name));
+                                                                    const singlePredefinedSelected =
+                                                                        entryLabelsForIndex.length === 1 &&
+                                                                        predefinedNames.has(entryLabelsForIndex[0]);
+                                                                    const showPredefinedRow = !singlePredefinedSelected;
 
-                                                                {/* Boutons des labels prédéfinis */}
-                                                                <div className="modal-predefined-labels">
-                                                                    {predefinedLabels.map((labelObj) => (
-                                                                        <button
-                                                                            key={labelObj.name}
-                                                                            type="button"
-                                                                            onClick={() => handleAddLabel(index, labelObj.name)}
-                                                                            disabled={entryLabelsForIndex.includes(labelObj.name) || userRole === 'visiteur'}
-                                                                            className={`modal-predefined-label-button ${entryLabelsForIndex.includes(labelObj.name) ? 'modal-predefined-label-button-disabled' : ''}`}
-                                                                            style={!entryLabelsForIndex.includes(labelObj.name) ? {
-                                                                                borderColor: labelObj.color,
-                                                                                color: labelObj.color
-                                                                            } : {
-                                                                                backgroundColor: `${labelObj.color}15`,
-                                                                                borderColor: labelObj.color,
-                                                                                color: labelObj.color
-                                                                            }}
-                                                                        >
-                                                                            {labelObj.name}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
+                                                                    return (
+                                                                        <>
+                                                                            <div className="modal-labels-list">
+                                                                                {entryLabelsForIndex.length > 0 &&
+                                                                                    entryLabelsForIndex.map((label, idx) => {
+                                                                                        const labelColor = getLabelColor(label);
+                                                                                        const translatedLabel = getTranslatedLabel(label);
+                                                                                        return (
+                                                                                            <span 
+                                                                                                key={idx} 
+                                                                                                className="modal-label"
+                                                                                                style={{ 
+                                                                                                    backgroundColor: `${labelColor}18`,
+                                                                                                    borderColor: labelColor,
+                                                                                                    color: labelColor
+                                                                                                }}
+                                                                                            >
+                                                                                                {translatedLabel}
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    onClick={() => handleRemoveLabel(index, label)}
+                                                                                                    className="modal-remove-label-button"
+                                                                                                    title={t('eventModal.removeLabel')}
+                                                                                                    style={{ color: labelColor }}
+                                                                                                    disabled={userRole === 'visiteur'}
+                                                                                                >
+                                                                                                    ×
+                                                                                                </button>
+                                                                                            </span>
+                                                                                        );
+                                                                                    })}
+                                                                            </div>
+
+                                                                            {showPredefinedRow && (
+                                                                                <div className="modal-predefined-labels">
+                                                                                    {predefinedLabels.map((labelObj) => (
+                                                                                        <button
+                                                                                            key={labelObj.name}
+                                                                                            type="button"
+                                                                                            onClick={() => handleAddLabel(index, labelObj.name)}
+                                                                                            disabled={userRole === 'visiteur'}
+                                                                                            className="modal-predefined-label-button"
+                                                                                            style={{
+                                                                                                borderColor: labelObj.color,
+                                                                                                color: labelObj.color,
+                                                                                            }}
+                                                                                        >
+                                                                                            {labelObj.name}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()}
 
                                                                 {/* Input pour créer un label personnalisé */}
                                                                 {showLabelInputForEntry === index && (
@@ -1191,44 +1304,63 @@ export default function EventModal({
                                                 });
                                             };
 
+                                            const entryPrivacyMap =
+                                                courseNote?.entry_privacy && typeof courseNote.entry_privacy === "object"
+                                                    ? courseNote.entry_privacy
+                                                    : {};
+
+                                            const entryIsPersonal = (idx) =>
+                                                entryPrivacyMap[String(idx)] === NOTE_PRIVACY_PERSONAL;
+
                                             return (
-                                                <div>
+                                                <div className="modal-note-view-list">
                                                     {savedModalEntries.map((entry, index) => {
                                                         const entryLabelsForIndex = (courseNote?.entry_labels && courseNote.entry_labels[String(index)]) || [];
                                                         const isLabelOnly = entry === HIDDEN_LABEL_PLACEHOLDER || (!entry && entryLabelsForIndex.length > 0);
+                                                        const showPersonalStrip =
+                                                            mayShowPersonalPrivacyIndicators &&
+                                                            entryIsPersonal(index);
+                                                        const showMetaRow = !!lastPerson;
                                                         return (
-                                                            <div key={`${selectedEvent.uid}-view-${index}`}>
-                                                                {/* Labels pour cette note */}
-                                                                {entryLabelsForIndex.length > 0 && (
-                                                                    <div className="modal-note-labels-inline">
-                                                                        {entryLabelsForIndex.map((label, idx) => {
-                                                                            const labelColor = getLabelColor(label);
-                                                                            const translatedLabel = getTranslatedLabel(label);
-                                                                            return (
-                                                                                <span 
-                                                                                    key={idx} 
-                                                                                    className="modal-label-inline"
-                                                                                    style={{ 
-                                                                                        backgroundColor: `${labelColor}15`,
-                                                                                        borderColor: labelColor,
-                                                                                        color: labelColor
-                                                                                    }}
-                                                                                >
-                                                                                    {translatedLabel}
-                                                                                </span>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                )}
-                                                                {!isLabelOnly && (
-                                                                    <div className="modal-note-view-card">
-                                                                        <p className="modal-note-view-text">{entry}</p>
-                                                                    </div>
-                                                                )}
-                                                                {lastPerson && (
-                                                                    <div className="modal-note-last-person">
-                                                                        {lastPerson.user_name || 'Utilisateur inconnu'}
-                                                                        {lastPerson.timestamp && ` - ${formatDateTime(lastPerson.timestamp)}`}
+                                                            <div key={`${selectedEvent.uid}-view-${index}`} className="modal-note-view-block">
+                                                                <div className="modal-note-view-body">
+                                                                    <PersonalNoteIndicatorStrip visible={showPersonalStrip} />
+                                                                    {entryLabelsForIndex.length > 0 && (
+                                                                        <div className="modal-note-labels-inline">
+                                                                            {entryLabelsForIndex.map((label, idx) => {
+                                                                                const labelColor = getLabelColor(label);
+                                                                                const translatedLabel = getTranslatedLabel(label);
+                                                                                return (
+                                                                                    <span 
+                                                                                        key={idx} 
+                                                                                        className="modal-label-inline"
+                                                                                        style={{ 
+                                                                                            backgroundColor: `${labelColor}15`,
+                                                                                            borderColor: labelColor,
+                                                                                            color: labelColor
+                                                                                        }}
+                                                                                    >
+                                                                                        {translatedLabel}
+                                                                                    </span>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                    {!isLabelOnly && (
+                                                                        <div className="modal-note-view-card">
+                                                                            <p className="modal-note-view-text">{entry}</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {showMetaRow && (
+                                                                    <div className="modal-note-meta">
+                                                                        {lastPerson && (
+                                                                            <span className="modal-note-meta-author">
+                                                                                {lastPerson.user_name || 'Utilisateur inconnu'}
+                                                                                {lastPerson.timestamp &&
+                                                                                    ` — ${formatDateTime(lastPerson.timestamp)}`}
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1239,36 +1371,33 @@ export default function EventModal({
                                         })()}
                                     </div>
                                 )}
-                                {/* Actions uniquement pour utilisateurs connectés */}
-                                {notesAuthenticated && (
-                                    <>
-                                        {isModalEditingNotes ? (
-                                            <div className="modal-notes-actions">
-                                                <button
-                                                    type="button"
-                                                    className="modal-note-cancel"
-                                                    onClick={handleCancelEditing}
-                                                    disabled={savingNote}
-                                                >
-                                                    {t('eventModal.cancel')}
-                                                </button>
-                                                {modalHasChanges && (
-                                                    <button
-                                                        onClick={handleSaveNote}
-                                                        disabled={savingNote || userRole === 'visiteur'}
-                                                        className="modal-note-save"
-                                                        title={userRole === 'visiteur' ? t('eventModal.visitorCannotEdit') : ""}
-                                                    >
-                                                        {savingNote
-                                                            ? t('common.loading')
-                                                            : isDeletingNote
-                                                                ? t('eventModal.saveNote') + " (" + t('eventModal.delete') + ")"
-                                                                : t('eventModal.saveNote')}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ) : null}
-                                    </>
+                                {/* Actions : édition en cours (annuler / enregistrer) */}
+                                {notesAuthenticated && isModalEditingNotes && (
+                                    <div className="modal-notes-actions">
+                                        <button
+                                            type="button"
+                                            className="modal-note-cancel"
+                                            onClick={handleCancelEditing}
+                                            disabled={savingNote}
+                                        >
+                                            {t('eventModal.cancel')}
+                                        </button>
+                                        {modalHasChanges && (
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveNote}
+                                                disabled={savingNote || userRole === 'visiteur'}
+                                                className="modal-note-save"
+                                                title={userRole === 'visiteur' ? t('eventModal.visitorCannotEdit') : ""}
+                                            >
+                                                {savingNote
+                                                    ? t('common.loading')
+                                                    : isDeletingNote
+                                                        ? t('eventModal.saveNote') + " (" + t('eventModal.delete') + ")"
+                                                        : t('eventModal.saveNote')}
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                             );

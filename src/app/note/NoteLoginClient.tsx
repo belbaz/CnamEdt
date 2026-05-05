@@ -10,6 +10,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 import KeepAlive from "@/components/KeepAlive";
+import { setGalaoPostLoginRedirect } from "@/lib/galaoPostLoginRedirect";
 
 const NOTES_LAST_SEMESTER_KEY = "notes_last_semester";
 
@@ -103,17 +104,19 @@ export default function NoteLoginClient() {
     };
 
     /**
-     * Helper pour gérer l'expiration de session
+     * Session expirée ou invalide : retour au portail /galao puis reprise sur /note après login
      */
-    const handleSessionExpired = (msg) => {
+    const handleSessionExpired = (_msg) => {
         setHasExistingSession(false);
         setNotesHtml("");
         setNotesError("");
         setInfoMessage("");
-        setErrorMessage(msg);
+        setErrorMessage("");
         if (typeof document !== "undefined") {
             document.cookie = "galao_client=; Max-Age=0; path=/";
         }
+        setGalaoPostLoginRedirect("/note");
+        router.push("/galao");
     };
 
     /**
@@ -449,6 +452,7 @@ export default function NoteLoginClient() {
             loadNotes();
         } else {
             // Pas de session Galao, rediriger vers /galao pour se connecter
+            setGalaoPostLoginRedirect("/note");
             console.log("[NoteLogin] Pas de session Galao détectée, redirection vers /galao");
             router.push("/galao");
         }

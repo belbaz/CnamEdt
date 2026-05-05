@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import EventCard from "./EventCard";
 import { getEventPosition, getEventPositionVertical } from "@/utils/timelineUtils";
 import { getCompactModeValues } from "@/utils/compactModeUtils";
-import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER } from "@/utils/noteEntries";
+import { parseStoredNoteValue, HIDDEN_LABEL_PLACEHOLDER, agendaRowHasPersonalEntries } from "@/utils/noteEntries";
 import { useFileCounts } from "@/hooks/useFileCounts";
 import { useI18n } from "@/i18n/I18nContext";
 import "./EventsList.css";
@@ -195,6 +195,7 @@ export default function EventsList({
                                 entry !== HIDDEN_LABEL_PLACEHOLDER &&
                                 entry.trim().length > 0
                         );
+                        const noteHasPersonalEntries = agendaRowHasPersonalEntries(courseNote);
                         return (
                             <EventCard
                                 key={idx}
@@ -210,6 +211,7 @@ export default function EventsList({
                                 colorPosition={colorPosition}
                                 colorBackgroundOpacity={colorBackgroundOpacity}
                                 entranceAnimationActive={entranceAnimationActive && !isCalculating}
+                                noteHasPersonalEntries={noteHasPersonalEntries}
                             />
                         );
                     });

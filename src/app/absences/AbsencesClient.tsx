@@ -6,6 +6,12 @@ import BackButton from "@/components/BackButton";
 import styles from "../login/login.module.css";
 import KeepAlive from "@/components/KeepAlive";
 import { useI18n } from "@/i18n/I18nContext";
+import { setGalaoPostLoginRedirect } from "@/lib/galaoPostLoginRedirect";
+
+function redirectGalaoKeepingAbsencesIntent() {
+    setGalaoPostLoginRedirect("/absences");
+    window.location.replace("/galao");
+}
 
 /**
  * Page client pour l'affichage des absences Galao,
@@ -33,20 +39,20 @@ export default function AbsencesClient() {
             const data = await res.json();
 
             if (res.status === 401 || !res.ok || !data?.success) {
-                window.location.replace("/galao");
+                redirectGalaoKeepingAbsencesIntent();
                 return;
             }
 
             const rawHtml = data.html || "";
             if (!rawHtml) {
-                window.location.replace("/galao");
+                redirectGalaoKeepingAbsencesIntent();
                 return;
             }
 
             setHtml(rawHtml);
         } catch (e) {
             console.warn("[Absences] Erreur de chargement, redirection vers /galao", e);
-            window.location.replace("/galao");
+            redirectGalaoKeepingAbsencesIntent();
             return;
         } finally {
             setLoading(false);
@@ -157,6 +163,7 @@ export default function AbsencesClient() {
             );
             
             if (!hasClientFlag) {
+                setGalaoPostLoginRedirect("/absences");
                 window.location.replace("/galao");
                 return;
             }

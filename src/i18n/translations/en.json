@@ -82,7 +82,10 @@
     "error": "Error",
     "success": "Success",
     "notAvailable": "Not available",
-    "contact": "Contact"
+    "contact": "Contact",
+    "personalNoteBadge": "Personal note",
+    "noteCourseIconAlt": "Notes",
+    "noteCourseIconPersonalAlt": "Notes (personal entries)"
   },
   "eventModal": {
     "location": "Location",
@@ -116,6 +119,9 @@
     "connectToCreate": "Sign in",
     "connectToCreateFull": "Sign in to create a note",
     "connectToEdit": "Sign in to edit this note",
+    "connectNotesLinkEmpty": "Sign in · create a note",
+    "connectNotesLinkWithNotes": "Sign in · edit or add",
+    "connectNotesTooltip": "Sign in to create, edit, or add your notes for this course.",
     "unknownUser": "Unknown user",
     "saveError": "Error saving",
     "noteNumber": "Note",
@@ -130,7 +136,7 @@
     "addNotesPlaceholder": "Add your notes...",
     "visitorCannotModify": "Visitors cannot modify notes",
     "saving": "Saving...",
-    "personalNote": "Personal note (only visible to you when signed in)",
+    "personalNote": "Personal note (only you)",
     "personalNoteHint": "This entry is hidden from guests and the public list."
   },
   "footer": {
@@ -420,6 +426,9 @@
     "delete": "Delete",
     "connectToUpload": "Sign in",
     "connectToUploadFull": "to add and upload files",
+    "connectFilesLinkEmpty": "Sign in · add a file",
+    "connectFilesLinkWithFiles": "Sign in · your files",
+    "connectFilesTooltip": "Sign in to upload, download, or manage your files for this course.",
     "filesTitle": "📄 Files",
     "add": "Add",
     "uploadingShort": "Uploading…",
@@ -523,7 +532,7 @@
     "note": "Note",
     "noteNumber": "Note {index}",
     "remove": "Remove",
-    "personalNote": "Personal note (only visible to you when signed in)",
+    "personalNote": "Personal note (only you)",
     "personalNoteHint": "This entry is hidden from guests and the public list.",
     "labels": "Labels",
     "createCustomLabel": "Create custom label",
@@ -851,6 +860,11 @@
       "privacyNote": "Your credentials are not stored, they are only used to open a Galao session.",
       "loginSuccess": "Login successful!",
       "logoutButton": "Log out",
+      "sessionIdleTimeout": "You were signed out automatically: 15 minutes without reloading this portal page (consistent with Galao session behaviour). Sign in again if needed.",
+      "sessionStaleRelogin": "That session is no longer valid with Galao. Please sign in again.",
+      "verifyingSession": "Checking your Galao session…",
+      "resumeToNotes": "After signing in you’ll be returned to grades.",
+      "resumeToAbsences": "After signing in you’ll be returned to absences.",
       "chooseSection": "What would you like to view?",
       "loading": "Loading Galao portal..."
     },

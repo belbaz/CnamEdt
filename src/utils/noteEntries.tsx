@@ -111,6 +111,16 @@ export const NOTE_PRIVACY_PUBLIC = "public";
 export const NOTE_PRIVACY_PERSONAL = "personal";
 
 /**
+ * La ligne agenda contient au moins une entrée marquée personnelle (données non stripées).
+ */
+export function agendaRowHasPersonalEntries(row) {
+    if (!row?.entry_privacy || typeof row.entry_privacy !== "object") {
+        return false;
+    }
+    return Object.values(row.entry_privacy).some((v) => v === NOTE_PRIVACY_PERSONAL);
+}
+
+/**
  * Interprète entry_privacy (JSONB / API) : objet, chaîne JSON, ou null.
  * Certaines chaines (PostgREST) renvoient parfois une string au lieu d'un objet.
  */
