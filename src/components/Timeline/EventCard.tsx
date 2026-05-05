@@ -219,19 +219,13 @@ export default function EventCard({
     
 
     const entranceClass =
-        entranceAnimationActive ? ' event-card--home-entrance' : '';
+        entranceAnimationActive ? 'event-card--home-entrance' : '';
 
     return (
         <li
-            className={`event-card ${colorPosition === 'background' ? 'color-background' : 'color-top'}${entranceClass}`}
-            style={{
-                ...stylePos,
-                ...(colorPosition === 'background' && {
-                    backgroundColor: bgColorStyle
-                })
-            }}
+            className={`event-card ${colorPosition === 'background' ? 'color-background' : 'color-top'}`}
+            style={stylePos}
             data-index={colorIndex}
-            ref={cardRef}
             onClick={(e) => {
                 if (onOpenEventDetails && cardRef.current) {
                     const rect = cardRef.current.getBoundingClientRect();
@@ -245,6 +239,15 @@ export default function EventCard({
                 }
             }}
         >
+            <div
+                className={`event-card-surface ${entranceClass}`.trim()}
+                style={
+                    colorPosition === 'background'
+                        ? { backgroundColor: bgColorStyle }
+                        : undefined
+                }
+                ref={cardRef}
+            >
             {devMode && hoursLabel && (
                 <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
             )}
@@ -458,6 +461,7 @@ export default function EventCard({
                         )}
                     </div>
                 )}
+            </div>
             </div>
         </li>
     );

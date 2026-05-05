@@ -25,82 +25,97 @@
     }
 }
 
-/* 2. Style de base de la carte */
+/* 2. Enveloppe <li> : zone de survol stable (sans transform) pour éviter le
+   clignotement du :hover au bord des cours quand la carte scale/translate. */
 .event-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0.575rem 0.65rem 0.625rem;
-    border-radius: 10px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
     position: absolute;
     overflow: visible;
     top: 0;
     box-sizing: border-box;
     margin: 0;
+    padding: 0;
     cursor: pointer;
+    list-style: none;
+}
 
-    /* Optimisation pour les animations : on déclare uniquement ce qu'on anime
-       réellement pendant l'entrée (transform + opacity). Le navigateur peut
-       alors promouvoir la carte sur son propre layer GPU. */
+.event-card:hover {
+    z-index: 10;
+}
+
+/* Surface intérieure : même rendu qu’avant (fond, bordure, pseudo-barre, anim) */
+.event-card-surface {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0.575rem 0.65rem 0.625rem;
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    position: relative;
+    box-sizing: border-box;
+
     transform-origin: center bottom;
     backface-visibility: hidden;
 
-    /* Transition fluide pour le survol (hover) */
     transition:
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
         box-shadow 0.3s ease,
-        border-color 0.2s ease;
+        border-color 0.2s ease,
+        background 0.3s ease,
+        filter 0.2s ease;
 }
 
 /* 3. Déclenchement de l'animation (uniquement pendant l'entrée pour éviter
    de laisser `will-change` en permanence, ce qui consomme de la VRAM)
    Courbe ease-out-expo : fort mouvement initial qui décélère très doucement,
    donne ce rendu "premium" qu'on voit sur Apple/Stripe/Linear. */
-.event-card.event-card--home-entrance {
+.event-card-surface.event-card--home-entrance {
     will-change: transform, opacity;
     animation: eventCardEntrance 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* 4. Gestion des délais (Stagger effect) — 45ms d'écart entre chaque carte.
-   C'est le sweet spot : assez pour qu'on perçoive l'effet "en vague", assez
-   court pour que tout soit posé avant 1s total. */
-.event-card--home-entrance:nth-child(1) { animation-delay: 0.045s; }
-.event-card--home-entrance:nth-child(2) { animation-delay: 0.09s; }
-.event-card--home-entrance:nth-child(3) { animation-delay: 0.135s; }
-.event-card--home-entrance:nth-child(4) { animation-delay: 0.18s; }
-.event-card--home-entrance:nth-child(5) { animation-delay: 0.225s; }
-.event-card--home-entrance:nth-child(6) { animation-delay: 0.27s; }
-.event-card--home-entrance:nth-child(7) { animation-delay: 0.315s; }
-.event-card--home-entrance:nth-child(8) { animation-delay: 0.36s; }
-.event-card--home-entrance:nth-child(9) { animation-delay: 0.405s; }
-.event-card--home-entrance:nth-child(n+10) { animation-delay: 0.45s; }
+   La classe d’entrée est sur .event-card-surface, le nth-child sur le <li>. */
+.event-card:nth-child(1) > .event-card-surface.event-card--home-entrance { animation-delay: 0.045s; }
+.event-card:nth-child(2) > .event-card-surface.event-card--home-entrance { animation-delay: 0.09s; }
+.event-card:nth-child(3) > .event-card-surface.event-card--home-entrance { animation-delay: 0.135s; }
+.event-card:nth-child(4) > .event-card-surface.event-card--home-entrance { animation-delay: 0.18s; }
+.event-card:nth-child(5) > .event-card-surface.event-card--home-entrance { animation-delay: 0.225s; }
+.event-card:nth-child(6) > .event-card-surface.event-card--home-entrance { animation-delay: 0.27s; }
+.event-card:nth-child(7) > .event-card-surface.event-card--home-entrance { animation-delay: 0.315s; }
+.event-card:nth-child(8) > .event-card-surface.event-card--home-entrance { animation-delay: 0.36s; }
+.event-card:nth-child(9) > .event-card-surface.event-card--home-entrance { animation-delay: 0.405s; }
+.event-card:nth-child(n+10) > .event-card-surface.event-card--home-entrance { animation-delay: 0.45s; }
 
 /* 5. Accessibilité */
 @media (prefers-reduced-motion: reduce) {
-    .event-card.event-card--home-entrance {
+    .event-card-surface.event-card--home-entrance {
         animation: none !important;
         opacity: 1 !important;
         transform: none !important;
     }
 }
 
-/* 6. Bonus : Effet de survol cohérent */
-.event-card:hover {
+/* 6. Bonus : Effet de survol cohérent (transform uniquement sur la surface).
+   Cascading identique à l’historique : la 2e déclaration .event-card:hover
+   gérait fond / ombre / bordure visibles. */
+.event-card:hover .event-card-surface {
     transform: translateY(-4px) scale(1.02);
-    border-color: var(--accent-color, #3b82f6);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-    z-index: 10;
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-light);
 }
 
-.event-card:active {
+.event-card:active .event-card-surface {
     transform: scale(0.96);
     transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
-.event-card::before {
+.event-card-surface::before {
     margin: auto;
     content: '';
     position: absolute;
@@ -114,20 +129,14 @@
 }
 
 /* Mode fond : couleur en arrière-plan de toute la carte - on cache le ::before */
-.event-card.color-background::before {
+.event-card.color-background .event-card-surface::before {
     display: none;
 }
 
 /* Mode fond : le background est maintenant appliqué en inline style dans React pour supporter l'opacité dynamique */
 /* Le hover ajoute un léger effet de brightness */
-.event-card.color-background:hover {
+.event-card.color-background:hover .event-card-surface {
     filter: brightness(0.95);
-}
-
-.event-card:hover {
-    background: var(--bg-secondary);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-light);
 }
 
 /* Plus de bouton dédié; clic direct sur la carte */
@@ -847,7 +856,7 @@
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.event-card:hover::before {
+.event-card:hover .event-card-surface::before {
     height: 5px;
 }
 
@@ -1157,109 +1166,109 @@
 
 /* Accent de couleur avec personnalité - 20 teintes unies */
 
-.event-card[data-index="0"]::before {
+.event-card[data-index="0"] .event-card-surface::before {
     /* Sky */
     background-color: #0ea5e9;
 }
 
-.event-card[data-index="1"]::before {
+.event-card[data-index="1"] .event-card-surface::before {
     /* Emerald */
     background-color: #10b981;
 }
 
-.event-card[data-index="2"]::before {
+.event-card[data-index="2"] .event-card-surface::before {
     /* Amber */
     background-color: #f59e0b;
 }
 
-.event-card[data-index="3"]::before {
+.event-card[data-index="3"] .event-card-surface::before {
     /* Violet */
     background-color: #8b5cf6;
 }
 
-.event-card[data-index="4"]::before {
+.event-card[data-index="4"] .event-card-surface::before {
     /* Rose */
     background-color: #f43f5e;
 }
 
-.event-card[data-index="5"]::before {
+.event-card[data-index="5"] .event-card-surface::before {
     /* Teal */
     background-color: #14b8a6;
 }
 
-.event-card[data-index="6"]::before {
+.event-card[data-index="6"] .event-card-surface::before {
     /* Lime */
     background-color: #84cc16;
 }
 
-.event-card[data-index="7"]::before {
+.event-card[data-index="7"] .event-card-surface::before {
     /* Indigo */
     background-color: #6366f1;
 }
 
-.event-card[data-index="8"]::before {
+.event-card[data-index="8"] .event-card-surface::before {
     /* Orange */
     background-color: #f97316;
 }
 
-.event-card[data-index="9"]::before {
+.event-card[data-index="9"] .event-card-surface::before {
     /* Cyan */
     background-color: #06b6d4;
 }
 
-.event-card[data-index="10"]::before {
+.event-card[data-index="10"] .event-card-surface::before {
     /* Green */
     background-color: #22c55e;
 }
 
-.event-card[data-index="11"]::before {
+.event-card[data-index="11"] .event-card-surface::before {
     /* Fuchsia */
     background-color: #e879f9;
 }
 
-.event-card[data-index="12"]::before {
+.event-card[data-index="12"] .event-card-surface::before {
     /* Blue */
     background-color: #3b82f6;
 }
 
-.event-card[data-index="13"]::before {
+.event-card[data-index="13"] .event-card-surface::before {
     /* Red */
     background-color: #ef4444;
 }
 
-.event-card[data-index="14"]::before {
+.event-card[data-index="14"] .event-card-surface::before {
     /* Yellow */
     background-color: #eab308;
 }
 
-.event-card[data-index="15"]::before {
+.event-card[data-index="15"] .event-card-surface::before {
     /* Purple */
     background-color: #a855f7;
 }
 
-.event-card[data-index="16"]::before {
+.event-card[data-index="16"] .event-card-surface::before {
     /* Pink */
     background-color: #ec4899;
 }
 
-.event-card[data-index="17"]::before {
+.event-card[data-index="17"] .event-card-surface::before {
     /* Mint */
     background-color: #2dd4bf;
 }
 
-.event-card[data-index="18"]::before {
+.event-card[data-index="18"] .event-card-surface::before {
     /* Carrot */
     background-color: #fb923c;
 }
 
-.event-card[data-index="19"]::before {
+.event-card[data-index="19"] .event-card-surface::before {
     /* Deep Blue */
     background-color: #1d4ed8;
 }
 
 /* Mobile */
 @media (max-width: 768px) {
-    .event-card {
+    .event-card-surface {
         padding: 0.65rem 0.7rem;
         padding-top: 0.55rem;
         border-radius: 10px;
@@ -1267,39 +1276,39 @@
     }
 
 
-    .event-card::before {
+    .event-card-surface::before {
         height: 7px;
         width: 99%;
         border-radius: 10px 10px 0 0;
     }
 
-    .event-card.color-background::before {
+    .event-card.color-background .event-card-surface::before {
         height: 100%;
         width: 100%;
         border-radius: 10px;
     }
 
-    .vertical-events-container .event-card::before {
+    .vertical-events-container .event-card-surface::before {
         height: 6px;
         width: 97%;
         border-radius: 10px 10px 0 0;
     }
 
-    .vertical-events-container .event-card.color-background::before {
+    .vertical-events-container .event-card.color-background .event-card-surface::before {
         height: 100%;
         width: 100%;
         border-radius: 10px;
     }
 
-    .event-card:hover {
+    .event-card:hover .event-card-surface {
         transform: translateY(-3px);
     }
 
-    .event-card:active {
+    .event-card:active .event-card-surface {
         transform: translateY(-3px) scale(0.96);
     }
 
-    .event-card:hover::before {
+    .event-card:hover .event-card-surface::before {
         height: 4px;
     }
 
@@ -1327,6 +1336,9 @@
         left: 0;
         right: 0;
         width: 100%;
+    }
+
+    .event-card-surface {
         padding: 0.4rem 0.6rem 0.15rem 0.6rem;
         border-radius: 10px;
         overflow: hidden;
@@ -1336,7 +1348,7 @@
     }
 
 
-    /*.event-card::before {*/
+    /*.event-card-surface::before {*/
     /*    height: 4.5px;*/
     /*    border-radius: 10px 10px 0 0;*/
     /*    top: -1px;*/
@@ -1345,11 +1357,11 @@
     /*    width: calc(100% + 2px);*/
     /*}*/   
 
-    .event-card:active {
+    .event-card:active .event-card-surface {
         transform: translateY(-2px) scale(0.96);
     }
 
-    .event-card:hover::before {
+    .event-card:hover .event-card-surface::before {
         height: 4px;
     }
 
