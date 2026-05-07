@@ -222,8 +222,8 @@ body.modal-open {
 }
 
 /* S'assurer que les divs principaux ne débordent pas horizontalement */
-/* Exclure tooltips en portail — sinon width:100% (spécificité body > div) les étire sur tout l'écran */
-body > div:not(.tooltip, .note-tooltip) {
+/* Exclure : tooltips (portail), bannières fixes — sinon width:100% (spécificité body > div) écrase leurs largeurs */
+body > div:not(.tooltip, .note-tooltip, .cookie-consent-banner, .pwa-update-notification) {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
