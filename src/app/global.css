@@ -45,23 +45,19 @@
 }
 
 /* Mode OLED - Vrais noirs pour économiser la batterie sur écrans OLED */
-/* Thème optimisé avec des contrastes plus doux et des backgrounds adaptés */
 .oled-mode {
     --primary-color: #60a5fa;
     --bg-primary: #000000;
-    --bg-secondary: #f1f6ff;
-    /* Noir très sombre pour les conteneurs */
-    --bg-tertiary: #1a1a1a;
-    /* Gris très foncé pour les cartes */
+    /* Surfaces élevées (navbar, boutons, week picker) — éviter une teinte claire (#f1f…) qui cassait contraste avec le texte blanc */
+    --bg-secondary: #141820;
+    --bg-tertiary: #1c2433;
     --bg-gradient: #000000;
     --text-primary: #ffffff;
     --text-secondary: #e2e8f0;
     --text-dev: #f59e0b;
     --text-muted: #9ca3af;
-    --border-color: #2a2a2a;
-    /* Bordures grises foncées au lieu de noir */
-    --border-light: #1f1f1f;
-    /* Bordures plus subtiles */
+    --border-color: #2a3441;
+    --border-light: #1a222c;
     --shadow-sm: 0 2px 8px rgba(255, 255, 255, 0.02);
     --shadow-md: 0 4px 12px rgba(255, 255, 255, 0.03);
     --shadow-lg: 0 8px 16px rgba(255, 255, 255, 0.04);
@@ -86,8 +82,12 @@
     background: #000000 !important;
 }
 
-/* Les jours et cartes utilisent maintenant automatiquement --bg-secondary et --bg-tertiary 
-   qui gardent leurs valeurs du dark mode grâce à la définition ci-dessus */
+/* Les variables ci-dessus pilotent navbar, boutons, week picker, pastilles mobiles, etc. */
+
+.oled-mode .vertical-time-column::before {
+    background: #000000 !important;
+    border-right-color: var(--border-color) !important;
+}
 
 .oled-mode .vertical-day-column {
     background: #0f1419 !important;
@@ -155,9 +155,23 @@
 }
 
 .oled-mode .vertical-time-label {
-    color: var(--text-muted) !important;
-    background: var(--bg-tertiary) !important;
-    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* Desktop : libellés d’heures sans pastille (pas de fond clair parasite) */
+@media (min-width: 769px) {
+    .oled-mode .vertical-time-label {
+        background: transparent !important;
+        border: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .oled-mode .vertical-time-label {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-secondary) !important;
+    }
 }
 
 .oled-mode .time-label {

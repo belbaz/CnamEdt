@@ -468,6 +468,21 @@
     transform: translateX(2px);
 }
 
+/* Même disposition / effet que le survol direct du bouton quand la souris est sur le titre ou l’en-tête du jour */
+.vertical-day-header:hover:not(.collapsed) .vertical-day-collapse-btn {
+    background: var(--bg-primary);
+    transform: scale(1.2) rotate(180deg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.vertical-day-header:hover:not(.collapsed) .vertical-day-collapse-btn svg {
+    transform: translateX(2px);
+}
+
+.vertical-day-header:hover:not(.collapsed) .vertical-day-collapse-btn:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
 /* Style du bouton quand le jour est réduit */
 .vertical-day-header.collapsed .vertical-day-collapse-btn {
     width: 20px;

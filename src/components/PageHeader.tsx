@@ -556,11 +556,11 @@ export default function PageHeader({
                                 {darkMode ? (
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                                          xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <circle cx="12" cy="12" r="4.5" fill={oledMode ? "#000000" : "#fbbf24"}
-                                                stroke={oledMode ? "#ffffff" : "#f59e0b"} strokeWidth="1"/>
+                                        <circle cx="12" cy="12" r="4.5" fill={oledMode ? "#0c1018" : "#fbbf24"}
+                                                stroke={oledMode ? "#93c5fd" : "#f59e0b"} strokeWidth="1"/>
                                         <path
                                             d="M12 2v3M12 19v3M22 12h-3M5 12H2M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05l-2.12-2.12"
-                                            stroke={oledMode ? "#ffffff" : "#f59e0b"} strokeWidth="2"
+                                            stroke={oledMode ? "#93c5fd" : "#f59e0b"} strokeWidth="2"
                                             strokeLinecap="round"/>
                                     </svg>
                                 ) : (
@@ -568,23 +568,13 @@ export default function PageHeader({
                                 )}
                             </button>
                             {showEasterEgg && (
-                                <div className="easter-egg-notification">
+                                <div className="easter-egg-notification" role="status" aria-live="polite">
                                     <div className="easter-egg-content">
-                                        <div className="easter-egg-particles">
-                                            <div className="easter-egg-particle"></div>
-                                            <div className="easter-egg-particle"></div>
-                                            <div className="easter-egg-particle"></div>
-                                            <div className="easter-egg-particle"></div>
-                                            <div className="easter-egg-particle"></div>
-                                        </div>
-                                        <span className="easter-egg-icon">{oledMode ? '🌙' : '💡'}</span>
-                                        <span
-                                            className="easter-egg-text">{oledMode ? t('pageHeader.oledActivated') : t('pageHeader.oledDeactivated')}</span>
-                                        <span className="easter-egg-subtitle">
-                                            {oledMode
-                                                ? t('pageHeader.oledEnergy')
-                                                : t('pageHeader.oledBack')}
-                                        </span>
+                                        <span className="easter-egg-icon" aria-hidden="true">{oledMode ? '🌙' : '💡'}</span>
+                                        <p className="easter-egg-title">{oledMode ? t('pageHeader.oledActivated') : t('pageHeader.oledDeactivated')}</p>
+                                        <p className="easter-egg-desc">
+                                            {oledMode ? t('pageHeader.oledEnergy') : t('pageHeader.oledBack')}
+                                        </p>
                                     </div>
                                 </div>
                             )}
