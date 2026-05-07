@@ -1,6 +1,7 @@
 // @ts-nocheck
 import "./global.css";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import AnalyticsCollector from "@/components/AnalyticsCollector";
 import CookieConsent from "@/components/CookieConsent";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -308,6 +309,7 @@ export default function RootLayout({ children }) {
                     <CookieConsent />
                     {children}
                 </I18nProvider>
+                <Analytics />
             </body>
         </html>
     );
