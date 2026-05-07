@@ -487,6 +487,7 @@
     "debugErrorMessage": "Message :",
     "debugInfoTitle": "Informations de débogage",
     "debugInfoToggle": "Cliquer pour voir les détails",
+    "lastUpdateDetailsAriaLabel": "Voir les détails de la dernière mise à jour",
     "debugPWAInstalled": "PWA installée :",
     "debugStandaloneMode": "Mode standalone :",
     "debugProtocol": "Protocole :",

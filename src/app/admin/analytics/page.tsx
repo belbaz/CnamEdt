@@ -1,9 +1,10 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import Spinner from "@/components/Spinner";
 import './analytics.css';
 
@@ -513,9 +514,11 @@ export default function AnalyticsPage() {
                         </div>
                     )}
                 </div>
-                <button className="export-btn" onClick={exportData} title={t('admin.analytics.exportCSV')}>
-                    📥 {t('admin.analytics.export')}
-                </button>
+                <HoverTooltip text={t('admin.analytics.exportCSV')}>
+                    <button className="export-btn" onClick={exportData}>
+                        📥 {t('admin.analytics.export')}
+                    </button>
+                </HoverTooltip>
             </header>
 
             <div className="analytics-tabs">
@@ -635,7 +638,7 @@ export default function AnalyticsPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <RechartsTooltip />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
@@ -647,7 +650,7 @@ export default function AnalyticsPage() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="name" />
                                     <YAxis />
-                                    <Tooltip />
+                                    <RechartsTooltip />
                                     <Bar dataKey="value" fill="#667eea" />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -660,7 +663,7 @@ export default function AnalyticsPage() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="name" />
                                     <YAxis />
-                                    <Tooltip />
+                                    <RechartsTooltip />
                                     <Bar dataKey="value" fill="#764ba2" />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -674,7 +677,7 @@ export default function AnalyticsPage() {
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="date" />
                                         <YAxis />
-                                        <Tooltip />
+                                        <RechartsTooltip />
                                         <Area type="monotone" dataKey="visites" stroke="#667eea" fill="#667eea" fillOpacity={0.6} />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -689,7 +692,7 @@ export default function AnalyticsPage() {
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="heure" />
                                         <YAxis />
-                                        <Tooltip />
+                                        <RechartsTooltip />
                                         <Line type="monotone" dataKey="visites" stroke="#f093fb" strokeWidth={2} />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -709,22 +712,24 @@ export default function AnalyticsPage() {
                     <div className="filters-panel">
                         <h3>🔍 {t('admin.analytics.filtersTitle')}</h3>
                         <div className="filters-grid">
+                            <HoverTooltip text={t('admin.analytics.searchTooltip')} wrapperStyle={{ display: 'block' }}>
                             <input
                                 type="text"
                                 placeholder={t('admin.analytics.searchPlaceholder')}
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
                                 className="filter-input"
-                                title={t('admin.analytics.searchTooltip')}
                             />
+                            </HoverTooltip>
+                            <HoverTooltip text="Filtrer les sessions par email utilisateur" wrapperStyle={{ display: 'block' }}>
                             <input
                                 type="text"
                                 placeholder="Filtrer par email..."
                                 value={filters.email}
                                 onChange={(e) => handleFilterChange('email', e.target.value)}
                                 className="filter-input"
-                                title="Filtrer les sessions par email utilisateur"
                             />
+                            </HoverTooltip>
                             <select
                                 value={filters.deviceType}
                                 onChange={(e) => handleFilterChange('deviceType', e.target.value)}
@@ -795,6 +800,7 @@ export default function AnalyticsPage() {
                             />
                             <label className="filter-label">
                                 {t('admin.analytics.statsPeriodDays')}
+                                <HoverTooltip text={t('admin.analytics.statsPeriodTooltip')} wrapperStyle={{ display: 'block' }}>
                                 <input
                                     type="number"
                                     min="1"
@@ -802,8 +808,8 @@ export default function AnalyticsPage() {
                                     value={filters.statsDays}
                                     onChange={(e) => handleFilterChange('statsDays', e.target.value)}
                                     className="filter-input"
-                                    title={t('admin.analytics.statsPeriodTooltip')}
                                 />
+                                </HoverTooltip>
                             </label>
                             <label className="filter-checkbox">
                                 <input
@@ -859,25 +865,27 @@ export default function AnalyticsPage() {
                             )}
                         </div>
                         <div className="pagination">
+                            <HoverTooltip text={t('admin.analytics.previous')}>
                             <button
                                 disabled={offset === 0}
                                 onClick={() => setOffset(Math.max(0, offset - limit))}
-                                title={t('admin.analytics.previous')}
                             >
                                 ← {t('admin.analytics.previous')}
                             </button>
+                            </HoverTooltip>
                             <span>{t('admin.analytics.pageInfo')
                                 .replace('{page}', Math.floor(offset / limit) + 1)
                                 .replace('{from}', offset + 1)
                                 .replace('{to}', Math.min(offset + limit, totalCount))
                                 .replace('{total}', totalCount)}</span>
+                            <HoverTooltip text={t('admin.analytics.next')}>
                             <button
                                 disabled={offset + limit >= totalCount}
                                 onClick={() => setOffset(offset + limit)}
-                                title={t('admin.analytics.next')}
                             >
                                 {t('admin.analytics.next')} →
                             </button>
+                            </HoverTooltip>
                         </div>
                     </div>
 
@@ -899,39 +907,62 @@ export default function AnalyticsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredData.map((session, idx) => (
+                                {filteredData.map((session, idx) => {
+                                    const userCellTip = session.user_email
+                                        ? `Email: ${session.user_email}${session.user_id ? `\nID: ${session.user_id}` : ''}${session.user_name ? `\nNom: ${session.user_name}` : ''}`
+                                        : 'Visiteur anonyme';
+                                    const sessionIdTip = `${session.session_id}\n${t('admin.analytics.tableClickForDetails')}`;
+                                    const nameTip = `${session.user_first_name || ''} ${session.user_last_name || ''}`.trim();
+                                    return (
                                     <tr
                                         key={idx}
                                         className="session-row"
                                         onClick={() => handleUserClick(session)}
-                                        title={t('admin.analytics.tableClickForDetails')}
                                     >
-                                        <td className="session-id" title={session.session_id}>{session.session_id.substring(0, 8)}...</td>
-                                        <td title={`Adresse IP: ${session.ip_address || 'N/A'}`}>{session.ip_address || 'N/A'}</td>
-                                        <td title={session.user_email ? `Email: ${session.user_email}${session.user_id ? `\nID: ${session.user_id}` : ''}${session.user_name ? `\nNom: ${session.user_name}` : ''}` : 'Visiteur anonyme'}>
-                                            {session.user_email ? (
-                                                <div className="user-info">
-                                                    {session.user_name ? (
-                                                        <>
-                                                            <span className="user-name" title={`${session.user_first_name || ''} ${session.user_last_name || ''}`.trim()}>
-                                                                {session.user_name}
-                                                            </span>
-                                                            <span className="user-email" title={`Email: ${session.user_email}`}>
-                                                                ({session.user_email})
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="user-email">{session.user_email}</span>
-                                                    )}
-                                                    {session.user_id && (
-                                                        <span className="user-id" title={`User ID: ${session.user_id}`}>
-                                                            ID: {session.user_id.substring(0, 8)}...
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className="anonymous-user">Anonyme</span>
-                                            )}
+                                        <td className="session-id">
+                                            <HoverTooltip text={sessionIdTip}>
+                                                <span>{session.session_id.substring(0, 8)}...</span>
+                                            </HoverTooltip>
+                                        </td>
+                                        <td>
+                                            <HoverTooltip text={`Adresse IP: ${session.ip_address || 'N/A'}`}>
+                                                <span>{session.ip_address || 'N/A'}</span>
+                                            </HoverTooltip>
+                                        </td>
+                                        <td>
+                                            <HoverTooltip text={userCellTip} wrapperStyle={{ display: 'block' }}>
+                                            <div className="user-info">
+                                                {session.user_email ? (
+                                                    <>
+                                                        {session.user_name ? (
+                                                            <>
+                                                                <HoverTooltip text={nameTip || session.user_name}>
+                                                                    <span className="user-name">
+                                                                        {session.user_name}
+                                                                    </span>
+                                                                </HoverTooltip>
+                                                                <HoverTooltip text={`Email: ${session.user_email}`}>
+                                                                    <span className="user-email">
+                                                                        ({session.user_email})
+                                                                    </span>
+                                                                </HoverTooltip>
+                                                            </>
+                                                        ) : (
+                                                            <span className="user-email">{session.user_email}</span>
+                                                        )}
+                                                        {session.user_id && (
+                                                            <HoverTooltip text={`User ID: ${session.user_id}`}>
+                                                                <span className="user-id">
+                                                                    ID: {session.user_id.substring(0, 8)}...
+                                                                </span>
+                                                            </HoverTooltip>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="anonymous-user">Anonyme</span>
+                                                )}
+                                            </div>
+                                            </HoverTooltip>
                                         </td>
                                         <td>
                                             <div className="device-info">
@@ -954,17 +985,32 @@ export default function AnalyticsPage() {
                                             <div className="time-info">
                                                 <span className="time-last">{formatDuration(session.time_on_page)}</span>
                                                 {session.avg_time_on_page && (
-                                                    <span className="time-avg" title={t('admin.analytics.tableAvgTimeTooltip')}>
-                                                        (moy: {formatDuration(Math.round(session.avg_time_on_page))})
-                                                    </span>
+                                                    <HoverTooltip text={t('admin.analytics.tableAvgTimeTooltip')}>
+                                                        <span className="time-avg">
+                                                            (moy: {formatDuration(Math.round(session.avg_time_on_page))})
+                                                        </span>
+                                                    </HoverTooltip>
                                                 )}
                                             </div>
                                         </td>
-                                        <td title={`${session.visit_count || 1} visite${(session.visit_count || 1) > 1 ? 's' : ''}`}>{session.visit_count || 1}</td>
-                                        <td title={`Première visite: ${formatDate(session.first_visit_at)}`}>{formatDate(session.first_visit_at)}</td>
-                                        <td title={`Dernière visite: ${formatDate(session.last_visit_at)}`}>{formatDate(session.last_visit_at)}</td>
+                                        <td>
+                                            <HoverTooltip text={`${session.visit_count || 1} visite${(session.visit_count || 1) > 1 ? 's' : ''}`}>
+                                                <span>{session.visit_count || 1}</span>
+                                            </HoverTooltip>
+                                        </td>
+                                        <td>
+                                            <HoverTooltip text={`Première visite: ${formatDate(session.first_visit_at)}`}>
+                                                <span>{formatDate(session.first_visit_at)}</span>
+                                            </HoverTooltip>
+                                        </td>
+                                        <td>
+                                            <HoverTooltip text={`Dernière visite: ${formatDate(session.last_visit_at)}`}>
+                                                <span>{formatDate(session.last_visit_at)}</span>
+                                            </HoverTooltip>
+                                        </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                         {filteredData.length === 0 && (
@@ -1000,7 +1046,7 @@ export default function AnalyticsPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <RechartsTooltip />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -1013,7 +1059,7 @@ export default function AnalyticsPage() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="name" />
                                     <YAxis />
-                                    <Tooltip />
+                                    <RechartsTooltip />
                                     <Legend />
                                     <Bar dataKey="value" fill="#667eea" />
                                 </BarChart>
@@ -1032,7 +1078,7 @@ export default function AnalyticsPage() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip />
+                                <RechartsTooltip />
                                 <Bar dataKey="value" fill="#43e97b" />
                             </BarChart>
                         </ResponsiveContainer>

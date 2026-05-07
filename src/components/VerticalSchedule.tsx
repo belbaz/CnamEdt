@@ -99,34 +99,8 @@ export default function VerticalSchedule({
         });
     };
 
-    // Calculer la plage horaire globale pour tous les jours
-    // Affiche toujours au minimum de 9h à 18h, mais s'étend si des cours sont en dehors de cette plage
-    const globalTimeRange = useMemo(() => {
-        const MIN_START = 9 * 60; // 9h00
-        const MIN_END = 18 * 60; // 18h00
-
-        if (events.length === 0) {
-            return { startMinutes: MIN_START, endMinutes: MIN_END };
-        }
-
-        let minTime = Infinity, maxTime = -Infinity;
-        events.forEach(ev => {
-            const start = new Date(ev.start);
-            const end = new Date(ev.end);
-            minTime = Math.min(minTime, start.getHours() * 60 + start.getMinutes());
-            maxTime = Math.max(maxTime, end.getHours() * 60 + end.getMinutes());
-        });
-
-        // Arrondir aux 15 minutes
-        let startMinutes = Math.floor(minTime / 15) * 15;
-        let endMinutes = Math.ceil(maxTime / 15) * 15;
-
-        // Garantir un minimum de 9h à 18h, mais s'étendre si nécessaire
-        startMinutes = Math.min(startMinutes, MIN_START);
-        endMinutes = Math.max(endMinutes, MIN_END);
-
-        return { startMinutes, endMinutes };
-    }, [events]);
+    // Plage horaire = min / max réels des cours de la semaine (pas de tranche fixe 9h–18h).
+    const globalTimeRange = useMemo(() => getDayTimeRange(events), [events]);
 
     const { startMinutes, endMinutes } = globalTimeRange;
     const totalMinutes = endMinutes - startMinutes;
@@ -606,6 +580,58 @@ export default function VerticalSchedule({
                                 ? currentTimePercent
                                 : null;
 
+                            // Fin réelle du dernier cours du jour (horaire fin max), pour ne pas étendre l’overlay
+                            // sur le vide 16h–18h quand la grille globale est tirée par un autre jour de la semaine.
+                            let todayLastCourseBottomPercent = null;
+                            let todayLastCourseEndMinutes = null;
+                            if (isTodayDay && Array.isArray(dayEvents) && dayEvents.length > 0) {
+                                const sortedByStart = [...dayEvents].sort(
+                                    (a, b) => new Date(a.start) - new Date(b.start)
+                                );
+                                let latestIdx = 0;
+                                let latestEndMs = -1;
+                                sortedByStart.forEach((ev, i) => {
+                                    const t = new Date(ev.end_time || ev.end).getTime();
+                                    if (t > latestEndMs) {
+                                        latestEndMs = t;
+                                        latestIdx = i;
+                                    }
+                                });
+                                const lastEv = sortedByStart[latestIdx];
+                                const prevEv = latestIdx > 0 ? sortedByStart[latestIdx - 1] : null;
+                                const nextEv =
+                                    latestIdx < sortedByStart.length - 1
+                                        ? sortedByStart[latestIdx + 1]
+                                        : null;
+                                const posLast = getEventVerticalPosition(
+                                    lastEv.start,
+                                    lastEv.end_time || lastEv.end,
+                                    prevEv ? prevEv.end_time || prevEv.end : null,
+                                    nextEv ? nextEv.start : null
+                                );
+                                const topNum = parseFloat(String(posLast.top).replace('%', ''), 10);
+                                const hNum = parseFloat(String(posLast.height).replace('%', ''), 10);
+                                if (Number.isFinite(topNum) && Number.isFinite(hNum)) {
+                                    todayLastCourseBottomPercent = topNum + hNum;
+                                }
+                                const lastEndDate = new Date(lastEv.end_time || lastEv.end);
+                                todayLastCourseEndMinutes =
+                                    lastEndDate.getHours() * 60 + lastEndDate.getMinutes();
+                            }
+
+                            let indicatorPos = currentPos;
+                            let overlayPercent = currentPos;
+                            if (isTodayDay && currentPos !== null && todayLastCourseBottomPercent !== null) {
+                                overlayPercent = Math.min(currentPos, todayLastCourseBottomPercent);
+                                if (todayLastCourseEndMinutes !== null) {
+                                    const nowTotalMinutes =
+                                        new Date().getHours() * 60 + new Date().getMinutes();
+                                    if (nowTotalMinutes > todayLastCourseEndMinutes) {
+                                        indicatorPos = null;
+                                    }
+                                }
+                            }
+
                             let todayCoursesOutlineStyle = null;
                             if (isTodayDay && !isCollapsed && dayEvents.length > 0) {
                                 const sortedOutline = [...dayEvents].sort(
@@ -648,10 +674,10 @@ export default function VerticalSchedule({
                                     {!isCollapsed ? (
                                         <>
                                             {/* Indicateur de temps actuel */}
-                                            {showCurrentTimeIndicator && currentPos !== null && (
+                                            {showCurrentTimeIndicator && indicatorPos !== null && (
                                                 <div
                                                     className="vertical-current-time-indicator"
-                                                    style={{ top: `${currentPos}%` }}
+                                                    style={{ top: `${indicatorPos}%` }}
                                                 >
                                                     <div className="vertical-current-time-line"></div>
                                                     <div className="vertical-current-time-dot"></div>
@@ -659,20 +685,20 @@ export default function VerticalSchedule({
                                             )}
 
                                             {/* Ligne de temps passée */}
-                                            {currentPos !== null && (
+                                            {overlayPercent !== null && (
                                                 <>
                                                     <div
                                                         className="vertical-time-passed-overlay"
-                                                        style={{ height: `${currentPos}%`, opacity: timePassedOverlayIntensity }}
+                                                        style={{ height: `${overlayPercent}%`, opacity: timePassedOverlayIntensity }}
                                                     />
                                                     {showCourseProgressPercent && (
                                                         <div
                                                             className="vertical-time-passed-overlay-percentage"
-                                                            style={{ top: `${currentPos}%` }}
+                                                            style={{ top: `${overlayPercent}%` }}
                                                         >
                                                             <AnimatedCourseProgressLabel
                                                                 events={dayEvents}
-                                                                fallbackPercent={currentPos}
+                                                                fallbackPercent={overlayPercent}
                                                                 decimals={courseProgressPercentDecimals}
                                                             />
                                                         </div>

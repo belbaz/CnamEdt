@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { getSchoolYearRange, getSchoolYearLabel } from '@/utils/dateUtils';
 import { useI18n } from '@/i18n/I18nContext';
 import styles from './YearCalendar.module.css';
+import HoverTooltip from './HoverTooltip';
 
 // Mois de l'année scolaire (Septembre à Août)
 const SCHOOL_MONTHS_INDICES = [8, 9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7]; // 0 = Janvier
@@ -16,7 +17,7 @@ const FULL_MONTH_NAMES = [
 const DAYS_OF_WEEK_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DAYS_OF_WEEK_FULL = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
-const YearCalendar = ({ events, onDateClick }) => {
+const YearCalendar = ({ events, onDateClick, showTooltips = true }) => {
     const { t } = useI18n();
     const schoolYear = getSchoolYearRange();
     const yearLabel = getSchoolYearLabel();
@@ -158,13 +159,17 @@ const YearCalendar = ({ events, onDateClick }) => {
         <div className={styles['year-calendar-container']}>
             <div className={styles['year-header']}>
                 <h2 className={styles['year-title']}>{t('yearCalendar.title').replace('{year}', yearLabel)}</h2>
+                <HoverTooltip
+                    text={viewType === 'grid' ? t('yearCalendar.switchToPlanner') : t('yearCalendar.switchToCalendar')}
+                    enabled={showTooltips}
+                >
                 <button 
                     className={styles['view-toggle-button']}
                     onClick={toggleView}
-                    title={viewType === 'grid' ? t('yearCalendar.switchToPlanner') : t('yearCalendar.switchToCalendar')}
                 >
                     {viewType === 'grid' ? t('yearCalendar.plannerView') : t('yearCalendar.calendarView')}
                 </button>
+                </HoverTooltip>
             </div>
             
             {viewType === 'planner' ? (
@@ -174,10 +179,17 @@ const YearCalendar = ({ events, onDateClick }) => {
                         <div className={styles['planner-header-row']}>
                             <div className={styles['corner-cell']}></div>
                             {matrixData.map((col, i) => (
-                                <div key={`head-${i}`} className={styles['header-month-cell']} title={`${col.fullName} ${col.year}`}>
+                                <HoverTooltip
+                                    key={`head-${i}`}
+                                    text={`${col.fullName} ${col.year}`}
+                                    enabled={showTooltips}
+                                    wrapperClassName={styles.yearCalTooltipGridItem}
+                                >
+                                <div className={styles['header-month-cell']}>
                                     <span className={styles['month-initial']}>{col.name}</span>
                                     <span className={styles['month-year']}>{col.year}</span>
                                 </div>
+                                </HoverTooltip>
                             ))}
                         </div>
 
@@ -195,9 +207,22 @@ const YearCalendar = ({ events, onDateClick }) => {
                                     const dayInitial = ['D', 'L', 'M', 'M', 'J', 'V', 'S'][dayData.dayOfWeek];
                                     const dayName = DAYS_OF_WEEK_FULL[dayData.dayOfWeek];
 
+                                    const courseDayTip = dayData.hasCourse
+                                        ? t('yearCalendar.coursesOnDay')
+                                            .replace('{count}', dayData.courseCount)
+                                            .replace('{dayName}', dayName)
+                                            .replace('{day}', dayData.dayNum)
+                                            .replace('{month}', col.fullName)
+                                        : '';
+
                                     return (
-                                        <div 
+                                        <HoverTooltip
                                             key={dayData.key}
+                                            text={courseDayTip}
+                                            enabled={showTooltips}
+                                            wrapperClassName={styles.yearCalTooltipGridItem}
+                                        >
+                                        <div 
                                             className={`
                                                 ${styles['planner-cell']} 
                                                 ${dayData.isWeekend ? styles['cell-weekend'] : ''}
@@ -205,14 +230,10 @@ const YearCalendar = ({ events, onDateClick }) => {
                                                 ${dayData.isToday ? styles['cell-today'] : ''}
                                             `}
                                             onClick={() => dayData.hasCourse && onDateClick && onDateClick(dayData.date)}
-                                            title={dayData.hasCourse ? t('yearCalendar.coursesOnDay')
-                                                .replace('{count}', dayData.courseCount)
-                                                .replace('{dayName}', dayName)
-                                                .replace('{day}', dayData.dayNum)
-                                                .replace('{month}', col.fullName) : undefined}
                                         >
                                             <span className={styles['cell-day-initial']}>{dayInitial}</span>
                                         </div>
+                                        </HoverTooltip>
                                     );
                                 })}
                             </div>
@@ -237,18 +258,26 @@ const YearCalendar = ({ events, onDateClick }) => {
                                         return <div key={day.key} className={`${styles['day-cell']} ${styles['empty']}`} />;
                                     }
                                     
+                                    const courseDateTip = day.hasCourse
+                                        ? t('yearCalendar.coursesOnDate')
+                                            .replace('{count}', day.courseCount)
+                                            .replace('{date}', day.date.toLocaleDateString())
+                                        : '';
+
                                     return (
-                                        <div 
+                                        <HoverTooltip
                                             key={day.key}
+                                            text={courseDateTip}
+                                            enabled={showTooltips}
+                                            wrapperClassName={`${styles.yearCalTooltipGridItem} ${styles.yearCalTooltipDayCell}`}
+                                        >
+                                        <div 
                                             className={`
                                                 ${styles['day-cell']} 
                                                 ${day.hasCourse ? styles['has-course'] : ''} 
                                                 ${day.isToday ? styles['is-today'] : ''}
                                             `}
                                             onClick={() => day.hasCourse && onDateClick && onDateClick(day.date)}
-                                            title={day.hasCourse ? t('yearCalendar.coursesOnDate')
-                                                .replace('{count}', day.courseCount)
-                                                .replace('{date}', day.date.toLocaleDateString()) : undefined}
                                         >
                                             {day.dayNumber}
                                             {day.hasCourse && (
@@ -257,6 +286,7 @@ const YearCalendar = ({ events, onDateClick }) => {
                                                 </div>
                                             )}
                                         </div>
+                                        </HoverTooltip>
                                     );
                                 })}
                             </div>

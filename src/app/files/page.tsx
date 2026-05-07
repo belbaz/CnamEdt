@@ -4,6 +4,7 @@
 import {useState, useEffect, useMemo, Suspense} from "react";
 import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import Link from "next/link";
 import Spinner from "@/components/Spinner";
 import {useI18n} from "@/i18n/I18nContext";
@@ -411,10 +412,11 @@ function FilesContent() {
                                                                         </div>
                                                                     </a>
                                                                     {authenticated && (
+                                                                        <HoverTooltip text={t('files.delete')}>
                                                                         <button
                                                                             className={styles.fileCardDelete}
                                                                             onClick={() => handleDelete(file.id)}
-                                                                            title={t('files.delete')}
+                                                                            aria-label={t('files.delete')}
                                                                         >
                                                                             <svg width="16" height="16"
                                                                                  viewBox="0 0 16 16" fill="none"
@@ -426,6 +428,7 @@ function FilesContent() {
                                                                                       strokeLinejoin="round"/>
                                                                             </svg>
                                                                         </button>
+                                                                        </HoverTooltip>
                                                                     )}
                                                                 </div>
                                                                 {file.user_name && file.uploaded_at && (
@@ -519,10 +522,11 @@ function FilesContent() {
                                                                         </div>
                                                                     </a>
                                                                     {authenticated && (
+                                                                        <HoverTooltip text={t('files.delete')}>
                                                                         <button
                                                                             className={styles.fileCardDelete}
                                                                             onClick={() => handleDelete(file.id)}
-                                                                            title={t('files.delete')}
+                                                                            aria-label={t('files.delete')}
                                                                         >
                                                                             <svg width="16" height="16"
                                                                                  viewBox="0 0 16 16" fill="none"
@@ -534,6 +538,7 @@ function FilesContent() {
                                                                                       strokeLinejoin="round"/>
                                                                             </svg>
                                                                         </button>
+                                                                        </HoverTooltip>
                                                                     )}
                                                                 </div>
                                                                 {file.user_name && file.uploaded_at && (

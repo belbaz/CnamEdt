@@ -30,6 +30,7 @@
 /* Affichage du pourcentage en mode dev */
 .time-passed-overlay-percentage {
     position: absolute;
+    top: 50%;
     color: red;
     font-size: 0.75rem;
     font-weight: bold;

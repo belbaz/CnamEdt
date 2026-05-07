@@ -8,6 +8,7 @@ import Image from "next/image";
 import {useDevMode} from "../../utils/env";
 import {sanitizeNoteEntries} from "@/utils/noteEntries";
 import {useI18n} from "@/i18n/I18nContext";
+import HoverTooltip from "@/components/HoverTooltip";
 
 const isVisioLocation = (location) => {
     if (!location || typeof location !== 'string') return false;
@@ -252,9 +253,11 @@ export default function EventCard({
                 <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
             )}
             {isExam && (
-                <div className="exam-badge-card" title="Examen">
+                <HoverTooltip text={t('eventModal.exam')}>
+                <div className="exam-badge-card">
                     EXAMEN
                 </div>
+                </HoverTooltip>
             )}
             {(() => {
                 // On ne considère pour la tooltip / le badge que les entrées texte (notePreviewItems),
@@ -323,9 +326,9 @@ export default function EventCard({
                                     />
                                 </span>
                                 {noteHasPersonalEntries && (
+                                    <HoverTooltip text={t("common.noteCourseIconPersonalAlt")}>
                                     <span
                                         className="note-lock-corner"
-                                        title={t("common.noteCourseIconPersonalAlt")}
                                     >
                                         <Image
                                             src="/lock.svg"
@@ -335,6 +338,7 @@ export default function EventCard({
                                             aria-hidden
                                         />
                                     </span>
+                                    </HoverTooltip>
                                 )}
                             </div>
                             <span className="note-count-badge">{totalCount}</span>
@@ -391,12 +395,13 @@ export default function EventCard({
                             // Si le cours est marqué distanciel via un label, on n'affiche pas les sites physiques
                             if (isDistanciel && !visioLocation) {
                                 return (
+                                    <HoverTooltip text={t('common.remote')}>
                                     <span
                                         className="site-badge-card distanciel-badge"
-                                        title="Cours en distanciel"
                                     >
                                         DISTANCIEL
                                     </span>
+                                    </HoverTooltip>
                                 );
                             }
 
@@ -406,27 +411,28 @@ export default function EventCard({
                             // Si toutes les salles sont sur le même site, afficher un seul badge
                             if (sites.length > 0 && sites.every(s => s.site === sites[0].site)) {
                                 return (
+                                    <HoverTooltip text={sites[0].fullName}>
                                     <span
                                         className="site-badge-card"
                                         style={{backgroundColor: sites[0].color}}
-                                        title={sites[0].fullName}
                                     >
                                         {sites[0].site}
                                     </span>
+                                    </HoverTooltip>
                                 );
                             }
 
                             // Sinon, afficher un badge par site unique
                             const uniqueSites = Array.from(new Map(sites.map(s => [s.site, s])).values());
                             return uniqueSites.map((siteInfo, idx) => (
+                                <HoverTooltip key={idx} text={siteInfo.fullName}>
                                 <span
-                                    key={idx}
                                     className="site-badge-card"
                                     style={{backgroundColor: siteInfo.color}}
-                                    title={siteInfo.fullName}
                                 >
                                     {siteInfo.site}
                                 </span>
+                                </HoverTooltip>
                             ));
                         })()}
                     </div>
@@ -437,27 +443,30 @@ export default function EventCard({
                             {isDistanciel && !visioLocation ? 'Cours en distanciel' : locationLabel}
                         </span>
                         {visioLocation ? (
+                            <HoverTooltip text={t('common.remote')}>
                             <span
                                 className="site-badge-card visio-badge"
-                                title="Cours en distanciel"
                             >
                                 DISTANCIEL
                             </span>
+                            </HoverTooltip>
                         ) : isDistanciel ? (
+                            <HoverTooltip text={t('common.remote')}>
                             <span
                                 className="site-badge-card distanciel-badge"
-                                title="Cours en distanciel"
                             >
                                 DISTANCIEL
                             </span>
+                            </HoverTooltip>
                         ) : siteInfo && (
+                            <HoverTooltip text={siteInfo.fullName}>
                             <span
                                 className="site-badge-card"
                                 style={{backgroundColor: siteInfo.color}}
-                                title={siteInfo.fullName}
                             >
                                 {siteInfo.site}
                             </span>
+                            </HoverTooltip>
                         )}
                     </div>
                 )}

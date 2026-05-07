@@ -5,8 +5,9 @@ import {getEventTitle} from "@/utils/eventUtils";
 import SubjectHoursModal from "./SubjectHoursModal";
 import {useI18n} from "../i18n/I18nContext";
 import "./SubjectHoursInfo.css";
+import HoverTooltip from "./HoverTooltip";
 
-export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
+export default function SubjectHoursInfo({ allEvents = [], subjectColors = {}, showTooltips = true }) {
     const { t } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -73,17 +74,18 @@ export default function SubjectHoursInfo({allEvents = [], subjectColors = {}}) {
 
     return (
         <>
-            <button
-                className="subject-hours-info-button"
-                onClick={() => setIsOpen(true)}
-                title={t('subjectHours.title')}
-                aria-label={t('subjectHours.title')}
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-            </button>
+            <HoverTooltip text={t('subjectHours.title')} enabled={showTooltips}>
+                <button
+                    className="subject-hours-info-button"
+                    onClick={() => setIsOpen(true)}
+                    aria-label={t('subjectHours.title')}
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                </button>
+            </HoverTooltip>
 
             <SubjectHoursModal
                 isOpen={isOpen}

@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/i18n/I18nContext";
 import styles from "./PersonalNoteIndicator.module.css";
+import HoverTooltip from "./HoverTooltip";
 
 /** Cadenas plein (différent du contour utilisé ailleurs), couleur via currentColor */
 export function PersonalNoteFilledLockIcon({ size = 14 }: { size?: number }) {
@@ -45,8 +46,10 @@ export function PersonalNoteLockChip({
 }) {
     if (!visible) return null;
     return (
-        <span className={styles.lockChip} title={title} role="img" aria-label={title}>
+        <HoverTooltip text={title}>
+        <span className={styles.lockChip} role="img" aria-label={title}>
             <PersonalNoteFilledLockIcon size={13} />
         </span>
+        </HoverTooltip>
     );
 }

@@ -4,6 +4,7 @@
 import {useEffect, useState, Suspense} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {useI18n} from "@/i18n/I18nContext";
+import { applyThemeFromBrowserStorage } from "@/lib/themeHydration";
 import {getLocale} from "@/utils/dateUtils";
 import BackButton from "@/components/BackButton";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -58,18 +59,10 @@ function HistoContent() {
         }
     }, []);
 
-    // S'assurer que le dark mode est appliqué au chargement
+    // Thème (OLED prioritaire via cookie de session)
     useEffect(() => {
         try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
-            if (dark) {
-                document.documentElement.classList.add('dark-mode');
-            } else {
-                document.documentElement.classList.remove('dark-mode');
-            }
+            applyThemeFromBrowserStorage();
         } catch (e) {
             // Erreur silencieuse
         }

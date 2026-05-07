@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import { useI18n } from "@/i18n/I18nContext";
+import { applyThemeFromBrowserStorage } from "@/lib/themeHydration";
 import styles from "./dashboard.module.css";
 
 export default function DashboardPage() {
@@ -17,23 +18,7 @@ export default function DashboardPage() {
     useEffect(() => {
         // Appliquer le dark mode au chargement
         try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
-            if (dark) {
-                document.documentElement.classList.add('dark-mode');
-            } else {
-                document.documentElement.classList.remove('dark-mode');
-            }
-
-            // Vérifier aussi le mode OLED
-            const oledMode = localStorage.getItem('oledMode') === 'true';
-            if (oledMode && dark) {
-                document.documentElement.classList.add('oled-mode');
-            } else {
-                document.documentElement.classList.remove('oled-mode');
-            }
+            applyThemeFromBrowserStorage();
         } catch (e) {
             // Erreur silencieuse
         }

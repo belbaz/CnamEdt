@@ -7,6 +7,7 @@ import { getEventTitle } from "@/utils/eventUtils";
 import { createSubjectColorMapping } from "@/utils/eventUtils";
 import { generateEventKey } from "@/utils/eventModalUtils";
 import {useI18n} from "@/i18n/I18nContext";
+import { applyThemeFromBrowserStorage } from "@/lib/themeHydration";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
 import Footer from "@/components/Footer";
@@ -21,26 +22,10 @@ function ExamensContent() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [subjectColors, setSubjectColors] = useState({});
 
-    // Appliquer le dark mode immédiatement au chargement (avant React)
+    // Thème (OLED prioritaire via cookie de session)
     useEffect(() => {
         try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
-            if (dark) {
-                document.documentElement.classList.add('dark-mode');
-            } else {
-                document.documentElement.classList.remove('dark-mode');
-            }
-
-            // Vérifier aussi le mode OLED
-            const oled = localStorage.getItem('oledMode') === 'true';
-            if (oled && dark) {
-                document.documentElement.classList.add('oled-mode');
-            } else {
-                document.documentElement.classList.remove('oled-mode');
-            }
+            applyThemeFromBrowserStorage();
         } catch (e) {
             // Erreur silencieuse
         }

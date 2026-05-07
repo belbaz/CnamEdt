@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import {forwardRef, useMemo, useState, useEffect} from "react";
 import {isToday} from "@/utils/dateUtils";
@@ -5,11 +6,14 @@ import {getDayTimeRange, generateTimeMarkers, getCurrentTimePosition} from "@/ut
 import {getCompactModeValues} from "@/utils/compactModeUtils";
 import {useI18n} from "@/i18n/I18nContext";
 import TimelineWrapper from "./Timeline/TimelineWrapper";
+import HoverTooltip from "./HoverTooltip";
 import "./DayBlock.css";
 
 const DayBlock = forwardRef<HTMLDivElement, any>(({
     day,
     events,
+    /** Si fourni (ex. plage min/max de toute la semaine), même axe pour tous les jours du mode horizontal. */
+    weekTimeRange = null,
     subjectColors,
     isCollapsed,
     onToggle,
@@ -24,7 +28,8 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
     timePassedOverlayIntensity = 0.5,
     showCourseProgressPercent = false,
     courseProgressPercentDecimals = 2,
-    entranceAnimationActive = false
+    entranceAnimationActive = false,
+    showTooltips = true
 }, ref) => {
     const { t } = useI18n();
     // Mémoriser les calculs pour éviter de les refaire à chaque rendu
@@ -33,7 +38,16 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
 
     // On calcule toujours la timeline : le contenu reste monté pour permettre
     // une animation de repli/déploiement fluide (via grid-template-rows)
-    const timeRange = useMemo(() => getDayTimeRange(events), [events]);
+    const timeRange = useMemo(() => {
+        if (
+            weekTimeRange &&
+            typeof weekTimeRange.startMinutes === 'number' &&
+            typeof weekTimeRange.endMinutes === 'number'
+        ) {
+            return weekTimeRange;
+        }
+        return getDayTimeRange(events);
+    }, [weekTimeRange, events]);
     const {startMinutes, endMinutes} = timeRange;
 
     const timeMarkers = useMemo(
@@ -82,21 +96,32 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
 
     const totalMinutes = useMemo(() => endMinutes - startMinutes, [startMinutes, endMinutes]);
 
+    const blockTip = isCollapsed ? t('navbar.clickToExpandDay') : '';
+    const headerTip = isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay');
+
     return (
+        <HoverTooltip
+            text={blockTip}
+            enabled={showTooltips}
+            wrapperStyle={{ display: 'block', width: '100%' }}
+        >
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
              ref={todayCheck ? ref : null}
-             title={isCollapsed ? t('navbar.clickToExpandDay') : ''}
         >
+            <HoverTooltip
+                text={headerTip}
+                enabled={showTooltips}
+                wrapperStyle={{ display: 'block', width: '100%' }}
+            >
             <div
                 className="day-header"
                 onClick={onToggle}
-                title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
             >
                 <h2>{todayCheck ? `${day}📍` : day}</h2>
+                <HoverTooltip text={headerTip} enabled={showTooltips}>
                 <button
                     className="collapse-toggle"
                     aria-label={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
-                    title={isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay')}
                 >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                          aria-hidden="true">
@@ -104,7 +129,9 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                               strokeLinejoin="round"/>
                     </svg>
                 </button>
+                </HoverTooltip>
             </div>
+            </HoverTooltip>
             <div className="day-content" aria-hidden={isCollapsed}>
                 <div className="day-content-inner">
                     <TimelineWrapper
@@ -131,6 +158,7 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                 </div>
             </div>
         </div>
+        </HoverTooltip>
     );
 });
 

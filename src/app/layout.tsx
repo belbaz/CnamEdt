@@ -134,15 +134,31 @@ export default function RootLayout({ children }) {
                                 window.__INITIAL_LANGUAGE__ = 'fr';
                             }
                             
-                            // Dark mode
-                            var cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-                            var fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-                            var fromStorage = localStorage.getItem('darkMode');
-                            var dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
+                            // Thème : OLED (cookie session) prioritaire sur clair / sombre
+                            var oledCookieMatch = document.cookie.match(/(?:^|; )oledMode=([^;]+)/);
+                            var oledFromCookie = oledCookieMatch ? decodeURIComponent(oledCookieMatch[1]) : null;
+                            var wantOled = false;
+                            if (oledFromCookie === 'true') wantOled = true;
+                            else if (oledFromCookie === 'false') wantOled = false;
+                            else wantOled = localStorage.getItem('oledMode') === 'true';
+                            var dark = false;
+                            if (wantOled) {
+                                dark = true;
+                            } else {
+                                var cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
+                                var fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+                                var fromStorage = localStorage.getItem('darkMode');
+                                dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
+                            }
                             if (dark) {
                                 document.documentElement.classList.add('dark-mode');
                             } else {
                                 document.documentElement.classList.remove('dark-mode');
+                            }
+                            if (wantOled && dark) {
+                                document.documentElement.classList.add('oled-mode');
+                            } else {
+                                document.documentElement.classList.remove('oled-mode');
                             }
                         } catch (e) {
                             // En cas d'erreur, définir les valeurs par défaut

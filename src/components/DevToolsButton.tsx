@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useDevMode } from '@/utils/env';
 import styles from './DevToolsButton.module.css';
+import HoverTooltip from '@/components/HoverTooltip';
 
 /**
  * Bouton flottant qui apparaît uniquement en mode développement
@@ -109,14 +110,15 @@ NEXT_PUBLIC_APP_VERSION=1.0.0`;
 
     return (
         <>
+            <HoverTooltip text="Outils de développement">
             <button 
                 className={styles.devButton}
                 onClick={() => setIsModalOpen(true)}
-                title="Outils de développement"
                 aria-label="Outils de développement"
             >
                 🛠️
             </button>
+            </HoverTooltip>
 
             {isModalOpen && (
                 <div className={styles.modalOverlay} onClick={() => setIsModalOpen(false)}>
@@ -148,14 +150,15 @@ NEXT_PUBLIC_APP_VERSION=1.0.0`;
                                     <button onClick={() => handleTestAPI('/api/test-update')} className={styles.actionBtn}>
                                         🧪 Test Update
                                     </button>
+                                    <HoverTooltip text="Force le chemin « hash obsolète » comme en prod quand l’ICS change">
                                     <button
                                         type="button"
                                         onClick={handleToggleSimulateEdtChange}
                                         className={styles.actionBtn}
-                                        title="Force le chemin « hash obsolète » comme en prod quand l’ICS change"
                                     >
                                         {simulateEdtChange ? '✅ Simuler changement EDT (actif)' : '🔁 Simuler changement EDT'}
                                     </button>
+                                    </HoverTooltip>
                                 </div>
                                 <p style={{ fontSize: 12, opacity: 0.85, marginTop: 8 }}>
                                     Ou variable <code>NEXT_PUBLIC_SIMULATE_EDT_CHANGE=true</code> dans <code>.env.local</code>.

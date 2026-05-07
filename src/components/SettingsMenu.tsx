@@ -436,7 +436,7 @@ export default function SettingsMenu({
                                                     aria-haspopup="true"
                                                 >
                                                     <span className="language-button-text-settings">
-                                                        {colorPosition === 'top' ? t('settings.colorPositionTop') : t('settings.colorPositionBackground')}
+                                                        {colorPosition === 'background' ?  t('settings.colorPositionBackground') : t('settings.colorPositionTop')}
                                                     </span>
                                                     <span className="language-button-icon-settings">
                                                         {showColorPositionDropdown ? '▲' : '▼'}

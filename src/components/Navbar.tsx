@@ -5,6 +5,7 @@ import PageHeader from "./PageHeader";
 import WeekPicker from "./WeekPicker";
 import FilterPanel from "./FilterPanel";
 import Tooltip from "./Tooltip";
+import HoverTooltip from "./HoverTooltip";
 import "./Navbar.css";
 import {IS_DEV_MODE, isDevMode, useDevMode} from "../utils/env";
 import {getSchoolYearLabel} from "../utils/dateUtils";
@@ -694,14 +695,15 @@ export default function Navbar(props: any) {
                                 </div>
                                 {devMode && (
                                     <div>
-                                        <button
-                                            className="dev-clear-cache-btn"
-                                            onClick={handleClearCache}
-                                            title={t('navbar.clearCache')}
-                                            aria-label={t('navbar.clearCache')}
-                                        >
-                                            DEV
-                                        </button>
+                                        <HoverTooltip text={t('navbar.clearCache')} enabled={showTooltips}>
+                                            <button
+                                                className="dev-clear-cache-btn"
+                                                onClick={handleClearCache}
+                                                aria-label={t('navbar.clearCache')}
+                                            >
+                                                DEV
+                                            </button>
+                                        </HoverTooltip>
                                     </div>
                                 )}
                             </div>

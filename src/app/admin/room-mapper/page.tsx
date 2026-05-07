@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import Spinner from "@/components/Spinner";
 import "./room-mapper.css";
 
@@ -328,26 +329,28 @@ export default function RoomMapperPage() {
                                     </span>
                                 </div>
                                 <div className="room-actions">
+                                    <HoverTooltip text="Modifier la position">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             startEditMode(room);
                                         }}
                                         className="btn-edit"
-                                        title="Modifier la position"
                                     >
                                         ✏️
                                     </button>
+                                    </HoverTooltip>
+                                    <HoverTooltip text={room.validated ? "Désactiver" : "Activer"}>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             toggleRoomValidation(room.id);
                                         }}
                                         className="btn-toggle"
-                                        title={room.validated ? "Désactiver" : "Activer"}
                                     >
                                         {room.validated ? '✓' : '✗'}
                                     </button>
+                                    </HoverTooltip>
                                 </div>
                             </div>
                         ))}
@@ -389,16 +392,22 @@ export default function RoomMapperPage() {
                     >
                         {/* Contrôles de zoom en bas à droite */}
                         <div className="zoom-controls">
-                            <button onClick={zoomOut} className="zoom-btn" title="Dézoomer">
+                            <HoverTooltip text="Dézoomer">
+                            <button onClick={zoomOut} className="zoom-btn">
                                 -
                             </button>
+                            </HoverTooltip>
                             <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
-                            <button onClick={zoomIn} className="zoom-btn" title="Zoomer">
+                            <HoverTooltip text="Zoomer">
+                            <button onClick={zoomIn} className="zoom-btn">
                                 +
                             </button>
-                            <button onClick={resetZoom} className="zoom-reset" title="Réinitialiser">
+                            </HoverTooltip>
+                            <HoverTooltip text="Réinitialiser">
+                            <button onClick={resetZoom} className="zoom-reset">
                                 ↺
                             </button>
+                            </HoverTooltip>
                         </div>
                         
                         <div 

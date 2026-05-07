@@ -5,6 +5,7 @@ import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import {useDevMode} from '../utils/env';
 import {useI18n} from '../i18n/I18nContext';
+import HoverTooltip from './HoverTooltip';
 
 export default function Footer({
                                    testMode = false,
@@ -57,20 +58,24 @@ export default function Footer({
 
             {devMode && (
                 <div className="app-footer-dev-buttons">
-                    <button
-                        className={`test-mode-btn ${testMode ? 'active' : ''}`}
-                        onClick={onToggleTestMode}
-                        title={t('footer.testTodayTitle')}
-                    >
-                        {testMode ? t('footer.testTodayActive') : t('footer.testTodayInactive')}
-                    </button>
-                    <button
-                        className={`test-week-btn ${testWeekMode ? 'active' : ''}`}
-                        onClick={onToggleTestWeek}
-                        title={t('footer.testWeekTitle')}
-                    >
-                        {testWeekMode ? t('footer.testWeekActive') : t('footer.testWeekInactive')}
-                    </button>
+                    <HoverTooltip text={t('footer.testTodayTitle')}>
+                        <button
+                            className={`test-mode-btn ${testMode ? 'active' : ''}`}
+                            onClick={onToggleTestMode}
+                            aria-label={t('footer.testTodayTitle')}
+                        >
+                            {testMode ? t('footer.testTodayActive') : t('footer.testTodayInactive')}
+                        </button>
+                    </HoverTooltip>
+                    <HoverTooltip text={t('footer.testWeekTitle')}>
+                        <button
+                            className={`test-week-btn ${testWeekMode ? 'active' : ''}`}
+                            onClick={onToggleTestWeek}
+                            aria-label={t('footer.testWeekTitle')}
+                        >
+                            {testWeekMode ? t('footer.testWeekActive') : t('footer.testWeekInactive')}
+                        </button>
+                    </HoverTooltip>
                 </div>
             )}
         </footer>

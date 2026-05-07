@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {useI18n} from "@/i18n/I18nContext";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import Spinner from "@/components/Spinner";
 import './users.css';
 
@@ -432,13 +433,14 @@ export default function UsersManagementPage() {
                                             <td>{formatDate(user.date_online)}</td>
                                             <td>{formatDate(user.created_at)}</td>
                                             <td>
+                                                <HoverTooltip text={t('admin.edit')}>
                                                 <button
                                                     onClick={() => handleEdit(user)}
                                                     className="edit-button"
-                                                    title={t('admin.edit')}
                                                 >
                                                     ✏️ {t('admin.edit')}
                                                 </button>
+                                                </HoverTooltip>
                                             </td>
                                         </>
                                     )}

@@ -17,19 +17,21 @@ const HALF_GAP = '1px';
 const VERTICAL_PADDING_CORRECTION = '0.55rem';
 
 
+/** Fallback affiché quand il n’y a aucun cours (édition vide, état initial). */
+const EMPTY_DAY_START = 9 * 60;
+const EMPTY_DAY_END = 18 * 60;
+
 /**
- * Calcule la plage horaire d'une journée basée sur les événements
- * Affiche toujours au minimum de 9h à 18h, mais s'étend si des cours sont en dehors de cette plage
+ * Plage horaire dérivée uniquement des cours (arrondie aux 15 minutes).
+ * Sans cours : 9h–18h par défaut. Plus de plancher 9h–18h quand il y a des événements.
  */
 export function getDayTimeRange(dayEvents) {
-    const MIN_START = 9 * 60; // 9h00
-    const MIN_END = 18 * 60; // 18h00
-
     if (!dayEvents || dayEvents.length === 0) {
-        return {startMinutes: MIN_START, endMinutes: MIN_END};
+        return { startMinutes: EMPTY_DAY_START, endMinutes: EMPTY_DAY_END };
     }
 
-    let minTime = Infinity, maxTime = -Infinity;
+    let minTime = Infinity;
+    let maxTime = -Infinity;
     dayEvents.forEach(ev => {
         const start = new Date(ev.start);
         const end = new Date(ev.end);
@@ -37,15 +39,14 @@ export function getDayTimeRange(dayEvents) {
         maxTime = Math.max(maxTime, end.getHours() * 60 + end.getMinutes());
     });
 
-    // Arrondir aux 15 minutes
     let startMinutes = Math.floor(minTime / 15) * 15;
     let endMinutes = Math.ceil(maxTime / 15) * 15;
 
-    // Garantir un minimum de 9h à 18h, mais s'étendre si nécessaire
-    startMinutes = Math.min(startMinutes, MIN_START);
-    endMinutes = Math.max(endMinutes, MIN_END);
+    if (endMinutes <= startMinutes) {
+        endMinutes = startMinutes + 15;
+    }
 
-    return {startMinutes, endMinutes};
+    return { startMinutes, endMinutes };
 }
 
 /**
@@ -70,13 +71,15 @@ export function generateTimeMarkers(startMinutes, endMinutes) {
 }
 
 /**
- * Calcule la position de l'heure actuelle sur la timeline
+ * Calcule la position de l'heure actuelle sur la timeline (0–100 %).
+ * Hors plage [startMinutes, endMinutes] : null → pas d’overlay ni d’indicateur (cours du jour terminés ou pas encore commencés).
  */
 export function getCurrentTimePosition(dayDate, startMinutes, endMinutes) {
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    if (nowMinutes < startMinutes || nowMinutes > endMinutes) return null;
     const total = endMinutes - startMinutes;
+    if (total <= 0) return null;
+    if (nowMinutes < startMinutes || nowMinutes > endMinutes) return null;
     const current = nowMinutes - startMinutes;
     return (current / total) * 100;
 }

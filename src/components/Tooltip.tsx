@@ -4,7 +4,15 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "./Navbar.css";
 
-export default function Tooltip({ children, text, show, enabled = true, scrollContainerRef = null }) {
+export default function Tooltip({
+    children,
+    text,
+    show,
+    enabled = true,
+    scrollContainerRef = null,
+    wrapperStyle = null,
+    wrapperClassName = "",
+}) {
     const tooltipRef = useRef(null);
     const wrapperRef = useRef(null);
     const [position, setPosition] = useState({ top: 0, left: 0, placement: "top", arrowLeft: "50%" });
@@ -94,7 +102,11 @@ export default function Tooltip({ children, text, show, enabled = true, scrollCo
     }, [show, enabled, isMounted, text, scrollContainerRef]);
 
     return (
-        <div className="tooltip-wrapper" ref={wrapperRef}>
+        <div
+            className={["tooltip-wrapper", wrapperClassName].filter(Boolean).join(" ")}
+            ref={wrapperRef}
+            style={wrapperStyle || undefined}
+        >
             {children}
             {show && enabled && isMounted &&
                 createPortal(

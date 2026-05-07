@@ -2,6 +2,7 @@
 "use client";
 import { useEffect } from "react";
 import "./DevNotification.css";
+import HoverTooltip from "./HoverTooltip";
 
 export default function DevNotification({ message, isVisible, onClose }) {
     useEffect(() => {
@@ -21,14 +22,15 @@ export default function DevNotification({ message, isVisible, onClose }) {
             <div className="dev-notification-content">
                 <span className="dev-notification-icon">🔧</span>
                 <span className="dev-notification-message">{message}</span>
+                <HoverTooltip text="Fermer">
                 <button 
                     className="dev-notification-close"
                     onClick={onClose}
                     aria-label="Fermer la notification"
-                    title="Fermer"
                 >
                     ✕
                 </button>
+                </HoverTooltip>
             </div>
         </div>
     );

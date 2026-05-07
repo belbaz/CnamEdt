@@ -489,6 +489,7 @@
     "debugErrorMessage": "Message:",
     "debugInfoTitle": "Debug Information",
     "debugInfoToggle": "Click to view details",
+    "lastUpdateDetailsAriaLabel": "View details about the last update",
     "debugPWAInstalled": "PWA installed:",
     "debugStandaloneMode": "Standalone mode:",
     "debugProtocol": "Protocol:",

@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import './MapViewer.css';
+import HoverTooltip from '@/components/HoverTooltip';
 
 /**
  * Extrait le numéro de bâtiment depuis une location string
@@ -400,16 +401,17 @@ export default function MapViewer({ location, onClose }) {
                         {fullRoomNumber ? `Salle ${fullRoomNumber}` : buildingNumber ? `Bâtiment ${buildingNumber}` : 'Plan du bâtiment'}
                     </h2>
                     <div className="map-viewer-header-actions">
+                        <HoverTooltip text={debugMode ? "Masquer toutes les salles" : "Afficher toutes les salles"}>
                         <button 
                             className="map-viewer-debug-toggle"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setDebugMode(!debugMode);
                             }}
-                            title={debugMode ? "Masquer toutes les salles" : "Afficher toutes les salles"}
                         >
                             {debugMode ? '👁️' : '🔍'}
                         </button>
+                        </HoverTooltip>
                         <button 
                             className="map-viewer-close" 
                             onClick={onClose}
@@ -509,25 +511,32 @@ export default function MapViewer({ location, onClose }) {
                     {/* Contrôles flottants */}
                     <div className="map-controls">
                         {buildingCoords && (
+                            <HoverTooltip text="Centrer sur la salle">
                             <button 
                                 className="map-control-btn map-center-btn"
                                 onClick={centerOnRoom}
-                                title="Centrer sur la salle"
                             >
                                 📍
                             </button>
+                            </HoverTooltip>
                         )}
                         <div className="map-zoom-controls">
-                            <button onClick={zoomOut} className="map-control-btn" title="Dézoomer">
+                            <HoverTooltip text="Dézoomer">
+                            <button onClick={zoomOut} className="map-control-btn">
                                 −
                             </button>
+                            </HoverTooltip>
                             <span className="zoom-level">{Math.round(scale * 100)}%</span>
-                            <button onClick={zoomIn} className="map-control-btn" title="Zoomer">
+                            <HoverTooltip text="Zoomer">
+                            <button onClick={zoomIn} className="map-control-btn">
                                 +
                             </button>
-                            <button onClick={resetView} className="map-control-btn" title="Réinitialiser">
+                            </HoverTooltip>
+                            <HoverTooltip text="Réinitialiser">
+                            <button onClick={resetView} className="map-control-btn">
                                 ↺
                             </button>
+                            </HoverTooltip>
                         </div>
                     </div>
                 </div>

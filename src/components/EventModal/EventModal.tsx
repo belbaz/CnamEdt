@@ -28,6 +28,7 @@ import {
     PersonalNoteIndicatorStrip,
     PersonalNoteLockChip,
 } from "@/components/PersonalNoteIndicator";
+import HoverTooltip from "@/components/HoverTooltip";
 
 function ModalNoteEditToolbarIcon() {
     return (
@@ -494,9 +495,11 @@ export default function EventModal({
                             {selectedEvent.summary || selectedEvent.description || t('eventModal.course')}
                             {/* Badge Examen si présent dans la description */}
                             {selectedEvent.description && selectedEvent.description.toUpperCase().includes("EXAMEN") && (
-                                <span className="exam-badge-modal" title={t('eventModal.exam')}>
+                                <HoverTooltip text={t('eventModal.exam')}>
+                                <span className="exam-badge-modal">
                                     📝 {t('eventModal.exam').toUpperCase()}
                                 </span>
+                                </HoverTooltip>
                             )}
                         </div>
                         <button className="event-modal-close" aria-label={t('eventModal.close')}
@@ -766,6 +769,7 @@ export default function EventModal({
                                                     {t("eventModal.editNote")}
                                                 </button>
                                             )}
+                                            <HoverTooltip text={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}>
                                             <button
                                                 type="button"
                                                 className={[courseFilesStyles.uploadButton, "modal-notes-toolbar-btn"].join(
@@ -773,7 +777,6 @@ export default function EventModal({
                                                 )}
                                                 onClick={handleAddNoteButton}
                                                 disabled={savingNote || userRole === 'visiteur'}
-                                                title={userRole === 'visiteur' ? t('eventModal.visitorCannotCreate') : ""}
                                             >
                                                 <svg
                                                     width="12"
@@ -792,12 +795,13 @@ export default function EventModal({
                                                 </svg>
                                                 {t('files.add')}
                                             </button>
+                                            </HoverTooltip>
                                         </div>
                                     ) : (
+                                        <HoverTooltip text={t("eventModal.connectNotesTooltip")}>
                                         <a
                                             href="/login"
                                             className={[courseFilesStyles.uploadButton, "modal-notes-login-cta"].join(" ")}
-                                            title={t("eventModal.connectNotesTooltip")}
                                             aria-label={t("eventModal.connectNotesTooltip")}
                                         >
                                             <svg
@@ -822,6 +826,7 @@ export default function EventModal({
                                                     : "eventModal.connectNotesLinkWithNotes"
                                             )}
                                         </a>
+                                        </HoverTooltip>
                                     )}
                                 </div>
                                 
@@ -1092,22 +1097,23 @@ export default function EventModal({
                                                                         title={t("eventModal.personalNoteHint")}
                                                                     />
                                                                 </span>
+                                                                <HoverTooltip text={userRole === 'visiteur' ? t('eventModal.visitorCannotModify') : ""}>
                                                                 <button
                                                                     type="button"
                                                                     className="modal-note-remove"
                                                                     onClick={() => handleRemoveEntry(index)}
                                                                     disabled={savingNote || userRole === 'visiteur'}
-                                                                    title={userRole === 'visiteur' ? t('eventModal.visitorCannotModify') : ""}
                                                                 >
                                                                     {t('eventModal.delete')}
                                                                 </button>
+                                                                </HoverTooltip>
                                                             </div>
                                                             {notesAuthenticated &&
                                                                 userRole !== "visiteur" &&
                                                                 mayShowPersonalPrivacyIndicators && (
+                                                                <HoverTooltip text={t("eventModal.personalNoteHint")}>
                                                                 <label
                                                                     className="modal-note-privacy-toggle"
-                                                                    title={t("eventModal.personalNoteHint")}
                                                                 >
                                                                     <span className="modal-note-privacy-switch">
                                                                         <input
@@ -1131,12 +1137,14 @@ export default function EventModal({
                                                                         {t("eventModal.personalNote")}
                                                                     </span>
                                                                 </label>
-                                                            )}
+                                                                </HoverTooltip>
+                                                                )}
                                                             
                                                                 {/* Labels pour ce paragraphe */}
                                                                 <div className="modal-labels-section modal-labels-section-compact">
                                                                 <div className="modal-labels-header">
                                                                     <span className="modal-labels-title">{t('eventModal.labels')}</span>
+                                                                    <HoverTooltip text={t('eventModal.createLabelTitle')}>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => {
@@ -1150,11 +1158,11 @@ export default function EventModal({
                                                                             setShowLabelInputForEntry(showLabelInputForEntry === index ? null : index);
                                                                         }}
                                                                         className="modal-add-label-button"
-                                                                        title={t('eventModal.createLabelTitle')}
                                                                         disabled={userRole === 'visiteur'}
                                                                     >
                                                                         {t('eventModal.createLabel')}
                                                                     </button>
+                                                                    </HoverTooltip>
                                                                 </div>
                                                                 {(() => {
                                                                     const predefinedNames = new Set(predefinedLabels.map((p) => p.name));
@@ -1181,16 +1189,17 @@ export default function EventModal({
                                                                                                 }}
                                                                                             >
                                                                                                 {translatedLabel}
+                                                                                                <HoverTooltip text={t('eventModal.removeLabel')}>
                                                                                                 <button
                                                                                                     type="button"
                                                                                                     onClick={() => handleRemoveLabel(index, label)}
                                                                                                     className="modal-remove-label-button"
-                                                                                                    title={t('eventModal.removeLabel')}
                                                                                                     style={{ color: labelColor }}
                                                                                                     disabled={userRole === 'visiteur'}
                                                                                                 >
                                                                                                     ×
                                                                                                 </button>
+                                                                                                </HoverTooltip>
                                                                                             </span>
                                                                                         );
                                                                                     })}
@@ -1383,12 +1392,12 @@ export default function EventModal({
                                             {t('eventModal.cancel')}
                                         </button>
                                         {modalHasChanges && (
+                                            <HoverTooltip text={userRole === 'visiteur' ? t('eventModal.visitorCannotEdit') : ""}>
                                             <button
                                                 type="button"
                                                 onClick={handleSaveNote}
                                                 disabled={savingNote || userRole === 'visiteur'}
                                                 className="modal-note-save"
-                                                title={userRole === 'visiteur' ? t('eventModal.visitorCannotEdit') : ""}
                                             >
                                                 {savingNote
                                                     ? t('common.loading')
@@ -1396,6 +1405,7 @@ export default function EventModal({
                                                         ? t('eventModal.saveNote') + " (" + t('eventModal.delete') + ")"
                                                         : t('eventModal.saveNote')}
                                             </button>
+                                            </HoverTooltip>
                                         )}
                                     </div>
                                 )}

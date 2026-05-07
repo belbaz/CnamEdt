@@ -279,6 +279,25 @@
     border-right: none;
 }
 
+.yearCalTooltipGridItem {
+    min-width: 0;
+    display: flex;
+}
+
+.yearCalTooltipGridItem > * {
+    flex: 1;
+    min-width: 0;
+}
+
+.yearCalTooltipDayCell {
+    justify-content: center;
+    align-items: center;
+}
+
+.yearCalTooltipDayCell > * {
+    flex: 0 1 auto;
+}
+
 .month-initial {
     font-size: 0.85rem;
     font-weight: 600;

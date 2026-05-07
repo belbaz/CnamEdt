@@ -29,13 +29,13 @@ describe('timelineUtils', () => {
       expect(result.endMinutes).toBe(DAY_END);
     });
 
-    it('retourne 9h-18h pour une journée avec des cours dans la plage standard', () => {
+    it('retourne la plage réelle des cours (sans plancher 9h-18h)', () => {
       const events = [
         { start: makeDate('2025-03-17', 10, 0), end: makeDate('2025-03-17', 12, 0) },
       ];
       const result = getDayTimeRange(events);
-      expect(result.startMinutes).toBe(DAY_START);
-      expect(result.endMinutes).toBe(DAY_END);
+      expect(result.startMinutes).toBe(10 * 60);
+      expect(result.endMinutes).toBe(12 * 60);
     });
 
     it('s\'étend si des cours sont avant 9h ou après 18h', () => {

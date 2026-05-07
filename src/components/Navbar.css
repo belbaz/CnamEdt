@@ -158,16 +158,20 @@
 }
 
 .tooltip {
-    background: var(--bg-secondary);
+    --tooltip-bg: var(--bg-secondary);
+    background-color: var(--tooltip-bg);
     color: var(--text-primary);
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
     font-size: 0.75rem;
+    white-space: pre-line;
     z-index: 10000;
     box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
     pointer-events: none;
+    /* Opacité uniquement via le texte si besoin : pas d’opacity ici pour éviter d’estomper la flèche */
     animation: tooltipFadeIn 0.2s ease-out;
+    opacity: 1;
     /* Évite qu’un bloc fixed avec width:auto ne s’étire sur tout le viewport */
     box-sizing: border-box;
     width: fit-content;
@@ -179,33 +183,48 @@
     text-align: center;
 }
 
-.tooltip-top::after {
+/* Flèche = carré pivoté (même fond + même épaisseur de bordure que la bulle) */
+.tooltip-top::before {
     content: '';
     position: absolute;
+    width: 12px;
+    height: 12px;
     top: 100%;
     left: var(--arrow-left, 50%);
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--bg-secondary);
+    margin-top: -8px;
+    transform: translateX(-50%) rotate(45deg);
+    background-color: var(--tooltip-bg);
+    border-right: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--border-color);
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 1;
+    z-index: 1;
 }
 
-.tooltip-bottom::after {
+.tooltip-bottom::before {
     content: '';
     position: absolute;
-    bottom: 100%;
+    width: 12px;
+    height: 12px;
+    bottom: 107%;
     left: var(--arrow-left, 50%);
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-bottom-color: var(--bg-secondary);
+    margin-bottom: -7px;
+    transform: translateX(-50%) rotate(45deg);
+    background-color: var(--tooltip-bg);
+    border-left: 2px solid var(--border-color);
+    border-top: 2px solid var(--border-color);
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 1;
+    z-index: 1;
 }
 
 @keyframes tooltipFadeIn {
     from {
-        opacity: 0;
-        transform: translateY(4px);
+        transform: translateY(6px);
     }
     to {
-        opacity: 1;
         transform: translateY(0);
     }
 }

@@ -1383,7 +1383,6 @@
     margin-left: 0.4rem;
     opacity: 0.85;
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
 }
 

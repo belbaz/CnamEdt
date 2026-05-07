@@ -112,8 +112,8 @@ describe('Scénarios EDT', () => {
         },
       ];
       const range = getDayTimeRange(events);
-      expect(range.startMinutes).toBeLessThanOrEqual(DAY_START);
-      expect(range.endMinutes).toBeGreaterThanOrEqual(DAY_END);
+      expect(range.startMinutes).toBe(14 * 60);
+      expect(range.endMinutes).toBe(16 * 60);
     });
   });
 

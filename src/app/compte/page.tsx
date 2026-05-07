@@ -4,8 +4,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import Spinner from "@/components/Spinner";
 import {useI18n} from "@/i18n/I18nContext";
+import { applyThemeFromBrowserStorage } from "@/lib/themeHydration";
 import styles from "./compte.module.css";
 
 export default function ComptePage() {
@@ -35,26 +37,10 @@ export default function ComptePage() {
     // Sélecteur de langue
     const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
-    // Appliquer le dark mode au chargement
+    // Thème (OLED prioritaire via cookie de session)
     useEffect(() => {
         try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
-            if (dark) {
-                document.documentElement.classList.add('dark-mode');
-            } else {
-                document.documentElement.classList.remove('dark-mode');
-            }
-
-            // Vérifier aussi le mode OLED
-            const oledMode = localStorage.getItem('oledMode') === 'true';
-            if (oledMode && dark) {
-                document.documentElement.classList.add('oled-mode');
-            } else {
-                document.documentElement.classList.remove('oled-mode');
-            }
+            applyThemeFromBrowserStorage();
         } catch (e) {
             // Erreur silencieuse
         }
@@ -342,14 +328,17 @@ export default function ComptePage() {
                         <div className={[styles.infoItem, styles.emailItem].filter(Boolean).join(' ')}>
                             <span className={styles.infoLabel}>{t('compte.email')}</span>
                             <div style={{ position: 'relative' }}>
-                                <span className={styles.infoValue} title={userInfo.email}>{userInfo.email}</span>
+                                <HoverTooltip text={userInfo.email}>
+                                <span className={styles.infoValue}>{userInfo.email}</span>
+                                </HoverTooltip>
+                                <HoverTooltip text={emailCopied ? t('compte.copied') : t('compte.copyEmail')}>
                                 <button
                                     className={[styles.copyEmailButton, emailCopied && styles.copied].filter(Boolean).join(' ')}
                                     onClick={handleCopyEmail}
-                                    title={emailCopied ? t('compte.copied') : t('compte.copyEmail')}
                                 >
                                     {emailCopied ? "✓" : "📋"}
                                 </button>
+                                </HoverTooltip>
                             </div>
                         </div>
 
@@ -409,13 +398,13 @@ export default function ComptePage() {
                         <div className={styles.languageItem}>
                             <span className={styles.infoLabel}>{t('compte.language')}</span>
                             <div className={styles.languageSelector}>
+                                <HoverTooltip text={language === 'fr' ? t('compte.languageFrench') : t('compte.languageEnglish')}>
                                 <button
                                     type="button"
                                     className={styles.languageButton}
                                     onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                                     aria-expanded={showLanguageDropdown}
                                     aria-haspopup="true"
-                                    title={language === 'fr' ? t('compte.languageFrench') : t('compte.languageEnglish')}
                                 >
                                     <span className={styles.languageButtonText}>
                                         {language === 'fr' ? t('compte.languageFrench') : t('compte.languageEnglish')}
@@ -424,6 +413,7 @@ export default function ComptePage() {
                                         {showLanguageDropdown ? '▲' : '▼'}
                                     </span>
                                 </button>
+                                </HoverTooltip>
                                 {showLanguageDropdown && (
                                     <>
                                         <div 

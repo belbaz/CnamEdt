@@ -3,6 +3,7 @@
 import {useState, useEffect} from "react";
 import styles from "./CourseFiles.module.css";
 import {useI18n} from "@/i18n/I18nContext";
+import HoverTooltip from "@/components/HoverTooltip";
 
 /**
  * Composant pour gérer les fichiers d'un cours
@@ -232,10 +233,10 @@ export default function CourseFiles({courseUid, authenticated}) {
                         )}
                     </label>
                 ) : (
+                    <HoverTooltip text={t("files.connectFilesTooltip")}>
                     <a
                         href="/login"
                         className={[styles.uploadButton, "modal-notes-login-cta"].join(" ")}
-                        title={t("files.connectFilesTooltip")}
                         aria-label={t("files.connectFilesTooltip")}
                     >
                         <svg
@@ -260,6 +261,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                                 : "files.connectFilesLinkEmpty"
                         )}
                     </a>
+                    </HoverTooltip>
                 )}
             </div>
 
@@ -305,13 +307,14 @@ export default function CourseFiles({courseUid, authenticated}) {
                                         <span className={styles.fileName}>{file.file_name}</span>
                                         <span className={styles.fileSize}>{formatFileSize(file.file_size)}</span>
                                     </a>
+                                    <HoverTooltip text={t('files.download')}>
                                     <button
                                         className={styles.downloadButton}
                                         onClick={(e) => {
                                             e.preventDefault();
                                             handleDownload(file);
                                         }}
-                                        title={t('files.download')}
+                                        aria-label={t('files.download')}
                                     >
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                                              xmlns="http://www.w3.org/2000/svg">
@@ -319,11 +322,13 @@ export default function CourseFiles({courseUid, authenticated}) {
                                             <path d="M2 12V13H14V12H2Z" fill="currentColor"/>
                                         </svg>
                                     </button>
+                                    </HoverTooltip>
                                     {authenticated && (
+                                        <HoverTooltip text={t('files.delete')}>
                                         <button
                                             className={styles.deleteButton}
                                             onClick={() => handleDelete(file.id)}
-                                            title={t('files.delete')}
+                                            aria-label={t('files.delete')}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                                                  xmlns="http://www.w3.org/2000/svg">
@@ -331,6 +336,7 @@ export default function CourseFiles({courseUid, authenticated}) {
                                                       strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                         </button>
+                                        </HoverTooltip>
                                     )}
                                 </div>
                                 {file.user_name && file.uploaded_at && (

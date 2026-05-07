@@ -2,6 +2,7 @@
 "use client";
 import {useState, useEffect, useRef} from "react";
 import "./FilterPanel.css";
+import HoverTooltip from "./HoverTooltip";
 
 export default function FilterPanel({
                                         subjects = [],
@@ -99,23 +100,24 @@ export default function FilterPanel({
 
     return (
         <>
-            <button
-                className={`filter-button ${hasAnyFilter ? 'has-filters' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
-                title="Filtrer les cours"
-                aria-label="Filtrer les cours"
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                     aria-hidden="true">
-                    <path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <circle cx="17" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none" />
-                </svg>
-                {hasAnyFilter && (
-                    <span className="filter-badge" aria-label={`Filtres actifs`}>
-                        {activeFiltersCount + (showOnlyExams ? 1 : 0)}
-                    </span>
-                )}
-            </button>
+            <HoverTooltip text="Filtrer les cours">
+                <button
+                    className={`filter-button ${hasAnyFilter ? 'has-filters' : ''}`}
+                    onClick={() => setIsOpen(!isOpen)}
+                    aria-label="Filtrer les cours"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                         aria-hidden="true">
+                        <path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        <circle cx="17" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    </svg>
+                    {hasAnyFilter && (
+                        <span className="filter-badge" aria-label={`Filtres actifs`}>
+                            {activeFiltersCount + (showOnlyExams ? 1 : 0)}
+                        </span>
+                    )}
+                </button>
+            </HoverTooltip>
 
             {isOpen && (
                 <>

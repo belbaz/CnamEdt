@@ -3,6 +3,7 @@
 import {useState, useRef, useEffect} from "react";
 import SettingsMenu from "./SettingsMenu";
 import Tooltip from "./Tooltip";
+import HoverTooltip from "./HoverTooltip";
 import Spinner from "./Spinner";
 import DemoModeModal from "./DemoModeModal";
 import {useI18n} from "../i18n/I18nContext";
@@ -197,6 +198,11 @@ export default function PageHeader({
         <div className="page-header">
             <div className="header-content">
                 <div className="title-container">
+                    <HoverTooltip
+                        text={t('pageHeader.backToEDT')}
+                        enabled={showTooltips}
+                        wrapperStyle={{ display: 'block' }}
+                    >
                     <h1
                         className="page-title"
                         onClick={() => {
@@ -207,21 +213,22 @@ export default function PageHeader({
                             }
                         }}
                         style={{cursor: 'pointer', margin: 0}}
-                        title={t('pageHeader.backToEDT')}
                     >
                         Edt
                     </h1>
+                    </HoverTooltip>
 
                     {/* Badge Mode démo */}
                     {isDemoMode && (
                         <>
+                            <HoverTooltip text={t('pageHeader.demoModeInfo')} enabled={showTooltips}>
                             <div
                                 className="demo-mode-badge"
                                 onClick={() => setShowDemoModal(true)}
-                                title={t('pageHeader.demoModeInfo')}
                             >
                                 {t('pageHeader.demoMode')}
                             </div>
+                            </HoverTooltip>
                             <DemoModeModal
                                 isOpen={showDemoModal}
                                 onClose={() => setShowDemoModal(false)}
@@ -236,12 +243,16 @@ export default function PageHeader({
                             <Spinner size="small" ariaLabel={t('pageHeader.loadingUser')}/>
                         </div>
                     ) : userInfo && userInfo.name ? (
+                        <HoverTooltip
+                            text={t('pageHeader.userMenu')}
+                            enabled={showTooltips && !showUserMenu}
+                            wrapperStyle={{ display: 'block' }}
+                        >
                         <div
                             ref={userMenuRef}
                             className="userInfo"
                             style={{position: 'relative', cursor: 'pointer'}}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            title={t('pageHeader.userMenu')}
                         >
                             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -315,13 +326,18 @@ export default function PageHeader({
                                 </div>
                             )}
                         </div>
+                        </HoverTooltip>
                     ) : (
+                        <HoverTooltip
+                            text={t('pageHeader.guestMenu')}
+                            enabled={showTooltips && !showUserMenu}
+                            wrapperStyle={{ display: 'block' }}
+                        >
                         <div
                             ref={userMenuRef}
                             className="userInfo userInfoGuest"
                             style={{position: 'relative', cursor: 'pointer'}}
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            title={t('pageHeader.guestMenu')}
                         >
                             <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -389,6 +405,7 @@ export default function PageHeader({
                                 </div>
                             )}
                         </div>
+                        </HoverTooltip>
                     )}
                 </div>
                 <div className="header-actions">

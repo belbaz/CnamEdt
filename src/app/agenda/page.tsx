@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {useI18n} from "@/i18n/I18nContext";
 import {getLocale} from "@/utils/dateUtils";
 import BackButton from "@/components/BackButton";
+import HoverTooltip from "@/components/HoverTooltip";
 import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import {
@@ -1193,14 +1194,15 @@ function AgendaContent() {
                                                         title={t("agenda.personalNoteHint")}
                                                     />
                                                 </span>
+                                            <HoverTooltip text={userRole === 'visiteur' ? t('agenda.visitorCannotEdit') : ""}>
                                             <button
                                                 onClick={() => handleRemoveEntry(index)}
                                                 className={styles.noteEntryRemove}
                                                 disabled={userRole === 'visiteur'}
-                                                title={userRole === 'visiteur' ? t('agenda.visitorCannotEdit') : ""}
                                             >
                                                 {t('agenda.remove')}
                                             </button>
+                                            </HoverTooltip>
                                         </div>
                                         <PersonalNoteIndicatorStrip
                                             visible={
@@ -1211,9 +1213,9 @@ function AgendaContent() {
                                         {authenticated &&
                                             userRole !== "visiteur" &&
                                             mayShowPersonalPrivacyIndicators && (
+                                            <HoverTooltip text={t("agenda.personalNoteHint")}>
                                             <label
                                                 className={styles.notePrivacyToggle}
-                                                title={t("agenda.personalNoteHint")}
                                             >
                                                 <span className={styles.notePrivacySwitch}>
                                                     <input
@@ -1231,12 +1233,14 @@ function AgendaContent() {
                                                     {t("agenda.personalNote")}
                                                 </span>
                                             </label>
+                                            </HoverTooltip>
                                         )}
                                         
                                         {/* Labels pour cette note */}
                                         <div className={[styles.noteLabelsSection, styles.noteLabelsSectionCompact].join(" ")}>
                                             <div className={styles.noteLabelsHeader}>
                                                 <span className={styles.noteLabelsTitle}>{t('agenda.labels')}</span>
+                                                <HoverTooltip text={t('agenda.createCustomLabel')}>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -1250,11 +1254,11 @@ function AgendaContent() {
                                                         setShowLabelInputForEntry(showLabelInputForEntry === index ? null : index);
                                                     }}
                                                     className={styles.addLabelButton}
-                                                    title={t('agenda.createCustomLabel')}
                                                     disabled={userRole === 'visiteur'}
                                                 >
                                                     {t('agenda.newLabel')}
                                                 </button>
+                                                </HoverTooltip>
                                             </div>
                                             
                                             {(() => {
@@ -1282,16 +1286,17 @@ function AgendaContent() {
                                                                             }}
                                                                         >
                                                                             {translatedLabel}
+                                                                            <HoverTooltip text="Supprimer ce label">
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => handleRemoveLabel(index, label)}
                                                                                 className={styles.removeLabelButton}
-                                                                                title="Supprimer ce label"
                                                                                 style={{ color: labelColor }}
                                                                                 disabled={userRole === 'visiteur'}
                                                                             >
                                                                                 ×
                                                                             </button>
+                                                                            </HoverTooltip>
                                                                         </span>
                                                                     );
                                                                 })}
@@ -1380,14 +1385,15 @@ function AgendaContent() {
                         </div>
 
                         <div className={styles.noteActions}>
+                            <HoverTooltip text={userRole === 'visiteur' ? t('agenda.visitorCannotCreate') : ""}>
                             <button 
                                 onClick={handleAddEntry} 
                                 className={styles.addNoteButton}
                                 disabled={userRole === 'visiteur'}
-                                title={userRole === 'visiteur' ? t('agenda.visitorCannotCreate') : ""}
                             >
                                 {t('agenda.addNote')}
                             </button>
+                            </HoverTooltip>
                             <button
                                 onClick={saveNote}
                                 disabled={saving}
@@ -1409,14 +1415,15 @@ function AgendaContent() {
                         {noteEntries.length === 0 && !hasAnyLabel ? (
                             <div className={styles.notePlaceholder}>
                                 <p>{t('agenda.noNoteForCourse')}</p>
+                                <HoverTooltip text={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}>
                                 <button 
                                     onClick={handleStartEditing} 
                                     className={styles.addNoteButton}
                                     disabled={userRole === 'visiteur'}
-                                    title={userRole === 'visiteur' ? "Les visiteurs ne peuvent pas créer de notes" : ""}
                                 >
                                     + Ajouter une note
                                 </button>
+                                </HoverTooltip>
                             </div>
                         ) : (
                             <div className={styles.noteEntriesList}>
@@ -1531,13 +1538,15 @@ function AgendaContent() {
                                 <strong>{t('agenda.error')}</strong> {error}
                             </div>
                         </div>
+                        <HoverTooltip text={t('agenda.close')}>
                         <button
                             onClick={() => setError(null)}
                             className={styles.closeError}
-                            title={t('agenda.close')}
+                            aria-label={t('agenda.close')}
                         >
                             ×
                         </button>
+                        </HoverTooltip>
                     </div>
                 )}
 
@@ -1678,10 +1687,10 @@ function AgendaContent() {
                                                             <span className={styles.publicNotesSeparatorLine}></span>
                                                         </div>
                                                     )}
+                                                    <HoverTooltip text={note.event && note.event.start ? t('agenda.clickToOpenEDT') : ""} wrapperStyle={{ display: 'block' }}>
                                                     <article 
                                                         className={[styles.publicNoteCard, !note.isFuture && styles.publicNoteCardPast, note.event && note.event.start && styles.publicNoteCardClickable].filter(Boolean).join(' ')}
                                                         onClick={() => handleNoteClick(note)}
-                                                        title={note.event && note.event.start ? t('agenda.clickToOpenEDT') : ""}
                                                     >
                                                         <div className={styles.publicNoteHeader}>
                                                             <div>
@@ -1757,6 +1766,7 @@ function AgendaContent() {
                                                         })}
                                                     </div>
                                                 </article>
+                                                </HoverTooltip>
                                                 </React.Fragment>
                                             );
                                         })}
@@ -1837,7 +1847,9 @@ function AgendaContent() {
                                                                         >
                                                                             <span className={styles.calendarDayNumber}>{dayObj.label}</span>
                                                                             {dayObj.hasNotes && (
-                                                                                <span className={styles.calendarDayNoteIndicator} title={t('agenda.dayHasNotes')}></span>
+                                                                                <HoverTooltip text={t('agenda.dayHasNotes')}>
+                                                                                <span className={styles.calendarDayNoteIndicator} aria-hidden />
+                                                                                </HoverTooltip>
                                                                             )}
                                                                         </button>
                                                                     );
@@ -1907,9 +1919,11 @@ function AgendaContent() {
                                                                                     {formatTime(course.start)} - {formatTime(course.end)}
                                                                                 </span>
                                                                                 {hasNote && (
-                                                                                    <span className={styles.courseButtonNoteBadge} title={t('agenda.courseHasNotes')}>
+                                                                                    <HoverTooltip text={t('agenda.courseHasNotes')}>
+                                                                                    <span className={styles.courseButtonNoteBadge}>
                                                                                         📋
                                                                                     </span>
+                                                                                    </HoverTooltip>
                                                                                 )}
                                                                             </div>
                                                                             <span className={styles.courseButtonTitle}>

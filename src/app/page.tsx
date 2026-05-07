@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use client";
-import {useState, useEffect, useRef, useMemo, Suspense} from "react";
+import {useState, useEffect, useLayoutEffect, useRef, useMemo, Suspense} from "react";
 import {useSearchParams, useRouter} from "next/navigation";
 import {useI18n} from "@/i18n/I18nContext";
 import {getMonday, getCurrentWeek, extractAvailableWeeks, selectBestWeek, getSchoolYearRange} from "@/utils/dateUtils";
@@ -20,6 +20,11 @@ import {useNetworkStatus} from "@/hooks/useNetworkStatus";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import {useCourseNotes} from "@/hooks/useCourseNotes";
 import {useHomePageHandlers} from "@/hooks/useHomePageHandlers";
+import {
+    applyThemeFromBrowserStorage,
+    resolveThemeFromBrowser,
+    setOledSessionCookie,
+} from "@/lib/themeHydration";
 import Navbar from "@/components/Navbar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Spinner from "@/components/Spinner";
@@ -33,6 +38,7 @@ import Footer from "@/components/Footer";
 import OfflineNotification from "@/components/OfflineNotification";
 import SupabaseNotification from "@/components/SupabaseNotification";
 import SubjectHoursInfo from "@/components/SubjectHoursInfo";
+import HoverTooltip from "@/components/HoverTooltip";
 import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
@@ -42,6 +48,7 @@ import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
 import {parseStoredNoteValue} from "@/utils/noteEntries";
 import {generateEventKey} from "@/utils/eventModalUtils";
+import {getDayTimeRange} from "@/utils/timelineUtils";
 
 /**
  * Délai max sur UNE tentative de `fetchICSEvents()` → `/api/fetch-ics` uniquement.
@@ -65,8 +72,11 @@ function HomeContent({searchParams}) {
     const [eventsCalculated, setEventsCalculated] = useState(false);
     const [availableWeeks, setAvailableWeeks] = useState([]);
     const [selectedWeek, setSelectedWeek] = useState(null);
+    /** Valeurs alignées SSR ; appliquées depuis stockage dans useLayoutEffect (évite erreur d'hydratation). */
     const [darkMode, setDarkMode] = useState(false);
     const [oledMode, setOledMode] = useState(false);
+    /** Faux jusqu'à ce que le thème ait été lu (layout) — évite qu'un effet [darkMode]/[oled] initial à false efface localStorage / cookies */
+    const [themeReady, setThemeReady] = useState(false);
     const [subjectColors, setSubjectColors] = useState({});
     const [currentTime, setCurrentTime] = useState(new Date());
     const [autoScrollToday, setAutoScrollToday] = useState(true);
@@ -1126,38 +1136,21 @@ function HomeContent({searchParams}) {
         return null;
     });
 
-    // Appliquer le dark mode immédiatement au chargement (avant React)
-    useEffect(() => {
+    // Thème : avant paint — hydrate l'état depuis stockage sans laisser les useEffect écraser OLED au premier passage
+    useLayoutEffect(() => {
         try {
-            const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-            const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-            const fromStorage = localStorage.getItem('darkMode');
-            const dark = fromCookie != null ? (fromCookie === 'true') : (fromStorage === 'true');
-            if (dark) {
-                document.documentElement.classList.add('dark-mode');
-            } else {
-                document.documentElement.classList.remove('dark-mode');
-            }
+            applyThemeFromBrowserStorage();
+            const { dark, oled } = resolveThemeFromBrowser();
+            setDarkMode(dark);
+            setOledMode(oled);
         } catch (e) {
-            // Erreur silencieuse
+            /* ignore */
+        } finally {
+            setThemeReady(true);
         }
     }, []);
 
     useEffect(() => {
-        // Ne pas réinitialiser si déjà correct (évite le flash)
-        const savedMode = localStorage.getItem("darkMode");
-        const cookieMatch = document.cookie.match(/(?:^|; )darkMode=([^;]+)/);
-        const fromCookie = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-        const shouldBeDark = fromCookie === 'true' || savedMode === 'true';
-        if (darkMode !== shouldBeDark) {
-            setDarkMode(shouldBeDark);
-        }
-
-        const savedOledMode = localStorage.getItem("oledMode");
-        if (savedOledMode === 'true' && !oledMode) {
-            setOledMode(true);
-        }
-
         const savedAutoScroll = localStorage.getItem("autoScrollToday");
         if (savedAutoScroll !== null) setAutoScrollToday(savedAutoScroll === "true");
 
@@ -1247,6 +1240,7 @@ function HomeContent({searchParams}) {
     }, []);
 
     useEffect(() => {
+        if (!themeReady) return;
         if (darkMode) document.documentElement.classList.add("dark-mode");
         else {
             document.documentElement.classList.remove("dark-mode");
@@ -1258,20 +1252,23 @@ function HomeContent({searchParams}) {
             document.cookie = `darkMode=${darkMode ? 'true' : 'false'}; path=/; SameSite=Lax`;
         } catch (e) {
         }
-    }, [darkMode]);
+    }, [darkMode, themeReady]);
 
     useEffect(() => {
+        if (!themeReady) return;
         if (oledMode && darkMode) {
             document.documentElement.classList.add("oled-mode");
         } else {
             document.documentElement.classList.remove("oled-mode");
         }
-        if (oledMode) {
+        if (oledMode && darkMode) {
             localStorage.setItem("oledMode", "true");
+            setOledSessionCookie(true);
         } else {
             localStorage.removeItem("oledMode");
+            setOledSessionCookie(false);
         }
-    }, [oledMode, darkMode]);
+    }, [oledMode, darkMode, themeReady]);
 
     // Auto-scroll désactivé
     useEffect(() => {
@@ -1367,6 +1364,10 @@ function HomeContent({searchParams}) {
 
     // Calculer groupByDay avant de l'utiliser dans le hook
     const groupByDay = useMemo(() => groupEventsByDay(events, viewMode === 'horizontal' ? 'long' : 'short', language), [events, viewMode, language]);
+
+    /** Même échelle pour tous les jours en horizontal : premier début → dernière fin de la semaine affichée. */
+    const horizontalWeekTimeRange = useMemo(() => getDayTimeRange(events), [events]);
+
     const allDaysExpanded = useMemo(
         () => Object.keys(groupByDay).length > 0 && Object.keys(groupByDay).every(d => !collapsedDays[d]),
         [groupByDay, collapsedDays]
@@ -1763,6 +1764,7 @@ function HomeContent({searchParams}) {
                 {showFullYear && (!loading || events.length > 0) ? (
                     <YearCalendar
                         events={events}
+                        showTooltips={showTooltips}
                         onDateClick={(date) => {
                             const monday = getMonday(date);
                             setSelectedWeek(monday);
@@ -1876,6 +1878,7 @@ function HomeContent({searchParams}) {
                                                 ref={isToday ? todayRef : null}
                                                 day={day}
                                                 events={evs}
+                                                weekTimeRange={horizontalWeekTimeRange}
                                                 subjectColors={subjectColors}
                                                 isCollapsed={collapsedDays[day] || false}
                                                 onToggle={() => handleToggleDay(day)}
@@ -1894,6 +1897,7 @@ function HomeContent({searchParams}) {
                                                 timePassedOverlayIntensity={timePassedOverlayIntensity}
                                                 showCourseProgressPercent={showCourseProgressPercent}
                                                 courseProgressPercentDecimals={courseProgressPercentDecimals}
+                                                showTooltips={showTooltips}
                                             />
                                             {isToday && (
                                                 <div
@@ -1909,20 +1913,21 @@ function HomeContent({searchParams}) {
                             {
                                 !hasNetworkError && (
                                     <div className="last-update-info">
-                                        <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors}/>
+                                        <SubjectHoursInfo allEvents={allEvents} subjectColors={subjectColors} showTooltips={showTooltips}/>
                                         {isEdtVerifying && (
                                             <span className={styles.edtVerifyingPill} aria-live="polite">
                                             {t("page.edtVerifyingShort")}
                                         </span>
                                         )}
+                                        <HoverTooltip text="Cliquer pour voir les détails" enabled={showTooltips}>
                                         <button
                                             onClick={() => setShowOfflineModal(true)}
                                             className="btn-update-detail"
-                                            title="Cliquer pour voir les détails"
                                             aria-label="Voir les détails de la dernière mise à jour"
                                         >
                                             {formatLastUpdateButtonText(lastUpdateTimestamp)}
                                         </button>
+                                        </HoverTooltip>
                                     </div>
                                 )
                             }
@@ -1935,6 +1940,7 @@ function HomeContent({searchParams}) {
                                             {t("page.edtVerifyingShort")}
                                         </span>
                                         )}
+                                        <HoverTooltip text="Cliquer pour voir les détails" enabled={showTooltips}>
                                         <button
                                             onClick={() => setShowOfflineModal(true)}
                                             className={styles.offlineTimestamp}
@@ -1944,11 +1950,11 @@ function HomeContent({searchParams}) {
                                                 textAlign: 'inherit',
                                                 display: 'inline-block'
                                             }}
-                                            title="Cliquer pour voir les détails"
                                             aria-label="Voir les détails de la dernière mise à jour"
                                         >
                                             {formatLastUpdateButtonText(lastUpdateTimestamp)}
                                         </button>
+                                        </HoverTooltip>
                                     </div>
                                 )
                             }
