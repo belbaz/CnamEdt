@@ -180,29 +180,8 @@
     color: var(--text-primary) !important;
 }
 
-/* Amélioration des cartes d'événements en mode OLED */
-/* Les cartes gardent leurs couleurs vives du dark mode pour plus de couleur */
-.oled-mode .event-card .event-card-surface {
-    /* Les cartes conservent leur background du dark mode (--bg-tertiary = #374151) */
-    /* pour garder de la couleur et du contraste */
-    background: #2d3748 !important;
-    /* Couleur du dark mode classique */
-    border-color: var(--border-color) !important;
-}
-
-.oled-mode .event-card:hover .event-card-surface {
-    background: #374151 !important;
-    /* Un peu plus clair au survol */
-    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15) !important;
-}
-
-/* Les gradients de couleur des cours restent bien visibles et vifs */
-.oled-mode .event-card .event-card-surface::before {
-    /* Les gradients colorés restent à pleine intensité pour garder de la couleur */
-    opacity: 1 !important;
-    filter: brightness(1.1);
-    /* Légèrement plus lumineux pour contraster avec le noir */
-}
+/* Cartes cours : pas de surcharge OLED — les couleurs par matière (fond ou bandeau)
+   viennent de EventCard.css / styles inline comme en mode sombre classique. */
 
 .oled-mode * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
