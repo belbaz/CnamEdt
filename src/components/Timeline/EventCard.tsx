@@ -40,21 +40,21 @@ const BACKGROUND_COLORS_RGB = [
 ];
 
 export default function EventCard({
-    event,
-    stylePos,
-    subjectColors,
-    onOpenEventDetails,
-    noteEntries = [],
-    fileCount: propsFileCount,
-    isDistanciel = false,
-    notePreviewItems = [],
-    nonDistancielLabels = [],
-    colorPosition = 'background',
-    colorBackgroundOpacity = 0.6,
-    entranceAnimationActive = false,
-    noteHasPersonalEntries = false,
-}) {
-    const { t } = useI18n();
+                                      event,
+                                      stylePos,
+                                      subjectColors,
+                                      onOpenEventDetails,
+                                      noteEntries = [],
+                                      fileCount: propsFileCount,
+                                      isDistanciel = false,
+                                      notePreviewItems = [],
+                                      nonDistancielLabels = [],
+                                      colorPosition = 'background',
+                                      colorBackgroundOpacity = 0.6,
+                                      entranceAnimationActive = false,
+                                      noteHasPersonalEntries = false,
+                                  }) {
+    const {t} = useI18n();
     const {matiere, prof, description, splitGroup} = getEventTitle(event);
     const location = event.location?.replace(/^Salle\s*:\s*/, "").trim();
     const cardRef = useRef(null);
@@ -214,10 +214,10 @@ export default function EventCard({
     // Calculer l'index de couleur et le background pour le mode fond
     const colorIndex = getColorIndexForSubject(matiere || description, subjectColors);
     const bgColorRgb = BACKGROUND_COLORS_RGB[colorIndex] || BACKGROUND_COLORS_RGB[0];
-    const bgColorStyle = colorPosition === 'background' 
+    const bgColorStyle = colorPosition === 'background'
         ? `rgba(${bgColorRgb[0]}, ${bgColorRgb[1]}, ${bgColorRgb[2]}, ${colorBackgroundOpacity})`
         : undefined;
-    
+
 
     const entranceClass =
         entranceAnimationActive ? 'event-card--home-entrance' : '';
@@ -244,79 +244,77 @@ export default function EventCard({
                 className={`event-card-surface ${entranceClass}`.trim()}
                 style={
                     colorPosition === 'background'
-                        ? { backgroundColor: bgColorStyle }
+                        ? {backgroundColor: bgColorStyle}
                         : undefined
                 }
                 ref={cardRef}
             >
-            {devMode && hoursLabel && (
-                <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
-            )}
-            {isExam && (
-                <HoverTooltip text={t('eventModal.exam')}>
-                <div className="exam-badge-card">
-                    EXAMEN
-                </div>
-                </HoverTooltip>
-            )}
-            {(() => {
-                // On ne considère pour la tooltip / le badge que les entrées texte (notePreviewItems),
-                // jamais les placeholders utilisés pour les notes "labels uniquement".
-                const baseEntries = Array.isArray(notePreviewItems) ? notePreviewItems : [];
-                const cleanedEntries = sanitizeNoteEntries(baseEntries);
-                const noteCount = cleanedEntries.length;
-                
-                // Extraire les labels non-Distanciel valides
-                const validLabels = Array.isArray(nonDistancielLabels) 
-                    ? nonDistancielLabels.filter(label => typeof label === "string" && label.trim() !== "")
-                    : [];
-                
-                // Ne pas afficher le badge si seulement "Distanciel" sans note texte et sans autres labels
-                const hasOnlyDistanciel = isDistanciel && noteCount === 0 && validLabels.length === 0;
-                if (hasOnlyDistanciel) {
-                    return null;
-                }
-                
-                // Si il y a des notes texte, on affiche seulement les notes (pas les labels)
-                // Sinon, on affiche les labels
-                const totalNoteCount = noteCount > 0 ? noteCount : validLabels.length;
-                const totalCount = totalNoteCount + effectiveFileCount;
+                {devMode && hoursLabel && (
+                    <div className="event-hours-debug" aria-label="Durée du cours">{hoursLabel}</div>
+                )}
+                {isExam && (
+                    <div className="exam-badge-card">
+                        EXAMEN
+                    </div>
+                )}
+                {(() => {
+                    // On ne considère pour la tooltip / le badge que les entrées texte (notePreviewItems),
+                    // jamais les placeholders utilisés pour les notes "labels uniquement".
+                    const baseEntries = Array.isArray(notePreviewItems) ? notePreviewItems : [];
+                    const cleanedEntries = sanitizeNoteEntries(baseEntries);
+                    const noteCount = cleanedEntries.length;
 
-                // Afficher le badge seulement s'il y a des notes texte, des labels non-Distanciel OU des fichiers
-                if (totalCount === 0) {
-                    return null;
-                }
+                    // Extraire les labels non-Distanciel valides
+                    const validLabels = Array.isArray(nonDistancielLabels)
+                        ? nonDistancielLabels.filter(label => typeof label === "string" && label.trim() !== "")
+                        : [];
 
-                const hasTooltipContent = noteCount > 0 || validLabels.length > 0 || effectiveFileCount > 0;
+                    // Ne pas afficher le badge si seulement "Distanciel" sans note texte et sans autres labels
+                    const hasOnlyDistanciel = isDistanciel && noteCount === 0 && validLabels.length === 0;
+                    if (hasOnlyDistanciel) {
+                        return null;
+                    }
 
-                // Si il y a des notes texte, afficher seulement les notes (pas les labels)
-                // Sinon, afficher les labels
-                const maxPreviewItems = 3;
-                let tooltipItems = [];
-                let totalRemaining = 0;
-                
-                if (noteCount > 0) {
-                    // Afficher seulement les notes texte
-                    tooltipItems = cleanedEntries.slice(0, maxPreviewItems);
-                    totalRemaining = noteCount - tooltipItems.length;
-                } else {
-                    // Afficher les labels
-                    tooltipItems = validLabels.slice(0, maxPreviewItems);
-                    totalRemaining = validLabels.length - tooltipItems.length;
-                }
-                
-                return (
-                    <>
-                        <div
-                            ref={badgeRef}
-                            className="note-badge-card"
-                            aria-label={`${totalNoteCount} note${totalNoteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
-                            onMouseEnter={hasTooltipContent ? () => setShowTooltip(true) : undefined}
-                            onMouseLeave={hasTooltipContent ? () => setShowTooltip(false) : undefined}
-                            onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
-                            onBlur={hasTooltipContent ? () => setShowTooltip(false) : undefined}
-                        >
-                            <div className="note-badge-visual">
+                    // Si il y a des notes texte, on affiche seulement les notes (pas les labels)
+                    // Sinon, on affiche les labels
+                    const totalNoteCount = noteCount > 0 ? noteCount : validLabels.length;
+                    const totalCount = totalNoteCount + effectiveFileCount;
+
+                    // Afficher le badge seulement s'il y a des notes texte, des labels non-Distanciel OU des fichiers
+                    if (totalCount === 0) {
+                        return null;
+                    }
+
+                    const hasTooltipContent = noteCount > 0 || validLabels.length > 0 || effectiveFileCount > 0;
+
+                    // Si il y a des notes texte, afficher seulement les notes (pas les labels)
+                    // Sinon, afficher les labels
+                    const maxPreviewItems = 3;
+                    let tooltipItems = [];
+                    let totalRemaining = 0;
+
+                    if (noteCount > 0) {
+                        // Afficher seulement les notes texte
+                        tooltipItems = cleanedEntries.slice(0, maxPreviewItems);
+                        totalRemaining = noteCount - tooltipItems.length;
+                    } else {
+                        // Afficher les labels
+                        tooltipItems = validLabels.slice(0, maxPreviewItems);
+                        totalRemaining = validLabels.length - tooltipItems.length;
+                    }
+
+                    return (
+                        <>
+                            <div
+                                ref={badgeRef}
+                                className="note-badge-card"
+                                aria-label={`${totalNoteCount} note${totalNoteCount > 1 ? 's' : ''}${effectiveFileCount > 0 ? ` et ${effectiveFileCount} fichier${effectiveFileCount > 1 ? 's' : ''}` : ''} dans votre agenda`}
+                                onMouseEnter={hasTooltipContent ? () => setShowTooltip(true) : undefined}
+                                onMouseLeave={hasTooltipContent ? () => setShowTooltip(false) : undefined}
+                                onFocus={hasTooltipContent ? () => setShowTooltip(true) : undefined}
+                                onBlur={hasTooltipContent ? () => setShowTooltip(false) : undefined}
+                            >
+                                <div className="note-badge-visual">
                                 <span className="note-icon">
                                     <Image
                                         src="/note.svg"
@@ -325,8 +323,8 @@ export default function EventCard({
                                         sizes="20px"
                                     />
                                 </span>
-                                {noteHasPersonalEntries && (
-                                    <HoverTooltip text={t("common.noteCourseIconPersonalAlt")}>
+                                    {noteHasPersonalEntries && (
+                                        <HoverTooltip text={t("common.noteCourseIconPersonalAlt")}>
                                     <span
                                         className="note-lock-corner"
                                     >
@@ -338,139 +336,127 @@ export default function EventCard({
                                             aria-hidden
                                         />
                                     </span>
-                                    </HoverTooltip>
-                                )}
-                            </div>
-                            <span className="note-count-badge">{totalCount}</span>
-                        </div>
-                        {/* Afficher la tooltip seulement s'il y a du contenu (texte, labels ou fichiers) */}
-                        {isMounted && showTooltip && hasTooltipContent && createPortal(
-                            <div
-                                ref={tooltipRef}
-                                className="note-tooltip"
-                                style={tooltipStyle}
-                                onMouseEnter={() => setShowTooltip(true)}
-                                onMouseLeave={() => setShowTooltip(false)}
-                            >
-                                <strong>{totalNoteCount > 1 ? `${totalNoteCount} notes` : "note"}</strong>
-                                <ul className="note-tooltip-list">
-                                    {tooltipItems.map((item, idx) => (
-                                        <li key={idx}>{item}</li>
-                                    ))}
-                                    {totalRemaining > 0 && (
-                                        <li className="note-tooltip-more">
-                                            +{totalRemaining} autre{totalRemaining > 1 ? "s" : ""}
-                                        </li>
+                                        </HoverTooltip>
                                     )}
-                                </ul>
-                                {effectiveFileCount > 0 && (
-                                    <div className="note-tooltip-files">
-                                        <span className="note-tooltip-files-icon">📄</span>
-                                        <span className="note-tooltip-files-text">
+                                </div>
+                                <span className="note-count-badge">{totalCount}</span>
+                            </div>
+                            {/* Afficher la tooltip seulement s'il y a du contenu (texte, labels ou fichiers) */}
+                            {isMounted && showTooltip && hasTooltipContent && createPortal(
+                                <div
+                                    ref={tooltipRef}
+                                    className="note-tooltip"
+                                    style={tooltipStyle}
+                                    onMouseEnter={() => setShowTooltip(true)}
+                                    onMouseLeave={() => setShowTooltip(false)}
+                                >
+                                    <strong>{totalNoteCount > 1 ? `${totalNoteCount} notes` : "note"}</strong>
+                                    <ul className="note-tooltip-list">
+                                        {tooltipItems.map((item, idx) => (
+                                            <li key={idx}>{item}</li>
+                                        ))}
+                                        {totalRemaining > 0 && (
+                                            <li className="note-tooltip-more">
+                                                +{totalRemaining} autre{totalRemaining > 1 ? "s" : ""}
+                                            </li>
+                                        )}
+                                    </ul>
+                                    {effectiveFileCount > 0 && (
+                                        <div className="note-tooltip-files">
+                                            <span className="note-tooltip-files-icon">📄</span>
+                                            <span className="note-tooltip-files-text">
                                             {effectiveFileCount} fichier{effectiveFileCount > 1 ? 's' : ''}
                                         </span>
-                                    </div>
-                                )}
-                            </div>,
-                            document.body
-                        )}
-                    </>
-                );
-            })()}
-            <div className="event-time">
-                {formatTime(event.start)}{" - "}{formatTime(event.end)}
-            </div>
-            <div className="event-info">
-                {matiere && matiere !== ":" ? (
-                    <strong>{matiere}</strong>
-                ) : (
-                    description && <strong>{description}</strong>
-                )}
-                <span className="prof">{prof || "?"}</span>
-                {splitGroup ? (
-                    // Affichage demi-groupe: salles multiples
-                    <div className="location split-group-location">
-                        <span className="location-text">{splitGroup.rooms.join(" / ")}</span>
-                        {(() => {
-                            // Si le cours est marqué distanciel via un label, on n'affiche pas les sites physiques
-                            if (isDistanciel && !visioLocation) {
-                                return (
-                                    <HoverTooltip text={t('common.remote')}>
-                                    <span
-                                        className="site-badge-card distanciel-badge"
-                                    >
+                                        </div>
+                                    )}
+                                </div>,
+                                document.body
+                            )}
+                        </>
+                    );
+                })()}
+                <div className="event-time">
+                    {formatTime(event.start)}{" - "}{formatTime(event.end)}
+                </div>
+                <div className="event-info">
+                    {matiere && matiere !== ":" ? (
+                        <strong>{matiere}</strong>
+                    ) : (
+                        description && <strong>{description}</strong>
+                    )}
+                    <span className="prof">{prof || "?"}</span>
+                    {splitGroup ? (
+                        // Affichage demi-groupe: salles multiples
+                        <div className="location split-group-location">
+                            <span className="location-text">{splitGroup.rooms.join(" / ")}</span>
+                            {(() => {
+                                // Si le cours est marqué distanciel via un label, on n'affiche pas les sites physiques
+                                if (isDistanciel && !visioLocation) {
+                                    return (
+                                        <span
+                                            className="site-badge-card distanciel-badge"
+                                        >
                                         DISTANCIEL
                                     </span>
-                                    </HoverTooltip>
-                                );
-                            }
+                                    );
+                                }
 
-                            // Détecter le site pour chaque salle
-                            const sites = splitGroup.rooms.map(room => getCnamSite(room)).filter(Boolean);
+                                // Détecter le site pour chaque salle
+                                const sites = splitGroup.rooms.map(room => getCnamSite(room)).filter(Boolean);
 
-                            // Si toutes les salles sont sur le même site, afficher un seul badge
-                            if (sites.length > 0 && sites.every(s => s.site === sites[0].site)) {
-                                return (
-                                    <HoverTooltip text={sites[0].fullName}>
-                                    <span
-                                        className="site-badge-card"
-                                        style={{backgroundColor: sites[0].color}}
-                                    >
+                                // Si toutes les salles sont sur le même site, afficher un seul badge
+                                if (sites.length > 0 && sites.every(s => s.site === sites[0].site)) {
+                                    return (
+                                        <span
+                                            className="site-badge-card"
+                                            style={{backgroundColor: sites[0].color}}
+                                        >
                                         {sites[0].site}
                                     </span>
-                                    </HoverTooltip>
-                                );
-                            }
+                                    );
+                                }
 
-                            // Sinon, afficher un badge par site unique
-                            const uniqueSites = Array.from(new Map(sites.map(s => [s.site, s])).values());
-                            return uniqueSites.map((siteInfo, idx) => (
-                                <HoverTooltip key={idx} text={siteInfo.fullName}>
+                                // Sinon, afficher un badge par site unique
+                                const uniqueSites = Array.from(new Map(sites.map(s => [s.site, s])).values());
+                                return uniqueSites.map((siteInfo, idx) => (
+                                    <span
+                                        className="site-badge-card"
+                                        style={{backgroundColor: siteInfo.color}}
+                                    >
+                                    {siteInfo.site}
+                                </span>
+                                ));
+                            })()}
+                        </div>
+                    ) : (
+                        // Affichage normal: salle unique
+                        <div className={`location ${visioLocation || isDistanciel ? 'visio-location' : ''}`}>
+                        <span className="location-text">
+                            {isDistanciel && !visioLocation ? 'Cours en distanciel' : locationLabel}
+                        </span>
+                            {visioLocation ? (
+                                <span
+                                    className="site-badge-card visio-badge"
+                                >
+                                DISTANCIEL
+                            </span>
+                            ) : isDistanciel ? (
+                                <span
+                                    className="site-badge-card distanciel-badge"
+                                >
+                                DISTANCIEL
+                            </span>
+                            ) : siteInfo && (
                                 <span
                                     className="site-badge-card"
                                     style={{backgroundColor: siteInfo.color}}
                                 >
-                                    {siteInfo.site}
-                                </span>
-                                </HoverTooltip>
-                            ));
-                        })()}
-                    </div>
-                ) : (
-                    // Affichage normal: salle unique
-                    <div className={`location ${visioLocation || isDistanciel ? 'visio-location' : ''}`}>
-                        <span className="location-text">
-                            {isDistanciel && !visioLocation ? 'Cours en distanciel' : locationLabel}
-                        </span>
-                        {visioLocation ? (
-                            <HoverTooltip text={t('common.remote')}>
-                            <span
-                                className="site-badge-card visio-badge"
-                            >
-                                DISTANCIEL
-                            </span>
-                            </HoverTooltip>
-                        ) : isDistanciel ? (
-                            <HoverTooltip text={t('common.remote')}>
-                            <span
-                                className="site-badge-card distanciel-badge"
-                            >
-                                DISTANCIEL
-                            </span>
-                            </HoverTooltip>
-                        ) : siteInfo && (
-                            <HoverTooltip text={siteInfo.fullName}>
-                            <span
-                                className="site-badge-card"
-                                style={{backgroundColor: siteInfo.color}}
-                            >
                                 {siteInfo.site}
                             </span>
-                            </HoverTooltip>
-                        )}
-                    </div>
-                )}
-            </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </li>
     );
