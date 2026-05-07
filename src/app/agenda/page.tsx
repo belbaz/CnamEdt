@@ -10,6 +10,7 @@ import styles from "./page.module.css";
 import { getEventTitle } from "@/utils/eventUtils";
 import {
     areNoteEntriesEqual,
+    agendaRowHasPublicDisplayContent,
     parseStoredNoteValue,
     sanitizeNoteEntries,
     HIDDEN_LABEL_PLACEHOLDER,
@@ -408,6 +409,7 @@ function AgendaContent() {
         now.setHours(0, 0, 0, 0); // Mettre à minuit pour comparer les dates uniquement
 
         return publicNotes
+            .filter(agendaRowHasPublicDisplayContent)
             .map((note) => {
                 const relatedEvent = note?.course_uid ? eventsByUid.get(note.course_uid) : null;
                 // Si le cours n'est pas trouvé dans les events actuels, utiliser les infos orphelines
@@ -830,11 +832,8 @@ function AgendaContent() {
                         const month = String(eventDate.getMonth() + 1).padStart(2, "0");
                         const day = String(eventDate.getDate()).padStart(2, "0");
                         const courseDateString = `${year}-${month}-${day}`;
-                        if (courseDateString === dateString) {
-                            const entries = extractNoteEntries(note);
-                            if (entries && entries.length > 0 && entries.some(e => e && e.trim())) {
-                                return true;
-                            }
+                        if (courseDateString === dateString && agendaRowHasPublicDisplayContent(note)) {
+                            return true;
                         }
                     }
                 }
@@ -1891,8 +1890,10 @@ function AgendaContent() {
                                                         // Vérifier si ce cours a des notes
                                                         const courseNote = notes.get(course.uid);
                                                         const publicNote = publicNotes.find(n => n.course_uid === course.uid);
-                                                        const hasNote = (courseNote && extractNoteEntries(courseNote).some(e => e && e.trim())) ||
-                                                                        (publicNote && extractNoteEntries(publicNote).some(e => e && e.trim()));
+                                                        const hasNote =
+                                                            (courseNote &&
+                                                                extractNoteEntries(courseNote).some((e) => e && e.trim())) ||
+                                                            (publicNote && agendaRowHasPublicDisplayContent(publicNote));
                                                         return (
                                                             <div key={course.uid} className={[styles.courseButtonWrapper, isMobile && isSelected && styles.courseButtonWrapperExpanded].filter(Boolean).join(' ')}>
                                                                 <button

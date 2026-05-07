@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { verifySessionToken } from "@/lib/sessionToken";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
 import {
+    agendaRowHasPublicDisplayContent,
     buildPersistableNotesLabelsAndPrivacy,
     normalizeIncomingNotes,
     parseEntryPrivacyFromDb,
@@ -188,23 +189,12 @@ export async function GET(request) {
             );
         }
 
-        // Pour les utilisateurs non connectés, grouper par course_uid et prendre la note la plus récente
-        let processedData = data || [];
-        if (!user && !courseUid) {
-            // Grouper par course_uid et garder seulement la note la plus récente pour chaque cours
-            const notesByCourse = new Map();
-            processedData.forEach(note => {
-                const existing = notesByCourse.get(note.course_uid);
-                if (!existing || new Date(note.updated_at) > new Date(existing.updated_at)) {
-                    notesByCourse.set(note.course_uid, note);
-                }
-            });
-            processedData = Array.from(notesByCourse.values());
-        }
+        const rawRows = data || [];
+        const shouldStripPersonal = !user || forcePublicMode;
 
         // Récupérer toutes les informations utilisateur nécessaires (user_id de la note + tous les user_id de l'historique)
         const userIds = new Set();
-        processedData.forEach(note => {
+        rawRows.forEach(note => {
             userIds.add(note.user_id);
             // Ajouter tous les user_id de l'historique
             if (note.modification_history && Array.isArray(note.modification_history)) {
@@ -243,7 +233,7 @@ export async function GET(request) {
         };
 
         // Récupérer les infos des cours depuis edt_events_versions pour les notes orphelines
-        const courseUids = processedData.map(note => note.course_uid).filter(Boolean);
+        const courseUids = [...new Set(rawRows.map(note => note.course_uid).filter(Boolean))];
         let orphanEventInfoMap = {};
         
         if (courseUids.length > 0) {
@@ -268,7 +258,54 @@ export async function GET(request) {
             }
         }
 
-        const shouldStripPersonal = !user || forcePublicMode;
+        const rawRowHasVisiblePublicAfterStrip = (row) => {
+            const userInfo = userInfoMap[row.user_id] || null;
+            const enrichedHistory = enrichHistory(row.modification_history);
+            const orphanEventInfo = orphanEventInfoMap[row.course_uid] || null;
+            let out = formatAgendaRow({
+                ...row,
+                edt_user: userInfo,
+                modification_history: enrichedHistory,
+                orphan_event_info: orphanEventInfo,
+            });
+            if (shouldStripPersonal) {
+                out = stripPersonalEntriesFromAgendaRow(out);
+            }
+            return agendaRowHasPublicDisplayContent(out);
+        };
+
+        let processedData;
+        if (!user && !courseUid) {
+            const byCourse = new Map();
+            rawRows.forEach(note => {
+                if (!note.course_uid) return;
+                if (!byCourse.has(note.course_uid)) byCourse.set(note.course_uid, []);
+                byCourse.get(note.course_uid).push(note);
+            });
+            processedData = [];
+            byCourse.forEach((list) => {
+                list.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                for (const row of list) {
+                    if (rawRowHasVisiblePublicAfterStrip(row)) {
+                        processedData.push(row);
+                        break;
+                    }
+                }
+            });
+        } else if (!user && courseUid) {
+            const sorted = [...rawRows].sort(
+                (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+            );
+            processedData = [];
+            for (const row of sorted) {
+                if (rawRowHasVisiblePublicAfterStrip(row)) {
+                    processedData.push(row);
+                    break;
+                }
+            }
+        } else {
+            processedData = rawRows;
+        }
 
         // Formater les données avec les informations utilisateur et les infos de cours orphelins
         const formattedData = processedData.map(row => {
@@ -291,18 +328,22 @@ export async function GET(request) {
             return out;
         });
 
+        const rowsForResponse = shouldStripPersonal
+            ? formattedData.filter(agendaRowHasPublicDisplayContent)
+            : formattedData;
+
         if (courseUid) {
             return NextResponse.json(
                 {
                     authenticated: isAuthenticated,
-                    note: formattedData.length > 0 ? formattedData[0] : null
+                    note: rowsForResponse.length > 0 ? rowsForResponse[0] : null
                 },
                 { headers: AGENDA_GET_CACHE_HEADERS }
             );
         }
 
         return NextResponse.json(
-            { authenticated: isAuthenticated, notes: formattedData },
+            { authenticated: isAuthenticated, notes: rowsForResponse },
             { headers: AGENDA_GET_CACHE_HEADERS }
         );
 

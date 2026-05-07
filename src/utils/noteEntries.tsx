@@ -121,6 +121,26 @@ export function agendaRowHasPersonalEntries(row) {
 }
 
 /**
+ * Contenu réellement affichable pour les invités / l’onglet « public »
+ * (texte non vide ou labels), après retrait éventuel des entrées personnelles.
+ */
+export function agendaRowHasPublicDisplayContent(row) {
+    if (!row) return false;
+    const entries = Array.isArray(row.entries)
+        ? row.entries
+        : parseStoredNoteValue(row.notes);
+    const sanitized = sanitizeNoteEntries(entries);
+    if (sanitized.length > 0) {
+        return true;
+    }
+    const entryLabels =
+        row.entry_labels && typeof row.entry_labels === "object" ? row.entry_labels : {};
+    return Object.values(entryLabels).some(
+        (labelsArray) => Array.isArray(labelsArray) && labelsArray.length > 0
+    );
+}
+
+/**
  * Interprète entry_privacy (JSONB / API) : objet, chaîne JSON, ou null.
  * Certaines chaines (PostgREST) renvoient parfois une string au lieu d'un objet.
  */
