@@ -16,6 +16,7 @@
     box-shadow: var(--shadow-lg);
     padding: 1rem 1.25rem;
     display: flex;
+    border-radius: 13px;
     flex-direction: column;
     gap: 0.75rem;
 }
