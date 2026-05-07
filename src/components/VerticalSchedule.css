@@ -141,6 +141,18 @@
     }
 }
 
+/* Enveloppe : clippe le viewport de scroll aux coins arrondis (WebKit scrollbar incluse) */
+.vertical-schedule-shell {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
 .vertical-schedule-container {
     width: 100%;
     max-width: 100%;
@@ -149,18 +161,14 @@
     scrollbar-color: var(--border-color) var(--bg-secondary);
     position: relative;
     box-sizing: border-box;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--bg-secondary);
-    box-shadow: var(--shadow-sm);
-    overflow-x: scroll;
+    overflow-x: auto;
     overflow-y: hidden;
 }
 
 /* Force le scroll horizontal sur mobile uniquement */
 @media (max-width: 768px) {
     .vertical-schedule-container {
-        overflow-x: scroll;
+        overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
@@ -190,14 +198,8 @@
     }
 }
 
-/* Force le scroll horizontal sur PC si l'écran est trop petit pour tout afficher */
+/* PC : même conteneur, barre uniquement si débordement (overflow-x auto) */
 @media (min-width: 769px) {
-    /* Si le contenu dépasse, activer le scroll horizontal */
-    .vertical-schedule-container.has-scroll {
-        overflow-x: scroll;
-        overflow-y: hidden;
-    }
-
     .vertical-schedule-wrapper[data-needs-scroll="true"] {
         width: max-content;
         min-width: 100%;
@@ -211,12 +213,12 @@
 
 .vertical-schedule-container::-webkit-scrollbar-track {
     background: var(--bg-secondary);
-    border-radius: 4px;
+    border-radius: 10px;
 }
 
 .vertical-schedule-container::-webkit-scrollbar-thumb {
     background: var(--border-color);
-    border-radius: 4px;
+    border-radius: 10px;
 }
 
 .vertical-schedule-container::-webkit-scrollbar-thumb:hover {
@@ -271,7 +273,6 @@
 }
 
 .vertical-day-header {
-    padding: 0.5rem 0;
     background: rgba(228, 225, 225, 0.3);
     border-radius: 15px;
     border: 1px solid var(--border-color);
@@ -282,7 +283,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.3rem 0.75rem;
     user-select: none;
     transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
                 width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -621,10 +622,25 @@
     display: flex;
 }
 
-.vertical-day-column.today {
+/* Bordure « aujourd'hui » : zone calée sur les cours (.vertical-today-courses-outline), pas toute la grille 9h–18h */
+.vertical-day-column.today.collapsed {
     border-radius: 12px;
     border: 2px solid #4299e1;
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+.vertical-day-column.today:not(.collapsed) {
+    border: none;
+}
+
+.vertical-today-courses-outline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    border: 2px solid #4299e1;
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 1;
 }
 
 /* Indicateur pour les jours réduits */

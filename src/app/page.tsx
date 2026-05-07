@@ -1532,19 +1532,20 @@ function HomeContent({searchParams}) {
         return t('timeRemaining.minutes').replace('{count}', remainingMinutes);
     }, [getNextOngoingCourse, currentTime, isCurrentWeekSelected, showTimeRemaining, t]);
 
-    // Formater le timestamp pour l'affichage
-    const formatLastUpdate = (timestamp) => {
+    // Libellé complet du bouton « dernière mise à jour » (évite tout le texte en majuscules type « TODAY » venant des clés i18n)
+    const formatLastUpdateButtonText = (timestamp) => {
+        const unavailable =
+            language === 'en' ? 'Not available' : 'Non disponible';
+        const unknownDate =
+            language === 'en' ? 'Unknown date' : 'Date inconnue';
+
         if (!timestamp) {
-            // Si pas de timestamp mais qu'on a des événements en cache, c'est probablement un ancien cache
-            // On affiche un message indiquant que la date n'est pas disponible
-            if (allEvents.length > 0) {
-                return 'Date inconnue';
-            }
-            return 'Non disponible';
+            if (allEvents.length > 0) return unknownDate;
+            return unavailable;
         }
         try {
             const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return 'Non disponible';
+            if (isNaN(date.getTime())) return unavailable;
 
             const now = new Date();
             const isToday =
@@ -1552,25 +1553,27 @@ function HomeContent({searchParams}) {
                 date.getMonth() === now.getMonth() &&
                 date.getDate() === now.getDate();
 
-            // On garde le format date (JJ/MM/AAAA) + heure (24h) existant
             const time = date.toLocaleTimeString('fr-FR', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
             });
 
-            const day = isToday
-                ? t('page.lastUpdateToday')
-                : date.toLocaleDateString('fr-FR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
+            if (isToday) {
+                return language === 'en'
+                    ? `Updated today at ${time}`
+                    : `Mis à jour aujourd'hui à ${time}`;
+            }
 
-            // "Today 22:03" ou "Aujourd'hui 22:03"
-            return `${day} ${time}`;
+            const dayStr = date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            return `${t('page.lastUpdate')} ${dayStr} ${time}`;
         } catch (e) {
-            return 'Non disponible';
+            return unavailable;
         }
     };
 
@@ -1918,7 +1921,7 @@ function HomeContent({searchParams}) {
                                             title="Cliquer pour voir les détails"
                                             aria-label="Voir les détails de la dernière mise à jour"
                                         >
-                                            {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
+                                            {formatLastUpdateButtonText(lastUpdateTimestamp)}
                                         </button>
                                     </div>
                                 )
@@ -1944,7 +1947,7 @@ function HomeContent({searchParams}) {
                                             title="Cliquer pour voir les détails"
                                             aria-label="Voir les détails de la dernière mise à jour"
                                         >
-                                            {t('page.lastUpdate')} {formatLastUpdate(lastUpdateTimestamp)}
+                                            {formatLastUpdateButtonText(lastUpdateTimestamp)}
                                         </button>
                                     </div>
                                 )

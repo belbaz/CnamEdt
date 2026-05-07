@@ -408,18 +408,19 @@ export default function VerticalSchedule({
                     </span>
                 </div>
             )}
-            <div
-                ref={containerRef}
-                className={`vertical-schedule-container ${needsScroll ? 'has-scroll' : ''}`}
-                style={{
-                    '--days-count': days.length
-                }}
-            >
+            <div className="vertical-schedule-shell">
                 <div
-                    ref={wrapperRef}
-                    className="vertical-schedule-wrapper"
-                    data-needs-scroll={needsScroll ? "true" : "false"}
+                    ref={containerRef}
+                    className="vertical-schedule-container"
+                    style={{
+                        '--days-count': days.length
+                    }}
                 >
+                    <div
+                        ref={wrapperRef}
+                        className="vertical-schedule-wrapper"
+                        data-needs-scroll={needsScroll ? "true" : "false"}
+                    >
                     {/* En-tête avec les jours */}
                     {days.length > 0 && (
                         <div 
@@ -605,6 +606,38 @@ export default function VerticalSchedule({
                                 ? currentTimePercent
                                 : null;
 
+                            let todayCoursesOutlineStyle = null;
+                            if (isTodayDay && !isCollapsed && dayEvents.length > 0) {
+                                const sortedOutline = [...dayEvents].sort(
+                                    (a, b) => new Date(a.start) - new Date(b.start)
+                                );
+                                let minTop = Infinity;
+                                let maxBottom = -Infinity;
+                                sortedOutline.forEach((ev, evIdx) => {
+                                    const previousEvent = evIdx > 0 ? sortedOutline[evIdx - 1] : null;
+                                    const nextEvent =
+                                        evIdx < sortedOutline.length - 1 ? sortedOutline[evIdx + 1] : null;
+                                    const pos = getEventVerticalPosition(
+                                        ev.start,
+                                        ev.end_time || ev.end,
+                                        previousEvent ? previousEvent.end_time || previousEvent.end : null,
+                                        nextEvent ? nextEvent.start : null
+                                    );
+                                    const topNum = parseFloat(String(pos.top).replace('%', ''), 10);
+                                    const hNum = parseFloat(String(pos.height).replace('%', ''), 10);
+                                    if (!Number.isFinite(topNum) || !Number.isFinite(hNum)) return;
+                                    minTop = Math.min(minTop, topNum);
+                                    maxBottom = Math.max(maxBottom, topNum + hNum);
+                                });
+                                if (Number.isFinite(minTop) && Number.isFinite(maxBottom)) {
+                                    const span = Math.max(0.35, maxBottom - minTop);
+                                    todayCoursesOutlineStyle = {
+                                        top: `${minTop}%`,
+                                        height: `${span}%`
+                                    };
+                                }
+                            }
+
                             return (
                                 <div
                                     key={dayIdx}
@@ -668,6 +701,13 @@ export default function VerticalSchedule({
                                                 className="vertical-events-container"
                                                 style={{ height: `${totalMinutes}px` }}
                                             >
+                                                {todayCoursesOutlineStyle && (
+                                                    <div
+                                                        className="vertical-today-courses-outline"
+                                                        style={todayCoursesOutlineStyle}
+                                                        aria-hidden
+                                                    />
+                                                )}
                                                 {(() => {
                                                     // Trier les événements une seule fois par heure de début
                                                     const sortedEvents = [...dayEvents].sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -802,6 +842,7 @@ export default function VerticalSchedule({
                         })}
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );

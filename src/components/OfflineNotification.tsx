@@ -6,7 +6,7 @@ import {useI18n} from "@/i18n/I18nContext";
 import "./OfflineNotification.css";
 
 export default function OfflineNotification({ forceShow = false, lastUpdateTimestamp = null, showModal: externalShowModal = null, onModalClose: externalOnModalClose = null, onModalOpen: externalOnModalOpen = null }) {
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const { isOnline } = useNetworkStatus();
     const [showNotification, setShowNotification] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -128,6 +128,11 @@ export default function OfflineNotification({ forceShow = false, lastUpdateTimes
                     month: '2-digit',
                     year: 'numeric'
                 });
+
+            if (isToday) {
+                const linker = language === 'en' ? 'at' : 'à';
+                return `${day} ${linker} ${time}`;
+            }
 
             return `${day} ${time}`;
         } catch (e) {

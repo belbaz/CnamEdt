@@ -1412,7 +1412,7 @@ export default function EventModal({
                         )}
 
                         {/* Debug info */}
-                        {devMode && selectedEvent.description && (
+                        {selectedEvent.description && (
                             <details className="modal-section">
                                 <summary className="pop-desc" style={{ cursor: "pointer", fontWeight: 600 }}>
                                     Infos debug

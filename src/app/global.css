@@ -80,6 +80,7 @@
 .oled-mode .container,
 .oled-mode .page-header,
 .oled-mode .navbar-container,
+.oled-mode .vertical-schedule-shell,
 .oled-mode .vertical-schedule-container,
 .oled-mode .vertical-time-column {
     background: #000000 !important;
@@ -97,8 +98,15 @@
 .oled-mode .vertical-day-column.today {
     background: #0f1923 !important;
     /* Légèrement plus bleuté pour aujourd'hui */
+}
+
+.oled-mode .vertical-day-column.today.collapsed {
     border-color: #60a5fa !important;
-    /* Bordure bleue pour aujourd'hui */
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.3) !important;
+}
+
+.oled-mode .vertical-today-courses-outline {
+    border-color: #60a5fa !important;
     box-shadow: 0 0 12px rgba(96, 165, 250, 0.3) !important;
 }
 
