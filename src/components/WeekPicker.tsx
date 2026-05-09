@@ -221,6 +221,7 @@ export default function WeekPicker({
                     enabled={showTooltips}
                 >
                     <button
+                        type="button"
                         className="week-nav"
                         onClick={(e) => {
                             handleClick('previous');
@@ -232,7 +233,9 @@ export default function WeekPicker({
                         onMouseLeave={() => setShowTooltip(prev => ({ ...prev, previous: false }))}
                         {...longPressEventsPrevious}
                     >
-                        ←
+                        <svg className="week-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                     </button>
                 </Tooltip>
 
@@ -242,18 +245,18 @@ export default function WeekPicker({
                     enabled={showTooltips}
                 >
                     <div 
-                        className="week-display" 
+                        className={`week-display ${isDropdownOpen ? 'week-display--open' : ''}`}
                         ref={weekDisplayRef}
                         onClick={(e) => {
                             handleClick('weekDisplay');
                             handleWeekClick();
                         }}
-                        style={{ cursor: 'pointer' }}
                         onMouseEnter={() => setShowTooltip(prev => ({ ...prev, weekDisplay: true }))}
                         onMouseLeave={() => setShowTooltip(prev => ({ ...prev, weekDisplay: false }))}
                         {...longPressEventsWeekDisplay}
                         role="button"
                         aria-label={t('weekPicker.showWeeks')}
+                        aria-expanded={isDropdownOpen}
                         tabIndex={0}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
@@ -263,9 +266,15 @@ export default function WeekPicker({
                             }
                         }}
                     >
-                        <span className="week-label">{t('weekPicker.week')}</span>
-                        <span className="week-date">{currentWeekLabel}</span>
-                        <span className="week-arrow">{isDropdownOpen ? '▲' : '▼'}</span>
+                        <div className="week-display-main">
+                            <span className="week-label">{t('weekPicker.week')}</span>
+                            <span className="week-date">{currentWeekLabel}</span>
+                        </div>
+                        <span className="week-arrow" aria-hidden="true">
+                            <svg className="week-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </span>
                     </div>
                 </Tooltip>
 
@@ -300,6 +309,7 @@ export default function WeekPicker({
                     enabled={showTooltips}
                 >
                     <button
+                        type="button"
                         className="week-nav"
                         onClick={(e) => {
                             handleClick('next');
@@ -311,7 +321,9 @@ export default function WeekPicker({
                         onMouseLeave={() => setShowTooltip(prev => ({ ...prev, next: false }))}
                         {...longPressEventsNext}
                     >
-                        →
+                        <svg className="week-nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                     </button>
                 </Tooltip>
             </div>

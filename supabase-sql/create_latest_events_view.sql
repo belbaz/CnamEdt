@@ -46,15 +46,28 @@ COMMENT ON MATERIALIZED VIEW edt_latest_events_view IS
 
 -- Fonction pour rafraîchir la vue automatiquement après les modifications
 -- Cette fonction sera appelée par des triggers sur edt_events_versions
+--
+-- IMPORTANT (Supabase / rôle « service_role ») :
+-- Par défaut, une fonction TRIGGER s'exécute en SECURITY INVOKER : le REFRESH tourne avec
+-- le même rôle que l'écriture sur edt_events_versions — ce rôle n'est pas propriétaire
+-- de la vue matérialisée ⇒ erreur SQLSTATE 42501 « must be owner of materialized view ».
+-- SECURITY DEFINER exécute le corps de la fonction avec les droits du propriétaire de la fonction
+-- (viser postgres via OWNER ci-dessous), ce qui permet REFRESH MATERIALIZED VIEW CONCURRENTLY.
+-- search_path fixé pour éviter l'élévation via des fonctions/objets hors schéma public.
 CREATE OR REPLACE FUNCTION refresh_edt_latest_events_view()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
 BEGIN
-    -- Rafraîchir la vue de manière concurrente (sans bloquer les lectures)
-    -- Note: REFRESH CONCURRENTLY nécessite un index unique
     REFRESH MATERIALIZED VIEW CONCURRENTLY edt_latest_events_view;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+ALTER FUNCTION refresh_edt_latest_events_view() OWNER TO postgres;
+ALTER MATERIALIZED VIEW edt_latest_events_view OWNER TO postgres;
 
 -- Trigger AFTER INSERT sur edt_events_versions
 DROP TRIGGER IF EXISTS trigger_refresh_edt_latest_events_after_insert ON edt_events_versions;

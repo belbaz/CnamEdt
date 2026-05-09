@@ -100,19 +100,9 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
     const headerTip = isCollapsed ? t('navbar.clickToExpandDay') : t('navbar.clickToCollapseDay');
 
     return (
-        <HoverTooltip
-            text={blockTip}
-            enabled={showTooltips}
-            wrapperStyle={{ display: 'block', width: '100%' }}
-        >
         <div className={`day-block ${todayCheck ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
              ref={todayCheck ? ref : null}
         >
-            <HoverTooltip
-                text={headerTip}
-                enabled={showTooltips}
-                wrapperStyle={{ display: 'block', width: '100%' }}
-            >
             <div
                 className="day-header"
                 onClick={onToggle}
@@ -131,7 +121,6 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                 </button>
                 </HoverTooltip>
             </div>
-            </HoverTooltip>
             <div className="day-content" aria-hidden={isCollapsed}>
                 <div className="day-content-inner">
                     <TimelineWrapper
@@ -158,7 +147,6 @@ const DayBlock = forwardRef<HTMLDivElement, any>(({
                 </div>
             </div>
         </div>
-        </HoverTooltip>
     );
 });
 

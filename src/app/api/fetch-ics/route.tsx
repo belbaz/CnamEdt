@@ -15,6 +15,7 @@ import {
     getCachedIcsHistory,
     setCachedIcsHistory,
     invalidateAllCache,
+    invalidateLatestEventMapCache,
     getCacheStats
 } from "@/lib/icsCache";
 
@@ -583,6 +584,27 @@ async function migrateOrphanNotes(supabase, currentEvents) {
     }
 }
 
+/**
+ * Compte les lignes dans edt_events_versions (requête légère head), sans passer par le cache mémoire
+ * de la latest map — indispensable si la table a été vidée alors que le cache serveur est encore plein.
+ * @returns {Promise<number|null>} nombre de lignes, ou null si erreur (on ne force pas la resync).
+ */
+async function countEdtEventsVersionsRows(supabase) {
+    try {
+        const { count, error } = await supabase
+            .from('edt_events_versions')
+            .select('*', { count: 'exact', head: true });
+        if (error) {
+            console.warn('[API fetch-ics] count edt_events_versions:', error.message);
+            return null;
+        }
+        return typeof count === 'number' ? count : 0;
+    } catch (e) {
+        console.warn('[API fetch-ics] count edt_events_versions exception:', e?.message);
+        return null;
+    }
+}
+
 async function loadLatestEventMap(supabase) {
     try {
         // OPTIMISATION 1 : Vérifier le cache en mémoire d'abord
@@ -838,31 +860,43 @@ export async function GET(request) {
 
             // OPTIMISATION : Vérifier le cache in-memory avant de parser
             const cachedEvents = getCachedParsedICS(currentIcsHash);
-            if (cachedEvents && !forceParser) {
-                console.log('[API fetch-ics] ✅ Using cached parsed ICS (', cachedEvents.length, 'events)');
-                
-                // Retourner immédiatement depuis le cache
-                return NextResponse.json({
-                    unchanged: true,
-                    events: cachedEvents,
-                    diff: {
-                        added: [],
-                        updated: [],
-                        removed: []
-                    },
-                    meta: {
-                        source: 'memory-cache',
-                        fromCache: true,
-                        changed: 0,
-                        hash: hashForClient,
-                        icsUnchanged: true
+            if (cachedEvents && cachedEvents.length > 0 && !forceParser) {
+                let skipMemoryShortcut = false;
+                if (supabaseClient) {
+                    const rowCount = await countEdtEventsVersionsRows(supabaseClient);
+                    if (rowCount === 0) {
+                        console.log(
+                            '[API fetch-ics] Cache mémoire ICS dispo mais edt_events_versions est vide — resync BD requise (pas de réponse mémoire)'
+                        );
+                        invalidateLatestEventMapCache();
+                        skipMemoryShortcut = true;
                     }
-                }, {
-                    headers: {
-                        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
-                        'CDN-Cache-Control': 'public, max-age=300'
-                    }
-                });
+                }
+                if (!skipMemoryShortcut) {
+                    console.log('[API fetch-ics] ✅ Using cached parsed ICS (', cachedEvents.length, 'events)');
+
+                    return NextResponse.json({
+                        unchanged: true,
+                        events: cachedEvents,
+                        diff: {
+                            added: [],
+                            updated: [],
+                            removed: []
+                        },
+                        meta: {
+                            source: 'memory-cache',
+                            fromCache: true,
+                            changed: 0,
+                            hash: hashForClient,
+                            icsUnchanged: true
+                        }
+                    }, {
+                        headers: {
+                            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+                            'CDN-Cache-Control': 'public, max-age=300'
+                        }
+                    });
+                }
             }
 
             // Vérifier le hash du dernier ICS téléchargé (si Supabase disponible).
@@ -903,28 +937,68 @@ export async function GET(request) {
                         if (eventsForClient.length === 0) {
                             console.warn('[API fetch-ics] Hash inchangé mais parsing vide — poursuite du flux complet');
                         } else {
-                            console.log('[API fetch-ics] ICS hash inchangé — envoi de', eventsForClient.length, 'événements pour le cache client');
-                            return NextResponse.json({
-                                unchanged: true,
-                                events: eventsForClient,
-                                diff: {
-                                    added: [],
-                                    updated: [],
-                                    removed: []
-                                },
-                                meta: {
-                                    source: 'unchanged',
-                                    fromCache: false,
-                                    changed: 0,
-                                    hash: hashForClient,
-                                    icsUnchanged: true
-                                }
-                            }, {
-                                headers: {
-                                    'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
-                                    'CDN-Cache-Control': 'public, max-age=300'
-                                }
-                            });
+                            const rowCount = await countEdtEventsVersionsRows(supabaseClient);
+                            if (rowCount === 0) {
+                                console.log(
+                                    '[API fetch-ics] ICS inchangé (hash) mais edt_events_versions est vide — resync BD obligatoire, pas de court-circuit API'
+                                );
+                                invalidateLatestEventMapCache();
+                            } else if (rowCount !== null) {
+                                console.log(
+                                    '[API fetch-ics] ICS hash inchangé — envoi de',
+                                    eventsForClient.length,
+                                    'événements pour le cache client'
+                                );
+                                return NextResponse.json({
+                                    unchanged: true,
+                                    events: eventsForClient,
+                                    diff: {
+                                        added: [],
+                                        updated: [],
+                                        removed: []
+                                    },
+                                    meta: {
+                                        source: 'unchanged',
+                                        fromCache: false,
+                                        changed: 0,
+                                        hash: hashForClient,
+                                        icsUnchanged: true
+                                    }
+                                }, {
+                                    headers: {
+                                        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+                                        'CDN-Cache-Control': 'public, max-age=300'
+                                    }
+                                });
+                            } else {
+                                // Erreur de count : comportement historique (réponse rapide inchangée)
+                                console.log(
+                                    '[API fetch-ics] ICS hash inchangé — envoi de',
+                                    eventsForClient.length,
+                                    'événements (count BD indisponible)'
+                                );
+                                return NextResponse.json({
+                                    unchanged: true,
+                                    events: eventsForClient,
+                                    diff: {
+                                        added: [],
+                                        updated: [],
+                                        removed: []
+                                    },
+                                    meta: {
+                                        source: 'unchanged',
+                                        fromCache: false,
+                                        changed: 0,
+                                        hash: hashForClient,
+                                        icsUnchanged: true
+                                    }
+                                }, {
+                                    headers: {
+                                        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+                                        'CDN-Cache-Control': 'public, max-age=300'
+                                    }
+                                });
+                            }
                         }
                     }
                 } catch (checkErr) {
@@ -1238,6 +1312,9 @@ export async function GET(request) {
                         // Comme ça en mode fallback Supabase, on affiche la date de dernière modification réelle
                         const totalChanges = inserts.length + updates.length + deletes.length;
                         if (totalChanges > 0) {
+                            // loadLatestEventMap a pu mettre en cache une map vide/avant écriture : invalider
+                            // pour que les requêtes suivantes relisent la vérité côté Supabase.
+                            invalidateLatestEventMapCache();
                             try {
                                 // Récupérer l'ID de la dernière entrée
                                 const { data: lastEntry } = await supabaseClient

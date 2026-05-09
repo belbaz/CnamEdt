@@ -99,26 +99,23 @@ export default function FilterPanel({
     }
 
     return (
-        <>
-            <HoverTooltip text="Filtrer les cours">
-                <button
-                    className={`filter-button ${hasAnyFilter ? 'has-filters' : ''}`}
-                    onClick={() => setIsOpen(!isOpen)}
-                    aria-label="Filtrer les cours"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                         aria-hidden="true">
-                        <path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        <circle cx="17" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none"/>
-                    </svg>
-                    {hasAnyFilter && (
-                        <span className="filter-badge" aria-label={`Filtres actifs`}>
+        <div>
+            <button
+                className={`filter-button ${hasAnyFilter ? 'has-filters' : ''}`}
+                onClick={() => setIsOpen(!isOpen)}
+                aria-label="Filtrer les cours"
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     aria-hidden="true">
+                    <path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="17" cy="12" r="2.5" stroke="currentColor" strokeWidth="2" fill="none"/>
+                </svg>
+                {hasAnyFilter && (
+                    <span className="filter-badge" aria-label={`Filtres actifs`}>
                             {activeFiltersCount + (showOnlyExams ? 1 : 0)}
                         </span>
-                    )}
-                </button>
-            </HoverTooltip>
-
+                )}
+            </button>
             {isOpen && (
                 <>
                     <div className="filter-overlay" onClick={() => setIsOpen(false)}/>
@@ -188,7 +185,8 @@ export default function FilterPanel({
                                                     onChange={(e) => onShowOnlyExamsChange && onShowOnlyExamsChange(e.target.checked)}
                                                     className="exam-toggle-checkbox"
                                                 />
-                                                <span className="exam-toggle-text">Afficher uniquement les examens</span>
+                                                <span
+                                                    className="exam-toggle-text">Afficher uniquement les examens</span>
                                             </label>
                                         </div>
                                     </div>
@@ -203,7 +201,7 @@ export default function FilterPanel({
                     </div>
                 </>
             )}
-        </>
+        </div>
     );
 }
 

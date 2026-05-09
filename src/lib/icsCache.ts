@@ -109,6 +109,14 @@ export function setCachedLatestEventMap(eventMap) {
 }
 
 /**
+ * Invalide uniquement le cache de la map « derniers événements » (ex. table vidée côté Supabase).
+ */
+export function invalidateLatestEventMapCache() {
+    cache.latestEventMap = { data: null, timestamp: 0 };
+    console.log('[Cache] INVALIDATED - Latest Event Map');
+}
+
+/**
  * Récupère le cache de l'historique ICS
  * @returns {Object|null} - Historique ou null si cache invalide
  */

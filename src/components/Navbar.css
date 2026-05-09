@@ -268,6 +268,12 @@
 }
 
 /* Style pour le bouton "Voir toute l'année scolaire" */
+.view-filter-group-btn--full-year {
+    width: auto;
+    min-width: 44px;
+    padding: 0 8px;
+}
+
 .view-filter-group-btn {
     width: 44px;
     height: 44px;
@@ -297,6 +303,59 @@
     width: 24px;
     height: 24px;
     flex-shrink: 0;
+}
+
+/* Libellé année civile (bouton année complète) */
+.navbar-full-year-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.05em;
+    position: relative;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    transform: rotate(-8deg);
+    transform-origin: center center;
+    padding-bottom: 6px;
+}
+
+/* Soulignement : trait quasi droit, extrémités légèrement « tombantes » (effet dessiné) */
+.navbar-full-year-label::after {
+    content: "";
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: 0;
+    height: 10px;
+    background-color: #f97316;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M0 8.7 Q12 6 24 6 L76 6 Q88 6 100 8.7' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 12' preserveAspectRatio='none'%3E%3Cpath d='M0 8.7 Q12 6 24 6 L76 6 Q88 6 100 8.7' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    pointer-events: none;
+}
+
+.view-filter-group-btn.active .navbar-full-year-label::after {
+    background-color: #fdba74;
+}
+
+.navbar-full-year-digit {
+    display: inline-block;
+    background: linear-gradient(165deg, #b91c1c 0%, #dc2626 38%, #ea580c 72%, #fb923c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.view-filter-group-btn.active .navbar-full-year-digit {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .view-filter-group-btn:hover {

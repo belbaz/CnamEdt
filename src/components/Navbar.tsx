@@ -7,8 +7,7 @@ import FilterPanel from "./FilterPanel";
 import Tooltip from "./Tooltip";
 import HoverTooltip from "./HoverTooltip";
 import "./Navbar.css";
-import {IS_DEV_MODE, isDevMode, useDevMode} from "../utils/env";
-import {getSchoolYearLabel} from "../utils/dateUtils";
+import {isDevMode, useDevMode} from "../utils/env";
 import {useI18n} from "../i18n/I18nContext";
 import {fetchICSEvents, loadEventsFromCache} from "../services/icsService";
 
@@ -86,9 +85,7 @@ export default function Navbar(props: any) {
     const router = useRouter();
     const isExamensPage = pathname === '/examens';
 
-    // Calculer l'année scolaire pour l'afficher dans l'icône
-    const schoolYear = getSchoolYearLabel();
-    const [startYearShort, endYearShort] = schoolYear.split('-').map(y => y.slice(-2));
+    const calendarYear = new Date().getFullYear();
 
     // Vérifier les nouvelles modifications dans l'historique
     useEffect(() => {
@@ -174,7 +171,7 @@ export default function Navbar(props: any) {
         }
     }, [isExamensPage]);
 
-    useEffect(()=>{
+    useEffect(() => {
         setIsDev(isDevMode());
     }, [])
 
@@ -232,9 +229,9 @@ export default function Navbar(props: any) {
                     const scrollY = window.scrollY;
 
                     // Hystérésis : deux seuils différents pour éviter le clignotement
-                    if (scrollY > 90 && !isScrolled) {
+                    if (scrollY > 91 && !isScrolled) {
                         setIsScrolled(true);
-                    } else if (scrollY < 40 && isScrolled) {
+                    } else if (scrollY < 68 && isScrolled) {
                         setIsScrolled(false);
                     }
 
@@ -437,7 +434,7 @@ export default function Navbar(props: any) {
                                                             <stop offset="1" stopColor="#0a85d9"/>
                                                         </linearGradient>
                                                     </defs>
-                                                        <g fill="none" strokeMiterlimit="10" fontFamily="none"
+                                                    <g fill="none" strokeMiterlimit="10" fontFamily="none"
                                                        fontSize="none" fontWeight="none"
                                                        textAnchor="middle" transform="scale(5.33333)">
                                                         <path fill="url(#a)"
@@ -473,6 +470,39 @@ export default function Navbar(props: any) {
                                             <span style={{fontSize: '1.5rem', lineHeight: 1}}>🎓</span>
                                         </button>
                                     </Tooltip>
+                                    {onToggleFullYear && (
+                                        <Tooltip
+                                            text={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
+                                            show={showTooltip.fullYear}
+                                            enabled={showTooltips}
+                                        >
+                                            <button
+                                                type="button"
+                                                className={`view-filter-group-btn view-filter-group-btn--full-year ${showFullYear ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    handleClick('fullYear');
+                                                    onToggleFullYear();
+                                                }}
+                                                aria-label={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
+                                                onMouseEnter={() => setShowTooltip(prev => ({...prev, fullYear: true}))}
+                                                onMouseLeave={() => setShowTooltip(prev => ({
+                                                    ...prev,
+                                                    fullYear: false
+                                                }))}
+                                                onTouchStart={() => handleLongPressStart('fullYear')}
+                                                onTouchEnd={() => handleLongPressEnd('fullYear')}
+                                            >
+                                                <span className="navbar-full-year-label" aria-hidden="true">
+                                                    {String(calendarYear).split('').map((digit, i) => (
+                                                        <span key={`y-${calendarYear}-${i}`}
+                                                              className="navbar-full-year-digit">
+                                                            {digit}
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            </button>
+                                        </Tooltip>
+                                    )}
                                     {/* Bouton pour changer la vue (horizontal/vertical) */}
                                     {onViewModeChange && (
                                         <Tooltip
@@ -568,37 +598,6 @@ export default function Navbar(props: any) {
                                             </button>
                                         </Tooltip>
                                     )}
-                                    {onToggleFullYear && (
-                                        <Tooltip
-                                            text={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
-                                            show={showTooltip.fullYear}
-                                            enabled={showTooltips}
-                                        >
-                                            <button
-                                                className={`view-filter-group-btn ${showFullYear ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    handleClick('fullYear');
-                                                    onToggleFullYear();
-                                                }}
-                                                aria-label={showFullYear ? t('navbar.fullYearOff') : t('navbar.fullYear')}
-                                                onMouseEnter={() => setShowTooltip(prev => ({...prev, fullYear: true}))}
-                                                onMouseLeave={() => setShowTooltip(prev => ({
-                                                    ...prev,
-                                                    fullYear: false
-                                                }))}
-                                                onTouchStart={() => handleLongPressStart('fullYear')}
-                                                onTouchEnd={() => handleLongPressEnd('fullYear')}
-                                            >
-                                                <img
-                                                    src="/annee.svg"
-                                                    alt={t('navbar.fullYear')}
-                                                    width="24"
-                                                    height="24"
-                                                    style={{display: 'block'}}
-                                                />
-                                            </button>
-                                        </Tooltip>
-                                    )}
                                     {showFilter && (
                                         <Tooltip
                                             text={t('navbar.filter')}
@@ -624,74 +623,70 @@ export default function Navbar(props: any) {
                                             </div>
                                         </Tooltip>
                                     )}
-                                    {devMode ?
-                                        <Tooltip
-                                            text={t('navbar.history')}
-                                            show={showTooltip.history}
-                                            enabled={showTooltips}
-                                        >
-                                            <div style={{position: "relative"}}>
-                                                <button
-                                                    className="history-btn"
-                                                    onClick={() => {
-                                                        handleClick('history');
-                                                        handleShowHistory();
+                                    <Tooltip
+                                        text={t('navbar.history')}
+                                        show={showTooltip.history}
+                                        enabled={showTooltips}
+                                    >
+                                        <div style={{position: "relative"}}>
+                                            <button
+                                                className="history-btn"
+                                                onClick={() => {
+                                                    handleClick('history');
+                                                    handleShowHistory();
+                                                }}
+                                                aria-label={t('navbar.history')}
+                                                onMouseEnter={() => setShowTooltip(prev => ({
+                                                    ...prev,
+                                                    history: true
+                                                }))}
+                                                onMouseLeave={() => setShowTooltip(prev => ({
+                                                    ...prev,
+                                                    history: false
+                                                }))}
+                                                onTouchStart={() => handleLongPressStart('history')}
+                                                onTouchEnd={() => handleLongPressEnd('history')}
+                                            >
+                                                <svg width="18" height="18" viewBox="0 0 500 500" fill="none"
+                                                     xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                    <g transform="translate(0,500) scale(0.1,-0.1)"
+                                                       fill="currentColor"
+                                                       stroke="none">
+                                                        <path
+                                                            d="M2221 4564 c-409 -56 -784 -229 -1108 -511 l-73 -64 0 111 c0 124 -12 165 -62 217 -86 89 -242 75 -313 -27 -41 -59 -47 -134 -43 -537 l3 -368 28 -48 c35 -60 87 -94 157 -104 30 -4 226 -6 435 -3 361 5 382 6 420 26 62 32 98 91 103 168 5 75 -17 127 -74 175 -49 40 -107 51 -267 51 l-132 1 68 65 c329 315 812 484 1268 444 413 -36 754 -194 1045 -484 292 -293 449 -632 484 -1048 18 -213 -17 -485 -87 -683 -144 -405 -463 -761 -847 -945 -133 -63 -217 -93 -356 -124 -508 -113 -1027 9 -1426 335 -109 89 -248 242 -325 357 -172 257 -256 508 -283 847 -12 157 -15 168 -42 207 -43 62 -104 90 -181 86 -77 -5 -135 -41 -170 -107 -20 -38 -23 -59 -23 -147 0 -283 82 -616 219 -887 358 -707 1071 -1147 1861 -1147 331 0 631 70 920 213 716 357 1160 1071 1160 1867 0 1048 -774 1929 -1813 2065 -145 19 -404 18 -546 -1z"/>
+                                                        <path
+                                                            d="M2430 3637 c-50 -16 -114 -84 -129 -137 -9 -34 -11 -194 -9 -655 l3 -610 25 -45 c16 -28 43 -55 74 -75 l49 -30 421 0 421 0 45 25 c118 66 145 217 57 317 -61 70 -78 73 -394 73 l-283 0 0 481 c0 352 -3 493 -12 523 -16 53 -81 118 -134 134 -49 14 -86 14 -134 -1z"/>
+                                                    </g>
+                                                </svg>
+                                            </button>
+                                            {newHistoryCount > 0 && (
+                                                <span
+                                                    className="history-badge"
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: "-4px",
+                                                        right: "-4px",
+                                                        background: "#ef4444",
+                                                        color: "white",
+                                                        borderRadius: "10px",
+                                                        minWidth: "18px",
+                                                        height: "18px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontSize: "0.7rem",
+                                                        fontWeight: 700,
+                                                        padding: "0 5px",
+                                                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                                        border: "2px solid var(--bg-primary)",
+                                                        zIndex: 10
                                                     }}
-                                                    aria-label={t('navbar.history')}
-                                                    onMouseEnter={() => setShowTooltip(prev => ({
-                                                        ...prev,
-                                                        history: true
-                                                    }))}
-                                                    onMouseLeave={() => setShowTooltip(prev => ({
-                                                        ...prev,
-                                                        history: false
-                                                    }))}
-                                                    onTouchStart={() => handleLongPressStart('history')}
-                                                    onTouchEnd={() => handleLongPressEnd('history')}
                                                 >
-                                                    <svg width="18" height="18" viewBox="0 0 500 500" fill="none"
-                                                         xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                        <g transform="translate(0,500) scale(0.1,-0.1)"
-                                                           fill="currentColor"
-                                                           stroke="none">
-                                                            <path
-                                                                d="M2221 4564 c-409 -56 -784 -229 -1108 -511 l-73 -64 0 111 c0 124 -12 165 -62 217 -86 89 -242 75 -313 -27 -41 -59 -47 -134 -43 -537 l3 -368 28 -48 c35 -60 87 -94 157 -104 30 -4 226 -6 435 -3 361 5 382 6 420 26 62 32 98 91 103 168 5 75 -17 127 -74 175 -49 40 -107 51 -267 51 l-132 1 68 65 c329 315 812 484 1268 444 413 -36 754 -194 1045 -484 292 -293 449 -632 484 -1048 18 -213 -17 -485 -87 -683 -144 -405 -463 -761 -847 -945 -133 -63 -217 -93 -356 -124 -508 -113 -1027 9 -1426 335 -109 89 -248 242 -325 357 -172 257 -256 508 -283 847 -12 157 -15 168 -42 207 -43 62 -104 90 -181 86 -77 -5 -135 -41 -170 -107 -20 -38 -23 -59 -23 -147 0 -283 82 -616 219 -887 358 -707 1071 -1147 1861 -1147 331 0 631 70 920 213 716 357 1160 1071 1160 1867 0 1048 -774 1929 -1813 2065 -145 19 -404 18 -546 -1z"/>
-                                                            <path
-                                                                d="M2430 3637 c-50 -16 -114 -84 -129 -137 -9 -34 -11 -194 -9 -655 l3 -610 25 -45 c16 -28 43 -55 74 -75 l49 -30 421 0 421 0 45 25 c118 66 145 217 57 317 -61 70 -78 73 -394 73 l-283 0 0 481 c0 352 -3 493 -12 523 -16 53 -81 118 -134 134 -49 14 -86 14 -134 -1z"/>
-                                                        </g>
-                                                    </svg>
-                                                </button>
-                                                {newHistoryCount > 0 && (
-                                                    <span
-                                                        className="history-badge"
-                                                        style={{
-                                                            position: "absolute",
-                                                            top: "-4px",
-                                                            right: "-4px",
-                                                            background: "#ef4444",
-                                                            color: "white",
-                                                            borderRadius: "10px",
-                                                            minWidth: "18px",
-                                                            height: "18px",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            fontSize: "0.7rem",
-                                                            fontWeight: 700,
-                                                            padding: "0 5px",
-                                                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                                            border: "2px solid var(--bg-primary)",
-                                                            zIndex: 10
-                                                        }}
-                                                    >
                                                         {newHistoryCount > 9 ? '9+' : newHistoryCount}
                                                     </span>
-                                                )}
-                                            </div>
-                                        </Tooltip>
-                                        :
-                                        ''
-                                    }
+                                            )}
+                                        </div>
+                                    </Tooltip>
                                 </div>
                                 {devMode && (
                                     <div>
