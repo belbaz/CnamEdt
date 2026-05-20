@@ -13,6 +13,23 @@ import Spinner from "@/components/Spinner";
 import Footer from "@/components/Footer";
 import styles from "./page.module.css";
 
+// Icônes SVG ajustées pour accepter des tailles personnalisées
+const EyeIcon = ({ width = 16, height = 16 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={width} height={height} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+);
+
+const EyeOffIcon = ({ width = 16, height = 16 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={width} height={height} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+        <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+);
+
 function ExamensContent() {
     const { t } = useI18n();
     const router = useRouter();
@@ -22,7 +39,20 @@ function ExamensContent() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [subjectColors, setSubjectColors] = useState({});
 
-    // Thème (OLED prioritaire via cookie de session)
+    const [hiddenSubjects, setHiddenSubjects] = useState([]);
+
+    // --- SÉCURITÉ DE TRADUCTION ---
+    // Cette fonction évite de casser l'UI si les JSON ne sont pas encore à jour
+    const getSafeTranslation = (key, fallback) => {
+        const translation = t(key);
+        return (!translation || translation === key) ? fallback : translation;
+    };
+
+    const textHide = getSafeTranslation('examens.hide', 'Cacher');
+    const textShow = getSafeTranslation('examens.show', 'Afficher');
+    const textAllHidden = getSafeTranslation('examens.allHidden', 'Tous vos examens sont masqués.');
+    const textHiddenTitle = getSafeTranslation('examens.hiddenTitle', 'Examens masqués');
+
     useEffect(() => {
         try {
             applyThemeFromBrowserStorage();
@@ -31,7 +61,17 @@ function ExamensContent() {
         }
     }, []);
 
-    // Mettre à jour l'heure actuelle toutes les secondes
+    useEffect(() => {
+        try {
+            const savedHidden = localStorage.getItem('cnamedt_hidden_exams');
+            if (savedHidden) {
+                setHiddenSubjects(JSON.parse(savedHidden));
+            }
+        } catch (e) {
+            console.error("[Examens] Erreur lecture localStorage:", e);
+        }
+    }, []);
+
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentTime(new Date());
@@ -39,7 +79,6 @@ function ExamensContent() {
         return () => clearInterval(interval);
     }, []);
 
-    // Charger les événements
     useEffect(() => {
         async function loadEvents() {
             try {
@@ -61,9 +100,7 @@ function ExamensContent() {
         loadEvents();
     }, []);
 
-    // Filtrer et traiter les examens
     const upcomingExams = useMemo(() => {
-        // Filtrer et mapper les examens
         const allExams = events
             .filter((event) => {
                 const description = event.description || "";
@@ -77,7 +114,7 @@ function ExamensContent() {
                 const examDate = new Date(event.start);
                 const timeDiff = examDate - currentTime;
                 const { matiere } = getEventTitle(event);
-                
+
                 return {
                     ...event,
                     matiere: matiere || event.summary || t('examens.unknownSubject'),
@@ -87,61 +124,40 @@ function ExamensContent() {
             })
             .sort((a, b) => a.examDate - b.examDate);
 
-        // Regrouper les examens consécutifs de la même matière
-        const groupedExams = [];
-        let currentGroup = null;
+        const examsMap = new Map();
 
         for (const exam of allExams) {
-            if (!currentGroup) {
-                // Premier examen, créer un nouveau groupe
+            if (!examsMap.has(exam.matiere)) {
                 const examEndDate = exam.end || exam.end_time || exam.examDate;
-                currentGroup = {
+                examsMap.set(exam.matiere, {
                     ...exam,
                     exams: [exam],
                     endDate: new Date(examEndDate),
-                };
+                    _blockBroken: false
+                });
             } else {
-                // Vérifier si cet examen est consécutif et de la même matière
-                // Utiliser la date de fin du dernier examen du groupe
-                const lastExamInGroup = currentGroup.exams[currentGroup.exams.length - 1];
-                const lastExamEndDate = lastExamInGroup.end || lastExamInGroup.end_time || lastExamInGroup.examDate;
-                const timeBetweenExams = exam.examDate - new Date(lastExamEndDate);
-                const isSameSubject = exam.matiere === currentGroup.matiere;
-                const isConsecutive = timeBetweenExams <= 24 * 60 * 60 * 1000; // Moins de 24h entre les examens
+                const currentGroup = examsMap.get(exam.matiere);
 
-                if (isSameSubject && isConsecutive) {
-                    // Ajouter à ce groupe
-                    currentGroup.exams.push(exam);
-                    // Mettre à jour la date de fin avec la date de fin de cet examen
-                    const examEndDate = exam.end || exam.end_time || exam.examDate;
-                    currentGroup.endDate = new Date(examEndDate);
-                    // Mettre à jour le timeDiff avec le premier examen du groupe (le plus proche)
-                    if (exam.timeDiff < currentGroup.timeDiff) {
-                        currentGroup.timeDiff = exam.timeDiff;
-                        currentGroup.examDate = exam.examDate;
+                if (!currentGroup._blockBroken) {
+                    const lastExamInGroup = currentGroup.exams[currentGroup.exams.length - 1];
+                    const lastExamEndDate = lastExamInGroup.end || lastExamInGroup.end_time || lastExamInGroup.examDate;
+                    const timeBetweenExams = exam.examDate - new Date(lastExamEndDate);
+
+                    if (timeBetweenExams <= 24 * 60 * 60 * 1000) {
+                        const examEndDate = exam.end || exam.end_time || exam.examDate;
+                        currentGroup.endDate = new Date(examEndDate);
+                    } else {
+                        currentGroup._blockBroken = true;
                     }
-                } else {
-                    // Nouveau groupe, sauvegarder l'ancien
-                    groupedExams.push(currentGroup);
-                    const examEndDate = exam.end || exam.end_time || exam.examDate;
-                    currentGroup = {
-                        ...exam,
-                        exams: [exam],
-                        endDate: new Date(examEndDate),
-                    };
                 }
+
+                currentGroup.exams.push(exam);
             }
         }
 
-        // Ne pas oublier le dernier groupe
-        if (currentGroup) {
-            groupedExams.push(currentGroup);
-        }
-
-        return groupedExams;
+        return Array.from(examsMap.values());
     }, [events, currentTime]);
 
-    // Fonction pour formater le temps restant (toujours avec secondes)
     function formatTimeRemaining(timeDiff) {
         const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -159,7 +175,6 @@ function ExamensContent() {
         }
     }
 
-    // Fonction pour obtenir la couleur d'une matière
     function getSubjectColor(matiere) {
         const colorIndex = subjectColors[matiere] ?? 0;
         const colors = [
@@ -171,7 +186,6 @@ function ExamensContent() {
         return colors[colorIndex % colors.length];
     }
 
-    // Fonction pour formater la date (format court)
     function formatDate(date) {
         return date.toLocaleDateString("fr-FR", {
             weekday: "short",
@@ -182,29 +196,22 @@ function ExamensContent() {
         });
     }
 
-    // Fonction pour formater une plage de dates
     function formatDateRange(startDate, endDate) {
         const start = formatDate(startDate);
         const end = formatDate(endDate);
-        
-        // Si c'est le même jour, afficher seulement une date avec les heures
         const sameDay = startDate.toDateString() === endDate.toDateString();
         if (sameDay) {
             return start;
         }
-        
         return `${start} - ${end}`;
     }
 
-    // Fonction pour naviguer vers le cours correspondant à l'examen
     const handleExamClick = (exam) => {
         try {
-            // Si c'est un groupe d'examens, passer tous les eventKey
             if (exam.exams && exam.exams.length > 1) {
                 const eventKeys = exam.exams.map(e => encodeURIComponent(generateEventKey(e)));
                 router.push(`/?eventKey=${eventKeys.join(',')}`);
             } else {
-                // Un seul examen, navigation normale
                 const examToNavigate = exam.exams ? exam.exams[0] : exam;
                 const eventKey = generateEventKey(examToNavigate);
                 const encodedKey = encodeURIComponent(eventKey);
@@ -213,6 +220,115 @@ function ExamensContent() {
         } catch (err) {
             console.error("[Examens] Erreur lors de la navigation:", err);
         }
+    };
+
+    const toggleVisibility = (matiere, e) => {
+        e.stopPropagation();
+        setHiddenSubjects((prev) => {
+            const newHidden = prev.includes(matiere)
+                ? prev.filter((m) => m !== matiere)
+                : [...prev, matiere];
+
+            try {
+                localStorage.setItem('cnamedt_hidden_exams', JSON.stringify(newHidden));
+            } catch (err) {}
+            return newHidden;
+        });
+    };
+
+    const renderExamCard = (exam, index, isHidden) => {
+        const color = getSubjectColor(exam.matiere);
+        const isUrgent = exam.timeDiff < 24 * 60 * 60 * 1000;
+        const isVeryUrgent = exam.timeDiff < 7 * 60 * 60 * 1000;
+        const firstExam = exam.exams ? exam.exams[0] : exam;
+
+        return (
+            <li
+                key={exam.uid || index}
+                className={`${styles.examItem} ${isUrgent && !isHidden ? styles.urgent : ""} ${isVeryUrgent && !isHidden ? styles.veryUrgent : ""}`}
+                style={{
+                    "--subject-color": color,
+                    opacity: isHidden ? 0.6 : 1,
+                    filter: isHidden ? 'grayscale(0.6)' : 'none'
+                }}
+                onClick={() => handleExamClick(exam)}
+            >
+                <div className={styles.examContent}>
+                    <div className={styles.examLeft}>
+                        <div
+                            className={styles.colorIndicator}
+                            style={{ backgroundColor: color }}
+                        />
+                        <div className={styles.examInfo}>
+                            <h3 className={styles.examSubject}>
+                                {exam.matiere}
+                            </h3>
+                            <div className={styles.examMeta}>
+                                <span className={styles.examDate}>
+                                    📅 {formatDateRange(firstExam.examDate, exam.endDate)}
+                                </span>
+                                {firstExam.location && (
+                                    <span className={styles.examLocation}>
+                                        📍 {firstExam.location}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.examRight} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                            className={`${styles.timeRemaining} ${isUrgent && !isHidden ? styles.urgentTime : ""} ${isVeryUrgent && !isHidden ? styles.veryUrgentTime : ""}`}
+                        >
+                            {formatTimeRemaining(exam.timeDiff)}
+                        </div>
+                        {isVeryUrgent && !isHidden && (
+                            <span className={styles.urgentBadge}>⚠️</span>
+                        )}
+                        {isUrgent && !isVeryUrgent && !isHidden && (
+                            <span className={styles.warningBadge}>⏰</span>
+                        )}
+
+                        <button
+                            onClick={(e) => toggleVisibility(exam.matiere, e)}
+                            title={isHidden ? textShow : textHide}
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid var(--border-color, rgba(128, 128, 128, 0.4))',
+                                borderRadius: '12px',
+                                cursor: 'pointer',
+                                padding: '4px 10px',
+                                color: 'var(--text-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                opacity: 0.8,
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '1';
+                                e.currentTarget.style.background = 'var(--bg-secondary, rgba(128, 128, 128, 0.1))';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '0.8';
+                                e.currentTarget.style.background = 'transparent';
+                            }}
+                        >
+                            {isHidden ? (
+                                <>
+                                    <EyeIcon width={14} height={14} /> {textShow}
+                                </>
+                            ) : (
+                                <>
+                                    <EyeOffIcon width={14} height={14} /> {textHide}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </li>
+        );
     };
 
     if (loading) {
@@ -238,6 +354,9 @@ function ExamensContent() {
         );
     }
 
+    const visibleExams = upcomingExams.filter(exam => !hiddenSubjects.includes(exam.matiere));
+    const hiddenExamsList = upcomingExams.filter(exam => hiddenSubjects.includes(exam.matiere));
+
     return (
         <div className={styles.container}>
             <main className={styles.main}>
@@ -259,71 +378,39 @@ function ExamensContent() {
                         <div className={styles.summary}>
                             <p className={styles.summaryText}>
                                 {t('examens.upcomingExams')
-                                    .replace('{count}', upcomingExams.length)
-                                    .replace('{plural}', upcomingExams.length > 1 ? 's' : '')}
+                                    .replace('{count}', visibleExams.length)
+                                    .replace('{plural}', visibleExams.length > 1 ? 's' : '')}
                             </p>
                         </div>
 
-                        <ul className={styles.examsList}>
-                            {upcomingExams.map((exam, index) => {
-                                const color = getSubjectColor(exam.matiere);
-                                const isUrgent = exam.timeDiff < 24 * 60 * 60 * 1000; // Moins de 24h
-                                const isVeryUrgent = exam.timeDiff < 7 * 60 * 60 * 1000; // Moins de 7h
-                                const isGrouped = exam.exams && exam.exams.length > 1;
-                                const firstExam = exam.exams ? exam.exams[0] : exam;
-                                const lastExam = exam.exams ? exam.exams[exam.exams.length - 1] : exam;
-                                const lastExamEndDate = lastExam.end || lastExam.end_time || lastExam.examDate;
+                        {visibleExams.length > 0 ? (
+                            <ul className={styles.examsList}>
+                                {visibleExams.map((exam, index) => renderExamCard(exam, index, false))}
+                            </ul>
+                        ) : (
+                            <div className={styles.noExamsContainer} style={{ padding: '2rem 0' }}>
+                                <p className={styles.noExamsText}>{textAllHidden}</p>
+                            </div>
+                        )}
 
-                                return (
-                                    <li
-                                        key={exam.uid || index}
-                                        className={`${styles.examItem} ${isUrgent ? styles.urgent : ""} ${isVeryUrgent ? styles.veryUrgent : ""}`}
-                                        style={{ "--subject-color": color }}
-                                        onClick={() => handleExamClick(exam)}
-                                    >
-                                        <div className={styles.examContent}>
-                                            <div className={styles.examLeft}>
-                                                <div
-                                                    className={styles.colorIndicator}
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                                <div className={styles.examInfo}>
-                                                    <h3 className={styles.examSubject}>
-                                                        {exam.matiere}
-                                                    </h3>
-                                                    <div className={styles.examMeta}>
-                                                        <span className={styles.examDate}>
-                                                            📅 {isGrouped 
-                                                                ? formatDateRange(firstExam.examDate, new Date(lastExamEndDate))
-                                                                : formatDate(exam.examDate)
-                                                            }
-                                                        </span>
-                                                        {firstExam.location && (
-                                                            <span className={styles.examLocation}>
-                                                                📍 {firstExam.location}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className={styles.examRight}>
-                                                <div
-                                                    className={`${styles.timeRemaining} ${isUrgent ? styles.urgentTime : ""} ${isVeryUrgent ? styles.veryUrgentTime : ""}`}
-                                                >
-                                                    {formatTimeRemaining(exam.timeDiff)}
-                                                </div>
-                                                {isVeryUrgent && (
-                                                    <span className={styles.urgentBadge}>⚠️</span>
-                                                )}
-                                                {isUrgent && !isVeryUrgent && (
-                                                    <span className={styles.warningBadge}>⏰</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ul>
+                        {hiddenExamsList.length > 0 && (
+                            <div style={{ marginTop: '3rem', borderTop: '1px dashed var(--border-color)', paddingTop: '1.5rem' }}>
+                                <h2 style={{
+                                    fontSize: '1rem',
+                                    fontWeight: '500',
+                                    color: 'var(--text-secondary)',
+                                    marginBottom: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <EyeOffIcon width={18} height={18} /> {textHiddenTitle} ({hiddenExamsList.length})
+                                </h2>
+                                <ul className={styles.examsList}>
+                                    {hiddenExamsList.map((exam, index) => renderExamCard(exam, index, true))}
+                                </ul>
+                            </div>
+                        )}
                     </>
                 )}
             </main>
@@ -335,5 +422,3 @@ function ExamensContent() {
 export default function ExamensPage() {
     return <ExamensContent />;
 }
-
-

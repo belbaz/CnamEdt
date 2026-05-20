@@ -507,7 +507,11 @@
     "noExamsTitle": "Relax, no exam yet!",
     "noExamsText": "No upcoming exams at the moment. Enjoy this break! 🎉",
     "upcomingExams": "{count} exam{plural} upcoming",
-    "backToDashboard": "Back to dashboard"
+    "backToDashboard": "Back to dashboard",
+    "hide": "Hide",
+    "show": "Show",
+    "allHidden": "All your exams are hidden.",
+    "hiddenTitle": "Hidden exams"
   },
   "agenda": {
     "loading": "Loading agenda",

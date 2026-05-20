@@ -505,7 +505,11 @@
     "noExamsTitle": "Relax, pas encore d'examen !",
     "noExamsText": "Aucun examen à venir pour le moment. Profite de ce répit ! 🎉",
     "upcomingExams": "{count} examen{plural} à venir",
-    "backToDashboard": "Retour au dashboard"
+    "backToDashboard": "Retour au dashboard",
+    "hide": "Cacher",
+    "show": "Afficher",
+    "allHidden": "Tous vos examens sont masqués.",
+    "hiddenTitle": "Examens masqués"
   },
   "agenda": {
     "loading": "Chargement de l'agenda",
