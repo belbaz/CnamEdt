@@ -1144,8 +1144,8 @@ function AgendaContent() {
         const mayShowPersonalPrivacyIndicators =
             authenticated &&
             userInfo?.id &&
-            agendaCourseNote?.user_id === userInfo.id &&
-            userRole !== "visiteur";
+            userRole !== "visiteur" &&
+            (!agendaCourseNote || agendaCourseNote.user_id === userInfo.id);
 
         return (
             <>

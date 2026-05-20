@@ -75,12 +75,11 @@ export default function EventModal({
     const modalCourseNote =
         selectedEvent?.uid && courseNotes instanceof Map ? courseNotes.get(selectedEvent.uid) : null;
 
-    /** Indicateurs « note personnelle » : uniquement connecté + note chargée = la nôtre (user_id session) */
+    /** Afficher le switch perso si connecté et autorisé : création (pas encore de note) ou note appartenant à l'utilisateur. */
     const mayShowPersonalPrivacyIndicators =
         notesAuthenticated &&
-        !!modalCourseNote &&
         !!notesSessionUserId &&
-        modalCourseNote.user_id === notesSessionUserId;
+        (!modalCourseNote || modalCourseNote.user_id === notesSessionUserId);
 
     const extractNoteEntries = (record) => {
         if (!record) return [];
