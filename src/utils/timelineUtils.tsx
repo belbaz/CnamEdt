@@ -96,6 +96,13 @@ export function getDayCoursesTimeProgressPercent(dayEvents, now = new Date()) {
     let progressMs = 0;
 
     for (const ev of dayEvents) {
+        // Ignorer les examens dans le calcul de progression
+        const description = ev.description || '';
+        const summary = ev.summary || '';
+        if (description.toUpperCase().includes("EXAMEN") || summary.toUpperCase().includes("EXAMEN")) {
+            continue;
+        }
+
         const start = new Date(ev.start);
         const endRaw = ev.end_time || ev.end;
         if (!endRaw) continue;

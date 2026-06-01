@@ -723,6 +723,24 @@ export default function EventModal({
                                                         </>
                                                     )}
                                                 </div>
+                                                {hoursStats.percentage === 100 && hoursStats.hasUpcomingExam && (
+                                                    <div className="hours-stats-exam-warning" style={{ 
+                                                        marginTop: '12px', 
+                                                        padding: '8px 12px',
+                                                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                                                        borderRadius: '8px',
+                                                        fontSize: '13px', 
+                                                        color: '#f59e0b', 
+                                                        fontWeight: 500,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px'
+                                                    }}>
+                                                        <span style={{ fontSize: '15px' }}>📝</span>
+                                                        <span>{t('eventModal.nextExamUpcoming')}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

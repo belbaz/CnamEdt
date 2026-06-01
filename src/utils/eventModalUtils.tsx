@@ -42,19 +42,34 @@ export function getSubjectHoursStats(subjectName, allEvents, referenceEvent = nu
 
     let totalHours = 0;
     let completedHours = 0;
+    let hasUpcomingExam = false;
 
     allEvents.forEach(event => {
         const {matiere} = getEventTitle(event);
         if (matiere !== subjectName) return;
 
+        const description = event.description || '';
+        const summary = event.summary || '';
+        const isExam = description.toUpperCase().includes("EXAMEN") || summary.toUpperCase().includes("EXAMEN");
+
         const start = new Date(event.start);
+        const startMs = start.getTime();
+
+        if (isExam) {
+            if (startMs > referenceTimestamp) {
+                hasUpcomingExam = true;
+            }
+            // Ignorer les examens dans le calcul des heures de la matière
+            return;
+        }
+
         const endDate = event.end_time || event.end;
         if (!endDate) return;
 
         const end = new Date(endDate);
 
         // Vérifier que les dates sont valides
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+        if (isNaN(startMs) || isNaN(end.getTime())) return;
 
         const durationMs = end.getTime() - start.getTime();
         if (durationMs <= 0) return;
@@ -62,7 +77,6 @@ export function getSubjectHoursStats(subjectName, allEvents, referenceEvent = nu
         const durationHours = durationMs / msPerHour;
         totalHours += durationHours;
 
-        const startMs = start.getTime();
         const endMs = end.getTime();
 
         if (endMs <= referenceTimestamp) {
@@ -84,7 +98,8 @@ export function getSubjectHoursStats(subjectName, allEvents, referenceEvent = nu
         total: totalHours,
         completed: completedHours,
         remaining: remainingHours,
-        percentage: totalHours > 0 ? Math.round((completedHours / totalHours) * 100) : 0
+        percentage: totalHours > 0 ? Math.round((completedHours / totalHours) * 100) : 0,
+        hasUpcomingExam
     };
 }
 
@@ -186,13 +201,3 @@ export function getAcademicYearParts(dateLike) {
     const start = d.getMonth() >= 8 ? y : y - 1;
     return [start, start + 1];
 }
-
-
-
-
-
-
-
-
-
-
