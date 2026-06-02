@@ -11,6 +11,10 @@ export default function MessagePage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [messageInput, setMessageInput] = useState("");
+    const [messages, setMessages] = useState<any[]>([]);
+    const [myUserId, setMyUserId] = useState<string | null>(null);
+    const [conversationIds, setConversationIds] = useState<Set<string>>(new Set());
+    
     interface User{
         id: number;
         name: string;
@@ -35,19 +39,101 @@ export default function MessagePage() {
                 setUserList([]); // Initialise à un tableau vide pour éviter l'erreur
             }
         };
+        
+        const fetchContextData = async () => {
+            try {
+                const userRes = await fetch("/api/user");
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    if (userData.id) setMyUserId(String(userData.id));
+                }
+
+                const convRes = await fetch("/api/messages/conversations");
+                if (convRes.ok) {
+                    const convData = await convRes.json();
+                    if (convData.success && convData.conversations) {
+                        setConversationIds(new Set(convData.conversations.map(String)));
+                    }
+                }
+            } catch (err) {
+                console.error("Erreur chargement contexte:", err);
+            }
+        };
+        
         fetchUsers();
+        fetchContextData();
     }, []);
 
-    const messages = [
-        {id: 1, senderId: 1, text: "Bonjour, as-tu le cours d'hier ?", time: "10:30"},
-    ];
+    useEffect(() => {
+        if (!selectedUser) return;
+        
+        const fetchMessages = async () => {
+            try {
+                const response = await fetch(`/api/messages?userId=${selectedUser.id}`);
+                if (!response.ok) throw new Error("Failed to fetch messages");
+                const data = await response.json();
+                if (data.success && data.messages) {
+                    setMessages(data.messages);
+                }
+            } catch (err) {
+                console.error("Erreur chargement messages:", err);
+            }
+        };
+        fetchMessages();
+    }, [selectedUser]);
+
+    const handleSendMessage = async () => {
+        if (!messageInput.trim() || !selectedUser) return;
+        
+        const tempText = messageInput.trim();
+        setMessageInput(""); 
+        
+        const tempMsg = {
+            id: Date.now(),
+            sender_id: "me", // Utilisé localement
+            receiver_id: selectedUser.id,
+            text: tempText,
+            created_at: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, tempMsg]);
+        
+        try {
+            const response = await fetch("/api/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    receiverId: selectedUser.id,
+                    text: tempText,
+                }),
+            });
+            
+            if (!response.ok) throw new Error("Failed to send message");
+            
+            const data = await response.json();
+            if (data.success && data.message) {
+                setMessages(prev => prev.map(m => m.id === tempMsg.id ? data.message : m));
+            }
+        } catch (err) {
+            console.error("Erreur envoi message:", err);
+        }
+    };
 
     const normalizeString = (str: string | undefined | null) => {
         return (str || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     };
 
     const filteredUsers = userList.filter(u => {
+        // Retirer l'utilisateur actuel
+        if (myUserId && String(u.id) === String(myUserId)) return false;
+        
         if (!u.name || u.name === "null null" || u.name.trim() === "") return false;
+        
+        const isSearching = searchQuery.trim() !== "";
+        const hasConversation = conversationIds.has(String(u.id));
+        
+        // Si aucune recherche en cours, n'afficher que les conversations existantes
+        if (!isSearching && !hasConversation) return false;
+        
         return normalizeString(u.name).includes(normalizeString(searchQuery));
     });
 
@@ -105,23 +191,25 @@ export default function MessagePage() {
                                 <>
                                     <div className={styles.chatHeader}>
                                         <h2>{selectedUser.name}</h2>
-                                        <div className={styles.headerStatus}>
-                                            <span className={styles.statusDot}></span> En ligne
-                                        </div>
                                     </div>
                                     <div className={styles.messagesContainer}>
-                                        {messages.map(msg => (
-                                            <div
-                                                key={msg.id}
-                                                className={`${styles.messageWrapper} ${msg.senderId === "me" ? styles.sentWrapper : styles.receivedWrapper}`}
-                                            >
+                                        {messages.map(msg => {
+                                            const isMe = String(msg.sender_id) !== String(selectedUser.id);
+                                            const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+                                            
+                                            return (
                                                 <div
-                                                    className={`${styles.messageBubble} ${msg.senderId === "me" ? styles.sent : styles.received}`}>
-                                                    {msg.text}
-                                                    <div className={styles.messageTime}>{msg.time}</div>
+                                                    key={msg.id}
+                                                    className={`${styles.messageWrapper} ${isMe ? styles.sentWrapper : styles.receivedWrapper}`}
+                                                >
+                                                    <div
+                                                        className={`${styles.messageBubble} ${isMe ? styles.sent : styles.received}`}>
+                                                        {msg.text}
+                                                        <div className={styles.messageTime}>{time}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                     <div className={styles.inputContainer}>
                                         <input
@@ -130,11 +218,11 @@ export default function MessagePage() {
                                             className={styles.messageInput}
                                             value={messageInput}
                                             onChange={(e) => setMessageInput(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && setMessageInput('')}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                         />
                                         <button
                                             className={`${styles.sendButton} ${messageInput.trim() ? styles.sendButtonActive : ''}`}
-                                            onClick={() => setMessageInput("")}
+                                            onClick={handleSendMessage}
                                             disabled={!messageInput.trim()}
                                         >
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
