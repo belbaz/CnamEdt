@@ -949,5 +949,13 @@
         "operator": "Operator"
       }
     }
+  },
+  "messagePage": {
+    "title": "Messages",
+    "searchPlaceholder": "Search a user...",
+    "noUsersFound": "No user found",
+    "writeMessage": "Write a message...",
+    "send": "Send",
+    "selectUser": "Select a user to start chatting."
   }
 }

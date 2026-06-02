@@ -946,5 +946,13 @@
         "operator": "Opérateur"
       }
     }
+  },
+  "messagePage": {
+    "title": "Messages",
+    "searchPlaceholder": "Rechercher un utilisateur...",
+    "noUsersFound": "Aucun utilisateur trouvé",
+    "writeMessage": "Écrivez un message...",
+    "send": "Envoyer",
+    "selectUser": "Sélectionnez un utilisateur pour commencer à discuter."
   }
 }
