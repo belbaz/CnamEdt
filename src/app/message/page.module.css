@@ -203,6 +203,8 @@
 .messageWrapper {
     display: flex;
     width: 100%;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .sentWrapper {
@@ -356,4 +358,135 @@
     .chatArea {
         height: 65%;
     }
+}
+
+.messageOptions {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dotsBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.messageWrapper:hover .dotsBtn {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .dotsBtn {
+        opacity: 1;
+    }
+}
+
+.dropdownMenu {
+    position: absolute;
+    right: 50%;
+    top: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    min-width: 120px;
+    padding: 0.5rem 0;
+}
+
+.dropdownMenu button {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.dropdownMenu button:hover {
+    background: var(--bg-tertiary);
+}
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.2s ease-in;
+}
+
+.modalContent h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.modalContent p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.cancelBtn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.cancelBtn:hover {
+    background: var(--border-color);
+}
+
+.deleteBtn {
+    padding: 0.5rem 1rem;
+    background: #ef4444;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.deleteBtn:hover {
+    background: #dc2626;
 }

@@ -953,6 +953,11 @@
     "noUsersFound": "Aucun utilisateur trouvé",
     "writeMessage": "Écrivez un message...",
     "send": "Envoyer",
-    "selectUser": "Sélectionnez un utilisateur pour commencer à discuter."
+    "selectUser": "Sélectionnez un utilisateur pour commencer à discuter.",
+    "deleteMessage": "Supprimer",
+    "confirmDeleteTitle": "Supprimer le message",
+    "confirmDeleteText": "Êtes-vous sûr de vouloir supprimer ce message ?",
+    "cancel": "Annuler",
+    "delete": "Supprimer"
   }
 }

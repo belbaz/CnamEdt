@@ -14,6 +14,8 @@ export default function MessagePage() {
     const [messages, setMessages] = useState<any[]>([]);
     const [myUserId, setMyUserId] = useState<string | null>(null);
     const [conversationIds, setConversationIds] = useState<Set<string>>(new Set());
+    const [messageToDelete, setMessageToDelete] = useState<any>(null);
+    const [activeDropdown, setActiveDropdown] = useState<number | string | null>(null);
     
     interface User{
         id: number;
@@ -118,6 +120,27 @@ export default function MessagePage() {
         }
     };
 
+    const executeDeleteMessage = async () => {
+        if (!messageToDelete) return;
+        const msgId = messageToDelete.id;
+        setMessageToDelete(null);
+        
+        // Optimistic update
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+        
+        try {
+            const response = await fetch(`/api/messages?messageId=${msgId}`, {
+                method: "DELETE",
+            });
+            
+            if (!response.ok) {
+                throw new Error("Failed to delete message");
+            }
+        } catch (err) {
+            console.error("Erreur suppression message:", err);
+        }
+    };
+
     const normalizeString = (str: string | undefined | null) => {
         return (str || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     };
@@ -141,7 +164,7 @@ export default function MessagePage() {
         <div className={styles.container}>
             <div className={styles.content}>
                 <header className={styles.header}>
-                    <BackButton href="/dashboard" title={t('common.back')}/>
+                    <BackButton href="/" title={t('dashboard.backToEDT')} />
                     <h1>{t('messagePage.title')}</h1>
                 </header>
 
@@ -202,6 +225,36 @@ export default function MessagePage() {
                                                     key={msg.id}
                                                     className={`${styles.messageWrapper} ${isMe ? styles.sentWrapper : styles.receivedWrapper}`}
                                                 >
+                                                    {isMe && (
+                                                        <div className={styles.messageOptions}>
+                                                            <button 
+                                                                className={styles.dotsBtn} 
+                                                                onClick={() => {
+                                                                    setActiveDropdown(activeDropdown === msg.id ? null : msg.id);
+                                                                }}
+                                                            >
+                                                                ⋮
+                                                            </button>
+                                                            {activeDropdown === msg.id && (
+                                                                <>
+                                                                    <div 
+                                                                        style={{ position: 'fixed', inset: 0, zIndex: 9 }} 
+                                                                        onClick={() => setActiveDropdown(null)} 
+                                                                    />
+                                                                    <div className={styles.dropdownMenu}>
+                                                                        <button 
+                                                                            onClick={() => {
+                                                                                setActiveDropdown(null);
+                                                                                setMessageToDelete(msg);
+                                                                            }}
+                                                                        >
+                                                                            {t('messagePage.deleteMessage')}
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     <div
                                                         className={`${styles.messageBubble} ${isMe ? styles.sent : styles.received}`}>
                                                         {msg.text}
@@ -241,6 +294,23 @@ export default function MessagePage() {
                         </div>
                     </div>
                 </div>
+
+                {messageToDelete && (
+                    <div className={styles.modalOverlay} onClick={() => setMessageToDelete(null)}>
+                        <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                            <h3>{t('messagePage.confirmDeleteTitle')}</h3>
+                            <p>{t('messagePage.confirmDeleteText')}</p>
+                            <div className={styles.modalActions}>
+                                <button className={styles.cancelBtn} onClick={() => setMessageToDelete(null)}>
+                                    {t('messagePage.cancel')}
+                                </button>
+                                <button className={styles.deleteBtn} onClick={executeDeleteMessage}>
+                                    {t('messagePage.delete')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

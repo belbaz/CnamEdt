@@ -20,12 +20,12 @@ export async function GET(request: Request) {
 
         // On récupère tous les messages envoyés ou reçus par l'utilisateur
         const { data: sentMessages, error: err1 } = await supabase
-            .from('messages')
+            .from('edt_messages')
             .select('receiver_id')
             .eq('sender_id', myUserId);
             
         const { data: receivedMessages, error: err2 } = await supabase
-            .from('messages')
+            .from('edt_messages')
             .select('sender_id')
             .eq('receiver_id', myUserId);
 

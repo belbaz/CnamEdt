@@ -30,13 +30,13 @@ export async function GET(request: Request) {
 
         // Récupère la conversation avec deux requêtes simples pour éviter les erreurs de parsing
         const { data: sentMessages, error: err1 } = await supabase
-            .from('messages')
+            .from('edt_messages')
             .select('*')
             .eq('sender_id', myUserId)
             .eq('receiver_id', otherUserId);
 
         const { data: receivedMessages, error: err2 } = await supabase
-            .from('messages')
+            .from('edt_messages')
             .select('*')
             .eq('sender_id', otherUserId)
             .eq('receiver_id', myUserId);
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
         // Insertion du nouveau message
         const { data: message, error } = await supabase
-            .from('messages')
+            .from('edt_messages')
             .insert({
                 sender_id: myUserId,
                 receiver_id: receiverId,
@@ -94,6 +94,47 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ success: true, message });
+    } catch (e) {
+        console.error(e);
+        return NextResponse.json({ error: "Erreur serveur inattendue" }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const messageId = searchParams.get("messageId");
+
+        if (!messageId) {
+            return NextResponse.json({ error: "L'ID du message est requis" }, { status: 400 });
+        }
+
+        const cookieStore = await cookies();
+        const session = cookieStore.get("edt_session")?.value;
+        if (!session) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+        const tokenData = verifySessionToken(session);
+        if (!tokenData || !tokenData.sub) return NextResponse.json({ error: "Session invalide" }, { status: 401 });
+
+        const myUserId = tokenData.sub;
+        const supabase = await getSupabaseServerClient();
+
+        if (!supabase) {
+            return NextResponse.json({ error: "Service indisponible" }, { status: 500 });
+        }
+
+        const { error } = await supabase
+            .from('edt_messages')
+            .delete()
+            .eq('id', messageId)
+            .eq('sender_id', myUserId);
+
+        if (error) {
+            console.error("[API Messages] Erreur DELETE:", error);
+            return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true });
     } catch (e) {
         console.error(e);
         return NextResponse.json({ error: "Erreur serveur inattendue" }, { status: 500 });

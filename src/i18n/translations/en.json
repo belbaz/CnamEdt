@@ -956,6 +956,11 @@
     "noUsersFound": "No user found",
     "writeMessage": "Write a message...",
     "send": "Send",
-    "selectUser": "Select a user to start chatting."
+    "selectUser": "Select a user to start chatting.",
+    "deleteMessage": "Delete",
+    "confirmDeleteTitle": "Delete message",
+    "confirmDeleteText": "Are you sure you want to delete this message?",
+    "cancel": "Cancel",
+    "delete": "Delete"
   }
 }
