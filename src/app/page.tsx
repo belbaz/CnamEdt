@@ -43,6 +43,7 @@ import DevNotification from "@/components/DevNotification";
 import DevToolsButton from "@/components/DevToolsButton";
 import EventModal from "@/components/EventModal/EventModal";
 import YearCalendar from "@/components/YearCalendar";
+import MessagePopup from "@/components/MessagePopup/MessagePopup";
 import styles from "./page.module.css";
 import "@/components/VerticalSchedule.css";
 import {saveSnapshotIfChanged} from "@/utils/historyService";
@@ -141,6 +142,7 @@ function HomeContent({searchParams}) {
     const hasPlayedHomeEntranceRef = useRef(false);
     /** Flag pour savoir si on peut afficher les cartes (évite le flash avant animation) */
     const [canShowCards, setCanShowCards] = useState(false);
+    const [isMessagePopupOpen, setIsMessagePopupOpen] = useState(false);
     /** Dès l’ouverture : message « connexion » jusqu’à la fin de la sonde ; puis edtWaitSync / edtLoadingFirst. */
     const [edtInitialLoadingText, setEdtInitialLoadingText] = useState(() => t('page.connectivityCheck'));
     /** Début de l’écran de chargement plein écran (pour durée mini. d’affichage du texte). */
@@ -1674,6 +1676,7 @@ function HomeContent({searchParams}) {
                 isLoadingUser={isLoadingUser}
                 showFullYear={showFullYear}
                 onToggleFullYear={handleToggleFullYear}
+                onMessageClick={() => setIsMessagePopupOpen(prev => !prev)}
             />
 
             <main className={`${styles.container} ${viewMode === 'vertical' ? styles.containerVertical : ''}`}>
@@ -2015,6 +2018,9 @@ function HomeContent({searchParams}) {
             {/* Bouton des outils de développement (uniquement en mode dev) */}
             <DevToolsButton/>
 
+            {isMessagePopupOpen && (
+                <MessagePopup onClose={() => setIsMessagePopupOpen(false)} />
+            )}
         </div>
     );
 }

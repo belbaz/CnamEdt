@@ -61,7 +61,8 @@ export default function Navbar(props: any) {
         userInfo = null,
         isLoadingUser = false,
         showFullYear = false,
-        onToggleFullYear = null
+        onToggleFullYear = null,
+        onMessageClick = null
     } = props;
 
     const [isDev, setIsDev] = useState(false);
@@ -407,7 +408,11 @@ export default function Navbar(props: any) {
                                                 className="view-filter-group-btn"
                                                 onClick={() => {
                                                     handleClick('message');
-                                                    router.push('/message');
+                                                    if (onMessageClick) {
+                                                        onMessageClick();
+                                                    } else {
+                                                        router.push('/message');
+                                                    }
                                                 }}
                                                 aria-label={t('navbar.message')}
                                             >
