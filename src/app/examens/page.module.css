@@ -22,6 +22,12 @@
     margin-top: 1rem;
 }
 
+.headerTop {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
 .title {
     font-size: 2.5rem;
     font-weight: 700;

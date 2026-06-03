@@ -103,7 +103,7 @@
    Cascading identique à l’historique : la 2e déclaration .event-card:hover
    gérait fond / ombre / bordure visibles. */
 .event-card:hover .event-card-surface {
-    transform: scale(1.03);
+    transform: scale(1.02);
     box-shadow: var(--shadow-lg);
     border-color: var(--border-light);
 }

@@ -72,7 +72,7 @@ export default function SignupForm() {
     return (
         <div className={styles.page}>
             <div className={styles.wrapper}>
-                <BackButton href="/" title={t('signup.backToHome')} />
+                <BackButton href="/" title={t('backToHome')} />
                 <div className={styles.notice}>
                     <h1>{t('signup.noticeTitle')}</h1>
                     <p>{t('signup.noticeText')}</p>

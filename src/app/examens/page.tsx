@@ -6,7 +6,7 @@ import { fetchICSEvents } from "@/services/icsService";
 import { getEventTitle } from "@/utils/eventUtils";
 import { createSubjectColorMapping } from "@/utils/eventUtils";
 import { generateEventKey } from "@/utils/eventModalUtils";
-import {useI18n} from "@/i18n/I18nContext";
+import { useI18n } from "@/i18n/I18nContext";
 import { applyThemeFromBrowserStorage } from "@/lib/themeHydration";
 import BackButton from "@/components/BackButton";
 import Spinner from "@/components/Spinner";
@@ -231,7 +231,7 @@ function ExamensContent() {
 
             try {
                 localStorage.setItem('cnamedt_hidden_exams', JSON.stringify(newHidden));
-            } catch (err) {}
+            } catch (err) { }
             return newHidden;
         });
     };
@@ -361,7 +361,9 @@ function ExamensContent() {
         <div className={styles.container}>
             <main className={styles.main}>
                 <div className={styles.header}>
-                    <BackButton href="/dashboard" title={t('examens.backToDashboard')} />
+                    <div className={styles.headerTop}>
+                        <BackButton href="/" title={t('signup.backToHome')} />
+                    </div>
                     <h1 className={styles.title}>{t('examens.title')}</h1>
                 </div>
 
