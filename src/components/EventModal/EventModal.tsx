@@ -13,7 +13,7 @@ import {
     parseLocationMeta,
     getAcademicYearParts
 } from "@/utils/eventModalUtils";
-import { getEventTitle } from "@/utils/eventUtils";
+import { getEventTitle, getUnhandledDescriptionInfo } from "@/utils/eventUtils";
 import {
     areNoteEntriesEqual,
     parseStoredNoteValue,
@@ -508,6 +508,18 @@ export default function EventModal({
                     <div className="event-modal-content">
                         {/* Section Informations principales */}
                         <div className="modal-section">
+                            {(() => {
+                                const unhandledInfos = getUnhandledDescriptionInfo(selectedEvent.description);
+                                if (unhandledInfos && unhandledInfos.length > 0) {
+                                    return unhandledInfos.map((info, idx) => (
+                                        <div key={idx} className="pop-row" style={{ color: '#d97706', fontWeight: 600, backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '8px 12px', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                                            <span>📌</span>
+                                            <span>{info}</span>
+                                        </div>
+                                    ));
+                                }
+                                return null;
+                            })()}
                             <div className="pop-row">
                                 <span>⏰</span>
                                 <span>{new Date(selectedEvent.start).toLocaleTimeString('fr-FR', {

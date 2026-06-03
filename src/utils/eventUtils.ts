@@ -468,6 +468,62 @@ export function getEventTitle(ev: CourseEvent): {
 }
 
 /**
+ * Extrait les informations non gérées/inconnues de la description.
+ * Typiquement des types de cours spéciaux ("Soutenance de projet", etc.)
+ */
+export function getUnhandledDescriptionInfo(description: string | undefined): string[] {
+  if (!description) return [];
+
+  const parts = description.split(/(?:Professeur|Professor)\s*:/i);
+  const mainPart = parts[0] ?? "";
+
+  const segments = mainPart
+    .split(SEGMENT_SEPARATOR)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const unhandled: string[] = [];
+
+  for (const seg of segments) {
+    if (seg === "?" || seg === "-" || seg === "") continue;
+
+    const withoutGroup = stripGroupLabel(seg) ?? seg;
+    const withoutRooms = withoutGroup.replace(ROOM_REGEX, " ").replace(/\bsalle\b/gi, " ");
+    const candidateProf = cleanProfName(withoutRooms);
+
+    // Si ça ressemble fortement à un nom de prof, on ignore
+    if (isValidProfName(candidateProf)) continue;
+
+    // Si c'est juste une salle, on ignore
+    if (!withoutRooms.trim() || withoutRooms.trim() === "?") continue;
+
+    // Ignorer les types de cours standards ou ceux déjà gérés ailleurs (ex: Examen a déjà son propre badge)
+    const isStandardCourseType = /^(?:Cours(?:\s*\/\s*Exercices\s*Dirigés)?|Exercices\s*Dirigés|TP|TD|CM|Cours\s+Magistral|Examen|EXAMEN)$/i.test(seg);
+    if (isStandardCourseType) continue;
+
+    unhandled.push(seg);
+  }
+
+  // Vérifier aussi la partie après "Professeur :" au cas où
+  if (parts.length > 1) {
+    const afterProf = parts.slice(1).join("Professeur :");
+    const afterSegments = afterProf
+        .split(SEGMENT_SEPARATOR)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    for (const seg of afterSegments) {
+        if (seg === "?" || seg === "-" || seg === "") continue;
+        const candidateProf = cleanProfName(seg);
+        if (isValidProfName(candidateProf)) continue;
+        unhandled.push(seg);
+    }
+  }
+
+  return unhandled;
+}
+
+/**
  * Retourne l'index de couleur pour une matière donnée
  */
 export function getColorIndexForSubject(matiere: string, subjectColors: Record<string, number>): number {

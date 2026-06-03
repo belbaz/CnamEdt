@@ -39,7 +39,7 @@
     flex-wrap: nowrap;
 }
 
-/* Bouton today sur mobile : caché par défaut, affiché dans navbar-actions-right sur mobile */
+/* Bouton today sur mobile : cachÃ© par dÃ©faut, affichÃ© dans navbar-actions-right sur mobile */
 .today-btn-mobile {
     display: none !important;
 }
@@ -116,7 +116,7 @@
     background: #3182ce;
 }
 
-/* Bouton étendre/replier tout (desktop) réutilise le style mobile */
+/* Bouton Ã©tendre/replier tout (desktop) rÃ©utilise le style mobile */
 .expand-all-btn {
     width: 44px;
     height: 44px;
@@ -170,10 +170,10 @@
     box-shadow: var(--shadow-lg);
     border: 2px solid var(--border-color);
     pointer-events: none;
-    /* Opacité uniquement via le texte si besoin : pas d’opacity ici pour éviter d’estomper la flèche */
+    /* OpacitÃ© uniquement via le texte si besoin : pas dâ€™opacity ici pour Ã©viter dâ€™estomper la flÃ¨che */
     animation: tooltipFadeIn 0.2s ease-out;
     opacity: 1;
-    /* Évite qu’un bloc fixed avec width:auto ne s’étire sur tout le viewport */
+    /* Ã‰vite quâ€™un bloc fixed avec width:auto ne sâ€™Ã©tire sur tout le viewport */
     box-sizing: border-box;
     width: fit-content;
     max-width: min(22rem, calc(100vw - 2rem));
@@ -184,7 +184,7 @@
     text-align: center;
 }
 
-/* Flèche = carré pivoté (même fond + même épaisseur de bordure que la bulle) */
+/* FlÃ¨che = carrÃ© pivotÃ© (mÃªme fond + mÃªme Ã©paisseur de bordure que la bulle) */
 .tooltip-top::before {
     content: '';
     position: absolute;
@@ -268,7 +268,7 @@
     opacity: 0.9;
 }
 
-/* Style pour le bouton "Voir toute l'année scolaire" */
+/* Style pour le bouton "Voir toute l'annÃ©e scolaire" */
 .view-filter-group-btn--full-year {
     width: auto;
     min-width: 44px;
@@ -293,7 +293,7 @@
     transform-origin: center;
 }
 
-/* S'assurer que les images SVG dans le bouton restent bien centrées et fixes */
+/* S'assurer que les images SVG dans le bouton restent bien centrÃ©es et fixes */
 .view-filter-group-btn img {
     display: block;
     object-fit: contain;
@@ -306,7 +306,7 @@
     flex-shrink: 0;
 }
 
-/* Libellé année civile (bouton année complète) */
+/* LibellÃ© annÃ©e civile (bouton annÃ©e complÃ¨te) */
 .navbar-full-year-label {
     display: inline-flex;
     align-items: baseline;
@@ -321,7 +321,7 @@
     padding-bottom: 6px;
 }
 
-/* Soulignement : trait quasi droit, extrémités légèrement « tombantes » (effet dessiné) */
+/* Soulignement : trait quasi droit, extrÃ©mitÃ©s lÃ©gÃ¨rement Â« tombantes Â» (effet dessinÃ©) */
 .navbar-full-year-label::after {
     content: "";
     position: absolute;
@@ -389,7 +389,7 @@
     background: var(--bg-primary) !important;
 }
 
-/* Menu déroulant options (tous écrans) */
+/* Menu dÃ©roulant options (tous Ã©crans) */
 .options-menu-container {
     position: relative;
 }
@@ -531,7 +531,7 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Bouton DEV - Historique (déprécié, gardé pour compatibilité) */
+/* Bouton DEV - Historique (dÃ©prÃ©ciÃ©, gardÃ© pour compatibilitÃ©) */
 .dev-history-btn {
     width: 44px;
     height: 44px;
@@ -705,4 +705,18 @@
         width: 38px;
         height: 38px;
     }
+}
+
+/* Bordure claire au survol pour tous les boutons de la navbar */
+.history-btn:hover,
+.test-mode-btn:hover,
+.expand-all-btn:hover,
+.view-filter-group .today-btn:hover,
+.view-filter-group-btn:hover,
+.view-filter-group .filter-button:hover,
+.options-menu-toggle:hover,
+.dev-clear-cache-btn:hover,
+.dev-history-btn:hover,
+.auto-scroll-toggle:hover {
+    border-color: var(--text-primary) !important;
 }

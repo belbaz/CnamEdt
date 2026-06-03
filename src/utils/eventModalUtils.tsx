@@ -44,6 +44,10 @@ export function getSubjectHoursStats(subjectName, allEvents, referenceEvent = nu
     let completedHours = 0;
     let hasUpcomingExam = false;
 
+    const referenceIsExam = referenceEvent && 
+        ((referenceEvent.description || '').toUpperCase().includes("EXAMEN") || 
+         (referenceEvent.summary || '').toUpperCase().includes("EXAMEN"));
+
     allEvents.forEach(event => {
         const {matiere} = getEventTitle(event);
         if (matiere !== subjectName) return;
@@ -56,7 +60,7 @@ export function getSubjectHoursStats(subjectName, allEvents, referenceEvent = nu
         const startMs = start.getTime();
 
         if (isExam) {
-            if (startMs > referenceTimestamp) {
+            if (startMs > referenceTimestamp && !referenceIsExam) {
                 hasUpcomingExam = true;
             }
             // Ignorer les examens dans le calcul des heures de la matière
