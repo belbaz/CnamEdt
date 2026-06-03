@@ -392,8 +392,7 @@ export default function Navbar(props: any) {
                                         </button>
                                     </Tooltip>
                                     {/*bouton message privé*/}
-                                    <div
-                                        style={{display: isDev ? "block" : "none"}}>
+                                    <div>
                                         <Tooltip
                                             text={t('navbar.message')}
                                             show={showTooltip.message}

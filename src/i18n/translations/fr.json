@@ -958,6 +958,9 @@
     "confirmDeleteTitle": "Supprimer le message",
     "confirmDeleteText": "Êtes-vous sûr de vouloir supprimer ce message ?",
     "cancel": "Annuler",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "deleteConversation": "Supprimer la conversation",
+    "confirmDeleteConversationTitle": "Supprimer la conversation",
+    "confirmDeleteConversationText": "Êtes-vous sûr de vouloir supprimer cette conversation ? Tous les messages seront perdus."
   }
 }

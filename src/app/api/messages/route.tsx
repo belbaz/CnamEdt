@@ -104,9 +104,10 @@ export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const messageId = searchParams.get("messageId");
+        const conversationWithUserId = searchParams.get("conversationWithUserId");
 
-        if (!messageId) {
-            return NextResponse.json({ error: "L'ID du message est requis" }, { status: 400 });
+        if (!messageId && !conversationWithUserId) {
+            return NextResponse.json({ error: "L'ID du message ou de la conversation est requis" }, { status: 400 });
         }
 
         const cookieStore = await cookies();
@@ -123,15 +124,34 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: "Service indisponible" }, { status: 500 });
         }
 
-        const { error } = await supabase
-            .from('edt_messages')
-            .delete()
-            .eq('id', messageId)
-            .eq('sender_id', myUserId);
+        if (messageId) {
+            const { error } = await supabase
+                .from('edt_messages')
+                .delete()
+                .eq('id', messageId)
+                .eq('sender_id', myUserId);
 
-        if (error) {
-            console.error("[API Messages] Erreur DELETE:", error);
-            return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
+            if (error) {
+                console.error("[API Messages] Erreur DELETE:", error);
+                return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
+            }
+        } else if (conversationWithUserId) {
+            const { error: err1 } = await supabase
+                .from('edt_messages')
+                .delete()
+                .eq('sender_id', myUserId)
+                .eq('receiver_id', conversationWithUserId);
+
+            const { error: err2 } = await supabase
+                .from('edt_messages')
+                .delete()
+                .eq('sender_id', conversationWithUserId)
+                .eq('receiver_id', myUserId);
+
+            if (err1 || err2) {
+                console.error("[API Messages] Erreur DELETE Conversation:", err1 || err2);
+                return NextResponse.json({ error: "Erreur lors de la suppression de la conversation" }, { status: 500 });
+            }
         }
 
         return NextResponse.json({ success: true });

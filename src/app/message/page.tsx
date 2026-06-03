@@ -15,6 +15,7 @@ export default function MessagePage() {
     const [myUserId, setMyUserId] = useState<string | null>(null);
     const [conversationIds, setConversationIds] = useState<Set<string>>(new Set());
     const [messageToDelete, setMessageToDelete] = useState<any>(null);
+    const [conversationToDelete, setConversationToDelete] = useState<any>(null);
     const [activeDropdown, setActiveDropdown] = useState<number | string | null>(null);
     
     interface User{
@@ -141,6 +142,33 @@ export default function MessagePage() {
         }
     };
 
+    const executeDeleteConversation = async () => {
+        if (!conversationToDelete) return;
+        const otherUserId = conversationToDelete.id;
+        setConversationToDelete(null);
+        
+        // Optimistic update
+        setMessages([]);
+        setConversationIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(String(otherUserId));
+            return newSet;
+        });
+        setSelectedUser(null);
+        
+        try {
+            const response = await fetch(`/api/messages?conversationWithUserId=${otherUserId}`, {
+                method: "DELETE",
+            });
+            
+            if (!response.ok) {
+                throw new Error("Failed to delete conversation");
+            }
+        } catch (err) {
+            console.error("Erreur suppression conversation:", err);
+        }
+    };
+
     const normalizeString = (str: string | undefined | null) => {
         return (str || "").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     };
@@ -214,6 +242,16 @@ export default function MessagePage() {
                                 <>
                                     <div className={styles.chatHeader}>
                                         <h2>{selectedUser.name}</h2>
+                                        <button 
+                                            className={styles.deleteConversationBtn}
+                                            onClick={() => setConversationToDelete(selectedUser)}
+                                            title={t('messagePage.deleteConversation')}
+                                        >
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                     <div className={styles.messagesContainer}>
                                         {messages.map(msg => {
@@ -305,6 +343,23 @@ export default function MessagePage() {
                                     {t('messagePage.cancel')}
                                 </button>
                                 <button className={styles.deleteBtn} onClick={executeDeleteMessage}>
+                                    {t('messagePage.delete')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {conversationToDelete && (
+                    <div className={styles.modalOverlay} onClick={() => setConversationToDelete(null)}>
+                        <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                            <h3>{t('messagePage.confirmDeleteConversationTitle')}</h3>
+                            <p>{t('messagePage.confirmDeleteConversationText')}</p>
+                            <div className={styles.modalActions}>
+                                <button className={styles.cancelBtn} onClick={() => setConversationToDelete(null)}>
+                                    {t('messagePage.cancel')}
+                                </button>
+                                <button className={styles.deleteBtn} onClick={executeDeleteConversation}>
                                     {t('messagePage.delete')}
                                 </button>
                             </div>

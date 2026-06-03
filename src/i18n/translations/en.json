@@ -961,6 +961,9 @@
     "confirmDeleteTitle": "Delete message",
     "confirmDeleteText": "Are you sure you want to delete this message?",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "deleteConversation": "Delete conversation",
+    "confirmDeleteConversationTitle": "Delete conversation",
+    "confirmDeleteConversationText": "Are you sure you want to delete this conversation? All messages will be lost."
   }
 }
