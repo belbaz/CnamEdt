@@ -2,12 +2,14 @@
 "use client";
 
 import {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
 import BackButton from "@/components/BackButton";
 import {useI18n} from "@/i18n/I18nContext";
 import styles from "./page.module.css";
 
 export default function MessagePage() {
     const {t} = useI18n();
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [messageInput, setMessageInput] = useState("");
@@ -48,7 +50,15 @@ export default function MessagePage() {
                 const userRes = await fetch("/api/user");
                 if (userRes.ok) {
                     const userData = await userRes.json();
-                    if (userData.id) setMyUserId(String(userData.id));
+                    if (userData.id) {
+                        setMyUserId(String(userData.id));
+                    } else {
+                        router.push("/");
+                        return;
+                    }
+                } else {
+                    router.push("/");
+                    return;
                 }
 
                 const convRes = await fetch("/api/messages/conversations");

@@ -392,22 +392,24 @@ export default function Navbar(props: any) {
                                         </button>
                                     </Tooltip>
                                     {/*bouton message privé*/}
-                                    <div>
+                                    <div
+                                        onMouseEnter={() => setShowTooltip(prev => ({...prev, message: true}))}
+                                        onMouseLeave={() => setShowTooltip(prev => ({...prev, message: false}))}
+                                        onTouchStart={() => handleLongPressStart('message')}
+                                        onTouchEnd={() => handleLongPressEnd('message')}
+                                    >
                                         <Tooltip
-                                            text={t('navbar.message')}
+                                            text={!userInfo ? t('agenda.tabAddEditDescGuest') : t('navbar.message')}
                                             show={showTooltip.message}
                                             enabled={showTooltips}>
                                             <button
+                                                disabled={!userInfo}
                                                 className="view-filter-group-btn"
                                                 onClick={() => {
                                                     handleClick('message');
                                                     router.push('/message');
                                                 }}
                                                 aria-label={t('navbar.message')}
-                                                onMouseEnter={() => setShowTooltip(prev => ({...prev, message: true}))}
-                                                onMouseLeave={() => setShowTooltip(prev => ({...prev, message: false}))}
-                                                onTouchStart={() => handleLongPressStart('message')}
-                                                onTouchEnd={() => handleLongPressEnd('message')}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                      viewBox="0 0 256 256">
