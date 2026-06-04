@@ -31,6 +31,8 @@ export async function POST(request) {
             );
         }
 
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         // Accepter soit "admin" soit "test" soit une adresse @lecnam.net
         if (email !== "admin" && email !== "test" && !email.endsWith("@lecnam.net")) {
             return NextResponse.json(
@@ -38,6 +40,7 @@ export async function POST(request) {
                 { status: 400 },
             );
         }
+        */
 
         const pepper = process.env.JWT_SECRET;
         if (!pepper) {

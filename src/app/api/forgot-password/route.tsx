@@ -86,12 +86,15 @@ export async function POST(request) {
             );
         }
 
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         if (!email.endsWith("@lecnam.net")) {
             return NextResponse.json(
                 { error: "Seules les adresses @lecnam.net sont autorisées." },
                 { status: 400 },
             );
         }
+        */
 
         // Vérifier que l'utilisateur existe
         const { data: user, error: userError } = await supabase

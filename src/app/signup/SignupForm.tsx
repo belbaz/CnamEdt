@@ -30,10 +30,13 @@ export default function SignupForm() {
 
         const normalizedEmail = email.trim().toLowerCase();
 
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         if (!normalizedEmail.endsWith("@lecnam.net")) {
             setErrorMessage(t('signup.errorEmail'));
             return;
         }
+        */
 
         if (password.length < 6) {
             setErrorMessage(t('signup.errorPasswordLength'));

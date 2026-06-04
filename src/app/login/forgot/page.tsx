@@ -27,10 +27,13 @@ export default function ForgotPage() {
             return;
         }
 
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         if (!normalizedEmail.endsWith("@lecnam.net")) {
             setErrorMessage(t('forgot.errorEmailDomain'));
             return;
         }
+        */
 
         try {
             setIsSubmitting(true);

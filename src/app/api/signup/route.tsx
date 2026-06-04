@@ -9,7 +9,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const LOG_PREFIX = "[API signup]";
+// désactivation de l'obligation d'avoir un mail avec @lecnam.net
+/*
 const EMAIL_PATTERN = /^([a-zA-ZÀ-ÖØ-öø-ÿ-]+)\.([a-zA-ZÀ-ÖØ-öø-ÿ-]+)(?:\.[^@]+)?@lecnam\.net$/i;
+*/
 
 function capitalizeSegment(segment = "") {
     return segment
@@ -20,6 +23,8 @@ function capitalizeSegment(segment = "") {
         .trim();
 }
 
+// désactivation de l'obligation d'avoir un mail avec @lecnam.net
+/*
 function extractNamesFromEmail(email) {
     const match = email.match(EMAIL_PATTERN);
     if (!match) {
@@ -29,6 +34,18 @@ function extractNamesFromEmail(email) {
     return {
         firstName: capitalizeSegment(rawSecondSegment.toLowerCase()),
         lastName: capitalizeSegment(rawFirstSegment.toLowerCase()),
+    };
+}
+*/
+function extractNamesFromEmail(email) {
+    if (!email || !email.includes("@")) return null;
+    const localPart = email.split("@")[0];
+    const parts = localPart.split(/[._-]/);
+    const firstPart = parts[0] || "User";
+    const secondPart = parts[1] || firstPart;
+    return {
+        firstName: capitalizeSegment(secondPart.toLowerCase()),
+        lastName: capitalizeSegment(firstPart.toLowerCase()),
     };
 }
 
@@ -110,6 +127,8 @@ export async function POST(request) {
             );
         }
 
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         if (!email.endsWith("@lecnam.net")) {
             console.warn(`${LOG_PREFIX} Rejet email hors domaine: ${email}`);
             return NextResponse.json(
@@ -117,12 +136,24 @@ export async function POST(request) {
                 { status: 400 },
             );
         }
+        */
 
         const derivedNames = extractNamesFromEmail(email);
+        
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         if (!derivedNames) {
             console.warn(`${LOG_PREFIX} Format email invalide pour extraire le nom: ${email}`);
             return NextResponse.json(
                 { error: "Format d'adresse invalide. Utilisez prenom.nom@lecnam.net." },
+                { status: 400 },
+            );
+        }
+        */
+        if (!derivedNames) {
+            console.warn(`${LOG_PREFIX} Format email invalide pour extraire le nom: ${email}`);
+            return NextResponse.json(
+                { error: "Format d'adresse invalide." },
                 { status: 400 },
             );
         }

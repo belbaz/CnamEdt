@@ -60,11 +60,14 @@ export default function LoginForm({ onSuccess, embedded = false }) {
         setSuccessMessage("");
 
         const normalizedEmail = email.trim().toLowerCase();
+        // désactivation de l'obligation d'avoir un mail avec @lecnam.net
+        /*
         // Accepter soit "admin" soit "test" soit une adresse @lecnam.net
         if (normalizedEmail !== "admin" && normalizedEmail !== "test" && !normalizedEmail.endsWith("@lecnam.net")) {
             setErrorMessage(t('login.errorEmail'));
             return;
         }
+        */
 
         if (!password) {
             setErrorMessage(t('login.errorPassword'));
