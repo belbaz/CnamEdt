@@ -331,7 +331,7 @@ export default function ComptePage() {
                                 <HoverTooltip text={userInfo.email}>
                                 <span className={styles.infoValue}>{userInfo.email}</span>
                                 </HoverTooltip>
-                                <HoverTooltip text={emailCopied ? t('compte.copied') : t('compte.copyEmail')}>
+                                <HoverTooltip text={emailCopied ? t('compte.copied') : t('compte.copyEmail')} wrapperClassName={styles.copyEmailWrapper}>
                                 <button
                                     className={[styles.copyEmailButton, emailCopied && styles.copied].filter(Boolean).join(' ')}
                                     onClick={handleCopyEmail}
