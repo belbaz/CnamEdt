@@ -256,7 +256,7 @@
     "title": "Créer un compte",
     "noticeTitle": "Accès réservé aux comptes Cnam",
     "noticeText": "Créer un compte pour ajouter des cours dans l'agenda",
-    "emailLabel": "Adresse @lecnam.net",
+    "emailLabel": "Adresse mail",
     "emailPlaceholder": "prenom.nom.auditeur@lecnam.net",
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "••••••••••",
