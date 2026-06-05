@@ -200,6 +200,47 @@
     box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.15);
 }
 
+.passwordInputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.passwordInputWrapper input {
+    width: 100%;
+    padding-right: 2.75rem;
+    box-sizing: border-box;
+}
+
+.passwordToggle {
+    position: absolute;
+    right: 0.75rem;
+    background: none !important;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    box-shadow: none !important;
+}
+
+.passwordToggle:hover {
+    color: var(--primary-color);
+    background: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.passwordToggle:focus {
+    outline: none;
+    color: var(--primary-color);
+}
+
 .dualRow {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
