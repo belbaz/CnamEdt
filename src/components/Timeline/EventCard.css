@@ -60,12 +60,11 @@
     transform-origin: center bottom;
     backface-visibility: hidden;
 
-    transition:
-        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-        box-shadow 0.3s ease,
-        border-color 0.2s ease,
-        background 0.3s ease,
-        filter 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    border-color 0.2s ease,
+    background 0.3s ease,
+    filter 0.2s ease;
 }
 
 /* 3. Déclenchement de l'animation (uniquement pendant l'entrée pour éviter
@@ -79,16 +78,45 @@
 
 /* 4. Gestion des délais (Stagger effect) — 45ms d'écart entre chaque carte.
    La classe d’entrée est sur .event-card-surface, le nth-child sur le <li>. */
-.event-card:nth-child(1) > .event-card-surface.event-card--home-entrance { animation-delay: 0.045s; }
-.event-card:nth-child(2) > .event-card-surface.event-card--home-entrance { animation-delay: 0.09s; }
-.event-card:nth-child(3) > .event-card-surface.event-card--home-entrance { animation-delay: 0.135s; }
-.event-card:nth-child(4) > .event-card-surface.event-card--home-entrance { animation-delay: 0.18s; }
-.event-card:nth-child(5) > .event-card-surface.event-card--home-entrance { animation-delay: 0.225s; }
-.event-card:nth-child(6) > .event-card-surface.event-card--home-entrance { animation-delay: 0.27s; }
-.event-card:nth-child(7) > .event-card-surface.event-card--home-entrance { animation-delay: 0.315s; }
-.event-card:nth-child(8) > .event-card-surface.event-card--home-entrance { animation-delay: 0.36s; }
-.event-card:nth-child(9) > .event-card-surface.event-card--home-entrance { animation-delay: 0.405s; }
-.event-card:nth-child(n+10) > .event-card-surface.event-card--home-entrance { animation-delay: 0.45s; }
+.event-card:nth-child(1) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.045s;
+}
+
+.event-card:nth-child(2) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.09s;
+}
+
+.event-card:nth-child(3) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.135s;
+}
+
+.event-card:nth-child(4) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.18s;
+}
+
+.event-card:nth-child(5) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.225s;
+}
+
+.event-card:nth-child(6) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.27s;
+}
+
+.event-card:nth-child(7) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.315s;
+}
+
+.event-card:nth-child(8) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.36s;
+}
+
+.event-card:nth-child(9) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.405s;
+}
+
+.event-card:nth-child(n+10) > .event-card-surface.event-card--home-entrance {
+    animation-delay: 0.45s;
+}
 
 /* 5. Accessibilité */
 @media (prefers-reduced-motion: reduce) {
@@ -507,12 +535,10 @@
 @keyframes modalExpandFromSource {
     0% {
         opacity: 0;
-        transform:
-            translate(
+        transform: translate(
                 calc(-50% + var(--origin-x, 50vw) - 50vw),
                 calc(-50% + var(--origin-y, 50vh) - 50vh)
-            )
-            scale(0.3);
+        ) scale(0.3);
     }
     55% {
         opacity: 1;
@@ -898,6 +924,32 @@
     animation: examPulse 2s ease-in-out infinite;
 }
 
+/* Badge Informations supplémentaires (Sert aussi de wrapper pour le tooltip) */
+.extra-info-badge-card {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.2rem;
+    z-index: 6;
+    font-size: 0.55rem;
+    line-height: 1;
+    color: #ffffff;
+    font-weight: 800;
+    /* Orange vif et beaucoup plus lisible */
+    background: linear-gradient(135deg, #ff8c00 0%, #e65c00 100%);
+    padding: 0.25rem 0.4rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 140, 0, 0.4);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(230, 92, 0, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: .3rem;
+}
+
 /* Badge Note - affiché en haut à droite, à côté du badge examen si présent */
 .note-badge-card {
     position: absolute;
@@ -1033,20 +1085,28 @@
     pointer-events: none;
 }
 
-/* Ajuster la position du badge note quand le badge examen est présent */
-.event-card:has(.exam-badge-card) .note-badge-card {
-    top: 1.7rem;
-    right: 0.2rem;
+/* Ajuster la position des badges empilés sur la même ligne (Examen & Info) */
+.event-card:has(.exam-badge-card) .extra-info-badge-card {
+    right: 3.6rem;
 }
 
-/* Ajuster la position du badge debug quand les deux badges sont présents */
-.event-card:has(.exam-badge-card):has(.note-badge-card) .event-hours-debug {
+/* Position du badge note - Si Exam ou Info est présent, il descend à la 2ème ligne */
+.event-card:has(.exam-badge-card) .note-badge-card,
+.event-card:has(.extra-info-badge-card) .note-badge-card {
+    top: 1.7rem;
+}
+
+/* Position du badge debug */
+/* S'il n'y a que Exam/Info (pas de notes), le debug descend à la 2ème ligne */
+.event-card:has(.exam-badge-card):not(:has(.note-badge-card)) .event-hours-debug,
+.event-card:has(.extra-info-badge-card):not(:has(.note-badge-card)) .event-hours-debug {
+    top: 1.7rem;
+}
+
+/* Si on a Exam/Info ET Notes, le debug descend à la 3ème ligne */
+.event-card:has(.exam-badge-card):has(.note-badge-card) .event-hours-debug,
+.event-card:has(.extra-info-badge-card):has(.note-badge-card) .event-hours-debug {
     top: 2.9rem;
-}
-
-/* Ajuster la position du badge debug quand le badge examen est présent */
-.event-card:has(.exam-badge-card) .event-hours-debug {
-    top: 1.7rem;
 }
 
 @keyframes examPulse {
@@ -1061,7 +1121,7 @@
     }
 }
 
-/* Responsive pour le badge examen */
+/* Responsive pour les badges */
 @media (max-width: 768px) {
     .exam-badge-card {
         font-size: 0.5rem;
@@ -1070,8 +1130,30 @@
         right: 0.15rem;
     }
 
-    .event-card:has(.exam-badge-card) .event-hours-debug {
+    .extra-info-badge-card {
+        font-size: 0.5rem;
+        padding: 0.22rem 0.35rem;
+        top: 0.35rem;
+        right: 0.15rem;
+    }
+
+    .event-card:has(.exam-badge-card) .extra-info-badge-card {
+        right: 3.1rem;
+    }
+
+    .event-card:has(.exam-badge-card) .note-badge-card,
+    .event-card:has(.extra-info-badge-card) .note-badge-card {
         top: 1.5rem;
+    }
+
+    .event-card:has(.exam-badge-card):not(:has(.note-badge-card)) .event-hours-debug,
+    .event-card:has(.extra-info-badge-card):not(:has(.note-badge-card)) .event-hours-debug {
+        top: 1.5rem;
+    }
+
+    .event-card:has(.exam-badge-card):has(.note-badge-card) .event-hours-debug,
+    .event-card:has(.extra-info-badge-card):has(.note-badge-card) .event-hours-debug {
+        top: 2.65rem;
     }
 }
 
@@ -1083,8 +1165,30 @@
         right: 0.1rem;
     }
 
-    .event-card:has(.exam-badge-card) .event-hours-debug {
+    .extra-info-badge-card {
+        font-size: 0.48rem;
+        padding: 0.2rem 0.32rem;
+        top: 0.3rem;
+        right: 0.1rem;
+    }
+
+    .event-card:has(.exam-badge-card) .extra-info-badge-card {
+        right: 2.85rem;
+    }
+
+    .event-card:has(.exam-badge-card) .note-badge-card,
+    .event-card:has(.extra-info-badge-card) .note-badge-card {
         top: 1.4rem;
+    }
+
+    .event-card:has(.exam-badge-card):not(:has(.note-badge-card)) .event-hours-debug,
+    .event-card:has(.extra-info-badge-card):not(:has(.note-badge-card)) .event-hours-debug {
+        top: 1.4rem;
+    }
+
+    .event-card:has(.exam-badge-card):has(.note-badge-card) .event-hours-debug,
+    .event-card:has(.extra-info-badge-card):has(.note-badge-card) .event-hours-debug {
+        top: 2.5rem;
     }
 }
 
@@ -1353,8 +1457,7 @@
     /*    left: -1px;*/
     /*    right: -1px;*/
     /*    width: calc(100% + 2px);*/
-    /*}*/   
-
+    /*}*/
     .event-card:active .event-card-surface {
         transform: translateY(-2px) scale(0.96);
     }

@@ -2,7 +2,7 @@
 "use client";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
-import {getEventTitle, getColorIndexForSubject} from "@/utils/eventUtils";
+import {getEventTitle, getColorIndexForSubject, getUnhandledDescriptionInfo} from "@/utils/eventUtils";
 import "./EventCard.css";
 import Image from "next/image";
 import {useDevMode} from "../../utils/env";
@@ -211,6 +211,10 @@ export default function EventCard({
     // Détecter si la description contient "EXAMEN"
     const isExam = description && description.toUpperCase().includes("EXAMEN");
 
+    // Récupérer les informations supplémentaires
+    const unhandledInfos = getUnhandledDescriptionInfo(description);
+    const hasExtraInfo = unhandledInfos && unhandledInfos.length > 0;
+
     // Calculer l'index de couleur et le background pour le mode fond
     const colorIndex = getColorIndexForSubject(matiere || description, subjectColors);
     const bgColorRgb = BACKGROUND_COLORS_RGB[colorIndex] || BACKGROUND_COLORS_RGB[0];
@@ -256,6 +260,11 @@ export default function EventCard({
                     <div className="exam-badge-card">
                         EXAMEN
                     </div>
+                )}
+                {hasExtraInfo && (
+                    <HoverTooltip text={unhandledInfos.join(" | ")} wrapperClassName="extra-info-badge-card">
+                        <span>📌 INFO</span>
+                    </HoverTooltip>
                 )}
                 {(() => {
                     // On ne considère pour la tooltip / le badge que les entrées texte (notePreviewItems),
