@@ -80,7 +80,7 @@ const SEGMENT_SEPARATOR =
 
 /** Mots-clés qui indiquent un type de cours et non un prof */
 const COURSE_TYPE_KEYWORDS =
-  /^(?:Cours(?:\s*\/\s*Exercices\s*Dirigés)?|Exercices\s*Dirigés|TP|TD|CM|Conférence|Examen|EXAMEN|Évaluation|Contrôle|Atelier|Séminaire|Soutenance)\b/i;
+  /^(?:Cours(?:\s*\/\s*Exercices\s*Dirigés)?|Exercices\s*Dirigés|TP|TD|CM|Conférence|Examen|EXAMEN|Évaluation|Contrôle|Atelier|Séminaire|Soutenance|Rattrapage)\b/i;
 
 /**
  * Motif détectant un préfixe de "groupe" au début d'un segment.
